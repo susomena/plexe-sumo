@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NLJunctionControlBuilder.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Builder of microsim-junctions and tls
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NLJunctionControlBuilder_h
 #define NLJunctionControlBuilder_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -79,7 +86,7 @@ public:
     /** @brief Destructor
      *
      * Deletes previously allocated "myLogicControl" and "myJunctions" if
-     *  they were not previously returned (this may happen if an error occurred).
+     *  they were not previously returned (this may happen if an error occured).
      */
     virtual ~NLJunctionControlBuilder();
 
@@ -98,8 +105,7 @@ public:
      * @todo Check why "key" is given
      */
     void openJunction(const std::string& id, const std::string& key,
-                      const SumoXMLNodeType type,
-                      const Position pos,
+                      const SumoXMLNodeType type, double x, double y,
                       const PositionVector& shape,
                       const std::vector<MSLane*>& incomingLanes,
                       const std::vector<MSLane*>& internalLanes);
@@ -173,8 +179,20 @@ public:
      * @todo min/max is used only by one junction type. Recheck
      * @todo min/max: maybe only one type of a phase definition should be built
      */
-    void addPhase(SUMOTime duration, const std::string& state, int nextPhase,
-                  SUMOTime min, SUMOTime max, const std::string& name);
+    void addPhase(SUMOTime duration, const std::string& state,
+                  SUMOTime min, SUMOTime max);
+
+    /** @brief Adds a phase to the currently built traffic lights logic
+     *
+     * @param[in] duration The duration of the phase
+     * @param[in] state The state of the tls
+     * @param[in] minDuration The minimum duration of the phase
+     * @param[in] maxDuration The maximum duration of the phase
+     * @param[in] transient_notdecisional Specifies if this is a transient phase (true) or a decisional one (false)
+     * @param[in] commit Specifies if this is a commit phase
+     */
+    void addPhase(SUMOTime duration, const std::string& state, SUMOTime minDuration, SUMOTime maxDuration, bool transient_notdecisional, bool commit) throw();
+
 
     /** @brief Adds a phase to the currently built traffic lights logic
      *
@@ -186,7 +204,7 @@ public:
      * @param[in] commit Specifies if this is a commit phase
      * @param[in] targetLanes A reference to the vector containing targeted sensor lanes for this phase, given by lane id
      */
-    void addPhase(SUMOTime duration, const std::string& state, int nextPhase, SUMOTime minDuration, SUMOTime maxDuration, const std::string& name, bool transient_notdecisional, bool commit, MSPhaseDefinition::LaneIdVector* targetLanes = nullptr);
+    void addPhase(SUMOTime duration, const std::string& state, SUMOTime minDuration, SUMOTime maxDuration, bool transient_notdecisional, bool commit, MSPhaseDefinition::LaneIdVector& targetLanes) throw();
 
 
     /** @brief Returns a previously build tls logic

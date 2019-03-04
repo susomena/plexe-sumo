@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Fri Dec 14 09:27:51 2018 by Eclipse SUMO netconvert Version v1_0_1+0645-93703db
-This data file and the accompanying materials
-are made available under the terms of the Eclipse Public License v2.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v20.html
-SPDX-License-Identifier: EPL-2.0
+<!-- generated on Thu Jan 12 10:32:59 2017 by SUMO netconvert Version dev-SVN-r22560
+<?xml version="1.0" encoding="UTF-8"?>
+
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
@@ -13,7 +10,6 @@ SPDX-License-Identifier: EPL-2.0
     </input>
 
     <output>
-        <write-license value="true"/>
         <output-file value="net.net.xml"/>
         <plain-output-prefix value="plain"/>
         <output.street-names value="true"/>
@@ -24,13 +20,9 @@ SPDX-License-Identifier: EPL-2.0
         <proj.plain-geo value="true"/>
     </projection>
 
-    <tls_building>
-        <tls.red.time value="10"/>
-    </tls_building>
-
-    <junctions>
+    <processing>
         <no-internal-links value="true"/>
-    </junctions>
+    </processing>
 
     <report>
         <verbose value="true"/>
@@ -40,12 +32,12 @@ SPDX-License-Identifier: EPL-2.0
 </configuration>
 -->
 
-<edges version="1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
+<edges version="0.27" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/edges_file.xsd">
     <edge id="-22917251" from="32266936" to="32266938" name="Teltowkanalbrücke" priority="6" type="highway.tertiary" numLanes="1" speed="22.22" disallow="tram rail_urban rail rail_electric ship"/>
     <edge id="-24214693#0" from="261599791" to="32266935" name="Ernst-Ruska-Ufer" priority="9" type="highway.primary" numLanes="2" speed="27.78" shape="13.520153,52.426821 13.522632,52.426659 13.526713,52.426404" disallow="tram rail_urban rail rail_electric ship"/>
     <edge id="-24214693#1" from="57343510" to="261599791" name="Ernst-Ruska-Ufer" priority="9" type="highway.primary" numLanes="2" speed="27.78" disallow="tram rail_urban rail rail_electric ship"/>
     <edge id="-24214694" from="32266938" to="32266935" name="Wegedornstraße" priority="6" type="highway.tertiary" numLanes="1" speed="22.22" disallow="tram rail_urban rail rail_electric ship"/>
-    <edge id="-25951490" from="32266938" to="175648134" priority="1" type="highway.cycleway" numLanes="1" speed="8.33" width="1.00" allow="bicycle"/>
+    <edge id="-25951490" from="32266938" to="175648134" priority="1" type="highway.cycleway" numLanes="1" speed="5.56" width="1.00" allow="bicycle"/>
     <edge id="-26816413#0" from="294168710" to="56231597" priority="2" type="highway.service" numLanes="1" speed="5.56" allow="delivery bicycle pedestrian"/>
     <edge id="-26816413#1" from="294168098" to="294168710" priority="2" type="highway.service" numLanes="1" speed="5.56" allow="delivery bicycle pedestrian"/>
     <edge id="-26816553" from="294168972" to="294168098" priority="2" type="highway.service" numLanes="1" speed="5.56" shape="13.530151,52.427390 13.530020,52.427475 13.529661,52.427706 13.528957,52.427350 13.528011,52.428054 13.527901,52.428135 13.527938,52.428223" allow="delivery bicycle pedestrian"/>
@@ -128,7 +120,7 @@ SPDX-License-Identifier: EPL-2.0
     <edge id="25944603#1" from="283018841" to="283018937" priority="1" type="highway.footway" numLanes="1" speed="2.78" spreadType="center" width="2.00" allow="pedestrian"/>
     <edge id="25944603#2" from="283018937" to="38919841" priority="1" type="highway.footway" numLanes="1" speed="2.78" spreadType="center" width="2.00" allow="pedestrian"/>
     <edge id="25944605" from="283018937" to="283018842" priority="1" type="highway.footway" numLanes="1" speed="2.78" shape="13.526990,52.430269 13.526818,52.430144 13.526621,52.430008" spreadType="center" width="2.00" allow="pedestrian"/>
-    <edge id="25951490" from="175648134" to="32266938" priority="1" type="highway.cycleway" numLanes="1" speed="8.33" width="1.00" allow="bicycle"/>
+    <edge id="25951490" from="175648134" to="32266938" priority="1" type="highway.cycleway" numLanes="1" speed="5.56" width="1.00" allow="bicycle"/>
     <edge id="26004787#0" from="283719736" to="283721344" priority="1" type="highway.footway" numLanes="1" speed="2.78" spreadType="center" width="2.00" allow="pedestrian"/>
     <edge id="26004787#1" from="283721344" to="283722837" priority="1" type="highway.footway" numLanes="1" speed="2.78" spreadType="center" width="2.00" allow="pedestrian"/>
     <edge id="26004787#2" from="283722837" to="283719904" priority="1" type="highway.footway" numLanes="1" speed="2.78" spreadType="center" width="2.00" allow="pedestrian"/>
@@ -224,7 +216,7 @@ SPDX-License-Identifier: EPL-2.0
     <edge id="7216737#1" from="36268421" to="261636678" name="Ernst-Ruska-Ufer" priority="9" type="highway.primary" numLanes="2" speed="27.78" disallow="tram rail_urban rail rail_electric ship"/>
     <edge id="7216737#2" from="261636678" to="36268369" name="Ernst-Ruska-Ufer" priority="9" type="highway.primary" numLanes="2" speed="27.78" shape="13.536086,52.425910 13.535048,52.425928 13.533400,52.426001 13.531039,52.426132 13.529100,52.426299" disallow="tram rail_urban rail rail_electric ship"/>
     <edge id="7216737#3" from="36268369" to="32266935" name="Ernst-Ruska-Ufer" priority="9" type="highway.primary" numLanes="2" speed="27.78" disallow="tram rail_urban rail rail_electric ship"/>
-    <edge id="7727482" from="38920501" to="56231397" name="Wegedornstraße" priority="6" type="highway.tertiary" numLanes="1" speed="22.22" shape="13.526921,52.428122 13.526935,52.428412 13.526948,52.428783" spreadType="center" disallow="tram rail_urban rail rail_electric ship"/>
+    <edge id="7727482" from="38920501" to="56231397" name="Wegedornstraße" priority="6" type="highway.tertiary" numLanes="1" speed="22.22" shape="13.526922,52.428122 13.526935,52.428412 13.526948,52.428783" spreadType="center" disallow="tram rail_urban rail rail_electric ship"/>
     <edge id="7727483#0" from="38920501" to="294169342" name="Wegedornstraße" priority="6" type="highway.tertiary" numLanes="1" speed="22.22" disallow="tram rail_urban rail rail_electric ship"/>
     <edge id="7727483#1" from="294169342" to="261647692" name="Wegedornstraße" priority="6" type="highway.tertiary" numLanes="1" speed="22.22" disallow="tram rail_urban rail rail_electric ship"/>
     <edge id="7727483#2" from="261647692" to="261647702" name="Wegedornstraße" priority="6" type="highway.tertiary" numLanes="1" speed="22.22" shape="13.526868,52.427845 13.526822,52.427416 13.526777,52.426999 13.526758,52.426821" disallow="tram rail_urban rail rail_electric ship"/>

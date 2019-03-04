@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ROJTRTurnDefLoader.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Loader for the of turning percentages and source/sink definitions
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <set>
 #include <string>
@@ -29,7 +36,7 @@
 #include <utils/xml/XMLSubSys.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/common/MsgHandler.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/ToString.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
 #include <router/RONet.h>
@@ -42,7 +49,7 @@
 // ===========================================================================
 ROJTRTurnDefLoader::ROJTRTurnDefLoader(RONet& net)
     : SUMOSAXHandler("turn-ratio-file"), myNet(net),
-      myIntervalBegin(0), myIntervalEnd(STEPS2TIME(SUMOTime_MAX)), myEdge(nullptr) {}
+      myIntervalBegin(0), myIntervalEnd(STEPS2TIME(SUMOTime_MAX)), myEdge(0) {}
 
 
 ROJTRTurnDefLoader::~ROJTRTurnDefLoader() {}
@@ -54,8 +61,8 @@ ROJTRTurnDefLoader::myStartElement(int element,
     bool ok = true;
     switch (element) {
         case SUMO_TAG_INTERVAL:
-            myIntervalBegin = attrs.get<double>(SUMO_ATTR_BEGIN, nullptr, ok);
-            myIntervalEnd = attrs.get<double>(SUMO_ATTR_END, nullptr, ok);
+            myIntervalBegin = attrs.get<double>(SUMO_ATTR_BEGIN, 0, ok);
+            myIntervalEnd = attrs.get<double>(SUMO_ATTR_END, 0, ok);
             break;
         case SUMO_TAG_FROMEDGE:
             beginFromEdge(attrs);
@@ -65,12 +72,12 @@ ROJTRTurnDefLoader::myStartElement(int element,
             break;
         case SUMO_TAG_SINK:
             if (attrs.hasAttribute(SUMO_ATTR_EDGES)) {
-                std::string edges = attrs.get<std::string>(SUMO_ATTR_EDGES, nullptr, ok);
+                std::string edges = attrs.get<std::string>(SUMO_ATTR_EDGES, 0, ok);
                 StringTokenizer st(edges, StringTokenizer::WHITECHARS);
                 while (st.hasNext()) {
                     std::string id = st.next();
                     ROEdge* edge = myNet.getEdge(id);
-                    if (edge == nullptr) {
+                    if (edge == 0) {
                         throw ProcessError("The edge '" + id + "' declared as a sink is not known.");
                     }
                     edge->setSink();
@@ -79,12 +86,12 @@ ROJTRTurnDefLoader::myStartElement(int element,
             break;
         case SUMO_TAG_SOURCE:
             if (attrs.hasAttribute(SUMO_ATTR_EDGES)) {
-                std::string edges = attrs.get<std::string>(SUMO_ATTR_EDGES, nullptr, ok);
+                std::string edges = attrs.get<std::string>(SUMO_ATTR_EDGES, 0, ok);
                 StringTokenizer st(edges, StringTokenizer::WHITECHARS);
                 while (st.hasNext()) {
                     std::string id = st.next();
                     ROEdge* edge = myNet.getEdge(id);
-                    if (edge == nullptr) {
+                    if (edge == 0) {
                         throw ProcessError("The edge '" + id + "' declared as a source is not known.");
                     }
                     edge->setSource();
@@ -99,16 +106,16 @@ ROJTRTurnDefLoader::myStartElement(int element,
 
 void
 ROJTRTurnDefLoader::beginFromEdge(const SUMOSAXAttributes& attrs) {
-    myEdge = nullptr;
+    myEdge = 0;
     bool ok = true;
     // get the id, report an error if not given or empty...
-    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
     if (!ok) {
         return;
     }
     //
     myEdge = static_cast<ROJTREdge*>(myNet.getEdge(id));
-    if (myEdge == nullptr) {
+    if (myEdge == 0) {
         WRITE_ERROR("The edge '" + id + "' is not known within the network (within a 'from-edge' tag).");
         return;
     }
@@ -117,18 +124,18 @@ ROJTRTurnDefLoader::beginFromEdge(const SUMOSAXAttributes& attrs) {
 
 void
 ROJTRTurnDefLoader::addToEdge(const SUMOSAXAttributes& attrs) {
-    if (myEdge == nullptr) {
+    if (myEdge == 0) {
         return;
     }
     bool ok = true;
     // get the id, report an error if not given or empty...
-    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
     if (!ok) {
         return;
     }
     //
     ROJTREdge* edge = static_cast<ROJTREdge*>(myNet.getEdge(id));
-    if (edge == nullptr) {
+    if (edge == 0) {
         WRITE_ERROR("The edge '" + id + "' is not known within the network (within a 'to-edge' tag).");
         return;
     }

@@ -1,6 +1,3 @@
-# testing meta processing
-meta
-
 # testing grid network building
 grid
 
@@ -12,6 +9,9 @@ random
 
 # testing different additional functions
 function
+
+# testing meta processing
+meta
 
 # tests error processing
 errors

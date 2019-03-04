@@ -1,39 +1,43 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2017-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    setup-traci.py
+@date    2017-01-26
+@author  Dominik Buse
+@author  Michael Behrisch
+@version $Id$
 
-# @file    setup-traci.py
-# @author  Dominik Buse
-# @author  Michael Behrisch
-# @date    2017-01-26
-# @version $Id$
+setuptool based setup module for SUMO's TraCI python client library
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2017-2017 DLR (http://www.dlr.de/) and contributors
 
-from setuptools import setup
-import os
-import version
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
-SUMO_VERSION = version.gitDescribe()[1:-11].replace("_", ".").replace("+", ".")
-package_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+from setuptools import setup, find_packages
+
+VERSION = '0.29.1'
 
 setup(
     name='traci',
-    version=SUMO_VERSION,
+
+    version=VERSION,
+
     url='http://sumo.dlr.de/wiki/TraCI/Interfacing_TraCI_from_Python',
     author='DLR and contributors',
     author_email='sumo@dlr.de',
-    license='EPL-2.0',
+
+    license='GNU GPL v3',
 
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
-        'LICENSE :: OSI Approved :: Eclipse Public License v2 (EPL-2.0)',
+        'LICENSE :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
@@ -41,12 +45,19 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
     ],
+
     keywords='traffic simulation traci sumo',
 
-    packages=["traci"],
-    package_dir={'': package_dir},
+    # automatically find packages
+    packages=find_packages(include=["traci", "traci.*"]),
 
-    install_requires=['sumolib>='+SUMO_VERSION],
+    script_name='./build/setup-traci.py',
+    data_files=['./build/setup-traci.py'],
+
+    # TODO: check requirements
+    install_requires=['sumolib>=%s' % VERSION],
+
+    # TODO: add extra dependencies for testing
+    extras_require={}
 )

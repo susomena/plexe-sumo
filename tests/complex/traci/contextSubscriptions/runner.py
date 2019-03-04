@@ -1,31 +1,44 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2012-10-19
+@version $Id$
 
-# @file    runner.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2012-10-19
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
 import os
+import subprocess
 import sys
+import time
 import math
 
-SUMO_HOME = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")
-sys.path.append(os.path.join(os.environ.get("SUMO_HOME", SUMO_HOME), "tools"))
+sumoHome = os.path.abspath(
+    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', '..', '..'))
+sys.path.append(os.path.join(sumoHome, "tools"))
 import sumolib  # noqa
-import traci  # noqa
+import traci
 
-sumoCall = [sumolib.checkBinary(sys.argv[1]), '-S', '-Q']
+DELTA_T = 1000
+
+if sys.argv[1] == "sumo":
+    sumoCall = [os.environ.get(
+        "SUMO_BINARY", os.path.join(sumoHome, 'bin', 'sumo'))]
+else:
+    sumoCall = [os.environ.get(
+        "GUISIM_BINARY", os.path.join(sumoHome, 'bin', 'sumo-gui')), '-S', '-Q']
 
 
 def dist2(v, w):
@@ -56,9 +69,8 @@ def runSingle(traciEndTime, viewRange, module, objID):
     while not step > traciEndTime:
         responses = traci.simulationStep()
         near1 = set()
-        if objID in module.getAllContextSubscriptionResults():
-            for v in module.getContextSubscriptionResults(objID):
-                # print(objID, "context:", v)
+        if objID in module.getContextSubscriptionResults():
+            for v in module.getContextSubscriptionResults()[objID]:
                 near1.add(v)
         vehs = traci.vehicle.getIDList()
         persons = traci.person.getIDList()
@@ -115,7 +127,8 @@ def runSingle(traciEndTime, viewRange, module, objID):
         print("Error: Unsubscribe did not work")
     else:
         print("Ok: Unsubscribe successful")
-    print("Print ended at step %s" % traci.simulation.getTime())
+    print("Print ended at step %s" %
+          (traci.simulation.getCurrentTime() / DELTA_T))
     traci.close()
     sys.stdout.flush()
     print("uncheck: seen %s vehicles via subscription, %s in surrounding" %
@@ -124,7 +137,6 @@ def runSingle(traciEndTime, viewRange, module, objID):
         print("Ok: Subscription and computed are same")
     else:
         print("Error: subscribed number and computed number differ")
-
 
 sys.stdout.flush()
 if sys.argv[3] == "vehicle":

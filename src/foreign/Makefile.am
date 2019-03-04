@@ -1,5 +1,5 @@
 if WITH_GUI
-GUIDIRS = rtree fontstash
+GUIDIRS = gl2ps polyfonts rtree
 endif
 
 SUBDIRS = eulerspiral tcpip PHEMlight $(GUIDIRS) 

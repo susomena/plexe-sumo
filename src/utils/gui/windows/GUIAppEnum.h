@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIAppEnum.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // Message and object IDs used by the FOX-version of the gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIAppEnum_h
 #define GUIAppEnum_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <fx.h>
 
@@ -39,129 +46,13 @@ enum {
     /// @brief Show about - dialog
     ID_ABOUT = FXMainWindow::ID_LAST,
 
-
-    /// @name hotkeys
-    /// @{
-    /// @brief hotkey for mode editing additional
-    MID_HOTKEY_A_ADDITIONALMODE,
-    /// @brief hotkey for mode connecting lanes
-    MID_HOTKEY_C_CONNECTMODE,
-    /// @brief hotkey for mode deleting things
-    MID_HOTKEY_D_DELETEMODE,
-    /// @brief hotkey for mode adding edges
-    MID_HOTKEY_E_EDGEMODE,
-    /// @brief hotkey for mode inspecting object attributes
-    MID_HOTKEY_I_INSPECTMODE,
-    /// @brief hotkey for mode moving element
-    MID_HOTKEY_M_MOVEMODE,
-    /// @brief hotkey for mode creating polygons
-    MID_HOTKEY_P_POLYGONMODE,
-    /// @brief hotkey for mode selecting objects
-    MID_HOTKEY_S_SELECTMODE,
-    /// @brief hotkey for mode editing crossing AND routes
-    MID_HOTKEY_R_CROSSINGMODE_ROUTEMODE,
-    /// @brief hotkey for mode editing TLS AND Vehicle Types
-    MID_HOTKEY_T_TLSMODE_VTYPEMODE,
-    /// @brief hotkey for mode create vehicles
-    MID_HOTKEY_V_VEHICLEMODE,
-    /// @brief hotkey for mode editing connection prohibitions
-    MID_HOTKEY_W_PROHIBITIONMODE,
-    /// @brief hotkey for mode editing TAZ
-    MID_HOTKEY_Z_TAZMODE,
-
-    /// @}
-
-    /// @name Ctrl - hotkeys
-    /// @{
-    /// @brief Start the simulation
-    MID_HOTKEY_CTRL_A_STARTSIMULATION,
-    /// @brief Edit simulation breakpoints
-    MID_GNE_HOTKEY_CTRL_B_EDITBREAKPOINT,
-    /// @brief Perform a single simulation step
-    MID_HOTKEY_CTRL_D_SINGLESIMULATIONSTEP,
-    /// @brief Gaming mode or toogle grid
-    MID_HOTKEY_CTRL_G_GAMINGMODE_TOOGLEGRID,
-    /// @brief Fullscreen mode - menu entry
-    MID_HOTKEY_CTRL_F_FULSCREENMODE,
-    /// @brief save joined junctions
-    MID_HOTKEY_CTRL_J_SAVEJOINEDJUNCTIONS,
-    /// @brief save network as plain XML
-    MID_HOTKEY_CTRL_L_SAVEASPLAINXML,
-    /// @brief create new empty newtork
-    MID_HOTKEY_CTRL_N_NEWNETWORK,
-    /// @brief Main window closes
-    MID_HOTKEY_CTRL_Q_CLOSE,
-    /// @brief save newtork and Stop the simulation
-    MID_HOTKEY_CTRL_S_SAVENETWORK_STOPSIMULATION,
-    /// @brief Reload the previously loaded simulation
-    MID_HOTKEY_CTRL_R_RELOAD,
-    /// @brief Open in SUMO GUI or in NETEDIT
-    MID_HOTKEY_CTRL_T_OPENSUMONETEDIT,
-    /// @brief Close simulation - ID
-    MID_HOTKEY_CTRL_W_CLOSESIMULATION,
-    /// @brief Undo 
-    MID_HOTKEY_CTRL_Y_REDO,
-    /// @brief Redo
-    MID_HOTKEY_CTRL_Z_UNDO,
-    /// @brief Toogle show connections in Netedit
-    MID_HOTKEY_CTRL_SHIFT_C_SHOWCONNECTIONS,
-    /// @brief Toogle move elevation
-    MID_HOTKEY_CTRL_SHIFT_H_TOOGLEELEVATION,
-    /// @brief Toogle select edges in Netedit
-    MID_HOTKEY_CTRL_SHIFT_I_SELECTEDGES,
-    /// @brief Toogle chaing edges
-    MID_HOTKEY_CTRL_SHIFT_J_TOOGLECHAIN,
-    /// @brief Toogle two way
-    MID_HOTKEY_CTRL_SHIFT_K_TOOGLETWOWAY,
-
-    /// @}
-
-    /// @name Other hotkeys
-    /// @{
-
-    /// @brief save newtwork as
-    MID_HOTKEY_CTRL_SHIFT_S_SAVENETWORKAS,
-    /// @brief Save additionals
-    MID_HOTKEY_CTRL_SHIFT_D_SAVEADDITIONAL,
-    /// @brief compute junctions
-    MID_HOTKEY_F5_RECOMPUTE,
-    /// @brief compute junctions with volatile options
-    MID_HOTKEY_SHIFT_F5_RECOMPUTEVOLATILE,
-    /// @brief hot key <F1> open online documentation
-    MID_HOTKEY_F1_ONLINEDOCUMENTATION,
-    /// @brief hot key <F2> open about dialog
-    MID_HOTKEY_F2_ABOUT,
-    /// @brief hot key <F3> set network mode in NETEDIT
-    MID_HOTKEY_F3_SUPERMODE_NETWORK,
-    /// @brief hot key <F4> set demand mode in NETEDIT
-    MID_HOTKEY_F4_SUPERMODE_DEMAND,
-    /// @brief hot key <ESC> abort current edit operation
-    MID_GNE_HOTKEY_ESC,
-    /// @brief hot key <F12> focus upper element of current frame
-    MID_GNE_HOTKEY_F12,
-    /// @brief hot key <DEL> delete selections or elements
-    MID_GNE_HOTKEY_DEL,
-    /// @brief hot key <ENTER> accept current operation
-    MID_GNE_HOTKEY_ENTER,
-    /// @brief save TLS Programs
-    MID_GNE_HOTKEY_CTRL_SHIFT_K,
-    /// @brief clean junctions without edges
-    MID_GNE_HOTKEY_F6,
-    /// @brief join selected junctions
-    MID_GNE_HOTKEY_F7,
-    /// @brief clean invalid crossings
-    MID_GNE_HOTKEY_F8,
-    /// @brief open options menu
-    MID_GNE_HOTKEY_F10,
-
-    /// @}
-
     /// @name application specific
     /// @{
 
     /// @brief Main window-ID
     MID_WINDOW,
-
+    /// @brief Main window closes
+    MID_QUIT,
     /// @}
 
 
@@ -183,22 +74,29 @@ enum {
     /// @brief Open network - ID
     MID_OPEN_NETWORK,
     /// @brief Load additional file with poi and polygons
-    MID_HOTKEY_CTRL_P,
-    /// @brief Load edge data for visualization
-    MID_OPEN_EDGEDATA,
+    MID_OPEN_SHAPES,
     /// @brief Load additional file with additional elements
     MID_OPEN_ADDITIONALS,
-    /// @brief Load additional file with additional elements
-    MID_OPEN_TLSPROGRAMS,
+    /// @brief Reload the previously loaded simulation
+    MID_RELOAD,
     /// @brief Loads a file previously loaded
     MID_RECENTFILE,
+    /// @brief Close simulation - ID
+    MID_CLOSE,
+    /// @brief About SUMO - ID
+    MID_ABOUT,
     /// @}
 
 
     /// @name Main Window Simulation Control - IDs
     /// @{
-    /// @brief Save state to file
-    MID_SIMSAVE,
+
+    /// @brief Start the simulation
+    MID_START,
+    /// @brief Stop the simulation
+    MID_STOP,
+    /// @brief Perform a single simulation step
+    MID_STEP,
     /// @}
 
 
@@ -229,6 +127,8 @@ enum {
 
     /// @brief Open editor for selections
     MID_EDITCHOSEN,
+    /// @brief Edit simulation breakpoints
+    MID_EDIT_BREAKPOINTS,
     /// @brief Open in netedit
     MID_NETEDIT,
     /// @}
@@ -239,6 +139,10 @@ enum {
 
     /// @brief Application settings - menu entry
     MID_APPSETTINGS,
+    /// @brief Gaming mode - menu entry
+    MID_GAMING,
+    /// @brief Fullscreen mode - menu entry
+    MID_FULLSCREEN,
     /// @brief Locator configuration - menu entry
     MID_LISTINTERNAL,
     MID_LISTPARKING,
@@ -257,8 +161,6 @@ enum {
     /// @brief Show person statistics
     MID_SHOWPERSONSTATS,
 
-    /// @brief update traci status
-    MID_TRACI_STATUS,
 
     /// @name Common View Settings - IDs
     /// @{
@@ -277,6 +179,10 @@ enum {
     MID_LOCATEPERSON,
     /// @brief Locate TLS - button
     MID_LOCATETLS,
+    /// @brief Locate BusStop - button
+    MID_LOCATEADDITIONAL_BUSSTOP,
+    /// @brief Locate ChargingStation - button
+    MID_LOCATEADDITIONAL_CHARGINGSTATION,
     /// @brief Locate addtional structure - button
     MID_LOCATEADD,
     /// @brief Locate poi - button
@@ -297,8 +203,6 @@ enum {
     MID_TIME_TOOGLE,
     /// @brief toogle delay between alternative value
     MID_DELAY_TOOGLE,
-    /// @brief scale traffic
-    MID_DEMAND_SCALE,
     /// @}
 
 
@@ -335,14 +239,10 @@ enum {
     MID_COPY_CURSOR_POSITION,
     /// @brief Copy cursor geo-coordinate position - popup entry
     MID_COPY_CURSOR_GEOPOSITION,
-    /// @brief open additional dialog (used in netedit)
-    MID_OPEN_ADDITIONAL_DIALOG,
     /// @brief Show object parameter - popup entry
     MID_SHOWPARS,
     /// @brief Show object type parameter - popup entry
     MID_SHOWTYPEPARS,
-    /// @brief Show transportable plan
-    MID_SHOWPLAN,
     /// @brief Show TLS phases - popup entry
     MID_SWITCH_OFF,
     MID_SWITCH,
@@ -361,10 +261,6 @@ enum {
     MID_SHOW_CURRENTROUTE,
     /// @brief Hide vehicle's current route
     MID_HIDE_CURRENTROUTE,
-    /// @brief Show vehicle's future route
-    MID_SHOW_FUTUREROUTE,
-    /// @brief Hide vehicle's future route
-    MID_HIDE_FUTUREROUTE,
     /// @brief Show vehicle's best lanes
     MID_SHOW_BEST_LANES,
     /// @brief Hide vehicle's best lanes
@@ -463,16 +359,25 @@ enum {
     MID_CHOOSEN_INVERT,
     /// @}
 
-    /// NETEDIT
+    /// @name childs of elements in netedit
+    /// @{
 
     /// @brief tree list with the childs
-    MID_GNE_DELETEFRAME_CHILDS,
+    MID_GNE_CHILDS,
     /// @brief In GNEDeleteFrame, center element
     MID_GNE_DELETEFRAME_CENTER,
     /// @brief In GNEDeleteFrame, inspect element
     MID_GNE_DELETEFRAME_INSPECT,
     /// @brief In GNEDeleteFrame, delete element
     MID_GNE_DELETEFRAME_DELETE,
+    /// @brief In GNEInspectFrame, center element
+    MID_GNE_INSPECTFRAME_CENTER,
+    /// @brief In GNEInspectFrame, inspect element
+    MID_GNE_INSPECTFRAME_INSPECT,
+    /// @brief In GNEInspectFrame, delete element
+    MID_GNE_INSPECTFRAME_DELETE,
+    /// @brief automatically delete additional childs
+    MID_GNE_AUTOMATICALLYDELETEADDITIONALS,
     /// @}
 
 
@@ -508,250 +413,229 @@ enum {
     MID_ADD_REROUTER,
     /// @}
 
-    /// @name Toolbar file messages
+
+    /// @name NETEDIT Message IDs
     /// @{
 
-    /// @brief open foreign network
-    MID_GNE_TOOLBARFILE_OPENFOREIGN,
-    /// @brief save additionals as
-    MID_GNE_TOOLBARFILE_SAVEADDITIONALS_AS,
+    /// @brief abort current edit operation
+    MID_GNE_ABORT,
+    /// @brief focus upper element of current frame
+    MID_GNE_FOCUS_FRAME,
+    /// @brief hot key <DEL>
+    MID_GNE_HOTKEY_DEL,
+    /// @brief hot key <ENTER>
+    MID_GNE_HOTKEY_ENTER,
+    /// @}
 
-    /// @brief save TLS Programs as
-    MID_GNE_TOOLBARFILE_SAVETLSPROGRAMS_AS,
-    /// @brief open demand elements
-    MID_GNE_TOOLBARFILE_LOADDEMAND,
-    /// @brief save demand elements
-    MID_GNE_TOOLBARFILE_SAVEDEMAND,
-    /// @brief save demand elements as
-    MID_GNE_TOOLBARFILE_SAVEDEMAND_AS,
+    /// @name NETEDIT edit modes
+    /// @{
+
+    /// @brief mode has changed
+    MID_GNE_MODE_CHANGE,
+    /// @brief mode has changed
+    MID_GNE_MODEADDITIONAL_CHANGE,
+    /// @brief mode for adding edges
+    MID_GNE_MODE_CREATE_EDGE,
+    /// @brief mode for moving things
+    MID_GNE_MODE_MOVE,
+    /// @brief mode for deleting things
+    MID_GNE_MODE_DELETE,
+    /// @brief mode for inspecting object attributes
+    MID_GNE_MODE_INSPECT,
+    /// @brief mode for selecting objects
+    MID_GNE_MODE_SELECT,
+    /// @brief mode for connecting lanes
+    MID_GNE_MODE_CONNECT,
+    /// @brief mode for editing tls
+    MID_GNE_MODE_TLS,
+    /// @brief mode for editing additional
+    MID_GNE_MODE_ADDITIONAL,
+    /// @brief mode for editing crossing
+    MID_GNE_MODE_CROSSING,
+    /// @brief mode for creating polygons
+    MID_GNE_MODE_POLYGON,
     /// @}
 
 
-    /// @name GNEViewParent dialog messages
-    /// @{
+    /// @brief selector match box messages
+    MID_GNE_SELMB_TAG,
+    MID_GME_SELMB_ATTRIBUTE,
+    MID_GNE_SELMB_STRING,
 
-    /// @brief Size of frame area updated
-    MID_GNE_VIEWPARENT_FRAMEAREAWIDTH,
+    /// @brief additional match box messages
+    MID_GNE_MODE_ADDITIONAL_ITEM,
+    MID_GNE_MODE_ADDITIONAL_REFERENCEPOINT,
+    MID_GNE_MODE_ADDITIONAL_CHANGEPARAMETER_TEXT,
+    MID_GNE_MODE_ADDITIONAL_CHANGEPARAMETER_DIAL,
+    MID_GNE_MODE_ADDITIONAL_CHANGEPARAMETER_BOOL,
+
+    /// @brief Inspector attribute dialog
+    MID_GNE_MODE_INSPECT_ACCEPT,
+    MID_GNE_MODE_INSPECT_CANCEL,
+    MID_GNE_MODE_INSPECT_RESET,
+
+    /// @brief Polygon frame
+    MID_GNE_MODE_POLYGON_START,
+    MID_GNE_MODE_POLYGON_STOP,
+    MID_GNE_MODE_POLYGON_ABORT,
+    MID_GNE_MODE_POLYGON_CLOSE,
+
+    /// @brief Additional dialogs
+    MID_GNE_MODE_ADDITIONALDIALOG_ACCEPT,
+    MID_GNE_MODE_ADDITIONALDIALOG_CANCEL,
+    MID_GNE_MODE_ADDITIONALDIALOG_RESET,
+
+    /// @brief Variable Speed Signal dialog
+    MID_GNE_VARIABLESPEEDSIGN_ADDROW,
+    MID_GNE_VARIABLESPEEDSIGN_REMOVEROW,
+    MID_GNE_VARIABLESPEEDSIGN_CHANGEVALUE,
+
+    /// @brief Rerouter dialog
+    MID_GNE_REROUTEDIALOG_TABLE_INTERVAL,
+    MID_GNE_REROUTEDIALOG_TABLE_CLOSINGLANEREROUTE,
+    MID_GNE_REROUTEDIALOG_TABLE_CLOSINGREROUTE,
+    MID_GNE_REROUTEDIALOG_TABLE_DESTPROBREROUTE,
+    MID_GNE_REROUTEDIALOG_TABLE_ROUTEPROBREROUTE,
+    MID_GNE_REROUTEDIALOG_ADD_INTERVAL,
+    MID_GNE_REROUTEDIALOG_ADD_CLOSINGLANEREROUTE,
+    MID_GNE_REROUTEDIALOG_ADD_CLOSINGREROUTE,
+    MID_GNE_REROUTEDIALOG_ADD_DESTPROBREROUTE,
+    MID_GNE_REROUTEDIALOG_ADD_ROUTEPROBREROUTE,
+    MID_GNE_REROUTEDIALOG_EDIT_INTERVAL,
+
+    /// @brief Calibrator dialog
+    MID_GNE_CALIBRATORDIALOG_TABLE_ROUTE,
+    MID_GNE_CALIBRATORDIALOG_ADD_ROUTE,
+    MID_GNE_CALIBRATORDIALOG_TABLE_FLOW,
+    MID_GNE_CALIBRATORDIALOG_ADD_FLOW,
+    MID_GNE_CALIBRATORDIALOG_TABLE_VEHICLETYPE,
+    MID_GNE_CALIBRATORDIALOG_ADD_VEHICLETYPE,
+    MID_GNE_CALIBRATORDIALOG_SET_VARIABLE,
+    MID_GNE_CALIBRATORDIALOG_SET_FLOWTYPE,
+
+    /// @brief allowDisallow dialog
+    MID_GNE_ALLOWDISALLOW_CHANGE,
+    MID_GNE_ALLOWDISALLOW_SELECTALL,
+    MID_GNE_ALLOWDISALLOW_UNSELECTALL,
+    MID_GNE_ALLOWDISALLOW_SELECTONLYNONROAD,
+
+    /// @brief FixStoppingPlaces dialog
+    MID_GNE_FIXSTOPPINGPLACES_CHANGE,
+
+    /// @brief processing menu messages
+    MID_GNE_COMPUTE_JUNCTIONS,
+    MID_GNE_COMPUTE_JUNCTIONS_VOLATILE,
+    MID_GNE_CLEAN_JUNCTIONS,
+    MID_GNE_JOIN_JUNCTIONS,
+    MID_GNE_CLEAN_INVALID_CROSSINGS,
+    MID_GNE_OPTIONS,
+
+    /// @name tls mode messages
+    /// @{
+    MID_GNE_TLS_SELECT_JUNCTION,
+    MID_GNE_TLS_UPDATE_STATUS,
+
+    /// @brief replace program with a newly guessed program
+    MID_GNE_GUESS_PROGRAM,
+    /// @brief definition related controls
+    MID_GNE_DEF_OFFSET,
+    MID_GNE_DEF_SWITCH,
+    MID_GNE_DEF_CREATE,
+    MID_GNE_DEF_DELETE,
+    MID_GNE_DEF_RENAME,
+    MID_GNE_DEF_SUBRENAME,
+    MID_GNE_DEF_ADDOFF,
     /// @}
 
-
-    /// @name GNEViewNet messages
+    /// @name phase related controls
     /// @{
+    /// @brief select phase thable
+    MID_GNE_PHASE_TABLE,
+    /// @brief create phase thable
+    MID_GNE_PHASE_CREATE,
+    /// @brief delete  phase thable
+    MID_GNE_PHASE_DELETE,
+    /// @}
 
-    /// @brief show demand elements
-    MID_GNE_VIEWNET_SHOW_DEMAND_ELEMENTS,
+    /// @brief misc messages
+    MID_GNE_NEW_NETWORK,
+    MID_GNE_OPEN_FOREIGN,
+    MID_GNE_VIS_HEIGHT,
+    MID_GNE_LOAD_POIS,
+    // MID_GNE_WIZARD,
+    /// @brief save network
+    MID_GNE_SAVE_NETWORK,
+    MID_GNE_SAVE_AS_NETWORK,
+    MID_GNE_SAVE_PLAIN_XML,
+    MID_GNE_SAVE_JOINED,
+    /// @brief Save shapes
+    MID_GNE_SAVE_SHAPES,
+    MID_GNE_SAVE_SHAPES_AS,
+    /// @brief Save additionals
+    MID_GNE_SAVE_ADDITIONALS,
+    MID_GNE_SAVE_ADDITIONALS_AS,
+    /// @brief insert contents of another network
+    MID_GNE_INSERT_NETWORK,
     /// @brief show connections
     MID_GNE_VIEWNET_SHOW_CONNECTIONS,
     /// @brief select edges
     MID_GNE_VIEWNET_SELECT_EDGES,
     /// @brief show junctions as bubbles
     MID_GNE_VIEWNET_SHOW_BUBBLES,
-    /// @brief move elevation instead of x,y
-    MID_GNE_VIEWNET_MOVE_ELEVATION,
     /// @brief show grid
     MID_GNE_VIEWNET_SHOW_GRID,
-    /// @}
-
-
-    /// @name GNEFrame messages
-    /// @{
-    // MID_GNE_WIZARD,
-    /// @brief attribute added
-    MID_GNE_ADD_ATTRIBUTE,
-    /// @brief attribute removed
-    MID_GNE_REMOVE_ATTRIBUTE,
     /// @brief attribute edited
     MID_GNE_SET_ATTRIBUTE,
-    /// @brief create something
-    MID_GNE_CREATE,
-    /// @brief used to select a type of element in a combo box
-    MID_GNE_SET_TYPE,
-    /// @brief text attribute edited
-    MID_GNE_SET_ATTRIBUTE_TEXT,
-    /// @brief bool attribute edited
-    MID_GNE_SET_ATTRIBUTE_BOOL,
-    /// @brief attribute edited trought dialog
-    MID_GNE_SET_ATTRIBUTE_DIALOG,
-    /// @brief attribute selected using a radio button
-    MID_GNE_SET_ATTRIBUTE_RADIOBUTTON,
-    /// @brief select items
-    MID_GNE_SELECT,
-    /// @}
-
-
-    /// @name GNESeletorFrame messages
-    /// @{
-
-    /// @brief select tag in selector frame
-    MID_GNE_SELECTORFRAME_SELECTTAG,
-    /// @brief select attribute in selector frame
-    MID_GNE_SELECTORFRAME_SELECTATTRIBUTE,
-    /// @brief process string
-    MID_GNE_SELECTORFRAME_PROCESSSTRING,
-    /// @brief changes the visual scaling of selected items
-    MID_GNE_SELECTORFRAME_SELECTSCALE,
-    /// @brief start drawing polygon
-    MID_GNE_STARTDRAWING,
-    /// @brief stop drawing polygon
-    MID_GNE_STOPDRAWING,
-    /// @brief abort drawing polygon
-    MID_GNE_ABORTDRAWING,
-    /// @}
-
-
-    /// @name GNEConnectorFrame messages
-    /// @{
-
-    /// @brief select dead end lanes
-    MID_GNE_CONNECTORFRAME_SELECTDEADENDS,
-    /// @brief select lanes that have no connection leading to it
-    MID_GNE_CONNECTORFRAME_SELECTDEADSTARTS,
-    /// @brief select lanes that are connected from concurrent lanes
-    MID_GNE_CONNECTORFRAME_SELECTCONFLICTS,
-    /// @brief select lanes with connections that have the pass attribute set to 'true'
-    MID_GNE_CONNECTORFRAME_SELECTPASS,
-    /// @}
-
-
-    /// @name GNEInspectorFrame messages
-    /// @{
-
-    /// @brief In GNEINSPECTORFRAME, center element
-    MID_GNE_INSPECTORFRAME_CENTER,
-    /// @brief In GNEINSPECTORFRAME, inspect element
-    MID_GNE_INSPECTORFRAME_INSPECT,
-    /// @brief In GNEINSPECTORFRAME, delete element
-    MID_GNE_INSPECTORFRAME_DELETE,
-    /// @brief set object as template
-    MID_GNE_INSPECTORFRAME_SETTEMPLATE,
-    /// @brief copy template
-    MID_GNE_INSPECTORFRAME_COPYTEMPLATE,
+    /// @brief attribute block movement
+    MID_GNE_SET_BLOCKING_MOVEMENT,
+    /// @brief attribute block shape
+    MID_GNE_SET_BLOCKING_SHAPE,
+    /// @brief attribute close shape
+    MID_GNE_SET_CLOSING_SHAPE,
+    /// @brief show connection
+    MID_GNE_SHOW_CONNECTION,
+    /// @brief inspect connection
+    MID_GNE_INSPECT_CONNECTION,
     /// @brief go back to the previous element
-    MID_GNE_INSPECTORFRAME_GOBACK,
-    /// @brief inspect next element
-    MID_GNE_INSPECTORFRAME_NEXT,
-    /// @brief inspect previous element
-    MID_GNE_INSPECTORFRAME_PREVIOUS,
-    /// @brief show list of overlapped elements
-    MID_GNE_INSPECTORFRAME_SHOWLIST,
-    /// @brief list item selected
-    MID_GNE_INSPECTORFRAME_ITEMSELECTED,
-    /// @}
-
-
-    /// @name GNETLSEditorFrame messages
-    /// @{
-
-    /// @brief selected junction von TLS
-    MID_GNE_TLSFRAME_SELECT_JUNCTION,
-    /// @brief update TLS status
-    MID_GNE_TLSFRAME_UPDATE_STATUS,
-    /// @brief replace program with a newly guessed program
-    MID_GNE_TLSFRAME_GUESSPROGRAM,
-    /// @brief definition related controls
-    MID_GNE_TLSFRAME_OFFSET,
-    /// @brief switch between programs
-    MID_GNE_TLSFRAME_SWITCH,
-    /// @brief Create TLS
-    MID_GNE_TLSFRAME_CREATE,
-    /// @brief delete TLS
-    MID_GNE_TLSFRAME_DELETE,
-    /// @brief rename TLS
-    MID_GNE_TLSFRAME_RENAME,
-    /// @brief sub-rename TLS
-    MID_GNE_TLSFRAME_SUBRENAME,
-    /// @brief add off to TLS
-    MID_GNE_TLSFRAME_ADDOFF,
-    /// @brief select phase thable
-    MID_GNE_TLSFRAME_PHASE_TABLE,
-    /// @brief create phase thable
-    MID_GNE_TLSFRAME_PHASE_CREATE,
-    /// @brief delete  phase thable
-    MID_GNE_TLSFRAME_PHASE_DELETE,
-    /// @brief cleanup unused states
-    MID_GNE_TLSFRAME_CLEANUP,
-    /// @brief mark unused states
-    MID_GNE_TLSFRAME_MARKUNUSED,
-    /// @brief mark unused states
-    MID_GNE_TLSFRAME_ADDUNUSED,
-    /// @brief Load Program
-    MID_GNE_TLSFRAME_LOAD_PROGRAM,
-    /// @brief cleanup unused states
-    MID_GNE_TLSFRAME_SAVE_PROGRAM,
-    /// @}
-
-
-    /// @name GNETLSEditorFrame messages
-    /// @{
-    /// @brief create vehicle types
-    MID_GNE_VEHICLETYPEFRAME_CREATE,
-    /// @brief delete a vehicle type
-    MID_GNE_VEHICLETYPEFRAME_DELETE,
-    /// @brief copy a vehicle type
-    MID_GNE_VEHICLETYPEFRAME_COPY,
-    /// @}
-
-
-    /// @name GNECrossingFrame messages
-    /// @{
-
-    /// @brief Create crossing
-    MID_GNE_CROSSINGFRAME_CREATECROSSING,
-    /// @}
-
-    /// @name GNEAdditionalFrame messages
-    /// @{
-
+    MID_GNE_INSPECT_GOBACK,
     /// @brief add row
-    MID_GNE_ADDITIONALFRAME_ADDROW,
+    MID_GNE_ADDROW,
     /// @brief remove row
-    MID_GNE_ADDITIONALFRAME_REMOVEROW,
-    /// @brief search element
-    MID_GNE_ADDITIONALFRAME_SEARCH,
-    /// @brief use selected elements
-    MID_GNE_ADDITIONALFRAME_USESELECTED,
-    /// @brief select element
-    MID_GNE_ADDITIONALFRAME_SELECT,
-    /// @brief clear selection of elements
-    MID_GNE_ADDITIONALFRAME_CLEARSELECTION,
-    /// @brief invert selection of eleents
-    MID_GNE_ADDITIONALFRAME_INVERTSELECTION,
-    /// @brief start selection of consecutive egdes/lanes
-    MID_GNE_ADDITIONALFRAME_STARTSELECTION,
-    /// @brief stop selection of consecutive egdes/lanes
-    MID_GNE_ADDITIONALFRAME_STOPSELECTION,
-    /// @brief abort selection of consecutive egdes/lanes
-    MID_GNE_ADDITIONALFRAME_ABORTSELECTION,
-    /// @}
-
-
-    /// @name GNEProhibitionFrame messages
-    /// @{
-
-    /// @brief select prohibiting connection
-    MID_GNE_PROHIBITIONFRAME_SELECTPROHIBITING,
-    /// @brief select connections to be prohibited
-    MID_GNE_PROHIBITIONFRAME_SELECTPROHIBITED,
-    /// @brief abort drawing polygon
-    MID_GNE_PROHIBITIONFRAME_ABORTDRAWING,
-    /// @}
-
-
-    /// @name GNEEdge messages
-    /// @{
-
-    /// @brief change default geometry endpoints
-    MID_GNE_EDGE_EDIT_ENDPOINT,
-    /// @brief reset default geometry endpoints
-    MID_GNE_EDGE_RESET_ENDPOINT,
-    /// @brief remove inner geometry
-    MID_GNE_EDGE_STRAIGHTEN,
-    /// @brief smooth geometry
-    MID_GNE_EDGE_SMOOTH,
-    /// @brief interpolate z values linear between junctions
-    MID_GNE_EDGE_STRAIGHTEN_ELEVATION,
-    /// @brief smooth elevation with regard to adjoining edges
-    MID_GNE_EDGE_SMOOTH_ELEVATION,
+    MID_GNE_REMOVEROW,
+    /// @brief add set
+    MID_GNE_ADDSET,
+    /// @brief remove set
+    MID_GNE_REMOVESET,
+    /// @brief search additional parent
+    MID_GNE_SEARCHADDITIONALPARENT,
+    /// @brief select additional parent
+    MID_GNE_SELECTADDITIONALPARENT,
+    /// @brief search edge
+    MID_GNE_SEARCHEDGE,
+    /// @brief show only selected edge in a list
+    MID_GNE_SHOWONLYSELECTEDEDGES,
+    /// @brief use selected edges only
+    MID_GNE_USEONLYSELECTEDEDGES,
+    /// @brief select edge
+    MID_GNE_SELECTEDGE,
+    /// @brief clear selection of edges
+    MID_GNE_CLEAREDGESELECTION,
+    /// @brief invert selection of edges
+    MID_GNE_INVERTEDGESELECTION,
+    /// @brief search lane
+    MID_GNE_SEARCHLANE,
+    /// @brief use selected lanes
+    MID_GNE_USESELECTEDLANES,
+    /// @brief select lane
+    MID_GNE_SELECTLANE,
+    /// @brief clear selection of lanes
+    MID_GNE_CLEARLANESELECTION,
+    /// @brief invert selection of lanes
+    MID_GNE_INVERTLANESELECTION,
+    /// @brief open edit dialog
+    MID_GNE_OPEN_ATTRIBUTE_EDITOR,
+    /// @brief open color dialog
+    MID_GNE_OPEN_COLOR_EDITOR,
     /// @brief split an edge
     MID_GNE_EDGE_SPLIT,
     /// @brief split an edge
@@ -760,210 +644,70 @@ enum {
     MID_GNE_EDGE_REVERSE,
     /// @brief add reverse edge
     MID_GNE_EDGE_ADD_REVERSE,
-    /// @}
-
-
-    /// @name GNEJunction messages
-    /// @{
-
-    /// @brief clear junction's connections
-    MID_GNE_JUNCTION_CLEAR_CONNECTIONS,
-    /// @brief reset junction's connections
-    MID_GNE_JUNCTION_RESET_CONNECTIONS,
-    /// @brief turn junction into geometry node
-    MID_GNE_JUNCTION_REPLACE,
-    /// @brief turn junction into multiple junctions
-    MID_GNE_JUNCTION_SPLIT,
     /// @brief edit junction shape
     MID_GNE_JUNCTION_EDIT_SHAPE,
-    /// @brief reset junction shape
-    MID_GNE_JUNCTION_RESET_SHAPE,
-    /// @}
-
-
-    /// @name GNEConnection messages
-    /// @{
-
-    /// @brief edit junction shape
-    MID_GNE_CONNECTION_EDIT_SHAPE,
-    /// @}
-
-
-    /// @name GNECrossing messages
-    /// @{
-
-    /// @brief edit junction shape
-    MID_GNE_CROSSING_EDIT_SHAPE,
-    /// @}
-
-
-    /// @name GNEPoly messages
-    /// @{
-
+    /// @brief turn junction into geometry node
+    MID_GNE_JUNCTION_REPLACE,
+    /// @brief set non-default geometry endpoint
+    MID_GNE_EDGE_SET_ENDPOINT,
+    /// @brief restore geometry endpoint to node position
+    MID_GNE_EDGE_RESET_ENDPOINT,
+    /// @brief remove inner geometry
+    MID_GNE_EDGE_STRAIGHTEN,
     /// @brief simplify polygon geometry
     MID_GNE_POLYGON_SIMPLIFY_SHAPE,
+    /// @brief delete geometry point
+    MID_GNE_VIEWNET_DELETE_GEOMETRY_POINT,
     /// @brief close opened polygon
     MID_GNE_POLYGON_CLOSE,
     /// @brief open closed polygon
     MID_GNE_POLYGON_OPEN,
     /// @brief Set a vertex of polygon as first verte
     MID_GNE_POLYGON_SET_FIRST_POINT,
-    /// @brief delete geometry point
-    MID_GNE_POLYGON_DELETE_GEOMETRY_POINT,
-    /// @}
-
-
-    /// @name GNEPOI messages
-    /// @{
-
-    /// @brief Transform POI to POILane, and viceversa
-    MID_GNE_POI_TRANSFORM,
-    /// @}
-
-    /// @name GNELane messages
-    /// @{
-
     /// @brief duplicate a lane
     MID_GNE_LANE_DUPLICATE,
-    /// @brief remove greenVerge
-    MID_GNE_LANE_RESET_CUSTOMSHAPE,
     /// @brief transform lane to sidewalk
     MID_GNE_LANE_TRANSFORM_SIDEWALK,
     /// @brief transform lane to bikelane
     MID_GNE_LANE_TRANSFORM_BIKE,
     /// @brief transform lane to busLane
     MID_GNE_LANE_TRANSFORM_BUS,
-    /// @brief transform lane to greenVerge
-    MID_GNE_LANE_TRANSFORM_GREENVERGE,
+    /// @brief revert transformation
+    MID_GNE_LANE_REVERT_TRANSFORMATION,
     /// @brief add sidewalk
     MID_GNE_LANE_ADD_SIDEWALK,
     /// @brief add bikelane
     MID_GNE_LANE_ADD_BIKE,
     /// @brief add busLane
     MID_GNE_LANE_ADD_BUS,
-    /// @brief add greenVerge
-    MID_GNE_LANE_ADD_GREENVERGE,
     /// @brief remove sidewalk
     MID_GNE_LANE_REMOVE_SIDEWALK,
     /// @brief remove bikelane
     MID_GNE_LANE_REMOVE_BIKE,
     /// @brief remove busLane
     MID_GNE_LANE_REMOVE_BUS,
-    /// @brief remove greenVerge
-    MID_GNE_LANE_REMOVE_GREENVERGE,
+    /// @brief set object as template
+    MID_GNE_SET_TEMPLATE,
+    /// @brief copy template
+    MID_GNE_COPY_TEMPLATE,
+    /// @brief remove template
+    MID_GNE_REMOVE_TEMPLATE,
+    /// @brief select dead end lanes
+    MID_GNE_SELECT_DEAD_ENDS,
+    /// @brief select lanes that have no connection leading to it
+    MID_GNE_SELECT_DEAD_STARTS,
+    /// @brief select lanes that are connected from concurrent lanes
+    MID_GNE_SELECT_CONFLICTS,
+    /// @brief select lanes with connections that have the pass attribute set to 'true'
+    MID_GNE_SELECT_PASS,
+    /// @brief changes the visual scaling of selected items
+    MID_GNE_SELECT_SCALE,
+    /// @brief Create crossing
+    MID_GNE_CREATE_CROSSING,
+    /// @brief Size of frame area updated
+    MID_GNE_SIZEOF_FRAMEAREAWIDTH_UPDATED,
     /// @}
 
-
-    /// @name Additional Dialog messages (used in all GNEAdditionalDialogs)
-    /// @{
-
-    /// @brief accept button
-    MID_GNE_ADDITIONALDIALOG_BUTTONACCEPT,
-    /// @brief cancel button
-    MID_GNE_ADDITIONALDIALOG_BUTTONCANCEL,
-    /// @brief reset button
-    MID_GNE_ADDITIONALDIALOG_BUTTONRESET,
-    /// @}
-
-    /// @name Variable Speed Sign Dialog messages
-    /// @{
-    /// @brief add row
-    MID_GNE_VARIABLESPEEDSIGN_ADDROW,
-    /// @brief Click over Table
-    MID_GNE_VARIABLESPEEDSIGN_TABLE,
-    /// @brief sort table values
-    MID_GNE_VARIABLESPEEDSIGN_SORT,
-    /// @}
-
-
-    /// @name Rerouter Dialog messages
-    /// @{
-
-    /// @brief select table interval
-    MID_GNE_REROUTEDIALOG_TABLE_INTERVAL,
-    /// @brief change table closing lane reroute reroute
-    MID_GNE_REROUTEDIALOG_TABLE_CLOSINGLANEREROUTE,
-    /// @brief change table route closing reroute
-    MID_GNE_REROUTEDIALOG_TABLE_CLOSINGREROUTE,
-    /// @brief change table destiny probability reroute
-    MID_GNE_REROUTEDIALOG_TABLE_DESTPROBREROUTE,
-    /// @brief change table route probability reroute
-    MID_GNE_REROUTEDIALOG_TABLE_ROUTEPROBREROUTE,
-    /// @brief change table parkingAreaReroute
-    MID_GNE_REROUTEDIALOG_TABLE_PARKINGAREAREROUTE,
-    /// @brief add interval
-    MID_GNE_REROUTEDIALOG_ADD_INTERVAL,
-    /// @brief sort rerouter intervals
-    MID_GNE_REROUTEDIALOG_SORT_INTERVAL,
-    /// @brief add closing lane reroute
-    MID_GNE_REROUTEDIALOG_ADD_CLOSINGLANEREROUTE,
-    /// @brief add closing reroute
-    MID_GNE_REROUTEDIALOG_ADD_CLOSINGREROUTE,
-    /// @brief add destiny probability route
-    MID_GNE_REROUTEDIALOG_ADD_DESTPROBREROUTE,
-    /// @brief add route probability route
-    MID_GNE_REROUTEDIALOG_ADD_ROUTEPROBREROUTE,
-    /// @brief add parkingAreaReroute
-    MID_GNE_REROUTEDIALOG_ADD_PARKINGAREAREROUTE,
-    /// @brief edit interval
-    MID_GNE_REROUTEDIALOG_EDIT_INTERVAL,
-    /// @}
-
-
-    /// @name Calibrator Dialog messages
-    /// @{
-
-    /// @brief change table route
-    MID_GNE_CALIBRATORDIALOG_TABLE_ROUTE,
-    /// @brief add new route
-    MID_GNE_CALIBRATORDIALOG_ADD_ROUTE,
-    /// @brief change table flow
-    MID_GNE_CALIBRATORDIALOG_TABLE_FLOW,
-    MID_GNE_CALIBRATORDIALOG_ADD_FLOW,
-    /// @brief change table route
-    MID_GNE_CALIBRATORDIALOG_TABLE_VEHICLETYPE,
-    /// @brief add vehicle type
-    MID_GNE_CALIBRATORDIALOG_ADD_VEHICLETYPE,
-    /// @brief set new variable
-    MID_GNE_CALIBRATORDIALOG_SET_VARIABLE,
-    /// @}
-
-    /// @name allowDisallow Dialog messages
-    /// @{
-
-    /// @brief select/unselect single vehicle
-    MID_GNE_ALLOWDISALLOW_CHANGE,
-    /// @brief select all vehicles
-    MID_GNE_ALLOWDISALLOW_SELECTALL,
-    /// @brief unselect all vehicles
-    MID_GNE_ALLOWDISALLOW_UNSELECTALL,
-    /// @brief select only non road vehicles
-    MID_GNE_ALLOWDISALLOW_SELECTONLYNONROAD,
-    /// @}
-
-
-    /// @name Fix Stoppingplaces Dialog messages
-    /// @{
-
-    /// @brief FixStoppingPlaces dialog
-    MID_GNE_FIXSTOPPINGPLACES_CHANGE,
-    /// @}
-
-    /// @name Generic Parameters Dialog messages
-    /// @{
-
-    /// @brief Generic parameters dialog load
-    MID_GNE_GENERICPARAMETERS_LOAD,
-    /// @brief Generic parameters dialog save
-    MID_GNE_GENERICPARAMETERS_SAVE,
-    /// @brief Generic parameters dialog clear
-    MID_GNE_GENERICPARAMETERS_CLEAR,
-    /// @brief Generic parameters dialog sort
-    MID_GNE_GENERICPARAMETERS_SORT,
-    /// @}
-
-
-    /// @brief last element of enum (not used)
     MID_LAST
 };
 

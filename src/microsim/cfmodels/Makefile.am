@@ -12,9 +12,12 @@ MSCFModel_KraussX.cpp MSCFModel_KraussX.h \
 MSCFModel_PWag2009.cpp MSCFModel_PWag2009.h \
 MSCFModel_SmartSK.cpp MSCFModel_SmartSK.h \
 MSCFModel_Wiedemann.cpp MSCFModel_Wiedemann.h \
-MSCFModel_ACC.cpp MSCFModel_ACC.h \
-MSCFModel_CACC.cpp MSCFModel_CACC.h \
 MSCFModel_Rail.cpp MSCFModel_Rail.h \
 MSCFModel_CC.cpp MSCFModel_CC.h \
+GenericEngineModel.cpp GenericEngineModel.h \
+FirstOrderLagModel.cpp FirstOrderLagModel.h \
+RealisticEngineModel.cpp RealisticEngineModel.h \
+EngineParameters.cpp EngineParameters.h \
+VehicleEngineHandler.cpp VehicleEngineHandler.h \
 CC_VehicleVariables.cpp CC_VehicleVariables.h \
 ParBuffer.h

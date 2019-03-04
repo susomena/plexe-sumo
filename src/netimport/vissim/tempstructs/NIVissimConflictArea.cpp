@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIVissimConflictArea.cpp
 /// @author  Lukas Grohmann
 /// @date    Aug 2015
@@ -14,18 +6,33 @@
 ///
 // A temporary storage for conflict areas imported from Vissim
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iterator>
 #include <map>
 #include <string>
 #include <utils/common/ToString.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include "NIVissimConflictArea.h"
 #include "NIVissimConnection.h"
 #include <netbuild/NBEdgeCont.h>
@@ -85,7 +92,7 @@ NIVissimConflictArea*
 NIVissimConflictArea::dictionary(int id) {
     DictType::iterator i = myDict.find(id);
     if (i == myDict.end()) {
-        return nullptr;
+        return 0;
     }
     return (*i).second;
 }
@@ -101,14 +108,14 @@ NIVissimConflictArea::dict_findByLinks(const std::string& link1,
             return (*i).second;
         }
     }
-    return nullptr;
+    return 0;
 }
 
 
 void
 NIVissimConflictArea::clearDict() {
     for (DictType::iterator i = myDict.begin(); i != myDict.end(); i++) {
-        delete (*i).second;
+        delete(*i).second;
     }
     myDict.clear();
 }
@@ -119,9 +126,9 @@ NIVissimConflictArea::setPriorityRegulation(NBEdgeCont& ec) {
     std::map<int, NIVissimConflictArea*>::iterator it;
     for (it = myDict.begin(); it != myDict.end(); it++) {
         NIVissimConflictArea* const conflictArea = it->second;
-        NIVissimConnection* const firstLink = NIVissimConnection::dictionary(StringUtils::toInt(conflictArea->getFirstLink()));
-        NIVissimConnection* const secondLink = NIVissimConnection::dictionary(StringUtils::toInt(conflictArea->getSecondLink()));
-        if (firstLink == nullptr || secondLink == nullptr) {
+        NIVissimConnection* const firstLink = NIVissimConnection::dictionary(TplConvert::_str2int(conflictArea->getFirstLink()));
+        NIVissimConnection* const secondLink = NIVissimConnection::dictionary(TplConvert::_str2int(conflictArea->getSecondLink()));
+        if (firstLink == 0 || secondLink == 0) {
             continue;
         }
         // status == "TWOYIELDSONE"
@@ -141,7 +148,7 @@ NIVissimConflictArea::setPriorityRegulation(NBEdgeCont& ec) {
         NBEdge* const mustStopFrom =  ec.retrievePossiblySplit(mustStopFrom_id, true);
         NBEdge* const mustStopTo =  ec.retrievePossiblySplit(mustStopTo_id, false);
 
-        if (mayDriveFrom != nullptr && mayDriveTo != nullptr && mustStopFrom != nullptr && mustStopTo != nullptr) {
+        if (mayDriveFrom != 0 && mayDriveTo != 0 && mustStopFrom != 0 && mustStopTo != 0) {
             NBNode* node = mayDriveFrom->getToNode();
             node->addSortedLinkFoes(
                 NBConnection(mayDriveFrom, mayDriveTo),

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIGLObjectPopupMenu.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // The popup menu of a globject
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <cassert>
@@ -34,6 +41,8 @@
 #include <utils/gui/div/GUIUserIO.h>
 #include <utils/common/ToString.h>
 #include "GUIGLObjectPopupMenu.h"
+
+#define DEBUG_VEHICLE_GUI_SELECTION 1
 
 // ===========================================================================
 // FOX callback mapping
@@ -58,7 +67,6 @@ FXIMPLEMENT(GUIGLObjectPopupMenu, FXMenuPane, GUIGLObjectPopupMenuMap, ARRAYNUMB
 // ===========================================================================
 // method definitions
 // ===========================================================================
-
 GUIGLObjectPopupMenu::GUIGLObjectPopupMenu(GUIMainWindow& app, GUISUMOAbstractView& parent, GUIGlObject& o) :
     FXMenuPane(&parent),
     myParent(&parent),
@@ -70,8 +78,8 @@ GUIGLObjectPopupMenu::GUIGLObjectPopupMenu(GUIMainWindow& app, GUISUMOAbstractVi
 
 GUIGLObjectPopupMenu::~GUIGLObjectPopupMenu() {
     // Delete MenuPaneChilds
-    for (auto i : myMenuPanes) {
-        delete i;
+    for (std::vector<FXMenuPane*>::iterator i = myMenuPanes.begin(); i != myMenuPanes.end(); i++) {
+        delete(*i);
     }
 }
 
@@ -79,12 +87,12 @@ GUIGLObjectPopupMenu::~GUIGLObjectPopupMenu() {
 void
 GUIGLObjectPopupMenu::insertMenuPaneChild(FXMenuPane* child) {
     // Check that MenuPaneChild isn't NULL
-    if (child == nullptr) {
+    if (child == NULL) {
         throw ProcessError("MenuPaneChild cannot be NULL");
     }
     // Check that MenuPaneChild wasn't already inserted
-    for (auto i : myMenuPanes) {
-        if (i == child) {
+    for (std::vector<FXMenuPane*>::iterator i = myMenuPanes.begin(); i != myMenuPanes.end(); i++) {
+        if ((*i) == child) {
             throw ProcessError("MenuPaneChild already inserted");
         }
     }
@@ -160,6 +168,9 @@ long
 GUIGLObjectPopupMenu::onCmdAddSelected(FXObject*, FXSelector, void*) {
     gSelected.select(myObject->getGlID());
     myParent->update();
+#ifdef DEBUG_VEHICLE_GUI_SELECTION
+    gDebugSelectedVehicle = myObject->getMicrosimID();
+#endif
     return 1;
 }
 
@@ -170,6 +181,7 @@ GUIGLObjectPopupMenu::onCmdRemoveSelected(FXObject*, FXSelector, void*) {
     myParent->update();
     return 1;
 }
+
 
 /****************************************************************************/
 

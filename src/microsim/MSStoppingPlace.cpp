@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSStoppingPlace.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,19 +7,33 @@
 ///
 // A lane area vehicles can halt at
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2005-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <map>
 #include <utils/vehicle/SUMOVehicle.h>
 #include <utils/geom/Position.h>
 #include <microsim/MSVehicleType.h>
-#include <microsim/MSNet.h>
 #include "MSLane.h"
 #include "MSTransportable.h"
 #include "MSStoppingPlace.h"
@@ -77,42 +83,11 @@ MSStoppingPlace::enter(SUMOVehicle* what, double beg, double end) {
 double
 MSStoppingPlace::getLastFreePos(const SUMOVehicle& forVehicle) const {
     if (myLastFreePos != myEndPos) {
-        const double vehGap = forVehicle.getVehicleType().getMinGap();
-        double pos = myLastFreePos - vehGap;
-        if (!fits(pos, forVehicle)) {
-            // try to find a place ahead of the waiting vehicles
-            const double vehLength = forVehicle.getVehicleType().getLength();
-            std::vector<std::pair<double, std::pair<double, const SUMOVehicle*> > > spaces;
-            for (auto it : myEndPositions) {
-                spaces.push_back(std::make_pair(it.second.first, std::make_pair(it.second.second, it.first)));
-            }
-            // sorted from myEndPos towars myBegPos
-            std::sort(spaces.begin(), spaces.end());
-            std::reverse(spaces.begin(), spaces.end());
-            double prev = myEndPos;
-            for (auto it : spaces) {
-                //if (forVehicle.isSelected()) {
-                //    std::cout << SIMTIME << " fitPosFor " << forVehicle.getID() << " l=" << vehLength << " prev=" << prev << " vehBeg=" << it.first << " vehEnd=" << it.second.first << " found=" << (prev - it.first >= vehLength) << "\n";
-                //}
-                if (prev - it.first + NUMERICAL_EPS >= vehLength && (
-                            it.second.second->isParking()
-                            || it.second.second->remainingStopDuration() > TIME2STEPS(10))) {
-                    return prev;
-                }
-                prev = it.second.first - vehGap;
-            }
-        }
-        return pos;
+        return myLastFreePos - forVehicle.getVehicleType().getMinGap();
     }
     return myLastFreePos;
 }
 
-bool
-MSStoppingPlace::fits(double pos, const SUMOVehicle& veh) const {
-    // always fit at the default position or if at least half the vehicle length
-    // is within the stop range (debatable)
-    return pos + POSITION_EPS >= myEndPos || (pos - myBegPos >= veh.getVehicleType().getLength() / 2);
-}
 
 Position
 MSStoppingPlace::getWaitPosition() const {
@@ -134,7 +109,6 @@ void
 MSStoppingPlace::addTransportable(MSTransportable* p) {
     myWaitingTransportables.push_back(p);
     myWaitingPos -= p->getVehicleType().getLength();
-    myWaitingPos = MAX2(myBegPos, myWaitingPos);
 }
 
 
@@ -173,38 +147,17 @@ MSStoppingPlace::computeLastFreePos() {
 }
 
 
-double
-MSStoppingPlace::getAccessPos(const MSEdge* edge) const {
+bool
+MSStoppingPlace::hasAccess(const MSEdge* edge) const {
     if (edge == &myLane.getEdge()) {
-        return (myBegPos + myEndPos) / 2.;
+        return true;
     }
-    for (const auto& access : myAccessPos) {
-        if (edge == &std::get<0>(access)->getEdge()) {
-            return std::get<1>(access);
+    for (std::multimap<MSLane*, double>::const_iterator i = myAccessPos.begin(); i != myAccessPos.end(); ++i) {
+        if (edge == &i->first->getEdge()) {
+            return true;
         }
     }
-    return -1.;
-}
-
-
-double
-MSStoppingPlace::getAccessDistance(const MSEdge* edge) const {
-    if (edge == &myLane.getEdge()) {
-        return 0.;
-    }
-    for (const auto& access : myAccessPos) {
-        const MSLane* const accLane = std::get<0>(access);
-        if (edge == &accLane->getEdge()) {
-            const double length = std::get<2>(access);
-            if (length >= 0.) {
-                return length;
-            }
-            const Position accPos = accLane->geometryPositionAtOffset(std::get<1>(access));
-            const Position stopPos = myLane.geometryPositionAtOffset((myBegPos + myEndPos) / 2.);
-            return accPos.distanceTo(stopPos);
-        }
-    }
-    return -1.;
+    return false;
 }
 
 
@@ -213,18 +166,5 @@ MSStoppingPlace::getMyName() const {
     return myName;
 }
 
-
-bool
-MSStoppingPlace::addAccess(MSLane* lane, const double pos, const double length) {
-    // prevent multiple accesss on the same lane
-    for (const auto& access : myAccessPos) {
-        if (lane == std::get<0>(access)) {
-            return false;
-        }
-    }
-    myAccessPos.push_back(std::make_tuple(lane, pos, length));
-    return true;
-}
-
-
 /****************************************************************************/
+

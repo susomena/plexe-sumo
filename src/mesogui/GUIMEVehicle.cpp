@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIMEVehicle.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,25 +8,36 @@
 ///
 // A MSVehicle extended by some values for usage within the gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <utils/gui/globjects/GLIncludes.h>
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/div/GUIParameterTableWindow.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
-#include <utils/gui/div/GUIBaseVehicleHelper.h>
 #include <utils/emissions/PollutantsInterface.h>
-#include <utils/gui/settings/GUIVisualizationSettings.h>
 #include <microsim/logging/CastingFunctionBinding.h>
 #include <microsim/logging/FunctionBinding.h>
-#include <microsim/devices/MSVehicleDevice.h>
+#include <microsim/devices/MSDevice.h>
 #include <guisim/GUILane.h>
-
 #include "GUIMEVehicle.h"
 
 
@@ -62,7 +65,7 @@ GUIParameterTableWindow*
 GUIMEVehicle::getParameterWindow(GUIMainWindow& app,
                                  GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 21 + (int)getParameter().getParametersMap().size());
+        new GUIParameterTableWindow(app, *this, 20 + (int)getParameter().getMap().size());
     // add items
     ret->mkItem("edge [id]", false, getEdge()->getID());
     ret->mkItem("segment [#]", false, getSegment()->getIndex());
@@ -107,7 +110,14 @@ GUIMEVehicle::getParameterWindow(GUIMainWindow& app,
     //            new FunctionBinding<GUIMEVehicle, double>(this, &GUIMEVehicle::getFuelConsumption));
     //ret->mkItem("noise (Harmonoise) [dB]", true,
     //            new FunctionBinding<GUIMEVehicle, double>(this, &GUIMEVehicle::getHarmonoise_NoiseEmissions));
-    ret->mkItem("devices", false, toString(myDevices));
+    std::ostringstream str;
+    for (std::vector<MSDevice*>::const_iterator i = myDevices.begin(); i != myDevices.end(); ++i) {
+        if (i != myDevices.begin()) {
+            str << ' ';
+        }
+        str << (*i)->getID().substr(0, (*i)->getID().find(getID()));
+    }
+    ret->mkItem("devices", false, str.str());
     //ret->mkItem("persons", true,
     //            new FunctionBinding<GUIMEVehicle, int>(this, &GUIMEVehicle::getPersonNumber));
     //ret->mkItem("containers", true,
@@ -117,7 +127,6 @@ GUIMEVehicle::getParameterWindow(GUIMainWindow& app,
     ret->mkItem("entry time [s]", true, new FunctionBinding<GUIMEVehicle, double>(this, &MEVehicle::getLastEntryTimeSeconds));
     ret->mkItem("block time [s]", true, new FunctionBinding<GUIMEVehicle, double>(this, &MEVehicle::getBlockTimeSeconds));
     ret->mkItem("link penalty [s]", true, new FunctionBinding<GUIMEVehicle, double>(this, &MEVehicle::getCurrentLinkPenaltySeconds));
-    ret->mkItem("stop time [s]", true, new FunctionBinding<GUIMEVehicle, double>(this, &MEVehicle::getCurrentStoppingTimeSeconds));
     // close building
     ret->closeBuilding(&getParameter());
     return ret;
@@ -128,7 +137,7 @@ GUIParameterTableWindow*
 GUIMEVehicle::getTypeParameterWindow(GUIMainWindow& app,
                                      GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 9 + (int)myType->getParameter().getParametersMap().size());
+        new GUIParameterTableWindow(app, *this, 9 + (int)myType->getParameter().getMap().size());
     // add items
     ret->mkItem("Type Information:", false, "");
     ret->mkItem("type [id]", false, myType->getID());
@@ -149,9 +158,10 @@ GUIMEVehicle::getTypeParameterWindow(GUIMainWindow& app,
 }
 
 
-void
-GUIMEVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& /* s */, bool /* asImage */) const {
-    GUIBaseVehicleHelper::drawAction_drawVehicleAsBoxPlus(getVType().getWidth(), getVType().getLength());
+bool
+GUIMEVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& /* s */, SUMOVehicleShape /* guiShape */, bool /* asImage */) const {
+    drawAction_drawVehicleAsBoxPlus();
+    return true;
 }
 
 
@@ -202,9 +212,8 @@ GUIMEVehicle::getColorValue(int activeScheme) const {
 
 
 void
-GUIMEVehicle::drawRouteHelper(const GUIVisualizationSettings& s, const MSRoute& r, bool future) const {
-    const double exaggeration = s.vehicleSize.getExaggeration(s, this);
-    MSRouteIterator i = future ? myCurrEdge : r.begin();
+GUIMEVehicle::drawRouteHelper(const MSRoute& r, double exaggeration) const {
+    MSRouteIterator i = r.begin();
     for (; i != r.end(); ++i) {
         const GUILane* lane = static_cast<GUILane*>((*i)->getLanes()[0]);
         GLHelper::drawBoxLines(lane->getShape(), lane->getShapeRotations(), lane->getShapeLengths(), 1.0);

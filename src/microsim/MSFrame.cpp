@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSFrame.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Eric Nicolay
@@ -20,12 +12,27 @@
 ///
 // Sets and checks options for microsim; inits global outputs and settings
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <iomanip>
@@ -36,10 +43,8 @@
 #include <utils/common/MsgHandler.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/common/ToString.h>
-#include <utils/common/StringUtils.h>
 #include <utils/geom/GeoConvHelper.h>
 #include <utils/iodevices/OutputDevice.h>
-#include <utils/vehicle/SUMOVehicleParserHelper.h>
 #include <microsim/MSBaseVehicle.h>
 #include <microsim/MSJunction.h>
 #include <microsim/MSRoute.h>
@@ -140,10 +145,6 @@ MSFrame::fillOptions() {
     oc.addDescription("fcd-output.geo", "Output", "Save the Floating Car Data using geo-coordinates (lon/lat)");
     oc.doRegister("fcd-output.signals", new Option_Bool(false));
     oc.addDescription("fcd-output.signals", "Output", "Add the vehicle signal state to the FCD output (brake lights etc.)");
-    oc.doRegister("fcd-output.filter-edges.input-file", new Option_FileName());
-    oc.addDescription("fcd-output.filter-edges.input-file", "Output", "Restrict fcd output to the edge selection from the given input file");
-
-
     oc.doRegister("full-output", new Option_FileName());
     oc.addDescription("full-output", "Output", "Save a lot of information for each timestep (very redundant)");
     oc.doRegister("queue-output", new Option_FileName());
@@ -185,9 +186,6 @@ MSFrame::fillOptions() {
     oc.addSynonyme("vehroute-output.dua", "vehroutes.dua");
     oc.addDescription("vehroute-output.dua", "Output", "Write the output in the duarouter alternatives style");
 
-    oc.doRegister("vehroute-output.cost", new Option_Bool(false));
-    oc.addDescription("vehroute-output.cost", "Output", "Write costs for all routes");
-
     oc.doRegister("vehroute-output.intended-depart", new Option_Bool(false));
     oc.addSynonyme("vehroute-output.intended-depart", "vehroutes.intended-depart");
     oc.addDescription("vehroute-output.intended-depart", "Output", "Write the output with the intended instead of the real departure time");
@@ -199,26 +197,14 @@ MSFrame::fillOptions() {
     oc.doRegister("vehroute-output.write-unfinished", new Option_Bool(false));
     oc.addDescription("vehroute-output.write-unfinished", "Output", "Write vehroute output for vehicles which have not arrived at simulation end");
 
-    oc.doRegister("vehroute-output.skip-ptlines", new Option_Bool(false));
-    oc.addDescription("vehroute-output.skip-ptlines", "Output", "Skip vehroute output for public transport vehicles");
-
     oc.doRegister("link-output", new Option_FileName());
     oc.addDescription("link-output", "Output", "Save links states into FILE");
-    
-    oc.doRegister("railsignal-block-output", new Option_FileName());
-    oc.addDescription("railsignal-block-output", "Output", "Save railsignal-blocks into FILE");
 
     oc.doRegister("bt-output", new Option_FileName());
     oc.addDescription("bt-output", "Output", "Save bluetooth visibilities into FILE (in conjunction with device.btreceiver and device.btsender)");
 
     oc.doRegister("lanechange-output", new Option_FileName());
     oc.addDescription("lanechange-output", "Output", "Record lane changes and their motivations for all vehicles into FILE");
-
-    oc.doRegister("lanechange-output.started", new Option_Bool(false));
-    oc.addDescription("lanechange-output.started", "Output", "Record start of lane change manoeuvres");
-
-    oc.doRegister("lanechange-output.ended", new Option_Bool(false));
-    oc.addDescription("lanechange-output.ended", "Output", "Record end of lane change manoeuvres");
 
     oc.doRegister("stop-output", new Option_FileName());
     oc.addDescription("stop-output", "Output", "Record stops and loading/unloading of passenger and containers for all vehicles into FILE");
@@ -236,7 +222,7 @@ MSFrame::fillOptions() {
     oc.addDescription("save-state.period", "Output", "save state repeatedly after TIME period");
     oc.doRegister("save-state.prefix", new Option_FileName("state"));
     oc.addDescription("save-state.prefix", "Output", "Prefix for network states");
-    oc.doRegister("save-state.suffix", new Option_String(".sbx"));
+    oc.doRegister("save-state.suffix", new Option_FileName(".sbx"));
     oc.addDescription("save-state.suffix", "Output", "Suffix for network states (.sbx or .xml)");
     oc.doRegister("save-state.files", new Option_FileName());//
     oc.addDescription("save-state.files", "Output", "Files for network states");
@@ -254,11 +240,12 @@ MSFrame::fillOptions() {
     oc.doRegister("step-method.ballistic", new Option_Bool(false));
     oc.addDescription("step-method.ballistic", "Processing", "Whether to use ballistic method for the positional update of vehicles (default is a semi-implicit Euler method).");
 
-    oc.doRegister("threads", new Option_Integer(1));
-    oc.addDescription("threads", "Processing", "Defines the number of threads for parallel simulation");
-
     oc.doRegister("lateral-resolution", new Option_Float(-1));
     oc.addDescription("lateral-resolution", "Processing", "Defines the resolution in m when handling lateral positioning within a lane (with -1 all vehicles drive at the center of their lane");
+
+    oc.doRegister("carfollow.model", new Option_String("Krauss"));
+    oc.addDescription("carfollow.model", "Processing", "Select default car following model (Krauss, IDM, ...)");
+    oc.addSynonyme("carfollow.model", "carfollowing.model", false);
 
     // register the processing options
     oc.doRegister("route-steps", 's', new Option_String("200", "TIME"));
@@ -271,7 +258,7 @@ MSFrame::fillOptions() {
     oc.addDescription("ignore-junction-blocker", "Processing", "Ignore vehicles which block the junction after they have been standing for SECONDS (-1 means never ignore)");
 
     oc.doRegister("ignore-route-errors", new Option_Bool(false));
-    oc.addDescription("ignore-route-errors", "Processing", "(1) Do not check whether routes are connected. (2) Allow inserting a vehicle in a situation which requires emergency braking.");
+    oc.addDescription("ignore-route-errors", "Processing", "Do not check whether routes are connected");
 
     oc.doRegister("ignore-accidents", new Option_Bool(false));
     oc.addDescription("ignore-accidents", "Processing", "Do not check whether accidents occur");
@@ -284,9 +271,6 @@ MSFrame::fillOptions() {
 
     oc.doRegister("collision.check-junctions", new Option_Bool(false));
     oc.addDescription("collision.check-junctions", "Processing", "Enables collisions checks on junctions");
-
-    oc.doRegister("collision.mingap-factor", new Option_Float(-1));
-    oc.addDescription("collision.mingap-factor", "Processing", "Sets the fraction of minGap that must be maintained to avoid collision detection. If a negative value is given, the carFollowModel parameter is used");
 
     oc.doRegister("max-num-vehicles", new Option_Integer(-1));
     oc.addDescription("max-num-vehicles", "Processing", "Delay vehicle insertion to stay within the given maximum number");
@@ -327,33 +311,15 @@ MSFrame::fillOptions() {
     oc.doRegister("tls.all-off", new Option_Bool(false));
     oc.addDescription("tls.all-off", "Processing", "Switches off all traffic lights.");
 
-    oc.doRegister("tls.actuated.show-detectors", new Option_Bool(false));
-    oc.addDescription("tls.actuated.show-detectors", "Processing", "Sets default visibility for actuation detectors");
-
     oc.doRegister("time-to-impatience", new Option_String("300", "TIME"));
     oc.addDescription("time-to-impatience", "Processing", "Specify how long a vehicle may wait until impatience grows from 0 to 1, defaults to 300, non-positive values disable impatience growth");
 
-    oc.doRegister("default.action-step-length", new Option_Float(0.0));
-    oc.addDescription("default.action-step-length", "Processing", "Length of the default interval length between action points for the car-following and lane-change models (in seconds). If not specified, the simulation step-length is used per default. Vehicle- or VType-specific settings override the default. Must be a multiple of the simulation step-length.");
-
-    oc.doRegister("default.carfollowmodel", new Option_String("Krauss"));
-    oc.addDescription("default.carfollowmodel", "Processing", "Select default car following model (Krauss, IDM, ...)");
-    oc.addSynonyme("default.carfollowmodel", "carfollow.model", false);
-
-    oc.doRegister("default.speeddev", new Option_Float(-1));
-    oc.addDescription("default.speeddev", "Processing", "Select default speed deviation. A negative value implies vClass specific defaults (0.1 for the default passenger class");
-
-    oc.doRegister("default.emergencydecel", new Option_String("default"));
-    oc.addDescription("default.emergencydecel", "Processing", "Select default emergencyDecel value among ('decel', 'default', FLOAT) which sets the value either to the same as the deceleration value, a vClass-class specific default or the given FLOAT in m/s^2");
-
-    oc.doRegister("emergencydecel.warning-threshold", new Option_Float(1));
-    oc.addDescription("emergencydecel.warning-threshold", "Processing", "Sets the fraction of emergency decel capability that must be used to trigger a warning.");
 
     // pedestrian model
     oc.doRegister("pedestrian.model", new Option_String("striping"));
     oc.addDescription("pedestrian.model", "Processing", "Select among pedestrian models ['nonInteracting', 'striping', 'remote']");
 
-    oc.doRegister("pedestrian.striping.stripe-width", new Option_Float(0.64));
+    oc.doRegister("pedestrian.striping.stripe-width", new Option_Float(0.65));
     oc.addDescription("pedestrian.striping.stripe-width", "Processing", "Width of parallel stripes for segmenting a sidewalk (meters) for use with model 'striping'");
 
     oc.doRegister("pedestrian.striping.dawdling", new Option_Float(0.2));
@@ -371,20 +337,12 @@ MSFrame::fillOptions() {
                       "Select among routing algorithms ['dijkstra', 'astar', 'CH', 'CHWrapper']");
     oc.doRegister("weights.random-factor", new Option_Float(1.));
     oc.addDescription("weights.random-factor", "Routing", "Edge weights for routing are dynamically disturbed by a random factor drawn uniformly from [1,FLOAT)");
-    oc.doRegister("weights.minor-penalty", new Option_Float(1.5));
-    oc.addDescription("weights.minor-penalty", "Routing", "Apply the given time penalty when computing minimum routing costs for minor-link internal lanes");
 
     oc.doRegister("astar.all-distances", new Option_FileName());
     oc.addDescription("astar.all-distances", "Routing", "Initialize lookup table for astar from the given file (generated by marouter --all-pairs-output)");
 
     oc.doRegister("astar.landmark-distances", new Option_FileName());
-    oc.addDescription("astar.landmark-distances", "Routing", "Initialize lookup table for astar ALT-variant from the given file");
-
-    oc.doRegister("persontrip.walkfactor", new Option_Float(double(0.75)));
-    oc.addDescription("persontrip.walkfactor", "Routing", "Use FLOAT as a factor on pedestrian maximum speed during intermodal routing");
-
-    oc.doRegister("persontrip.transfer.car-walk", new Option_String("parkingAreas"));
-    oc.addDescription("persontrip.transfer.car-walk", "Routing", "Where are mode changes from car to walking allowed (possible values: 'parkingAreas', 'ptStops', 'allJunctions' and combinations)");
+    oc.addDescription("astar.landmark-distances", "Processing", "Initialize lookup table for astar ALT-variant from the given file");
 
     // devices
     oc.addOptionSubTopic("Emissions");
@@ -406,6 +364,8 @@ MSFrame::fillOptions() {
     oc.doRegister("no-step-log", new Option_Bool(false));
     oc.addDescription("no-step-log", "Report", "Disable console output of current simulation step");
 
+
+#ifndef NO_TRACI
     //remote port 0 if not used
     oc.addOptionSubTopic("TraCI Server");
     oc.doRegister("remote-port", new Option_Integer(0));
@@ -415,6 +375,7 @@ MSFrame::fillOptions() {
 #ifdef HAVE_PYTHON
     oc.doRegister("python-script", new Option_String());
     oc.addDescription("python-script", "TraCI Server", "Runs TraCI script with embedded python");
+#endif
 #endif
     //
     oc.addOptionSubTopic("Mesoscopic");
@@ -453,14 +414,11 @@ MSFrame::fillOptions() {
 
     // add rand options
     RandHelper::insertRandOptions();
-    oc.doRegister("thread-rngs", new Option_Integer(64));
-    oc.addDescription("thread-rngs", "Random Number",
-                      "Number of pre-allocated random number generators to ensure repeatable multi-threaded simulations (should be at least the number of threads for repeatable simulations).");
 
     // add GUI options
     // the reason that we include them in vanilla sumo as well is to make reusing config files easy
     oc.addOptionSubTopic("GUI Only");
-    oc.doRegister("gui-settings-file", 'g', new Option_FileName());
+    oc.doRegister("gui-settings-file", new Option_FileName());
     oc.addDescription("gui-settings-file", "GUI Only", "Load visualisation settings from FILE");
 
     oc.doRegister("quit-on-end", 'Q', new Option_Bool(false));
@@ -472,20 +430,11 @@ MSFrame::fillOptions() {
     oc.doRegister("start", 'S', new Option_Bool(false));
     oc.addDescription("start", "GUI Only", "Start the simulation after loading");
 
-    oc.doRegister("breakpoints", new Option_String());
-    oc.addDescription("breakpoints", "GUI Only", "Use TIME[] as times when the simulation should halt");
-
-    oc.doRegister("edgedata-files", new Option_FileName());
-    oc.addDescription("edgedata-files", "GUI Only", "Load edge/lane weights for visualization from FILE");
-
     oc.doRegister("demo", 'D', new Option_Bool(false));
     oc.addDescription("demo", "GUI Only", "Restart the simulation after ending (demo mode)");
 
     oc.doRegister("disable-textures", 'T', new Option_Bool(false));
     oc.addDescription("disable-textures", "GUI Only", "Do not load background pictures");
-
-    oc.doRegister("registry-viewport", new Option_Bool(false));
-    oc.addDescription("registry-viewport", "GUI Only", "Load current viewport from registry");
 
     oc.doRegister("window-size", new Option_String());
     oc.addDescription("window-size", "GUI Only", "Create initial window with the given x,y size");
@@ -529,7 +478,6 @@ MSFrame::buildStreams() {
 
     //OutputDevice::createDeviceByOption("vtk-output", "vtk-export");
     OutputDevice::createDeviceByOption("link-output", "link-output");
-    OutputDevice::createDeviceByOption("railsignal-block-output", "railsignal-block-output");
     OutputDevice::createDeviceByOption("bt-output", "bt-output");
     OutputDevice::createDeviceByOption("lanechange-output", "lanechanges");
     OutputDevice::createDeviceByOption("stop-output", "stops", "stopinfo_file.xsd");
@@ -574,9 +522,6 @@ MSFrame::checkOptions() {
     if (oc.getBool("meso-junction-control.limited") && !oc.getBool("meso-junction-control")) {
         oc.set("meso-junction-control", "true");
     }
-    if (oc.getBool("mesosim") && oc.isDefault("pedestrian.model")) {
-        oc.set("pedestrian.model", "nonInteracting");
-    }
     const SUMOTime begin = string2time(oc.getString("begin"));
     const SUMOTime end = string2time(oc.getString("end"));
     if (begin < 0) {
@@ -608,11 +553,6 @@ MSFrame::checkOptions() {
     if (oc.getBool("ignore-accidents")) {
         WRITE_WARNING("The option 'ignore-accidents' is deprecated. Use 'collision.action none' instead.");
     }
-#ifdef HAVE_PYTHON
-    if (oc.isSet("python-script")) {
-        WRITE_WARNING("The option 'python-script' is deprecated. Use libsumo or TraCI instead.");
-    }
-#endif
     if (oc.getBool("duration-log.statistics") && oc.isDefault("verbose")) {
         oc.set("verbose", "true");
     }
@@ -637,29 +577,6 @@ MSFrame::checkOptions() {
         WRITE_ERROR("Unknown model '" + oc.getString("carfollow.model")  + "' for option 'carfollow.model'.");
         ok = false;
     }
-    if (oc.isSet("default.emergencydecel")) {
-        const std::string val = oc.getString("default.emergencydecel");
-        if (val != "default" && val != "decel") {
-            try {
-                StringUtils::toDouble(val);
-            } catch (NumberFormatException&) {
-                WRITE_ERROR("Invalid value '" + val + "' for option 'default.emergencydecel'. Must be a FLOAT or 'default' or 'decel'");
-                ok = false;
-            }
-        }
-    }
-    for (const std::string& val : oc.getStringVector("breakpoints")) {
-        try {
-            string2time(val);
-        } catch (ProcessError& e) {
-            WRITE_ERROR("Invalid time '" + val + "' for option 'breakpoints'." + e.what());
-            ok = false;
-        }
-    };
-    if (oc.getInt("threads") > oc.getInt("thread-rngs")) {
-        WRITE_WARNING("Number of threads exceeds number of thread-rngs. Simulation runs with the same seed may produce different results");
-    }
-
     ok &= MSDevice::checkOptions(oc);
     ok &= SystemFrame::checkOptions();
 
@@ -690,6 +607,7 @@ MSFrame::setMSGlobals(OptionsCont& oc) {
     MSGlobals::gMesoOvertaking = oc.getBool("meso-overtaking");
     MSGlobals::gMesoTLSPenalty = oc.getFloat("meso-tls-penalty");
     MSGlobals::gMesoMinorPenalty = string2time(oc.getString("meso-minor-penalty"));
+    MSGlobals::gSemiImplicitEulerUpdate = !oc.getBool("step-method.ballistic");
     if (MSGlobals::gUseMesoSim) {
         MSGlobals::gUsingInternalLanes = false;
     }
@@ -698,33 +616,6 @@ MSFrame::setMSGlobals(OptionsCont& oc) {
     MSLane::initCollisionOptions(oc);
 
     DELTA_T = string2time(oc.getString("step-length"));
-
-
-    bool integrationMethodSet = !oc.isDefault("step-method.ballistic");
-    bool actionStepLengthSet  = !oc.isDefault("default.action-step-length");
-    MSGlobals::gSemiImplicitEulerUpdate = !oc.getBool("step-method.ballistic");
-    // Init default value for gActionStepLength
-    if (MSGlobals::gSemiImplicitEulerUpdate && actionStepLengthSet && !integrationMethodSet) {
-        WRITE_MESSAGE("Integration method was set to 'ballistic', since a default action step length was specified.");
-        MSGlobals::gSemiImplicitEulerUpdate = false;
-    }
-    double givenDefaultActionStepLength = oc.getFloat("default.action-step-length");
-    MSGlobals::gActionStepLength = SUMOVehicleParserHelper::processActionStepLength(givenDefaultActionStepLength);
-
-    const std::string defaultEmergencyDecelOption = OptionsCont::getOptions().getString("default.emergencydecel");
-    if (defaultEmergencyDecelOption == "default") {
-        MSGlobals::gDefaultEmergencyDecel = VTYPEPARS_DEFAULT_EMERGENCYDECEL_DEFAULT;
-    } else if (defaultEmergencyDecelOption == "decel") {
-        MSGlobals::gDefaultEmergencyDecel = VTYPEPARS_DEFAULT_EMERGENCYDECEL_DECEL;
-    } else {
-        // value already checked in checkOptions()
-        MSGlobals::gDefaultEmergencyDecel = StringUtils::toDouble(defaultEmergencyDecelOption);
-    }
-    MSGlobals::gNumSimThreads = OptionsCont::getOptions().getInt("threads");
-
-    MSGlobals::gEmergencyDecelWarningThreshold = oc.getFloat("emergencydecel.warning-threshold");
-    MSGlobals::gMinorPenalty = oc.getFloat("weights.minor-penalty");
-
 #ifdef _DEBUG
     if (oc.isSet("movereminder-output")) {
         MSBaseVehicle::initMoveReminderOutput(oc);
@@ -733,4 +624,6 @@ MSFrame::setMSGlobals(OptionsCont& oc) {
 }
 
 
+
 /****************************************************************************/
+

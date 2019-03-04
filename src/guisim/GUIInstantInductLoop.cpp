@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2003-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIInstantInductLoop.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // The gui-version of the MSInstantInductLoop
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2003-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/geom/PositionVector.h>
@@ -55,13 +62,13 @@ GUIInstantInductLoop::buildDetectorGUIRepresentation() {
     return new MyWrapper(*this, myPosition);
 }
 
-// -------------------------------------------------------------------------
-// GUIInstantInductLoop::MyWrapper-methods
-// -------------------------------------------------------------------------
 
-GUIInstantInductLoop::MyWrapper::MyWrapper(GUIInstantInductLoop& detector, double pos) :
-    GUIDetectorWrapper(GLO_E1DETECTOR_INSTANT, detector.getID()),
-    myDetector(detector), myPosition(pos) {
+/* -------------------------------------------------------------------------
+ * GUIInstantInductLoop::MyWrapper-methods
+ * ----------------------------------------------------------------------- */
+GUIInstantInductLoop::MyWrapper::MyWrapper(GUIInstantInductLoop& detector, double pos)
+    : GUIDetectorWrapper("instant induct loop", detector.getID()),
+      myDetector(detector), myPosition(pos) {
     myFGPosition = detector.getLane()->geometryPositionAtOffset(pos);
     myBoundary.add(myFGPosition.x() + (double) 5.5, myFGPosition.y() + (double) 5.5);
     myBoundary.add(myFGPosition.x() - (double) 5.5, myFGPosition.y() - (double) 5.5);
@@ -101,7 +108,7 @@ GUIInstantInductLoop::MyWrapper::drawGL(const GUIVisualizationSettings& s) const
     glPushName(getGlID());
     double width = (double) 2.0 * s.scale;
     glLineWidth(1.0);
-    const double exaggeration = s.addSize.getExaggeration(s, this);
+    const double exaggeration = s.addSize.getExaggeration(s);
     // shape
     glColor3d(1, 0, 1);
     glPushMatrix();

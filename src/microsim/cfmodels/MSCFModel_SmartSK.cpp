@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_SmartSK.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,12 +9,27 @@
 ///
 // A smarter SK
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include <microsim/MSVehicle.h>
@@ -36,24 +43,22 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-MSCFModel_SmartSK::MSCFModel_SmartSK(const MSVehicleType* vtype) :
+MSCFModel_SmartSK::MSCFModel_SmartSK(const MSVehicleType* vtype,  double accel,
+                                     double decel, double emergencyDecel, double apparentDecel,
+                                     double dawdle, double headwayTime,
+                                     double tmp1, double tmp2, double tmp3, double tmp4, double tmp5) :
 // check whether setting these variables here with default values is ''good'' SUMO design
 //        double tmp1=0.0, double tmp2=5.0, double tmp3=0.0, double tmp4, double tmp5)
-    MSCFModel(vtype),
-    myDawdle(vtype->getParameter().getCFParam(SUMO_ATTR_SIGMA, SUMOVTypeParameter::getDefaultImperfection(vtype->getParameter().vehicleClass))),
-    myTauDecel(myDecel * myHeadwayTime),
-    myTmp1(vtype->getParameter().getCFParam(SUMO_ATTR_TMP1, 1.0)),
-    myTmp2(vtype->getParameter().getCFParam(SUMO_ATTR_TMP2, 1.0)),
-    myTmp3(vtype->getParameter().getCFParam(SUMO_ATTR_TMP3, 1.0)),
-    myTmp4(vtype->getParameter().getCFParam(SUMO_ATTR_TMP4, 1.0)),
-    myTmp5(vtype->getParameter().getCFParam(SUMO_ATTR_TMP5, 1.0)) {
+    MSCFModel(vtype, accel, decel, emergencyDecel, apparentDecel, headwayTime),
+    myDawdle(dawdle), myTauDecel(decel * headwayTime),
+    myTmp1(tmp1), myTmp2(tmp2), myTmp3(tmp3), myTmp4(tmp4), myTmp5(tmp5) {
     // the variable tmp1 is the acceleration delay time, e.g. two seconds (or something like this).
     // for use in the upate process, a rule like if (v<myTmp1) vsafe = 0; is needed.
     // To have this, we have to transform myTmp1 (which is a time) into an equivalent speed. This is done by the
     // using the vsafe formula and computing:
     // v(t=myTmp1) = -myTauDecel + sqrt(myTauDecel*myTauDecel + accel*(accel + decel)*t*t + accel*decel*t*TS);
     double t = myTmp1;
-    myS2Sspeed = -myTauDecel + sqrt(myTauDecel * myTauDecel + myAccel * (myAccel + myDecel) * t * t + myAccel * myDecel * t * TS);
+    myS2Sspeed = -myTauDecel + sqrt(myTauDecel * myTauDecel + accel * (accel + decel) * t * t + accel * decel * t * TS);
 #ifdef SmartSK_DEBUG
     std::cout << "# s2s-speed: " << myS2Sspeed << std::endl;
 #endif
@@ -74,8 +79,20 @@ MSCFModel_SmartSK::~MSCFModel_SmartSK() {}
 
 
 double
-MSCFModel_SmartSK::finalizeSpeed(MSVehicle* const veh, double vPos) const {
-    const double vNext = MSCFModel::finalizeSpeed(veh, vPos);
+MSCFModel_SmartSK::moveHelper(MSVehicle* const veh, double vPos) const {
+    const double oldV = veh->getSpeed(); // save old v for optional acceleration computation
+    const double vSafe = MIN2(vPos, veh->processNextStop(vPos)); // process stops
+    // we need the acceleration for emission computation;
+    //  in this case, we neglect dawdling, nonetheless, using
+    //  vSafe does not incorporate speed reduction due to interaction
+    //  on lane changing
+    const double vMin = getSpeedAfterMaxDecel(oldV);
+    const double vMax = MIN3(veh->getLane()->getVehicleMaxSpeed(veh), maxNextSpeed(oldV, veh), vSafe);
+#ifdef SmartSK_DEBUG
+    if (vMin > vMax) {
+        WRITE_WARNING("Maximum speed of vehicle '" + veh->getID() + "' is lower than the minimum speed (min: " + toString(vMin) + ", max: " + toString(vMax) + ").");
+    }
+#endif
     updateMyHeadway(veh);
     SSKVehicleVariables* vars = (SSKVehicleVariables*)veh->getCarFollowVariables();
 #ifdef SmartSK_DEBUG
@@ -86,19 +103,20 @@ MSCFModel_SmartSK::finalizeSpeed(MSVehicle* const veh, double vPos) const {
         }
     }
 #endif
+
     vars->gOld = vars->ggOld[(int) vPos];
     vars->ggOld.clear();
-    return vNext;
+    return veh->getLaneChangeModel().patchSpeed(vMin, MAX2(vMin, dawdle(vMax)), vMax, *this);
 }
 
 double
-MSCFModel_SmartSK::followSpeed(const MSVehicle* const veh, double speed, double gap, double predSpeed, double /*predMaxDecel*/, const MSVehicle* const /*pred*/) const {
+MSCFModel_SmartSK::followSpeed(const MSVehicle* const veh, double speed, double gap, double predSpeed, double /*predMaxDecel*/) const {
     SSKVehicleVariables* vars = (SSKVehicleVariables*)veh->getCarFollowVariables();
 
 // if (((gap - vars->gOld) < maxDeltaGap) && (speed>=5.0) && gap>=5.0) {
     if ((gap - vars->gOld) < maxDeltaGap) {
         double tTauTest = gap / speed;
-// allow  headway only to decrease only, never to increase. Increase is handled automatically by the headway dynamics in finalizeSpeed()!!!
+// allow  headway only to decrease only, never to increase. Increase is handled automatically by the headway dynamics in moveHelper()!!!
         if ((tTauTest < vars->myHeadway) && (tTauTest > TS)) {
             vars->myHeadway = tTauTest;
         }
@@ -123,7 +141,7 @@ MSCFModel_SmartSK::stopSpeed(const MSVehicle* const veh, const double speed, dou
 // if (((gap - vars->gOld) < maxDeltaGap) && (speed>=5.0) && gap>=5.0) {
     if ((gap - vars->gOld) < maxDeltaGap) {
         double tTauTest = gap / speed;
-// allow  headway only to decrease only, never to increase. Increase is handled automatically by the headway dynamics in finalizeSpeed()!!!
+// allow  headway only to decrease only, never to increase. Increase is handled automatically by the headway dynamics in moveHelper()!!!
         if ((tTauTest < vars->myHeadway) && (tTauTest > TS)) {
             vars->myHeadway = tTauTest;
         }
@@ -132,14 +150,10 @@ MSCFModel_SmartSK::stopSpeed(const MSVehicle* const veh, const double speed, dou
     return MAX2(getSpeedAfterMaxDecel(speed), MIN2(_vsafe(veh, gap, 0), maxNextSpeed(speed, veh)));
 }
 
-double
-MSCFModel_SmartSK::patchSpeedBeforeLC(const MSVehicle* veh, double /*vMin*/, double /*vMax*/) const {
-    return dawdle(veh->getSpeed(), veh->getRNG());
-}
 
 double
-MSCFModel_SmartSK::dawdle(double speed, std::mt19937* rng) const {
-    return MAX2(0., speed - ACCEL2SPEED(myDawdle * myAccel * RandHelper::rand(rng)));
+MSCFModel_SmartSK::dawdle(double speed) const {
+    return MAX2(0., speed - ACCEL2SPEED(myDawdle * myAccel * RandHelper::rand()));
 }
 
 
@@ -165,5 +179,6 @@ double MSCFModel_SmartSK::_vsafe(const MSVehicle* const veh, double gap, double 
 
 MSCFModel*
 MSCFModel_SmartSK::duplicate(const MSVehicleType* vtype) const {
-    return new MSCFModel_SmartSK(vtype);
+    return new MSCFModel_SmartSK(vtype, myAccel, myDecel, myEmergencyDecel, myApparentDecel, myDawdle, myHeadwayTime,
+                                 myTmp1, myTmp2, myTmp3, myTmp4, myTmp5);
 }

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSSimpleTrafficLightLogic.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Julia Ringel
@@ -18,12 +10,27 @@
 ///
 // A fixed traffic light logic
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <utility>
@@ -41,10 +48,10 @@
 // member method definitions
 // ===========================================================================
 MSSimpleTrafficLightLogic::MSSimpleTrafficLightLogic(MSTLLogicControl& tlcontrol,
-        const std::string& id, const std::string& programID, const TrafficLightType logicType, const Phases& phases,
+        const std::string& id, const std::string& subid, const Phases& phases,
         int step, SUMOTime delay,
         const std::map<std::string, std::string>& parameters) :
-    MSTrafficLightLogic(tlcontrol, id, programID, logicType, delay, parameters),
+    MSTrafficLightLogic(tlcontrol, id, subid, delay, parameters),
     myPhases(phases),
     myStep(step) {
     for (int i = 0; i < (int)myPhases.size(); i++) {
@@ -69,11 +76,7 @@ MSSimpleTrafficLightLogic::trySwitch() {
     }
 
     // increment the index
-    if (myPhases[myStep]->nextPhase >= 0) {
-        myStep = myPhases[myStep]->nextPhase;
-    } else {
-        myStep++;
-    }
+    myStep++;
     // if the last phase was reached ...
     if (myStep >= (int)myPhases.size()) {
         // ... set the index to the first phase

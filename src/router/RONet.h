@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RONet.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -17,6 +9,17 @@
 ///
 // The router's network representation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef RONet_h
 #define RONet_h
 
@@ -24,12 +27,19 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
+#include <queue>
 #include <vector>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/NamedObjectCont.h>
 #include <utils/distribution/RandomDistributor.h>
+#include <utils/vehicle/PedestrianRouter.h>
+#include <utils/vehicle/SUMOAbstractRouter.h>
 #include <utils/vehicle/SUMOVehicleParameter.h>
 #include <utils/vehicle/SUMOVTypeParameter.h>
 #include "ROLane.h"
@@ -45,8 +55,10 @@
 // class declarations
 // ===========================================================================
 class ROEdge;
+class ROLane;
 class RONode;
 class ROPerson;
+class RORoutable;
 class ROVehicle;
 class OptionsCont;
 class OutputDevice;
@@ -64,7 +76,7 @@ class OutputDevice;
 class RONet {
 public:
 
-    typedef std::map<const SUMOTime, std::vector<RORoutable*> > RoutablesMap;
+    typedef std::map<const SUMOTime, std::deque<RORoutable*> > RoutablesMap;
 
     /// @brief Constructor
     RONet();
@@ -187,33 +199,78 @@ public:
     }
 
 
-    /* @brief Adds a read stopping place (bus, train, container, parking)  to the network
+    /* @brief Adds a read bus stop to the network
      *
-     * If the place is already known (another one with the same id and category exists),
+     * If the bus stop is already known (another one with the same id exists),
      *  an error is generated and given to msg-error-handler. The stop
      *  is deleted in this case
      *
-     * @param[in] id The name of the stop to add
-     * @param[in] category The type of stop
-     * @param[in] stop The detailed stop description
+     * @param[in] node The stop to add
      */
-    void addStoppingPlace(const std::string& id, const SumoXMLTag category, SUMOVehicleParameter::Stop* stop);
+    void addBusStop(const std::string& id, SUMOVehicleParameter::Stop* stop);
 
-    /** @brief Retrieves a stopping place from the network
+
+    /* @brief Adds a read container stop to the network
      *
-     * @param[in] id The name of the stop to retrieve
-     * @param[in] category The type of stop
+     * If the container stop is already known (another one with the same id exists),
+     *  an error is generated and given to msg-error-handler. The stop
+     *  is deleted in this case
+     *
+     * @param[in] node The stop to add
+     */
+    void addContainerStop(const std::string& id, SUMOVehicleParameter::Stop* stop);
+
+
+    /* @brief Adds a read parking area to the network
+     *
+     * If the parking area is already known (another one with the same id exists),
+     *  an error is generated and given to msg-error-handler. The stop
+     *  is deleted in this case
+     *
+     * @param[in] node The stop to add
+     */
+    void addParkingArea(const std::string& id, SUMOVehicleParameter::Stop* stop);
+
+    /** @brief Retrieves a bus stop from the network
+     *
+     * @param[in] name The name of the stop to retrieve
      * @return The named stop if known, otherwise 0
      */
-    const SUMOVehicleParameter::Stop* getStoppingPlace(const std::string& id, const SumoXMLTag category) const {
-        if (myStoppingPlaces.count(category) > 0) {
-            return myStoppingPlaces.find(category)->second.get(id);
+    const SUMOVehicleParameter::Stop* getBusStop(const std::string& id) const {
+        std::map<std::string, SUMOVehicleParameter::Stop*>::const_iterator it = myBusStops.find(id);
+        if (it == myBusStops.end()) {
+            return 0;
         }
-        return 0;
+        return it->second;
     }
 
-    /// @brief return the name for the given stopping place id
-    const std::string getStoppingPlaceName(const std::string& id) const;
+
+    /** @brief Retrieves a container stop from the network
+     *
+     * @param[in] name The name of the stop to retrieve
+     * @return The named stop if known, otherwise 0
+     */
+    const SUMOVehicleParameter::Stop* getContainerStop(const std::string& id) const {
+        std::map<std::string, SUMOVehicleParameter::Stop*>::const_iterator it = myContainerStops.find(id);
+        if (it == myContainerStops.end()) {
+            return 0;
+        }
+        return it->second;
+    }
+
+
+    /** @brief Retrieves a parking area from the network
+     *
+     * @param[in] name The name of the stop to retrieve
+     * @return The named stop if known, otherwise 0
+     */
+    const SUMOVehicleParameter::Stop* getParkingArea(const std::string& id) const {
+        std::map<std::string, SUMOVehicleParameter::Stop*>::const_iterator it = myParkingAreas.find(id);
+        if (it == myParkingAreas.end()) {
+            return 0;
+        }
+        return it->second;
+    }
     //@}
 
 
@@ -358,26 +415,23 @@ public:
 
 
     /// Returns the information whether further vehicles, persons or containers are stored
-    bool furtherStored();
+    virtual bool furtherStored();
     //@}
+
+
+
 
 
     /** @brief Opens the output for computed routes
      *
+     * If the second parameter is set, a second file for route alternatives
+     *  will be opened.
      * If one of the file outputs can not be build, an IOError is thrown.
      *
-     * @param[in] options The options to be asked for "output-file", "alternatives-output" and "vtype-output"
+     * @param[in] options The options to be asked for "output-file" and "vtype-output"
+     * @param[in] altFilename The name of the file for writing alternatives, "" means no alternatives
      */
-    void openOutput(const OptionsCont& options);
-
-
-    /** @brief Writes the intermodal network and weights if requested
-     *
-     * If one of the file outputs can not be build, an IOError is thrown.
-     *
-     * @param[in] options The options to be asked for "intermodal-network-output" and "intermodal-weight-output"
-     */
-    void writeIntermodal(const OptionsCont& options, ROIntermodalRouter& router) const;
+    void openOutput(const OptionsCont& options, const std::string altFilename = "");
 
 
     /** @brief closes the file output for computed routes and deletes associated threads if necessary */
@@ -385,14 +439,12 @@ public:
 
 
     /// Returns the total number of edges the network contains including internal edges
-    int getEdgeNumber() const;
+    int getEdgeNo() const;
 
     /// Returns the number of internal edges the network contains
     int getInternalEdgeNumber() const;
 
-    const NamedObjectCont<ROEdge*>& getEdgeMap() const {
-        return myEdges;
-    }
+    const std::map<std::string, ROEdge*>& getEdgeMap() const;
 
     static void adaptIntermodalRouter(ROIntermodalRouter& router);
 
@@ -458,8 +510,14 @@ private:
     /// @brief Known edges
     NamedObjectCont<ROEdge*> myEdges;
 
-    /// @brief Known bus / train / container stops and parking areas
-    std::map<SumoXMLTag, NamedObjectCont<SUMOVehicleParameter::Stop*> > myStoppingPlaces;
+    /// @brief Known bus stops
+    std::map<std::string, SUMOVehicleParameter::Stop*> myBusStops;
+
+    /// @brief Known container stops
+    std::map<std::string, SUMOVehicleParameter::Stop*> myContainerStops;
+
+    /// @brief Known parking areas
+    std::map<std::string, SUMOVehicleParameter::Stop*> myParkingAreas;
 
     /// @brief Known vehicle types
     NamedObjectCont<SUMOVTypeParameter*> myVehicleTypes;
@@ -469,14 +527,11 @@ private:
     /// @brief A distribution of vehicle types (probability->vehicle type)
     VTypeDistDictType myVTypeDistDict;
 
-    /// @brief Whether the default vehicle type was already used or can still be replaced
+    /// @brief Whether no vehicle type has been loaded yet
     bool myDefaultVTypeMayBeDeleted;
 
-    /// @brief Whether the default pedestrian type was already used or can still be replaced
+    /// @brief Whether no pedestrian type has been loaded yet
     bool myDefaultPedTypeMayBeDeleted;
-
-    /// @brief Whether the default bicycle type was already used or can still be replaced
-    bool myDefaultBikeTypeMayBeDeleted;
 
     /// @brief Known routes
     NamedObjectCont<RORouteDef*> myRoutes;
@@ -487,15 +542,9 @@ private:
     /// @brief Known flows
     NamedObjectCont<SUMOVehicleParameter*> myFlows;
 
-    /// @brief whether any flows are still active
-    bool myHaveActiveFlows;
-
     /// @brief Known containers
     typedef std::multimap<const SUMOTime, const std::string> ContainerMap;
     ContainerMap myContainers;
-
-    /// @brief vehicles to keep for public transport routing
-    std::vector<const RORoutable*> myPTVehicles;
 
     /// @brief Departure times for randomized flows
     std::map<std::string, std::vector<SUMOTime> > myDepartures;

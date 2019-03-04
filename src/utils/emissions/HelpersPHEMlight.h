@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    HelpersPHEMlight.h
 /// @author  Daniel Krajzewicz
 /// @author  Nikolaus Furian
@@ -15,6 +7,17 @@
 ///
 // Helper methods for PHEMlight-based emission computation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef HelpersPHEMlight_h
 #define HelpersPHEMlight_h
 
@@ -22,7 +25,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #define INTERNAL_PHEM
 
@@ -106,15 +113,6 @@ public:
      * @return The amount of the pollutant emitted by the given emission class when moving with the given velocity and acceleration [mg/s or ml/s]
      */
     double compute(const SUMOEmissionClass c, const PollutantsInterface::EmissionType e, const double v, const double a, const double slope, const std::map<int, double>* param) const;
-
-    /** @brief Returns the adapted acceleration value, useful for comparing with external PHEMlight references.
-     * @param[in] c the emission class
-     * @param[in] v the speed value
-     * @param[in] a the acceleration value
-     * @param[in] slope The road's slope at vehicle's position [deg]
-     * @return the modified acceleration
-     */
-    double getModifiedAccel(const SUMOEmissionClass c, const double v, const double a, const double slope) const;
 
 private:
     /** @brief Returns the amount of emitted pollutant given the vehicle type and state (in mg/s or in ml/s for fuel)

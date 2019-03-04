@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<osm version="0.6">
+<osm version="0.6" generator="Overpass API">
+<note>The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.</note>
 <meta osm_base="2015-05-06T15:52:02Z"/>
 
   <node id="30618469" lat="52.4345275" lon="13.5383273"/>
@@ -1398,9 +1399,6 @@
     <nd ref="1560592323"/>
     <nd ref="1560592311"/>
     <tag k="landuse" v="grass"/>
-  </way>
-  <way id='112439415' action='delete' timestamp='2011-05-09T05:09:49Z' uid='69619' user='thegrids' version='1' changeset='8089527'>
-    <tag k='building' v='yes' />
   </way>
   <relation id="56951">
     <member type="way" ref="118132057" role="outer"/>

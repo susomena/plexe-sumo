@@ -35,11 +35,11 @@ busses
 # (relevant for cmd-line sumo since they can be access via TraCI)
 shapes
 
+# test continuous lane change maneuvers
+continuous_lanechange
+
 # tests functions of the example device
 device_example
-
-# tests functions of the bluelight device
-device_bluelight
 
 # saving and loading simulation state
 state
@@ -50,7 +50,7 @@ device_bt
 # tests for battery device and charging station
 electric
 
-# check options for collision handling (emergencyDecel is disabled here to keep the legacy behavior)
+# check options for collision handling
 collisions
 rail
 

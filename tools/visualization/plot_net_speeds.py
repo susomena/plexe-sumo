@@ -1,32 +1,31 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    plot_net_speeds.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2014-02-19
+@version $Id$
 
-# @file    plot_net_speeds.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2014-02-19
-# @version $Id$
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
 
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
 import os
 import sys
 
-if 'SUMO_HOME' in os.environ:
-    sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
-else:
-    sys.exit("please declare environment variable 'SUMO_HOME'")
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import sumolib  # noqa
-from sumolib.visualization import helpers  # noqa
-import matplotlib.pyplot as plt  # noqa
-import matplotlib  # noqa
+from sumolib.visualization import helpers
+
+import matplotlib.pyplot as plt
 
 
 def main(args=None):
@@ -88,9 +87,8 @@ def main(args=None):
     # drawing the legend, at least for the colors
     print("%s -> %s" % (minV, maxV))
     sm = matplotlib.cm.ScalarMappable(
-        cmap=matplotlib.cm.get_cmap(options.colormap), norm=matplotlib.colors.Normalize(vmin=minV, vmax=maxV))
-    # "fake up the array of the scalar mappable. Urgh..."
-    # (pelson, http://stackoverflow.com/questions/8342549/matplotlib-add-colorbar-to-a-sequence-of-line-plots)
+        cmap=get_cmap(options.colormap), norm=plt.normalize(vmin=minV, vmax=maxV))
+    # "fake up the array of the scalar mappable. Urgh..." (pelson, http://stackoverflow.com/questions/8342549/matplotlib-add-colorbar-to-a-sequence-of-line-plots)
     sm._A = []
     plt.colorbar(sm)
     options.nolegend = True

@@ -232,17 +232,8 @@ on("ready", function(){
     toogleCanvas();
 
     // OSM map
-    // avoid cross domain resource sharing issues (#3991)
-    // (https://gis.stackexchange.com/questions/83953/openlayers-maps-issue-with-ssl)
     var map = new OpenLayers.Map("map");
-    var maplayer = new OpenLayers.Layer.OSM("OpenStreetMap", 
-    // Official OSM tileset as protocol-independent URLs
-    [
-        'https://a.tile.openstreetmap.org/${z}/${x}/${y}.png',
-        'https://b.tile.openstreetmap.org/${z}/${x}/${y}.png',
-        'https://c.tile.openstreetmap.org/${z}/${x}/${y}.png'
-    ], null);
-    map.addLayer(maplayer);
+    map.addLayer(new OpenLayers.Layer.OSM);
 
     function setPosition(lon, lat){
         if(!lon || !lat){
@@ -251,20 +242,6 @@ on("ready", function(){
             lat = parseFloat(latLon[0]);
         } else {
             elem("#lat_lon").value = lat.toFixed(6) + " " + lon.toFixed(6);
-        }
-
-        var leftHandBounds = [new OpenLayers.Bounds(-9, 50, 3, 60), // British Isles
-                              new OpenLayers.Bounds(66, 3, 90, 30), // India, Pakistan
-                              new OpenLayers.Bounds(95, -45, 179, 2), // Australia, Indonesia
-                              new OpenLayers.Bounds(-20, -35, 40, -15), // Southern Africa
-                              new OpenLayers.Bounds(135, 30, 150, 42), // Japan
-                             ];
-        elem("#leftHand").checked = false;
-        for (var i = 0; i < leftHandBounds.length; i++) {
-            if (leftHandBounds[i].contains(lon, lat)) {
-                elem("#leftHand").checked = true;
-                break;
-            }
         }
 
         var lonLat = new OpenLayers.LonLat(lon, lat);
@@ -278,7 +255,7 @@ on("ready", function(){
 
     function setPositionByString() {
       query = elem("#address").value
-      var url = "https://nominatim.openstreetmap.org/search?q=" + query + "&format=json&polygon=0&addressdetails=0&limit=1&callback";
+      var url = "http://nominatim.openstreetmap.org/search?q=" + query + "&format=json&polygon=0&addressdetails=0&limit=1&callback";
       getJSON(url,
           function(err, data) {
             if (err != null) {
@@ -293,12 +270,6 @@ on("ready", function(){
             }
           });
     }
-
-    elem("#address").on("keyup", function(e){
-        if (e.keyCode == 13) {
-            setPositionByString();
-        }
-    });
 
     var getJSON = function(url, callback) {
         var xhr = new XMLHttpRequest();
@@ -429,8 +400,6 @@ on("ready", function(){
         var data = {
             poly: elem("#polygons").checked,
             duration: parseInt(elem("#duration").value),
-            publicTransport: elem("#publicTransport").checked,
-            leftHand: elem("#leftHand").checked,
             vehicles: {}
         };
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PlainXMLFormatter.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,12 +7,27 @@
 ///
 // Static storage of an output device and its base (abstract) implementation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/common/ToString.h>
 #include <utils/options/OptionsCont.h>
@@ -81,14 +88,14 @@ PlainXMLFormatter::openTag(std::ostream& into, const SumoXMLTag& xmlElement) {
 
 
 bool
-PlainXMLFormatter::closeTag(std::ostream& into, const std::string& comment) {
+PlainXMLFormatter::closeTag(std::ostream& into) {
     if (!myXMLStack.empty()) {
         if (myHavePendingOpener) {
-            into << "/>" << comment << "\n";
+            into << "/>\n";
             myHavePendingOpener = false;
         } else {
             const std::string indent(4 * (myXMLStack.size() + myDefaultIndentation - 1), ' ');
-            into << indent << "</" << myXMLStack.back() << ">" << comment << "\n";
+            into << indent << "</" << myXMLStack.back() << ">\n";
         }
         myXMLStack.pop_back();
         return true;
@@ -103,11 +110,6 @@ PlainXMLFormatter::writePreformattedTag(std::ostream& into, const std::string& v
         into << ">\n";
         myHavePendingOpener = false;
     }
-    into << val;
-}
-
-void
-PlainXMLFormatter::writePadding(std::ostream& into, const std::string& val) {
     into << val;
 }
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUITLLogicPhasesTrackerWindow.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // A window displaying the phase diagram of a tl-logic
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <iostream>
@@ -37,7 +44,7 @@
 #include <utils/gui/images/GUIIconSubSys.h>
 #include <utils/gui/settings/GUIVisualizationSettings.h>
 #include <utils/gui/div/GUIDesigns.h>
-#include <foreign/fontstash/fontstash.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/gui/globjects/GLIncludes.h>
 
 
@@ -64,7 +71,7 @@ FXIMPLEMENT(GUITLLogicPhasesTrackerWindow::GUITLLogicPhasesTrackerPanel, FXGLCan
 GUITLLogicPhasesTrackerWindow::GUITLLogicPhasesTrackerPanel::GUITLLogicPhasesTrackerPanel(
     FXComposite* c, GUIMainWindow& app,
     GUITLLogicPhasesTrackerWindow& parent)
-    : FXGLCanvas(c, app.getGLVisual(), app.getBuildGLCanvas(), (FXObject*) nullptr, (FXSelector) 0, LAYOUT_SIDE_TOP | LAYOUT_FILL_X | LAYOUT_FILL_Y/*, 0, 0, 300, 200*/),
+    : FXGLCanvas(c, app.getGLVisual(), app.getBuildGLCanvas(), (FXObject*) 0, (FXSelector) 0, LAYOUT_SIDE_TOP | LAYOUT_FILL_X | LAYOUT_FILL_Y/*, 0, 0, 300, 200*/),
       myParent(&parent) {}
 
 
@@ -146,25 +153,24 @@ GUITLLogicPhasesTrackerWindow::GUITLLogicPhasesTrackerWindow(
     GUIMainWindow& app,
     MSTrafficLightLogic& logic, GUITrafficLightLogicWrapper& wrapper,
     ValueSource<std::pair<SUMOTime, MSPhaseDefinition> >* src)
-    : FXMainWindow(app.getApp(), "TLS-Tracker", nullptr, nullptr, DECOR_ALL,
+    : FXMainWindow(app.getApp(), "TLS-Tracker", NULL, NULL, DECOR_ALL,
                    20, 20, 300, 200),
       myApplication(&app), myTLLogic(&logic), myAmInTrackingMode(true) {
     // build the toolbar
-    myToolBarDrag = new FXToolBarShell(this, GUIDesignToolBar);
+    myToolBarDrag = new FXToolBarShell(this, GUIDesignToolBarShell3);
     myToolBar = new FXToolBar(this, myToolBarDrag, LAYOUT_SIDE_TOP | LAYOUT_FILL_X | FRAME_RAISED);
     new FXToolBarGrip(myToolBar, myToolBar, FXToolBar::ID_TOOLBARGRIP, GUIDesignToolBarGrip);
     // interval manipulation
-    myBeginOffset = new FXRealSpinner(myToolBar, 10, this, MID_SIMSTEP, LAYOUT_TOP | FRAME_SUNKEN | FRAME_THICK);
-    //myBeginOffset->setFormatString("%.0f");
-    //myBeginOffset->setIncrements(1, 10, 100);
-    myBeginOffset->setIncrement(10);
+    myBeginOffset = new FXRealSpinDial(myToolBar, 10, this, MID_SIMSTEP, LAYOUT_TOP | FRAME_SUNKEN | FRAME_THICK);
+    myBeginOffset->setFormatString("%.0f");
+    myBeginOffset->setIncrements(1, 10, 100);
     myBeginOffset->setRange(60, 3600);
     myBeginOffset->setValue(240);
-    new FXLabel(myToolBar, "(s)", nullptr, LAYOUT_CENTER_Y);
+    new FXLabel(myToolBar, "(s)", 0, LAYOUT_CENTER_Y);
     //
     myConnector = new GLObjectValuePassConnector<std::pair<SUMOTime, MSPhaseDefinition> >(wrapper, src, this);
     FXint height = (FXint)(myTLLogic->getLinks().size() * 20 + 30 + 8 + 30);
-    app.addChild(this);
+    app.addChild(this, true);
     for (int i = 0; i < (int)myTLLogic->getLinks().size(); ++i) {
         myLinkNames.push_back(toString<int>(i));
     }
@@ -184,14 +190,14 @@ GUITLLogicPhasesTrackerWindow::GUITLLogicPhasesTrackerWindow(
     GUIMainWindow& app,
     MSTrafficLightLogic& logic, GUITrafficLightLogicWrapper& /*wrapper*/,
     const MSSimpleTrafficLightLogic::Phases& /*phases*/)
-    : FXMainWindow(app.getApp(), "TLS-Tracker", nullptr, nullptr, DECOR_ALL,
+    : FXMainWindow(app.getApp(), "TLS-Tracker", NULL, NULL, DECOR_ALL,
                    20, 20, 300, 200),
       myApplication(&app), myTLLogic(&logic), myAmInTrackingMode(false),
-      myToolBarDrag(nullptr), myBeginOffset(nullptr) {
-    myConnector = nullptr;
+      myToolBarDrag(0), myBeginOffset(0) {
+    myConnector = 0;
     FXint height = (FXint)(myTLLogic->getLinks().size() * 20 + 30 + 8);
     setTitle("TLS-Tracker");
-    app.addChild(this);
+    app.addChild(this, true);
     for (int i = 0; i < (int)myTLLogic->getLinks().size(); ++i) {
         myLinkNames.push_back(toString<int>(i));
     }
@@ -221,7 +227,7 @@ GUITLLogicPhasesTrackerWindow::~GUITLLogicPhasesTrackerWindow() {
 void
 GUITLLogicPhasesTrackerWindow::create() {
     FXMainWindow::create();
-    if (myToolBarDrag != nullptr) {
+    if (myToolBarDrag != 0) {
         myToolBarDrag->create();
     }
 }
@@ -238,11 +244,7 @@ GUITLLogicPhasesTrackerWindow::drawValues(GUITLLogicPhasesTrackerPanel& caller) 
         myPhases.clear();
         myDurations.clear();
         // insert phases
-        MSSimpleTrafficLightLogic* simpleTLLogic = dynamic_cast<MSSimpleTrafficLightLogic*>(myTLLogic);
-        if (simpleTLLogic == nullptr) {
-            return;
-        }
-        const MSSimpleTrafficLightLogic::Phases& phases = simpleTLLogic->getPhases();
+        const MSSimpleTrafficLightLogic::Phases& phases = static_cast<MSSimpleTrafficLightLogic*>(myTLLogic)->getPhases();
         MSSimpleTrafficLightLogic::Phases::const_iterator j;
         myLastTime = 0;
         myBeginTime = 0;
@@ -252,7 +254,7 @@ GUITLLogicPhasesTrackerWindow::drawValues(GUITLLogicPhasesTrackerPanel& caller) 
             myLastTime += (*j)->duration;
         }
         if (myLastTime <= myBeginTime) {
-            WRITE_ERROR("Overflow in time computation occurred.");
+            WRITE_ERROR("Overflow in time computation occured.");
             return;
         }
     } else {
@@ -295,9 +297,8 @@ GUITLLogicPhasesTrackerWindow::drawValues(GUITLLogicPhasesTrackerPanel& caller) 
     // compute some values needed more than once
     const double height = (double) caller.getHeight();
     const double width = (double) caller.getWidth();
-    const double barWidth = MAX2(1.0, width - 31);
-    const double fontHeight = 0.08 * 300. / height;
-    const double fontWidth = 0.08 * 300. / width;
+    pfSetScaleXY((double)(.08 * 300. / width), (double)(.08 * 300. / height));
+    const double h4 = ((double) 4 / height);
     const double h9 = ((double) 9 / height);
     const double h10 = ((double) 10 / height);
     const double h11 = ((double) 11 / height);
@@ -314,9 +315,12 @@ GUITLLogicPhasesTrackerWindow::drawValues(GUITLLogicPhasesTrackerPanel& caller) 
         glEnd();
         // draw the name
         if (i < (int)myTLLogic->getLinks().size()) {
-            glTranslated(0, h - h20, 0);
-            GLHelper::drawText(myLinkNames[i], Position(0, 0), 1, fontHeight, RGBColor::WHITE, 0, FONS_ALIGN_LEFT | FONS_ALIGN_BOTTOM, fontWidth);
-            glTranslated(0, -h + h20, 0);
+            glRotated(180, 1, 0, 0);
+            pfSetPosition(0, 0);
+            glTranslated(0.0, -h + h20 - h4, 0);
+            pfDrawString(myLinkNames[i].c_str());
+            glTranslated(-0.0, h - h20 + h4, 0);
+            glRotated(-180, 1, 0, 0);
             h2 += 20;
         }
         h -= h20;
@@ -341,7 +345,7 @@ GUITLLogicPhasesTrackerWindow::drawValues(GUITLLogicPhasesTrackerPanel& caller) 
     // determine the initial offset
     double x = ((double) 31. / width);
     double ta = (double) leftOffset / width;
-    ta *= (double)((barWidth / ((double)(myLastTime - myBeginTime))));
+    ta *= (double)(((width - 31.0) / ((double)(myLastTime - myBeginTime))));
     x += ta;
 
     // and the initial phase information
@@ -357,7 +361,7 @@ GUITLLogicPhasesTrackerWindow::drawValues(GUITLLogicPhasesTrackerPanel& caller) 
         // compute the heigh and the width of the phase
         h = (double)(1.0 - h10);
         double a = (double) duration / width;
-        a *= (double)((barWidth / ((double)(myLastTime - myBeginTime))));
+        a *= (double)(((width - 31.0) / ((double)(myLastTime - myBeginTime))));
         const double x2 = x + a;
 
         // go through the links
@@ -381,8 +385,8 @@ GUITLLogicPhasesTrackerWindow::drawValues(GUITLLogicPhasesTrackerPanel& caller) 
                     // draw a thick block
                     glBegin(GL_QUADS);
                     glVertex2d(x, h - h16);
-                    glVertex2d(x, h);
-                    glVertex2d(x2, h);
+                    glVertex2d(x, h - h4);
+                    glVertex2d(x2, h - h4);
                     glVertex2d(x2, h - h16);
                     glEnd();
                     break;
@@ -404,33 +408,36 @@ GUITLLogicPhasesTrackerWindow::drawValues(GUITLLogicPhasesTrackerPanel& caller) 
     if (myPhases.size() != 0) {
         SUMOTime tickDist = TIME2STEPS(10);
         // patch distances - hack
-        double t = myBeginOffset != nullptr ? (double) myBeginOffset->getValue() : STEPS2TIME(myLastTime - myBeginTime);
-        while (t > barWidth / 4.) {
+        double t = myBeginOffset != 0 ? (double) myBeginOffset->getValue() : STEPS2TIME(myLastTime - myBeginTime);
+        while (t > (width - 31.) / 4.) {
             tickDist += TIME2STEPS(10);
-            t -= (double)(barWidth / 4.);
+            t -= (double)((width - 31.) / 4.);
         }
         // draw time information
         //h = (double)(myTLLogic->getLinks().size() * 20 + 12);
         double glh = (double)(1.0 - myTLLogic->getLinks().size() * h20 - h10);
         // current begin time
+        pfSetScaleXY((double)(.05 * 300. / width), (double)(.05 * 300. / height));
         // time ticks
         SUMOTime currTime = myFirstTime2Show;
         int pos = 31;// + /*!!!currTime*/ - myFirstTime2Show;
         double glpos = (double) pos / width;
-        const double ticSize = 4 / height;
         while (pos < width + 50) {
             const std::string timeStr = time2string(currTime);
-            const double w = 50 / width;
-            glTranslated(glpos - w / 2., glh - h20, 0);
-            GLHelper::drawText(timeStr, Position(0, 0), 1, fontHeight, RGBColor::WHITE, 0, FONS_ALIGN_LEFT | FONS_ALIGN_MIDDLE, fontWidth);
-            glTranslated(-glpos + w / 2., -glh + h20, 0);
+            const double w = pfdkGetStringWidth(timeStr.c_str());
+            glRotated(180, 1, 0, 0);
+            pfSetPosition(0, 0);
+            glTranslated(glpos - w / 2., -glh + h20 - h4, 0);
+            pfDrawString(timeStr.c_str());
+            glTranslated(-glpos + w / 2., glh - h20 + h4, 0);
+            glRotated(-180, 1, 0, 0);
 
             glBegin(GL_LINES);
             glVertex2d(glpos, glh);
-            glVertex2d(glpos, glh - ticSize);
+            glVertex2d(glpos, glh - h4);
             glEnd();
 
-            const double a = STEPS2TIME(tickDist) * barWidth / STEPS2TIME(myLastTime - myBeginTime);
+            const double a = STEPS2TIME(tickDist) * (width - 31.0) / STEPS2TIME(myLastTime - myBeginTime);
             pos += (int) a;
             glpos += a / width;
             currTime += tickDist;

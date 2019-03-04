@@ -1,19 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSLaneChangerSublane.h
 /// @author  Jakob Erdmann
-/// @author  Leonhard Luecken
 /// @date    Oct 2015
 /// @version $Id$
 ///
 // Performs sub-lane changing of vehicles
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef MSLaneChangerSublane_h
 #define MSLaneChangerSublane_h
@@ -22,7 +24,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <microsim/lcmodels/MSAbstractLaneChangeModel.h>
 #include "MSLaneChanger.h"
@@ -65,40 +71,22 @@ protected:
      * @param[in] leaders The candidate vehicle's leaders
      * @param[in] preb The bestLanse of the candidaet vehicle
      * @param[out] latDist The distance by which the vehicle changes laterally
-     * @param[out] maneuverDist The lateral distance for the complete envisioned maneuver
-     *                           (used for maneuver continuation in non-actionsteps).
      */
     int checkChangeSublane(
         int laneOffset,
         LaneChangeAction alternatives,
         const std::vector<MSVehicle::LaneQ>& preb,
-        double& latDist,
-        double& maneuverDist) const;
-
-    ///  @brief Continue a sublane-lane change maneuver and return whether the midpoint was passed in this step
-    //          (used to continue sublane changing in non-action steps).
-    bool continueChangeSublane(MSVehicle* vehicle, ChangerIt& from);
+        double& latDist) const;
 
     ///  @brief change by the specified amount and return whether a new lane was entered
     bool startChangeSublane(MSVehicle* vehicle, ChangerIt& from, double latDist);
 
-    /// @brief check whether the given vehicle has entered the new lane 'to->lane' during a sublane LC-step
-    bool checkChangeToNewLane(MSVehicle* vehicle, const int direction, ChangerIt from, ChangerIt to);
-
     /// @brief get leaders for ego on the given lane
     MSLeaderDistanceInfo getLeaders(const ChangerIt& target, const MSVehicle* ego) const;
-
-    /// @brief immediately stop lane-changing and register vehicle as unchanged
-    void abortLCManeuver(MSVehicle* vehicle);
 
     typedef MSAbstractLaneChangeModel::StateAndDist StateAndDist;
     /// @brief helper function that calls checkChangeSublane and sets blocker information
     StateAndDist checkChangeHelper(MSVehicle* vehicle, int laneOffset, LaneChangeAction alternatives);
-
-    /// @brief optional output for start of lane-change maneuvre
-    void outputLCStarted(MSVehicle* vehicle, ChangerIt& from, ChangerIt& to, int direction);
-    /// @brief optional output for end of lane-change maneuvre
-    void outputLCEnded(MSVehicle* vehicle, ChangerIt& from, ChangerIt& to, int direction);
 
 private:
     /// Default constructor.

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSFCDExport.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,18 +9,32 @@
 ///
 // Realises dumping Floating Car Data (FCD) Data
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/iodevices/OutputDevice.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/geom/GeoConvHelper.h>
 #include <utils/geom/GeomHelper.h>
-#include <microsim/devices/MSDevice_FCD.h>
 #include <microsim/MSEdgeControl.h>
 #include <microsim/MSEdge.h>
 #include <microsim/MSLane.h>
@@ -49,20 +55,12 @@ void
 MSFCDExport::write(OutputDevice& of, SUMOTime timestep, bool elevation) {
     const bool useGeo = OptionsCont::getOptions().getBool("fcd-output.geo");
     const bool signals = OptionsCont::getOptions().getBool("fcd-output.signals");
-    const SUMOTime period = string2time(OptionsCont::getOptions().getString("device.fcd.period"));
-    if (period > 0 && timestep % period != 0) {
-        return;
-    }
     of.openTag("timestep").writeAttr(SUMO_ATTR_TIME, time2string(timestep));
     MSVehicleControl& vc = MSNet::getInstance()->getVehicleControl();
-    const bool filter = MSDevice_FCD::getEdgeFilter().size() > 0;
     for (MSVehicleControl::constVehIt it = vc.loadedVehBegin(); it != vc.loadedVehEnd(); ++it) {
         const SUMOVehicle* veh = it->second;
         const MSVehicle* microVeh = dynamic_cast<const MSVehicle*>(veh);
-        if ((veh->isOnRoad() || veh->isParking() || veh->isRemoteControlled())
-                && veh->getDevice(typeid(MSDevice_FCD)) != nullptr
-                // only filter on normal edges
-                && (!filter || MSDevice_FCD::getEdgeFilter().count(veh->getEdge()) > 0)) {
+        if (veh->isOnRoad() || veh->isParking() || veh->isRemoteControlled()) {
             Position pos = veh->getPosition();
             if (useGeo) {
                 of.setPrecision(gPrecisionGeo);
@@ -79,24 +77,24 @@ MSFCDExport::write(OutputDevice& of, SUMOTime timestep, bool elevation) {
             of.writeAttr(SUMO_ATTR_TYPE, veh->getVehicleType().getID());
             of.writeAttr(SUMO_ATTR_SPEED, veh->getSpeed());
             of.writeAttr(SUMO_ATTR_POSITION, veh->getPositionOnLane());
-            if (microVeh != nullptr) {
+            if (microVeh != 0) {
                 of.writeAttr(SUMO_ATTR_LANE, microVeh->getLane()->getID());
             }
             of.writeAttr(SUMO_ATTR_SLOPE, veh->getSlope());
-            if (microVeh != nullptr && signals) {
+            if (microVeh != 0 && signals) {
                 of.writeAttr("signals", toString(microVeh->getSignals()));
             }
             of.closeTag();
-            // write persons and containers
-            const MSEdge* edge = microVeh == nullptr ? veh->getEdge() : &veh->getLane()->getEdge();
-
-            const std::vector<MSTransportable*>& persons = veh->getPersons();
-            for (std::vector<MSTransportable*>::const_iterator it_p = persons.begin(); it_p != persons.end(); ++it_p) {
-                writeTransportable(of, edge, *it_p, SUMO_TAG_PERSON, useGeo, elevation);
-            }
-            const std::vector<MSTransportable*>& containers = veh->getContainers();
-            for (std::vector<MSTransportable*>::const_iterator it_c = containers.begin(); it_c != containers.end(); ++it_c) {
-                writeTransportable(of, edge, *it_c, SUMO_TAG_CONTAINER, useGeo, elevation);
+            if (microVeh != 0) {
+                // write persons and containers
+                const std::vector<MSTransportable*>& persons = microVeh->getPersons();
+                for (std::vector<MSTransportable*>::const_iterator it_p = persons.begin(); it_p != persons.end(); ++it_p) {
+                    writeTransportable(of, &microVeh->getLane()->getEdge(), *it_p, SUMO_TAG_PERSON, useGeo, elevation);
+                }
+                const std::vector<MSTransportable*>& containers = microVeh->getContainers();
+                for (std::vector<MSTransportable*>::const_iterator it_c = containers.begin(); it_c != containers.end(); ++it_c) {
+                    writeTransportable(of, &microVeh->getLane()->getEdge(), *it_c, SUMO_TAG_CONTAINER, useGeo, elevation);
+                }
             }
         }
     }
@@ -105,9 +103,6 @@ MSFCDExport::write(OutputDevice& of, SUMOTime timestep, bool elevation) {
         MSEdgeControl& ec = MSNet::getInstance()->getEdgeControl();
         const MSEdgeVector& edges = ec.getEdges();
         for (MSEdgeVector::const_iterator e = edges.begin(); e != edges.end(); ++e) {
-            if (filter && MSDevice_FCD::getEdgeFilter().count(*e) == 0) {
-                continue;
-            }
             const std::vector<MSTransportable*>& persons = (*e)->getSortedPersons(timestep);
             for (std::vector<MSTransportable*>::const_iterator it_p = persons.begin(); it_p != persons.end(); ++it_p) {
                 writeTransportable(of, *e, *it_p, SUMO_TAG_PERSON, useGeo, elevation);
@@ -119,9 +114,6 @@ MSFCDExport::write(OutputDevice& of, SUMOTime timestep, bool elevation) {
         MSEdgeControl& ec = MSNet::getInstance()->getEdgeControl();
         const std::vector<MSEdge*>& edges = ec.getEdges();
         for (std::vector<MSEdge*>::const_iterator e = edges.begin(); e != edges.end(); ++e) {
-            if (filter && MSDevice_FCD::getEdgeFilter().count(*e) == 0) {
-                continue;
-            }
             const std::vector<MSTransportable*>& containers = (*e)->getSortedContainers(timestep);
             for (std::vector<MSTransportable*>::const_iterator it_c = containers.begin(); it_c != containers.end(); ++it_c) {
                 writeTransportable(of, *e, *it_c, SUMO_TAG_CONTAINER, useGeo, elevation);
@@ -134,9 +126,6 @@ MSFCDExport::write(OutputDevice& of, SUMOTime timestep, bool elevation) {
 
 void
 MSFCDExport::writeTransportable(OutputDevice& of, const MSEdge* e, MSTransportable* p, SumoXMLTag tag, bool useGeo, bool elevation) {
-    if (!MSDevice::equippedByParameter(p, "fcd", true)) {
-        return;
-    }
     Position pos = p->getPosition();
     if (useGeo) {
         of.setPrecision(gPrecisionGeo);

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUISelectedStorage.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Storage for "selected" objects
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <algorithm>
 #include <utils/gui/globjects/GUIGlObject.h>
@@ -96,19 +103,13 @@ GUISelectedStorage::isSelected(GUIGlObjectType type, GUIGlID id) {
     switch (type) {
         case GLO_NETWORK:
             return false;
+        case GLO_ADDITIONAL:
+            return isSelected(GLO_TRIGGER, id) || isSelected(GLO_DETECTOR, id) || mySelections[GLO_ADDITIONAL].isSelected(id);
         default:
             return mySelections[type].isSelected(id);
     }
 }
 
-bool
-GUISelectedStorage::isSelected(const GUIGlObject* o) {
-    if (o == nullptr) {
-        return false;
-    } else {
-        return isSelected(o->getType(), o->getGlID());
-    }
-}
 
 void
 GUISelectedStorage::select(GUIGlID id, bool update) {
@@ -264,7 +265,7 @@ GUISelectedStorage::add2Update(UpdateTarget* updateTarget) {
 
 void
 GUISelectedStorage::remove2Update() {
-    myUpdateTarget = nullptr;
+    myUpdateTarget = 0;
 }
 
 
@@ -273,7 +274,7 @@ GUISelectedStorage::save(const std::string& filename, const std::set<GUIGlID>& i
     OutputDevice& dev = OutputDevice::getDevice(filename);
     for (std::set<GUIGlID>::const_iterator i = ids.begin(); i != ids.end(); ++i) {
         GUIGlObject* object = GUIGlObjectStorage::gIDStorage.getObjectBlocking(*i);
-        if (object != nullptr) {
+        if (object != 0) {
             std::string name = object->getFullName();
             dev << name << "\n";
             GUIGlObjectStorage::gIDStorage.unblockObject(*i);

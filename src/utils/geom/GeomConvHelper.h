@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GeomConvHelper.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Some helping functions for geometry parsing
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GeomConvHelper_h
 #define GeomConvHelper_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/geom/PositionVector.h>
@@ -39,7 +46,7 @@
  */
 class GeomConvHelper {
 public:
-    /** @brief Builds a PositionVector from a string representation, reporting occurred errors
+    /** @brief Builds a PositionVector from a string representation, reporting occured errors
      *
      * It is assumed, the vector is stored as "x,y[ x,y]*" where x and y are doubles.
      * @param[in] shpdef The shape definition to parse
@@ -54,7 +61,7 @@ public:
             const char* objectid, bool& ok, bool allowEmpty, bool report = true);
 
 
-    /** @brief Builds a boundary from its string representation, reporting occurred errors
+    /** @brief Builds a boundary from its string representation, reporting occured errors
      *
      * It is assumed that the boundary is stored as a quadruple of double, divided by ','.
      * @param[in] def The boundary definition to parse
@@ -72,8 +79,8 @@ private:
     /** @brief Writes an error message into the MessageHandler
      * @param[in] report Whether errors shall be written to msg handler's error instance
      * @param[in] what Name of the parsed object ("Shape", or "Boundary")
-     * @param[in] objecttype The name of the parsed object type the error occurred at
-     * @param[in] objectid The name of the parsed object type the error occurred at
+     * @param[in] objecttype The name of the parsed object type the error occured at
+     * @param[in] objectid The name of the parsed object type the error occured at
      * @param[out] desc Error description
      */
     static void emitError(bool report, const std::string& what, const std::string& objecttype,

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIXMLTrafficLightsHandler.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,12 +8,27 @@
 ///
 // Importer for traffic lights stored in XML
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <iostream>
@@ -33,7 +40,7 @@
 #include <utils/xml/SUMOSAXHandler.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
 #include <utils/common/ToString.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/options/OptionsCont.h>
@@ -51,14 +58,13 @@
 // method definitions
 // ===========================================================================
 NIXMLTrafficLightsHandler::NIXMLTrafficLightsHandler(
-    NBTrafficLightLogicCont& tlCont, NBEdgeCont& ec, bool ignoreUnknown) :
+    NBTrafficLightLogicCont& tlCont, NBEdgeCont& ec) :
     SUMOSAXHandler("xml-tllogics"),
     myTLLCont(tlCont),
     myEdgeCont(ec),
-    myCurrentTL(nullptr),
-    myResetPhases(false),
-    myIgnoreUnknown(ignoreUnknown)
-{ }
+    myCurrentTL(0),
+    myResetPhases(false) {
+}
 
 
 NIXMLTrafficLightsHandler::~NIXMLTrafficLightsHandler() {}
@@ -72,7 +78,7 @@ NIXMLTrafficLightsHandler::myStartElement(
             myCurrentTL = initTrafficLightLogic(attrs, myCurrentTL);
             break;
         case SUMO_TAG_PHASE:
-            if (myCurrentTL != nullptr) {
+            if (myCurrentTL != 0) {
                 if (myResetPhases) {
                     myCurrentTL->getLogic()->resetPhases();
                     myResetPhases = false;
@@ -87,14 +93,6 @@ NIXMLTrafficLightsHandler::myStartElement(
         case SUMO_TAG_DELETE:
             removeTlConnection(attrs);
             break;
-        case SUMO_TAG_PARAM:
-            if (myCurrentTL != nullptr) {
-                bool ok = true;
-                const std::string key = attrs.get<std::string>(SUMO_ATTR_KEY, nullptr, ok);
-                // circumventing empty string test
-                const std::string val = attrs.hasAttribute(SUMO_ATTR_VALUE) ? attrs.getString(SUMO_ATTR_VALUE) : "";
-                myCurrentTL->setParameter(key, val);
-            }
         default:
             break;
     }
@@ -105,7 +103,11 @@ void
 NIXMLTrafficLightsHandler::myEndElement(int element) {
     switch (element) {
         case SUMO_TAG_TLLOGIC:
-            myCurrentTL = nullptr;
+            if (!myCurrentTL) {
+                WRITE_ERROR("Unmatched closing tag for tlLogic.");
+            } else {
+                myCurrentTL = 0;
+            }
             break;
         default:
             break;
@@ -117,20 +119,20 @@ NBLoadedSUMOTLDef*
 NIXMLTrafficLightsHandler::initTrafficLightLogic(const SUMOSAXAttributes& attrs, NBLoadedSUMOTLDef* currentTL) {
     if (currentTL) {
         WRITE_ERROR("Definition of tlLogic '" + currentTL->getID() + "' was not finished.");
-        return nullptr;
+        return 0;
     }
     bool ok = true;
-    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
     std::string programID = attrs.getOpt<std::string>(SUMO_ATTR_PROGRAMID, id.c_str(), ok, "<unknown>");
     SUMOTime offset = attrs.hasAttribute(SUMO_ATTR_OFFSET) ? TIME2STEPS(attrs.get<double>(SUMO_ATTR_OFFSET, id.c_str(), ok)) : 0;
-    std::string typeS = attrs.getOpt<std::string>(SUMO_ATTR_TYPE, nullptr, ok,
+    std::string typeS = attrs.getOpt<std::string>(SUMO_ATTR_TYPE, 0, ok,
                         OptionsCont::getOptions().getString("tls.default-type"));
     TrafficLightType type;
     if (SUMOXMLDefinitions::TrafficLightTypes.hasString(typeS)) {
         type = SUMOXMLDefinitions::TrafficLightTypes.get(typeS);
     } else {
         WRITE_ERROR("Unknown traffic light type '" + typeS + "' for tlLogic '" + id + "'.");
-        return nullptr;
+        return 0;
     }
     // there are three scenarios to consider
     // 1) the tll.xml is loaded to update traffic lights defined in a net.xml:
@@ -141,26 +143,24 @@ NIXMLTrafficLightsHandler::initTrafficLightLogic(const SUMOSAXAttributes& attrs,
     //   there should be a definition with the same id but different programID
     const std::map<std::string, NBTrafficLightDefinition*>& programs = myTLLCont.getPrograms(id);
     if (programs.size() == 0) {
-        if (!myIgnoreUnknown) {
-            WRITE_ERROR("Cannot load traffic light program for unknown id '" + id + "', programID '" + programID + "'.");
-        }
-        return nullptr;
+        WRITE_ERROR("Cannot load traffic light program for unknown id '" + id + "', programID '" + programID + "'.");
+        return 0;
     }
     const std::string existingProgram = programs.begin()->first; // arbitrary for our purpose
     NBLoadedSUMOTLDef* loadedDef = dynamic_cast<NBLoadedSUMOTLDef*>(myTLLCont.getDefinition(id, programID));
-    if (loadedDef == nullptr) {
+    if (loadedDef == 0) {
         NBLoadedSUMOTLDef* oldDef = dynamic_cast<NBLoadedSUMOTLDef*>(myTLLCont.getDefinition(id, existingProgram));
-        if (oldDef == nullptr) {
+        if (oldDef == 0) {
             // case 2
             NBTrafficLightDefinition* newDef = dynamic_cast<NBOwnTLDef*>(myTLLCont.getDefinition(
                                                    id, NBTrafficLightDefinition::DefaultProgramID));
-            if (newDef == nullptr) {
+            if (newDef == 0) {
                 // the default program may have already been replaced with a loaded program
                 newDef = dynamic_cast<NBLoadedSUMOTLDef*>(myTLLCont.getDefinition(
                              id, NBTrafficLightDefinition::DefaultProgramID));
-                if (newDef == nullptr) {
+                if (newDef == 0) {
                     WRITE_ERROR("Cannot load traffic light program for unknown id '" + id + "', programID '" + programID + "'.");
-                    return nullptr;
+                    return 0;
                 }
             }
             assert(newDef != 0);
@@ -191,7 +191,6 @@ NIXMLTrafficLightsHandler::initTrafficLightLogic(const SUMOSAXAttributes& attrs,
             for (std::vector<NBNode*>::iterator it = nodes.begin(); it != nodes.end(); it++) {
                 loadedDef->addNode(*it);
             }
-            //std::cout << " case3 oldDef=" << oldDef->getDescription() << " loadedDef=" << loadedDef->getDescription() << "\n";
             myTLLCont.insert(loadedDef);
         }
     } else {
@@ -203,7 +202,7 @@ NIXMLTrafficLightsHandler::initTrafficLightLogic(const SUMOSAXAttributes& attrs,
         myResetPhases = true;
         return loadedDef;
     } else {
-        return nullptr;
+        return 0;
     }
 }
 
@@ -234,16 +233,16 @@ NIXMLTrafficLightsHandler::addTlConnection(const SUMOSAXAttributes& attrs) {
     }
     NBEdge::Connection c = *con_it;
     // read other  attributes
-    std::string tlID = attrs.getOpt<std::string>(SUMO_ATTR_TLID, nullptr, ok, "");
+    std::string tlID = attrs.getOpt<std::string>(SUMO_ATTR_TLID, 0, ok, "");
     if (tlID == "") {
         // we are updating an existing tl-controlled connection
         tlID = c.tlID;
         assert(tlID != "");
     }
-    int tlIndex = attrs.getOpt<int>(SUMO_ATTR_TLLINKINDEX, nullptr, ok, -1);
+    int tlIndex = attrs.getOpt<int>(SUMO_ATTR_TLLINKINDEX, 0, ok, -1);
     if (tlIndex == -1) {
         // we are updating an existing tl-controlled connection
-        tlIndex = c.tlLinkIndex;
+        tlIndex = c.tlLinkNo;
     }
 
     // register the connection with all definitions
@@ -271,7 +270,7 @@ NIXMLTrafficLightsHandler::addTlConnection(const SUMOSAXAttributes& attrs) {
 void
 NIXMLTrafficLightsHandler::removeTlConnection(const SUMOSAXAttributes& attrs) {
     bool ok = true;
-    std::string tlID = attrs.get<std::string>(SUMO_ATTR_TLID, nullptr, ok);
+    std::string tlID = attrs.get<std::string>(SUMO_ATTR_TLID, 0, ok);
     // does the traffic light still exist?
     const std::map<std::string, NBTrafficLightDefinition*>& programs = myTLLCont.getPrograms(tlID);
     if (programs.size() > 0) {
@@ -286,7 +285,7 @@ NIXMLTrafficLightsHandler::removeTlConnection(const SUMOSAXAttributes& attrs) {
         if (!ok) {
             return;
         }
-        int tlIndex = attrs.get<int>(SUMO_ATTR_TLLINKINDEX, nullptr, ok);
+        int tlIndex = attrs.get<int>(SUMO_ATTR_TLLINKINDEX, 0, ok);
 
         NBConnection conn(from, fromLane, to, toLane, tlIndex);
         // remove the connection from all definitions
@@ -307,9 +306,9 @@ NIXMLTrafficLightsHandler::removeTlConnection(const SUMOSAXAttributes& attrs) {
 NBEdge*
 NIXMLTrafficLightsHandler::retrieveEdge(
     const SUMOSAXAttributes& attrs, SumoXMLAttr attr, bool& ok) {
-    std::string edgeID = attrs.get<std::string>(attr, nullptr, ok);
+    std::string edgeID = attrs.get<std::string>(attr, 0, ok);
     NBEdge* edge = myEdgeCont.retrieve(edgeID, true);
-    if (edge == nullptr) {
+    if (edge == 0) {
         WRITE_ERROR("Unknown edge '" + edgeID + "' given in connection.");
         ok = false;
     }
@@ -320,7 +319,7 @@ NIXMLTrafficLightsHandler::retrieveEdge(
 int
 NIXMLTrafficLightsHandler::retrieveLaneIndex(
     const SUMOSAXAttributes& attrs, SumoXMLAttr attr, NBEdge* edge, bool& ok) {
-    int laneIndex = attrs.get<int>(attr, nullptr, ok);
+    int laneIndex = attrs.get<int>(attr, 0, ok);
     if (edge->getNumLanes() <= laneIndex) {
         WRITE_ERROR("Invalid lane index '" + toString(laneIndex) + "' for edge '" + edge->getID() + "'.");
         ok = false;

@@ -1,19 +1,23 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    osmBuild.py
+@author  Daniel Krajzewicz
+@author  Jakob Erdmann
+@author  Michael Behrisch
+@date    2009-08-01
+@version $Id$
 
-# @file    osmBuild.py
-# @author  Daniel Krajzewicz
-# @author  Jakob Erdmann
-# @author  Michael Behrisch
-# @date    2009-08-01
-# @version $Id$
+Builds a sumo network and polygons from a downloaded area from OpenStreetMap.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 
 import os
@@ -29,9 +33,7 @@ vclassRemove = {"passenger": ["--keep-edges.by-vclass", "passenger"],
                 "all": []}
 possibleVClassOptions = '|'.join(vclassRemove.keys())
 
-DEFAULT_NETCONVERT_OPTS = '''--geometry.remove,--roundabouts.guess,--ramps.guess,-v,--junctions.join,\
---tls.guess-signals,--tls.discard-simple,--tls.join,--output.original-names,--junctions.corner-detail,\
-5,--output.street-names'''
+DEFAULT_NETCONVERT_OPTS = "--geometry.remove,--roundabouts.guess,--ramps.guess,-v,--junctions.join,--tls.guess-signals,--tls.discard-simple,--tls.join,--output.original-names,--junctions.corner-detail,5,--output.street-names"
 
 
 optParser = optparse.OptionParser()
@@ -59,14 +61,6 @@ optParser.add_option("-y", "--polyconvert-options",
                      default="-v,--osm.keep-full-type", help="comma-separated options for polyconvert")
 
 
-def getRelative(dirname, option):
-    ld = len(dirname)
-    if option[:ld] == dirname:
-        return option[ld+1:]
-    else:
-        return option
-
-
 def build(args=None, bindir=None):
     (options, args) = optParser.parse_args(args=args)
 
@@ -84,17 +78,15 @@ def build(args=None, bindir=None):
         optParser.error('output directory "%s" does not exist' %
                         options.output_directory)
 
-    netconvert = sumolib.checkBinary('netconvert', bindir)
-    polyconvert = sumolib.checkBinary('polyconvert', bindir)
-
-    netconvertOpts = [netconvert]
+    netconvertOpts = [sumolib.checkBinary('netconvert', bindir)]
     if options.pedestrians:
         netconvertOpts += ['--sidewalks.guess', '--crossings.guess']
     if options.netconvert_typemap:
         netconvertOpts += ["-t", options.netconvert_typemap]
     netconvertOpts += options.netconvert_options.split(',') + ['--osm-files']
-    polyconvertOpts = ([polyconvert] + options.polyconvert_options.split(',') +
-                       ['--type-file', options.typemap, '--osm-files'])
+    polyconvertOpts = [sumolib.checkBinary('polyconvert', bindir)] + \
+        options.polyconvert_options.split(',') + \
+                      ['--type-file', options.typemap, '--osm-files']
 
     prefix = options.oldapi_prefix
     if prefix:  # used old API
@@ -111,24 +103,20 @@ def build(args=None, bindir=None):
     if options.prefix:
         prefix = options.prefix
 
-    netfile = prefix + '.net.xml'
+    basename = path.join(options.output_directory, prefix)
+    netfile = basename + '.net.xml'
     netconvertOpts += vclassRemove[options.vehicle_classes] + ["-o", netfile]
 
+    subprocess.call(netconvertOpts)
     # write config
-    cfg = prefix + ".netccfg"
-    # use relative paths where possible
-    netconvertOpts = [getRelative(options.output_directory, o) for o in netconvertOpts]
-    subprocess.call(netconvertOpts + ["--save-configuration", cfg], cwd=options.output_directory)
-    subprocess.call([netconvert, "-c", cfg], cwd=options.output_directory)
-
+    subprocess.call(netconvertOpts +
+                    ["--save-configuration", basename + ".netccfg"])
     if options.typemap:
+        polyconvertOpts += ["-n", netfile, "-o", basename + '.poly.xml']
+        subprocess.call(polyconvertOpts)
         # write config
-        cfg = prefix + ".polycfg"
-        polyconvertOpts += ["-n", netfile, "-o", prefix + '.poly.xml']
-        # use relative paths where possible
-        polyconvertOpts = [getRelative(options.output_directory, o) for o in polyconvertOpts]
-        subprocess.call(polyconvertOpts + ["--save-configuration", cfg], cwd=options.output_directory)
-        subprocess.call([polyconvert, "-c", cfg], cwd=options.output_directory)
+        subprocess.call(polyconvertOpts +
+                        ["--save-configuration", basename + ".polycfg"])
 
 
 if __name__ == "__main__":

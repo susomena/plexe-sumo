@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NGNet.h
 /// @author  Markus Hartinger
 /// @author  Daniel Krajzewicz
@@ -16,6 +8,17 @@
 ///
 // The class storing the generated network
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NGNet_h
 #define NGNet_h
 
@@ -23,9 +26,12 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <utils/distribution/Distribution_Parameterized.h>
 #include "NGEdge.h"
 #include "NGNode.h"
 
@@ -111,9 +117,10 @@ public:
      * @param[in] spaceX The space between nodes in x-direction
      * @param[in] spaceY The space between nodes in y-direction
      * @param[in] attachLength The length of streets attached at the border
+     * @param[in] alphaIDs Whether to use alphanumerial node ids
      * @see NGNet::connect
      */
-    void createChequerBoard(int numX, int numY, double spaceX, double spaceY, double attachLength);
+    void createChequerBoard(int numX, int numY, double spaceX, double spaceY, double attachLength, bool alphaIDs);
 
 
     /** @brief Creates a spider network
@@ -192,18 +199,10 @@ private:
      */
     void connect(NGNode* node1, NGNode* node2);
 
-    /// @brief return a letter code for the given integer index
-    std::string alphabeticalCode(int i, int iMax);
-
-    /// @brief get distribution from option
-    static Distribution_Parameterized getDistribution(const std::string& option);
 
 private:
     /// @brief The last ID given to node or link
     int myLastID;
-
-    /// @brief Whether to use alphanumericalIDs
-    const bool myAlphaIDs;
 
     /// @brief The builder used to build NB*-structures
     NBNetBuilder& myNetBuilder;

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOSAXAttributes.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Encapsulated SAX-Attributes
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2007-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef SUMOSAXAttributes_h
 #define SUMOSAXAttributes_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -77,7 +84,7 @@ public:
      * @param[in] objectid The name of the parsed object; used for error message generation
      * @param[out] ok Whether the value could be read
      * @param[in] report Whether errors shall be written to msg handler's error instance
-     * @return The read value if given and correct; -1 if an error occurred
+     * @return The read value if given and correct; -1 if an error occured
      */
     template <typename T>
     T get(int attr, const char* objectid, bool& ok, bool report = true) const;
@@ -96,7 +103,7 @@ public:
      * @param[out] ok Whether the value could be read
      * @param[in] defaultValue The value to return if the attribute is not within the element
      * @param[in] report Whether errors shall be written to msg handler's error instance
-     * @return The read value if given and correct; the default value if the attribute does not exist;  -1 if an error occurred
+     * @return The read value if given and correct; the default value if the attribute does not exist;  -1 if an error occured
      */
     template <typename T>
     T getOpt(int attr, const char* objectid, bool& ok, T defaultValue, bool report = true) const;
@@ -116,7 +123,7 @@ public:
      * @param[in] objectid The name of the parsed object; used for error message generation
      * @param[out] ok Whether the value could be read
      * @param[in] report Whether errors shall be written to msg handler's error instance
-     * @return The read value if given and correct; -1 if an error occurred
+     * @return The read value if given and correct; -1 if an error occured
      */
     SUMOTime getSUMOTimeReporting(int attr, const char* objectid, bool& ok,
                                   bool report = true) const;
@@ -139,7 +146,7 @@ public:
      * @param[out] ok Whether the value could be read
      * @param[in] defaultValue The value to return if the attribute is not within the element
      * @param[in] report Whether errors shall be written to msg handler's error instance
-     * @return The read value if given and correct; the default value if the attribute does not exist;  -1 if an error occurred
+     * @return The read value if given and correct; the default value if the attribute does not exist;  -1 if an error occured
      */
     SUMOTime getOptSUMOTimeReporting(int attr, const char* objectid, bool& ok,
                                      SUMOTime defaultValue, bool report = true) const;
@@ -315,11 +322,6 @@ public:
      */
     virtual SumoXMLNodeType getNodeType(bool& ok) const = 0;
 
-    /**
-     * @brief Returns the right-of-way method
-     */
-    virtual RightOfWay getRightOfWay(bool& ok) const = 0;
-
 
     /**
      * @brief Returns the value of the named attribute
@@ -333,29 +335,23 @@ public:
     /** @brief Tries to read given attribute assuming it is a PositionVector
      *
      * @param[in] attr The id of the attribute to read
-     * @return The read value if given and not empty; empty position vector if an error occurred
+     * @return The read value if given and not empty; empty position vector if an error occured
      */
     virtual PositionVector getShape(int attr) const = 0;
 
     /** @brief Tries to read given attribute assuming it is a Boundary
      *
      * @param[in] attr The id of the attribute to read
-     * @return The read value if given and not empty; empty Boundary if an error occurred
+     * @return The read value if given and not empty; empty Boundary if an error occured
      */
     virtual Boundary getBoundary(int attr) const = 0;
 
     /** @brief Tries to read given attribute assuming it is a string vector
      *
-     * The behavior is similar to Python's string.split(), so multiple consecutive
-     *  whitespace do not generate empty strings and leading and trailing whitespace is silently omitted.
-     *
      * @param[in] attr The id of the attribute to read
-     * @return The read value if given and not empty; empty vector if an error occurred
+     * @return The read value if given and not empty; empty vector if an error occured
      */
-    const std::vector<std::string> getStringVector(int attr) const;
-
-    /// @brief convenience function to avoid the default argument and the template stuff at getOpt<>
-    const std::vector<std::string> getOptStringVector(int attr, const char* objectid, bool& ok, bool report = true) const;
+    virtual std::vector<std::string> getStringVector(int attr) const = 0;
     //}
 
 
@@ -373,10 +369,6 @@ public:
      */
     virtual void serialize(std::ostream& os) const = 0;
 
-    /** @brief Retrieves all attribute names
-     */
-    virtual std::vector<std::string> getAttributeNames() const = 0;
-
 
     /// @brief return the objecttype to which these attributes belong
     const std::string& getObjectType() const {
@@ -393,11 +385,37 @@ public:
     static const std::string ENCODING;
 
 
+    /** @brief Splits the given string
+     *
+     * Spaces, ",", and ";" are assumed to be separator characters.
+     * Though, in the case a "," or a ";" occurs, a warning is generated (once).
+     *
+     * @param[in] def The string to split
+     * @param[out] into The vector to fill
+     */
+    static void parseStringVector(const std::string& def, std::vector<std::string>& into);
+
+
+    /** @brief Splits the given string, stores it in a set
+     *
+     * Spaces, ",", and ";" are assumed to be separator characters.
+     * Though, in the case a "," or a ";" occurs, a warning is generated (once).
+     *
+     * @param[in] def The string to split
+     * @param[out] into The set to fill
+     */
+    static void parseStringSet(const std::string& def, std::set<std::string>& into);
+
+
 protected:
     template <typename T> T getInternal(const int attr) const;
     void emitUngivenError(const std::string& attrname, const char* objectid) const;
     void emitEmptyError(const std::string& attrname, const char* objectid) const;
     void emitFormatError(const std::string& attrname, const std::string& type, const char* objectid) const;
+
+private:
+    /// @brief Information whether the usage of a deprecated divider was reported
+    static bool myHaveInformedAboutDeprecatedDivider;
 
 private:
     /// @brief Invalidated copy constructor.
@@ -420,51 +438,6 @@ inline std::ostream& operator<<(std::ostream& os, const SUMOSAXAttributes& src) 
 
 template<typename X> struct invalid_return {
     static const X value;
-    static const std::string type;
-};
-
-template<> struct invalid_return<bool> {
-    static const bool value;
-    static const std::string type;
-};
-
-template<> struct invalid_return<int> {
-    static const int value;
-    static const std::string type;
-};
-
-template<> struct invalid_return<long long int> {
-    static const long long int value;
-    static const std::string type;
-};
-
-template<> struct invalid_return<double> {
-    static const double value;
-    static const std::string type;
-};
-
-template<> struct invalid_return<std::string> {
-    static const std::string value;
-    static const std::string type;
-};
-
-template<> struct invalid_return<RGBColor> {
-    static const RGBColor value;
-    static const std::string type;
-};
-
-template<> struct invalid_return<PositionVector> {
-    static const PositionVector value;
-    static const std::string type;
-};
-
-template<> struct invalid_return<Boundary> {
-    static const Boundary value;
-    static const std::string type;
-};
-
-template<> struct invalid_return<std::vector<std::string> > {
-    static const std::vector<std::string> value;
     static const std::string type;
 };
 

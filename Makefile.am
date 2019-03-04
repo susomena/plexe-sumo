@@ -1,6 +1,6 @@
 SUBDIRS = src unittest bin
 
-EXTRA_DIST = README.md ChangeLog AUTHORS CONTRIBUTING.md LICENSE NOTICE.md sumo.doxyconf
+EXTRA_DIST = README ChangeLog AUTHORS COPYING INSTALL NEWS sumo.doxyconf
 
 doc: pydoc doxygen userdoc javadoc
 
@@ -33,8 +33,10 @@ userdoc:
 javadoc:
 	rm -rf docs/javadoc
 	mkdir docs/javadoc
-	ant -f tools/contributed/traas/build.xml javadoc || true
-	mv tools/contributed/traas/javadoc docs/javadoc/traas || true
+	mvn --batch-mode -f tools/contributed/traci4j/pom.xml javadoc:javadoc
+	mv tools/contributed/traci4j/target/site/apidocs docs/javadoc/traci4j
+	ant -f tools/contributed/traas/build.xml javadoc
+	mv tools/contributed/traas/javadoc docs/javadoc/traas
 
 man:
 	rm -rf docs/man
@@ -62,12 +64,13 @@ dist-hook:
 	    find tests/complex/tutorial -regex ".*\.\(xml\|txt\|sumocfg\|netccfg\|py\|osm\)" -print0 | xargs -0 cp -v --parents --target-directory $(abs_distdir) ; \
 	    mv -v ${abs_distdir}/tests/complex/tutorial $(abs_distdir)/docs ; \
 	    rm -rf $(abs_distdir)/tests ; \
-	    tools/extractTest.py -i -f tests/examples.txt -o $(abs_distdir) ; \
-	    find build -regex ".*\.\(sh\|csh\|desktop\|png\|spec\|cmake\)" -print0 | xargs -0 cp --parents --target-directory $(abs_distdir) ; \
-	    find data -regex ".*\.\(xsd\|xml\|csv\|veh\|obj\|mtl\|ttf\)" -print0 | xargs -0 cp --parents --target-directory $(abs_distdir) ; \
-	    find tools -regex ".*\.\(py\|java\|xml\|sumocfg\|gif\|html\|png\|js\|css\)" -print0 | xargs -0 cp --parents --target-directory $(abs_distdir) ; \
-	    find . -name CMakeLists.txt -print0 | xargs -0 cp --parents --target-directory $(abs_distdir) ; \
-	    cp --parents src/*.cmake $(abs_distdir) ; \
+	    tools/extractTest.py -i -f tests/examples.txt -o $(abs_distdir)/docs ; \
+	    find build -regex ".*\.\(vcxproj\|vcxproj\.filters\|props\|sln\|spec\)" -print0 | xargs -0 cp --parents --target-directory $(abs_distdir) ; \
+	    find data -regex ".*\.\(xsd\|xml\|csv\|veh\|obj\|mtl\)" -print0 | xargs -0 cp --parents --target-directory $(abs_distdir) ; \
+	    ( svn export --force tools $(distdir)/tools && cd $(distdir) && find tools -type f -print0 > ../tools_filelist; true ) ; \
+	    xargs -0 cp --parents --target-directory $(abs_distdir) < tools_filelist ; \
+	    find $(abs_distdir)/tools -name  "*.jar" | xargs rm ; \
+	    cp tools_filelist $(abs_distdir) ; \
 	fi;
 
 dist-doc: doc
@@ -80,7 +83,7 @@ dist-doc: doc
 	rmdir $(distdir)/tests
 	find docs/doxygen -name "*.png" | xargs rm
 	cp -r docs/pydoc docs/doxygen docs/userdoc docs/javadoc $(distdir)/docs
-	tools/extractTest.py -i -f tests/examples.txt -o $(distdir)
+	tools/extractTest.py -i -f tests/examples.txt -o $(distdir)/docs
 	tar -czf $(PACKAGE)-doc-$(VERSION).tar.gz $(distdir)
 	rm -f $(PACKAGE)-doc-$(VERSION).zip
 	zip -r $(PACKAGE)-doc-$(VERSION).zip $(distdir)
@@ -94,7 +97,7 @@ dist-tests:
 	tar -czf $(PACKAGE)-tests-$(VERSION).tar.gz $(distdir)
 	$(am__remove_distdir)
 
-dist-complete: dist dist-doc dist-tests traas cadyts
+dist-complete: dist dist-doc dist-tests traas traci4j
 	mv $(PACKAGE)-$(VERSION).tar.gz $(PACKAGE)-src-$(VERSION).tar.gz
 	mv $(PACKAGE)-$(VERSION).zip $(PACKAGE)-src-$(VERSION).zip
 	tar -xzf $(PACKAGE)-doc-$(VERSION).tar.gz $(distdir)
@@ -113,12 +116,16 @@ examples:
 	tools/extractTest.py -x -f tests/examples.txt
 
 traas:
-	ant -f tools/contributed/traas/build.xml clean release || true
-	cp tools/contributed/traas/dist/TraaS.jar bin || true
+	ant -f tools/contributed/traas/build.xml clean release
+	cp tools/contributed/traas/dist/TraaS.jar bin
 
-cadyts:
-	mvn --batch-mode -f tools/contributed/calibration/pom.xml clean install || true
-	cp tools/contributed/calibration/*/target/*.jar bin || true
+traci4j:
+	mvn --batch-mode -f tools/contributed/traci4j/pom.xml clean install || true
+	cp tools/contributed/traci4j/target/*.jar bin || true
+
+trafficmodeler:
+	cd tools/contributed/trafficmodeler && ./build.sh
+	cp tools/contributed/trafficmodeler/jar/*.jar bin
 
 sumo$(EXEEXT) netconvert$(EXEEXT) \
         netgenerate$(EXEEXT) duarouter$(EXEEXT) \

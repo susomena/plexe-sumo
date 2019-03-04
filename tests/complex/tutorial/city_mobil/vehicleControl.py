@@ -1,19 +1,23 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    vehicleControl.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@author  Lena Kalleske
+@date    2008-07-21
+@version $Id$
 
-# @file    vehicleControl.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @author  Lena Kalleske
-# @date    2008-07-21
-# @version $Id$
+Control the CityMobil parking lot via TraCI.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import subprocess
@@ -22,19 +26,12 @@ import sys
 import os
 from optparse import OptionParser
 
-from constants import PREFIX, DOUBLE_ROWS, STOP_POS, SLOTS_PER_ROW, SLOT_LENGTH, BUS_CAPACITY, BREAK_DELAY
-from constants import CYBER_CAPACITY, PORT
+from constants import *  # sys.path is modified here
+
+import traci
+import traci.constants as tc
+
 import statistics
-
-if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:
-    sys.exit("please declare environment variable 'SUMO_HOME'")
-
-import traci  # noqa
-import traci.constants as tc  # noqa
-import sumolib  # noqa
 
 
 class Manager:
@@ -73,7 +70,6 @@ class Setting:
     verbose = False
     cyber = False
 
-
 setting = Setting()
 occupancy = {}
 vehicleStatus = {}
@@ -94,9 +90,9 @@ def init(manager, forTest=False):
     optParser.add_option("-b", "--break", type="int", dest="breakstep", metavar="TIMESTEP",
                          help="let a vehicle break for %s seconds at TIMESTEP" % BREAK_DELAY)
     (options, args) = optParser.parse_args()
-    sumoExe = os.environ.get("SUMO_BINARY", os.path.join(os.environ['SUMO_HOME'], 'bin', 'sumo'))
+    sumoExe = SUMO
     if options.gui:
-        sumoExe = os.environ.get("GUISIM_BINARY", os.path.join(os.environ['SUMO_HOME'], 'bin', 'sumo-gui'))
+        sumoExe = SUMOGUI
     sumoConfig = "%s%02i.sumocfg" % (PREFIX, options.demand)
     if options.cyber:
         sumoConfig = "%s%02i_cyber.sumocfg" % (PREFIX, options.demand)
@@ -132,7 +128,7 @@ def getPosition(vehicleID):
 
 
 def stopAt(vehicleID, edge, pos=None):
-    if pos is None:
+    if pos == None:
         pos = STOP_POS
         if edge.endswith("out") or edge.endswith("in"):
             pos = 90.
@@ -146,7 +142,7 @@ def stopAt(vehicleID, edge, pos=None):
     vehicleStatus[vehicleID].targetPos = pos
 
 
-def leaveStop(vehicleID, newTarget=None, delay=0):
+def leaveStop(vehicleID, newTarget=None, delay=0.):
     v = vehicleStatus[vehicleID]
     if newTarget:
         traci.vehicle.changeTarget(vehicleID, newTarget)
@@ -162,7 +158,7 @@ def _rerouteCar(vehicleID):
         for idx in range(SLOTS_PER_ROW):
             for dir in ["l", "r"]:
                 slotEdge = "slot%s-%s%s" % (rowIdx, idx, dir)
-                if slotEdge not in occupancy:
+                if not slotEdge in occupancy:
                     occupancy[slotEdge] = vehicleID
                     stopAt(vehicleID, slotEdge, SLOT_LENGTH - 5.)
                     return
@@ -196,7 +192,7 @@ def _checkInitialPositions(vehicleID, edge, pos):
         elif "foot" in edge:
             traci.vehicle.setStop(vehicleID, "-" + edge)
             parkEdge = edge.replace("foot", "slot")
-            if parkEdge not in persons:
+            if not parkEdge in persons:
                 persons[parkEdge] = []
             persons[parkEdge].append(vehicleID)
             vehicleStatus[vehicleID].parking = True
@@ -212,7 +208,7 @@ def doStep():
         print("step", setting.step)
     traci.simulationStep()
     moveNodes = []
-    for veh, subs in traci.vehicle.getAllSubscriptionResults().items():
+    for veh, subs in traci.vehicle.getSubscriptionResults().iteritems():
         moveNodes.append(
             (veh, subs[tc.VAR_ROAD_ID], subs[tc.VAR_LANEPOSITION]))
     departed = traci.simulation.getSubscriptionResults(

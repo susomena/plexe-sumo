@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    emissionsDrivingCycle_main.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,18 +7,33 @@
 ///
 // Main for an emissions calculator
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
 #endif
 
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <iostream>
 #include <string>
 #include <ctime>
@@ -39,7 +46,7 @@
 #include <utils/common/ToString.h>
 #include <utils/xml/XMLSubSys.h>
 #include <utils/common/FileHelpers.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/StringTokenizer.h>
 #include <utils/common/StringUtils.h>
 #include <utils/emissions/PollutantsInterface.h>
@@ -61,8 +68,8 @@ main(int argc, char** argv) {
     // build options
     OptionsCont& oc = OptionsCont::getOptions();
     //  give some application descriptions
-    oc.setApplicationDescription("Computes emissions by driving a time line using SUMO's emission models.");
-    oc.setApplicationName("emissionsDrivingCycle", "Eclipse SUMO emissionsDrivingCycle Version " VERSION_STRING);
+    oc.setApplicationDescription("Computes emissions by driving a time line.");
+    oc.setApplicationName("emissionsDrivingCycle", "SUMO emissionsDrivingCycle Version " VERSION_STRING);
     //  add options
 
     SystemFrame::addConfigurationOptions(oc);
@@ -151,18 +158,18 @@ main(int argc, char** argv) {
         if (!oc.isSet("output-file") && (oc.isSet("timeline-file") || !oc.isSet("emission-output"))) {
             throw ProcessError("The output file must be given.");
         }
-        std::ostream* out = nullptr;
+        std::ostream* out = 0;
         if (oc.isSet("output-file")) {
             out = new std::ofstream(oc.getString("output-file").c_str());
         }
         OutputDevice::createDeviceByOption("emission-output", "emission-export", "emission_file.xsd");
-        OutputDevice* xmlOut = nullptr;
+        OutputDevice* xmlOut = 0;
         if (oc.isSet("emission-output")) {
             xmlOut = &OutputDevice::getDeviceByOption("emission-output");
-        } else if (out == nullptr) {
+        } else if (out == 0) {
             out = &std::cout;
         }
-        std::ostream* sumOut = nullptr;
+        std::ostream* sumOut = 0;
         if (oc.isSet("sum-output")) {
             sumOut = new std::ofstream(oc.getString("sum-output").c_str());
             (*sumOut) << "Vehicle,Cycle,Time,Speed,Gradient,Acceleration,FC,FCel,CO2,NOx,CO,HC,PM" << std::endl;
@@ -191,10 +198,10 @@ main(int argc, char** argv) {
                 StringTokenizer st(StringUtils::prune(line), oc.getString("timeline-file.separator"));
                 if (st.hasNext()) {
                     try {
-                        double t = StringUtils::toDouble(st.next());
+                        double t = TplConvert::_2double<char>(st.next().c_str());
                         double v = 0;
                         if (st.hasNext()) {
-                            v = StringUtils::toDouble(st.next());
+                            v = TplConvert::_2double<char>(st.next().c_str());
                         } else {
                             v = t;
                             t = time;
@@ -202,8 +209,8 @@ main(int argc, char** argv) {
                         if (inKMH) {
                             v /= 3.6;
                         }
-                        double a = !computeA && st.hasNext() ? StringUtils::toDouble(st.next()) : TrajectoriesHandler::INVALID_VALUE;
-                        double s = haveSlope && st.hasNext() ? StringUtils::toDouble(st.next()) : TrajectoriesHandler::INVALID_VALUE;
+                        double a = !computeA && st.hasNext() ? TplConvert::_2double<char>(st.next().c_str()) : TrajectoriesHandler::INVALID_VALUE;
+                        double s = haveSlope && st.hasNext() ? TplConvert::_2double<char>(st.next().c_str()) : TrajectoriesHandler::INVALID_VALUE;
                         if (handler.writeEmissions(*out, "", defaultClass, t, v, a, s)) {
                             l += v;
                             totalA += a;
@@ -221,7 +228,7 @@ main(int argc, char** argv) {
                 std::cout << "sums" << std::endl
                           << "length:" << l << std::endl;
             }
-            if (sumOut != nullptr) {
+            if (sumOut != 0) {
                 (*sumOut) << oc.getString("emission-class") << "," << lr.getFileName() << "," << time << ","
                           << (l / time * 3.6) << "," << (totalS / time) << "," << (totalA / time) << ",";
                 handler.writeNormedSums(*sumOut, "", l);
@@ -233,7 +240,6 @@ main(int argc, char** argv) {
         if (!quiet) {
             handler.writeSums(std::cout, "");
         }
-        delete sumOut;
     } catch (InvalidArgument& e) {
         MsgHandler::getErrorInstance()->inform(e.what());
         MsgHandler::getErrorInstance()->inform("Quitting (on error).", false);

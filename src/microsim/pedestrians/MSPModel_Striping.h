@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSPModel_Striping.h
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
@@ -15,13 +7,28 @@
 ///
 // The pedestrian following model (prototype)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSPModel_Striping_h
 #define MSPModel_Striping_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <limits>
@@ -62,9 +69,6 @@ public:
     /// @brief register the given person as a pedestrian
     PedestrianState* add(MSPerson* person, MSPerson::MSPersonStage_Walking* stage, SUMOTime now);
 
-    /// @brief put the given state on lane
-    void add(PedestrianState* pState, const MSLane* lane);
-
     /// @brief remove the specified person from the pedestrian simulation
     void remove(PedestrianState* state);
 
@@ -81,10 +85,6 @@ public:
 
     /// @brief whether the given lane has pedestrians on it
     bool hasPedestrians(const MSLane* lane);
-
-    /// @brief whether movements on intersections are modelled
-    //// @note function declared as member for sake of inheritance (delegates to static function)
-    bool usingInternalLanes();
 
     /// @brief returns the next pedestrian beyond minPos that is laterally between minRight and maxLeft or 0
     PersonDist nextBlocking(const MSLane* lane, double minPos, double minRight, double maxLeft, double stopTime = 0);
@@ -272,10 +272,6 @@ protected:
         SUMOTime getWaitingTime(const MSPerson::MSPersonStage_Walking& stage, SUMOTime now) const;
         double getSpeed(const MSPerson::MSPersonStage_Walking& stage) const;
         const MSEdge* getNextEdge(const MSPerson::MSPersonStage_Walking& stage) const;
-        void moveToXY(MSPerson* p, Position pos, MSLane* lane, double lanePos,
-                      double lanePosLat, double angle, int routeOffset,
-                      const ConstMSEdgeVector& edges, SUMOTime t);
-
         /// @}
 
         PState(MSPerson* person, MSPerson::MSPersonStage_Walking* stage, const MSLane* lane);
@@ -303,10 +299,6 @@ protected:
         WalkingAreaPath* myWalkingAreaPath;
         /// @brief whether the person is jammed
         bool myAmJammed;
-        /// @brief remote-controlled position
-        Position myRemoteXYPos;
-        /// @brief cached angle
-        mutable double myAngle;
 
         /// @brief return the minimum position on the lane
         double getMinX(const bool includeMinGap = true) const;
@@ -348,9 +340,6 @@ protected:
 
         /// @brief replace obstacles in the first vector with obstacles from the second if they are closer to me
         void mergeObstacles(Obstacles& into, const Obstacles& obs2);
-
-        /// @brief replace obstacles in the first vector with obstacles from the second if they are closer in the given direction
-        static void mergeObstacles(Obstacles& into, const Obstacles& obs2, int dir, int offset);
 
         /// @brief whether the pedestrian may ignore a red light
         bool ignoreRed(const MSLink* link) const;
@@ -448,21 +437,16 @@ private:
     static int getStripeOffset(int origStripes, int destStripes, bool addRemainder);
 
     ///@brief add vehicles driving across
-    static bool addCrossingVehs(const MSLane* crossing, int stripes, double lateral_offset, int dir, Obstacles& crossingVehs, bool prio);
-
-    ///@brief retrieve vehicle obstacles on the given lane
-    static Obstacles getVehicleObstacles(const MSLane* lane, int dir, PState* ped = 0);
-
-    static bool usingInternalLanesStatic();
+    static bool addCrossingVehs(const MSLane* crossing, int stripes, double lateral_offset, int dir, Obstacles& crossingVehs);
 private:
+    /// @brief the MovePedestrians command that is registered
+    MovePedestrians* myCommand;
+
     /// @brief the total number of active pedestrians
     int myNumActivePedestrians;
 
     /// @brief store of all lanes which have pedestrians on them
     ActiveLanes myActiveLanes;
-
-    /// @brief whether an event for pedestrian processing was added
-    bool myAmActive;
 
     /// @brief store for walkinArea elements
     static WalkingAreaPaths myWalkingAreaPaths;

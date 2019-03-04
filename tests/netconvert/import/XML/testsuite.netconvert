@@ -1,6 +1,3 @@
-# Tests parsing of stopOffsets (lane / edge child elements)
-stopOffsets
-
 # Tests for using types
 types
 
@@ -67,6 +64,9 @@ load_location
 # tests for the generated junction logic
 junctionLogic
 
+# test building static tls programs for different junction types
+tlsPrograms
+
 # tests for roundabouts specified via xml
 roundabout
 
@@ -75,7 +75,5 @@ node_radius
 
 # set a non-default node-radius
 node_radius_default
-connection_guessing
 
-# import params from plain xml
-params
+connection_guessing

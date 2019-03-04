@@ -1,23 +1,24 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    extractTest.py
-# @author  Daniel Krajzewicz
-# @author  Jakob Erdmann
-# @author  Michael Behrisch
-# @date    2009-07-08
-# @version $Id$
-
 """
+@file    extractTest.py
+@author  Daniel Krajzewicz
+@author  Jakob Erdmann
+@author  Michael Behrisch
+@date    2009-07-08
+@version $Id$
+
 Extract all files for a test case into a new dir.
 It may copy more files than needed because it copies everything
 that is mentioned in the config under copy_test_path.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR/TS, Germany
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -25,7 +26,9 @@ import os
 import sys
 from os.path import join
 import optparse
+import os
 import glob
+import sys
 import shutil
 import subprocess
 from collections import defaultdict
@@ -35,6 +38,7 @@ SUMO_HOME = os.path.dirname(THIS_DIR)
 sys.path.append(join(SUMO_HOME, "tools"))
 
 from sumolib import checkBinary  # noqa
+os.environ["PATH"] += os.pathsep + join(SUMO_HOME, 'bin')
 
 # cannot use ':' because it is a component of absolute paths on windows
 SOURCE_DEST_SEP = ';'
@@ -46,12 +50,10 @@ def get_options(args=None):
         "-o", "--output", default=".", help="send output to directory")
     optParser.add_option(
         "-f", "--file", help="read list of source and target dirs from")
-    optParser.add_option(
-        "-p", "--python-script", help="name of a python script to generate for a batch run")
     optParser.add_option("-i", "--intelligent-names", dest="names", action="store_true",
                          default=False, help="generate cfg name from directory name")
-    optParser.add_option("-v", "--verbose", action="store_true", default=False, help="more information")
-    optParser.add_option("-a", "--application", help="sets the application to be used")
+    optParser.add_option(
+        "-a", "--application", help="sets the application to be used")
     optParser.add_option("-s", "--skip-configuration",
                          dest="skip_configuration", default=False, action="store_true",
                          help="skips creation of an application config from the options.app file")
@@ -94,19 +96,14 @@ def main(options):
         for line in open(options.file):
             line = line.strip()
             if line and line[0] != '#':
-                ls = line.split(SOURCE_DEST_SEP) + [""]
-                ls[0] = join(dirname, ls[0])
-                ls[1] = join(dirname, ls[1])
-                targets.append(ls[:3])
+                l = line.split(SOURCE_DEST_SEP) + [""]
+                l[0] = join(dirname, l[0])
+                l[1] = join(dirname, l[1])
+                targets.append(l[:3])
     for val in options.args:
         source_and_maybe_target = val.split(SOURCE_DEST_SEP) + ["", ""]
         targets.append(source_and_maybe_target[:3])
 
-    if options.python_script:
-        if not os.path.exists(os.path.dirname(options.python_script)):
-            os.makedirs(os.path.dirname(options.python_script))
-        pyBatch = open(options.python_script, 'w')
-        pyBatch.write('import subprocess,sys\nfor p in [\n')
     for source, target, app in targets:
         outputFiles = glob.glob(join(source, "output.[0-9a-z]*"))
         # print source, target, outputFiles
@@ -120,7 +117,7 @@ def main(options):
             elif app in appName:
                 appName = set([app])
             else:
-                print(("Skipping %s because the application was not unique (found %s).") % (
+                print("Skipping %s because the application was not unique (found %s)." % (
                     source, appName), file=sys.stderr)
                 continue
         app = next(iter(appName))
@@ -156,16 +153,13 @@ def main(options):
         net = None
         skip = False
         appOptions = []
-        for f in reversed(optionsFiles):
+        for f in optionsFiles:
             for o in open(f).read().split():
                 if skip:
                     skip = False
                     continue
                 if o == "--xml-validation" and options.skip_validation:
                     skip = True
-                    continue
-                if o == "{CLEAR}":
-                    appOptions = []
                     continue
                 appOptions.append(o)
                 if "=" in o:
@@ -197,22 +191,6 @@ def main(options):
                                     toCopy, join(testPath, os.path.basename(toCopy)), merge, exclude)
                         else:
                             shutil.copy2(toCopy, testPath)
-        if options.python_script:
-            if app == "netgen":
-                call = ["netgenerate"] + appOptions
-            elif app == "tools":
-                call = ["python"] + appOptions
-                call[1] = join(SUMO_HOME, call[1])
-            elif app == "complex":
-                call = ["python"]
-                for o in appOptions:
-                    if o.endswith(".py"):
-                        call.insert(1, os.path.join(".", os.path.basename(o)))
-                    else:
-                        call.append(o)
-            else:
-                call = [join(SUMO_HOME, "bin", app)] + appOptions
-            pyBatch.write('    subprocess.Popen([r"%s"], cwd=r"%s"),\n' % ('", r"'.join(call), testPath))
         if options.skip_configuration:
             continue
         oldWorkDir = os.getcwd()
@@ -222,23 +200,20 @@ def main(options):
             appOptions += ['--save-configuration', '%s.%scfg' %
                            (nameBase, app[:4])]
             if app == "netgen":
-                # binary is now called differently but app still has the old name
+                # binary is now called differently but app still has the old
+                # name
                 app = "netgenerate"
-            if options.verbose:
-                print(("calling %s for testPath '%s' with  options '%s'") %
-                      (checkBinary(app), testPath, " ".join(appOptions)))
             subprocess.call([checkBinary(app)] + appOptions)
         elif app == "tools":
             if os.name == "posix" or options.file:
                 tool = join("$SUMO_HOME", appOptions[-1])
-                open(nameBase + ".sh", "w").write(tool + " " + " ".join(appOptions[:-1]))
+                open(nameBase + ".sh", "w").write(tool +
+                                                  " " + " ".join(appOptions[:-1]))
             if os.name != "posix" or options.file:
                 tool = join("%SUMO_HOME%", appOptions[-1])
-                open(nameBase + ".bat", "w").write(tool + " " + " ".join(appOptions[:-1]))
+                open(nameBase + ".bat", "w").write(tool +
+                                                   " " + " ".join(appOptions[:-1]))
         os.chdir(oldWorkDir)
-    if options.python_script:
-        pyBatch.write(']:\n    if p.wait() != 0:\n        sys.exit(1)\n')
-
 
 if __name__ == "__main__":
     main(get_options())

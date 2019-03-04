@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    OutputDevice.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Static storage of an output device and its base (abstract) implementation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include <fstream>
@@ -34,7 +41,7 @@
 #include "OutputDevice_CERR.h"
 #include "OutputDevice_Network.h"
 #include "PlainXMLFormatter.h"
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/common/FileHelpers.h>
 #include <utils/common/ToString.h>
@@ -58,7 +65,7 @@ OutputDevice::getDevice(const std::string& name) {
         return *myOutputDevices[name];
     }
     // build the device
-    OutputDevice* dev = nullptr;
+    OutputDevice* dev = 0;
     // check whether the device shall print to stdout
     if (name == "stdout") {
         dev = OutputDevice_COUT::getDevice();
@@ -66,7 +73,7 @@ OutputDevice::getDevice(const std::string& name) {
         dev = OutputDevice_CERR::getDevice();
     } else if (FileHelpers::isSocket(name)) {
         try {
-            int port = StringUtils::toInt(name.substr(name.find(":") + 1));
+            int port = TplConvert::_2int(name.substr(name.find(":") + 1).c_str());
             dev = new OutputDevice_Network(name.substr(0, name.find(":")), port);
         } catch (NumberFormatException&) {
             throw IOError("Given port number '" + name.substr(name.find(":") + 1) + "' is not numeric.");
@@ -124,7 +131,7 @@ OutputDevice::getDeviceByOption(const std::string& optionName) {
 
 
 void
-OutputDevice::closeAll(bool keepErrorRetrievers) {
+OutputDevice::closeAll() {
     std::vector<OutputDevice*> errorDevices;
     std::vector<OutputDevice*> nonErrorDevices;
     for (std::map<std::string, OutputDevice*>::iterator i = myOutputDevices.begin(); i != myOutputDevices.end(); ++i) {
@@ -136,21 +143,18 @@ OutputDevice::closeAll(bool keepErrorRetrievers) {
     }
     for (std::vector<OutputDevice*>::iterator i = nonErrorDevices.begin(); i != nonErrorDevices.end(); ++i) {
         try {
-            //std::cout << "  close '" << (*i)->getFilename() << "'\n";
             (*i)->close();
         } catch (const IOError& e) {
             WRITE_ERROR("Error on closing output devices.");
             WRITE_ERROR(e.what());
         }
     }
-    if (!keepErrorRetrievers) {
-        for (std::vector<OutputDevice*>::iterator i = errorDevices.begin(); i != errorDevices.end(); ++i) {
-            try {
-                (*i)->close();
-            } catch (const IOError& e) {
-                std::cerr << "Error on closing error output devices." << std::endl;
-                std::cerr << e.what() << std::endl;
-            }
+    for (std::vector<OutputDevice*>::iterator i = errorDevices.begin(); i != errorDevices.end(); ++i) {
+        try {
+            (*i)->close();
+        } catch (const IOError& e) {
+            std::cerr << "Error on closing error output devices." << std::endl;
+            std::cerr << e.what() << std::endl;
         }
     }
 }
@@ -165,7 +169,7 @@ OutputDevice::realString(const double v, const int precision) {
     if (v < pow(10., -precision)) {
         oss.setf(std::ios::scientific, std::ios::floatfield);
     } else {
-        oss.setf(std::ios::fixed, std::ios::floatfield);     // use decimal format
+        oss.setf(std::ios::fixed , std::ios::floatfield);    // use decimal format
         oss.setf(std::ios::showpoint);    // print decimal point
         oss << std::setprecision(precision);
     }
@@ -177,9 +181,8 @@ OutputDevice::realString(const double v, const int precision) {
 // ===========================================================================
 // member method definitions
 // ===========================================================================
-OutputDevice::OutputDevice(const bool binary, const int defaultIndentation, const std::string& filename) :
-    myAmBinary(binary),
-    myFilename(filename) {
+OutputDevice::OutputDevice(const bool binary, const int defaultIndentation)
+    : myAmBinary(binary) {
     if (binary) {
         myFormatter = new BinaryFormatter();
     } else {
@@ -199,11 +202,6 @@ OutputDevice::ok() {
 }
 
 
-const std::string&
-OutputDevice::getFilename() {
-    return myFilename;
-}
-
 void
 OutputDevice::close() {
     while (closeTag()) {}
@@ -213,7 +211,6 @@ OutputDevice::close() {
             break;
         }
     }
-    MsgHandler::removeRetrieverFromAllInstances(this);
     delete this;
 }
 
@@ -251,8 +248,8 @@ OutputDevice::openTag(const SumoXMLTag& xmlElement) {
 
 
 bool
-OutputDevice::closeTag(const std::string& comment) {
-    if (myFormatter->closeTag(getOStream(), comment)) {
+OutputDevice::closeTag() {
+    if (myFormatter->closeTag(getOStream())) {
         postWriteHook();
         return true;
     }

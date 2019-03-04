@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDevice_BTreceiver.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,11 +8,26 @@
 ///
 // A BT Receiver
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/common/MsgHandler.h>
 #include <utils/options/OptionsCont.h>
@@ -72,9 +79,9 @@ MSDevice_BTreceiver::insertOptions(OptionsCont& oc) {
 
 
 void
-MSDevice_BTreceiver::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into) {
+MSDevice_BTreceiver::buildVehicleDevices(SUMOVehicle& v, std::vector<MSDevice*>& into) {
     OptionsCont& oc = OptionsCont::getOptions();
-    if (equippedByDefaultAssignmentOptions(oc, "btreceiver", v, false)) {
+    if (equippedByDefaultAssignmentOptions(oc, "btreceiver", v)) {
         MSDevice_BTreceiver* device = new MSDevice_BTreceiver(v, "btreceiver_" + v.getID());
         into.push_back(device);
         if (!myWasInitialised) {
@@ -374,7 +381,7 @@ MSDevice_BTreceiver::BTreceiverUpdate::writeOutput(const std::string& id, const 
 // MSDevice_BTreceiver-methods
 // ---------------------------------------------------------------------------
 MSDevice_BTreceiver::MSDevice_BTreceiver(SUMOVehicle& holder, const std::string& id)
-    : MSVehicleDevice(holder, id) {
+    : MSDevice(holder, id) {
 }
 
 

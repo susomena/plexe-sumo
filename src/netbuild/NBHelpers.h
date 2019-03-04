@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBHelpers.h
 /// @author  Daniel Krajzewicz
 /// @author  Sascha Krieg
@@ -17,6 +9,17 @@
 ///
 // Some mathematical helper methods
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBHelpers_h
 #define NBHelpers_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <set>
@@ -63,13 +70,6 @@ public:
 
     /// @brief Add prefixed ids defined in file
     static void loadPrefixedIDsFomFile(const std::string& file, const std::string prefix,  std::set<std::string>& into);
-
-    /** @brief parses edge-id and index from lane-id
-     * @param[in] lane_id The lane-id
-     * @param[out] edge_id ID of this lane's edge
-     * @param[out] index Index of this lane
-     */
-    static void interpretLaneID(const std::string& lane_id, std::string& edge_id, int& index);
 };
 
 

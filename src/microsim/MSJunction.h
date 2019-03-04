@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSJunction.h
 /// @author  Christian Roessel
 /// @author  Daniel Krajzewicz
@@ -17,6 +9,17 @@
 ///
 // The base class for an intersection
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSJunction_h
 #define MSJunction_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -32,7 +39,6 @@
 #include <utils/geom/Position.h>
 #include <utils/geom/PositionVector.h>
 #include <utils/common/Named.h>
-#include <utils/common/Parameterised.h>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
@@ -45,11 +51,8 @@ class MSVehicle;
 class MSLink;
 class MSLane;
 class MSEdge;
-class MSJunctionLogic;
 
-typedef std::vector<MSEdge*> MSEdgeVector;
 typedef std::vector<const MSEdge*> ConstMSEdgeVector;
-
 
 // ===========================================================================
 // class definitions
@@ -58,7 +61,7 @@ typedef std::vector<const MSEdge*> ConstMSEdgeVector;
  * @class MSJunction
  * @brief The base class for an intersection
  */
-class MSJunction : public Named, public Parameterised {
+class MSJunction : public Named {
 public:
     /** @brief Constructor
      * @param[in] id The id of the junction
@@ -103,8 +106,6 @@ public:
         return myIncoming;
     }
 
-    int getNrOfIncomingLanes() const;
-
     inline const ConstMSEdgeVector& getOutgoing() const {
         return myOutgoing;
     }
@@ -131,10 +132,9 @@ public:
     /// @brief erase vehicle from myLinkLeaders
     void passedJunction(const MSVehicle* vehicle);
 
-    // @brief return the underlying right-of-way and conflict matrix
-    virtual const MSJunctionLogic* getLogic() const {
-        return nullptr;
-    }
+    /* @brief @return whether the foe vehicle is a leader for ego
+     * @note vehicles are added to myLinkLeaders when first seen as a foe */
+    bool isLeader(const MSVehicle* ego, const MSVehicle* foe);
 
 protected:
     /// @brief Tye type of this junction
@@ -157,6 +157,11 @@ protected:
 
     /// @brief definition of the static dictionary type
     typedef std::map<std::string, MSJunction* > DictType;
+
+    /// @brief map from leader vehicle to follower vehicles
+    typedef std::map<const MSVehicle*, std::set<const MSVehicle*> > LeaderMap;
+    LeaderMap myLinkLeaders;
+
 
 private:
     /// @brief Invalidated copy constructor.

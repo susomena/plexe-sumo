@@ -1,17 +1,20 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    CC_VehicleVariables.h
 /// @author  Michele Segata
 /// @date    Mon, 7 Mar 2016
-/// @version $Id$
+/// @version $Id: $
 ///
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.sourceforge.net/
+// Copyright (C) 2001-2011 DLR (http://www.dlr.de/) and contributors
+// Copyright (C) 2012-2017 Michele Segata (segata@ccs-labs.org)
+/****************************************************************************/
+//
+//   This program is free software; you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation; either version 2 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef CC_VEHICLEVARIABLES_H
 #define CC_VEHICLEVARIABLES_H
@@ -19,18 +22,20 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "CC_Const.h"
 #include <microsim/cfmodels/MSCFModel.h>
 #include <utils/geom/Position.h>
 #include <string.h>
-#include <string>
-#include <map>
 
-#include <microsim/engine/GenericEngineModel.h>
-#include <microsim/engine/FirstOrderLagModel.h>
-#include <microsim/engine/RealisticEngineModel.h>
+#include "GenericEngineModel.h"
+#include "FirstOrderLagModel.h"
+#include "RealisticEngineModel.h"
 
 class CC_VehicleVariables : public MSCFModel::VehicleVariables {
 public:
@@ -55,10 +60,8 @@ public:
         double frontDistance;
         double frontSpeed;
         double frontAcceleration;
-        double frontControllerAcceleration;
         double leaderSpeed;
         double leaderAcceleration;
-        double leaderControllerAcceleration;
     };
 
     /**
@@ -87,51 +90,34 @@ public:
     /// @brief acceleration as computed by the controller, to be sent to other vehicles
     double controllerAcceleration;
 
+    /// @brief last time front vehicle data (speed and acceleration) has been updated
+    SUMOTime frontDataLastUpdate;
     /// @brief current front vehicle speed
     double frontSpeed;
     /// @brief current front vehicle acceleration (used by CACC)
     double frontAcceleration;
-    /// @brief front vehicle controller acceleration (used by CACC)
-    double frontControllerAcceleration;
     /// @brief current front vehicle position
     Position frontPosition;
     /// @brief when front vehicle data has been readed from GPS
     double frontDataReadTime;
-    /// @brief front vehicle velocity vector
-    Position frontVelocity;
-    /// @brief front vehicle angle in radians
-    double frontAngle;
     /// @did we receive at least one packet?
     bool frontInitialized;
 
-    /// @brief determines whether CACC should automatically fetch data about other vehicles
-    bool autoFeed;
-    /// @brief leader vehicle, used for auto feeding
-    MSVehicle* leaderVehicle;
-    /// @brief front sumo id, used for auto feeding
-    MSVehicle* frontVehicle;
-
     /// @brief headway time for ACC
     double accHeadwayTime;
-    double accLambda;
+    /// @brief fixed spacing for CACC
+    double caccSpacing;
 
-    /// @brief determines whether PATH's CACC should use the real vehicle
-    /// acceleration or the controller computed one
-    bool useControllerAcceleration;
+    /// @brief last time leader vehicle data has been updated
+    SUMOTime leaderDataLastUpdate;
     /// @brief platoon's leader speed (used by CACC)
     double leaderSpeed;
     /// @brief platoon's leader acceleration (used by CACC)
     double leaderAcceleration;
-    /// @brief platoon's leader controller acceleration (used by CACC)
-    double leaderControllerAcceleration;
     /// @brief platoon's leader position
     Position leaderPosition;
     /// @brief when leader data has been readed from GPS
     double leaderDataReadTime;
-    /// @brief platoon's leader velocity vector
-    Position leaderVelocity;
-    /// @brief platoon's leader angle in radians
-    double leaderAngle;
     /// @did we receive at least one packet?
     bool leaderInitialized;
     bool caccInitialized;
@@ -143,16 +129,20 @@ public:
 
     //car collided in the last timestep
     bool crashed;
-    bool crashedVictim;
 
     /// @brief CC desired speed
     double ccDesiredSpeed;
-    double ccKp;
     /// @brief currently active controller
     enum Plexe::ACTIVE_CONTROLLER activeController;
 
     /// @brief fake controller data. @see FAKE_CONTROLLER_DATA
     struct FAKE_CONTROLLER_DATA fakeData;
+
+    //TODO: most probably the following variables needs to be moved to the application logic (i.e., network protocol)
+    /// @brief own platoon id
+    std::string platoonId;
+    /// @brief is ego vehicle the leader?
+    bool isPlatoonLeader;
 
     /// @brief L matrix
     int L[MAX_N_CARS][MAX_N_CARS];
@@ -179,33 +169,15 @@ public:
     double caccOmegaN;
     double caccC1;
     double caccAlpha1, caccAlpha2, caccAlpha3, caccAlpha4, caccAlpha5;
-    /// @brief fixed spacing for CACC
-    double caccSpacing;
-    double engineTau;
-    /// @brief limits for u
-    double uMin, uMax;
+    double engineTau, engineAlpha, engineOneMinusAlpha;
     double ploegH;
     double ploegKp;
     double ploegKd;
-    double flatbedKa;
-    double flatbedKv;
-    double flatbedKp;
-    double flatbedD;
-    double flatbedH;
 
     /// @brief engine model employed by this car
-    GenericEngineModel* engine;
+    GenericEngineModel *engine;
     /// @brief numeric value indicating the employed model
     int engineModel;
-
-    /// @brief enable/disable data prediction (interpolation) for missing data
-    bool usePrediction;
-
-    /// @brief list of members belonging to my platoon
-    std::map<int, std::string> members;
-
-    /// @brief automatic whole platoon lane change
-    bool autoLaneChange;
 };
 
 #endif

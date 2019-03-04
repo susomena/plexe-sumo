@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDeterministicHiLevelTrafficLightLogic.cpp
 /// @author  Riccardo Belletti
 /// @date    Mar 2014
@@ -14,14 +6,25 @@
 ///
 // The class for deterministic high level traffic light logic
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 #include "MSDeterministicHiLevelTrafficLightLogic.h"
 
 MSDeterministicHiLevelTrafficLightLogic::MSDeterministicHiLevelTrafficLightLogic(
     MSTLLogicControl& tlcontrol, const std::string& id,
-    const std::string& programID, const Phases& phases, int step,
+    const std::string& subid, const Phases& phases, int step,
     SUMOTime delay, const std::map<std::string, std::string>& parameters) :
-    MSSOTLHiLevelTrafficLightLogic(tlcontrol, id, programID, TLTYPE_HILVL_DETERMINISTIC, phases, step,
+    MSSOTLHiLevelTrafficLightLogic(tlcontrol, id, subid, phases, step,
                                    delay, parameters) {
 
     addPolicy(new MSSOTLPlatoonPolicy(new MSSOTLPolicy3DStimulus("PLATOON", parameters), parameters));
@@ -35,7 +38,8 @@ MSDeterministicHiLevelTrafficLightLogic::~MSDeterministicHiLevelTrafficLightLogi
 
 }
 
-void MSDeterministicHiLevelTrafficLightLogic::init(NLDetectorBuilder& nb) {
+void MSDeterministicHiLevelTrafficLightLogic::init(NLDetectorBuilder& nb)
+throw(ProcessError) {
     MSSOTLHiLevelTrafficLightLogic::init(nb);
     //Setting the startup policy
     choosePolicy(0, 0);
@@ -43,7 +47,7 @@ void MSDeterministicHiLevelTrafficLightLogic::init(NLDetectorBuilder& nb) {
         "*** Intersection " + getID()
         + " will run using MSDeterministicHiLevelTrafficLightLogic ***");
 
-    MSLane* currentLane = nullptr;
+    MSLane* currentLane = NULL;
     for (MSTrafficLightLogic::LaneVectorVector::const_iterator laneVector =
                 myLanes.begin(); laneVector != myLanes.end(); laneVector++) {
         for (MSTrafficLightLogic::LaneVector::const_iterator lane =

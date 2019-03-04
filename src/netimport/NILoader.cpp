@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NILoader.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // Perfoms network import
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/UtilExceptions.h>
@@ -33,7 +40,7 @@
 #include <utils/common/FileHelpers.h>
 #include <utils/common/StringUtils.h>
 #include <utils/common/ToString.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/geom/GeoConvHelper.h>
 #include <utils/xml/SUMOSAXHandler.h>
 #include <utils/xml/SUMOSAXReader.h>
@@ -47,8 +54,6 @@
 #include <netimport/NIXMLNodesHandler.h>
 #include <netimport/NIXMLTrafficLightsHandler.h>
 #include <netimport/NIXMLTypesHandler.h>
-#include <netimport/NIXMLPTHandler.h>
-#include <netimport/NIXMLShapeHandler.h>
 #include <netimport/NIXMLConnectionsHandler.h>
 #include <netimport/NIImporter_DlrNavteq.h>
 #include <netimport/NIImporter_VISUM.h>
@@ -60,7 +65,7 @@
 #include <netimport/NIImporter_OpenDrive.h>
 #include <netimport/NIImporter_MATSim.h>
 #include <netimport/NIImporter_ITSUMO.h>
-#include <netimport/typemap.h>
+#include "typemap.h"
 #include "NILoader.h"
 
 // ===========================================================================
@@ -108,9 +113,6 @@ NILoader::load(OptionsCont& oc) {
         if (removed > 0) {
             WRITE_MESSAGE(" Removed " + toString(removed) + " traffic lights before loading plain-XML");
         }
-    }
-    if (oc.getBool("railway.signals.discard")) {
-        myNetBuilder.getNodeCont().discardRailSignals();
     }
     loadXML(oc);
     // check the loaded structures
@@ -173,26 +175,6 @@ NILoader::loadXML(OptionsCont& oc) {
     loadXMLType(new NIXMLTrafficLightsHandler(
                     myNetBuilder.getTLLogicCont(), myNetBuilder.getEdgeCont()),
                 oc.getStringVector("tllogic-files"), "traffic lights");
-
-    // load public transport stops (used for restricting edge removal and as input when repairing railroad topology)
-    loadXMLType(new NIXMLPTHandler(
-                    myNetBuilder.getEdgeCont(),
-                    myNetBuilder.getPTStopCont(),
-                    myNetBuilder.getPTLineCont()),
-                oc.getStringVector("ptstop-files"), "public transport stops");
-
-    // load public transport lines (used as input when repairing railroad topology)
-    loadXMLType(new NIXMLPTHandler(
-                    myNetBuilder.getEdgeCont(),
-                    myNetBuilder.getPTStopCont(),
-                    myNetBuilder.getPTLineCont()),
-                oc.getStringVector("ptline-files"), "public transport lines");
-
-    // load shapes for output formats that embed shape data
-    loadXMLType(new NIXMLShapeHandler(
-                    myNetBuilder.getShapeCont(),
-                    myNetBuilder.getEdgeCont()),
-                oc.getStringVector("polygon-files"), "polygon data");
 }
 
 void
@@ -220,7 +202,7 @@ NILoader::loadXMLType(SUMOSAXHandler* handler, const std::vector<std::string>& f
             PROGRESS_DONE_MESSAGE();
         }
     } catch (const XERCES_CPP_NAMESPACE::XMLException& toCatch) {
-        exceptMsg = StringUtils::transcode(toCatch.getMessage())
+        exceptMsg = TplConvert::_2str(toCatch.getMessage())
                     + "\n  The " + type + " could not be loaded from '" + handler->getFileName() + "'.";
     } catch (const ProcessError& toCatch) {
         exceptMsg =

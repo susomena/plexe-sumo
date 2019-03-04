@@ -1,20 +1,12 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    Assignment.py
-# @author  Jakob Erdmann
-# @author  Yun-Pang Floetteroed
-# @author  Michael Behrisch
-# @date    2008-03-28
-# @version $Id$
-
 """
+@file    Assignment.py
+@author  Jakob Erdmann
+@author  Yun-Pang Floetteroed
+@author  Michael Behrisch
+@date    2008-03-28
+@version $Id$
+
 This script is for executing the traffic assignment.
 Three assignment models are available:
 - incremental
@@ -22,6 +14,15 @@ Three assignment models are available:
 - lohse
 
 The c-logit model are set as default.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -33,16 +34,14 @@ import math
 import operator
 from xml.sax import make_parser
 from optparse import OptionParser
-
-sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
-import sumolib.net  # noqa
-
-from network import Net, DistrictsReader, ExtraSignalInformationReader  # noqa
-from dijkstra import dijkstraBoost, dijkstraPlain, dijkstra  # noqa
-from inputs import getMatrix, getConnectionTravelTime  # noqa
-from outputs import timeForInput, outputODZone, outputNetwork, outputStatistics, sortedVehOutput, linkChoicesOutput  # noqa
-from assign import doSUEAssign, doLohseStopCheck, doSUEVehAssign, doIncAssign  # noqa
-from tables import updateCurveTable  # noqa
+from network import Net, DistrictsReader, ExtraSignalInformationReader
+from dijkstra import dijkstraBoost, dijkstraPlain, dijkstra
+from inputs import getMatrix, getConnectionTravelTime
+from outputs import timeForInput, outputODZone, outputNetwork, outputStatistics, sortedVehOutput, linkChoicesOutput
+from assign import doSUEAssign, doLohseStopCheck, doSUEVehAssign, doIncAssign
+from tables import updateCurveTable
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sumolib.net
 
 
 def initLinkChoiceMap(net, startVertices, endVertices, matrixPshort, linkChoiceMap, odPairsMap):
@@ -164,8 +163,8 @@ def main():
         # the disk space
         vehicles = []
         iterInterval = 0
-        matrixPshort, startVertices, endVertices, CurrentMatrixSum, begintime, assignPeriod, Pshort_EffCells, \
-            matrixSum, smallDemandRatio = getMatrix(net, options.verbose, matrix, matrixSum, options.demandscale)
+        matrixPshort, startVertices, endVertices, CurrentMatrixSum, begintime, assignPeriod, Pshort_EffCells, matrixSum, smallDemandRatio = getMatrix(
+            net, options.verbose, matrix, matrixSum, options.demandscale)
         options.hours = float(assignPeriod)
         smallDemandPortion = math.ceil(
             float(options.maxiteration) / 2. * smallDemandRatio)
@@ -208,8 +207,9 @@ def main():
 
         # the number of origins, the umber of destinations and the number of
         # the OD pairs
-        len(startVertices)
-        len(endVertices)
+        origins = len(startVertices)
+        dests = len(endVertices)
+        ODpairs = origins * dests
 
         # output the origin and destination zones and the number of effective
         # OD pairs
@@ -275,8 +275,7 @@ def main():
                 if checkKPaths:
                     checkPathStart = datetime.datetime.now()
                     newRoutes = net.calcKPaths(
-                        options.verbose, options.kPaths, newRoutes, startVertices, endVertices, matrixPshort,
-                        options.gamma)
+                        options.verbose, options.kPaths, newRoutes, startVertices, endVertices, matrixPshort, options.gamma)
                     checkPathEnd = datetime.datetime.now() - checkPathStart
                     foutlog.write(
                         '- Time for finding the k-shortest paths: %s\n' % checkPathEnd)
@@ -330,8 +329,7 @@ def main():
                     foutlog.write(
                         'The max. number of iterations is reached!\n')
                     foutlog.write(
-                        'The number of new routes and the parameter stable will be set to zero and ' +
-                        'True respectively.\n')
+                        'The number of new routes and the parameter stable will be set to zero and True respectively.\n')
                     print('newRoutes:', newRoutes)
                     stable = True
                     newRoutes = 0
@@ -365,7 +363,6 @@ def main():
         print('Duration for traffic assignment:', assigntime)
         print('Total assigned vehicles:', vehID)
     print('Total number of the assigned trips:', matrixSum)
-
 
 optParser = OptionParser()
 optParser.add_option("-m", "--matrix-file", dest="mtxpsfile",
@@ -421,8 +418,7 @@ optParser.add_option("-r", "--profile", action="store_true", dest="profile",
                      default=False, help="writing profiling info")
 optParser.add_option("-+", "--dijkstra", dest="dijkstra", type="choice",
                      choices=('extend', 'plain', 'boost'),
-                     default="plain", help="use penalty, plain(original) or boost in dijkstra implementation " +
-                                           "[default: %default]")
+                     default="plain", help="use penalty, plain(original) or boost in dijkstra implementation [default: %default]")
 optParser.add_option("-x", "--odestimation", action="store_true", dest="odestimation",
                      default=False, help="generate trips for OD estimation")
 optParser.add_option("-f", "--scale-factor", dest="demandscale",

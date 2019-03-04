@@ -1,28 +1,14 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2016-2019 German Aerospace Center (DLR) and others.
-# SUMOPy module
-# Copyright (C) 2012-2017 University of Bologna - DICAM
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    test_notebook.py
-# @author  Joerg Schweizer
-# @date
-# @version $Id$
-
 
 #import images
 import wx
 
 
 class PanelOne(wx.Panel):
+
     """
     This will be the first notebook tab
     """
-    # ----------------------------------------------------------------------
+    #----------------------------------------------------------------------
 
     def __init__(self, parent):
         """"""
@@ -41,10 +27,11 @@ class PanelOne(wx.Panel):
 
 
 class NestedPanel(wx.Panel):
+
     """
     This will be the first notebook tab
     """
-    # ----------------------------------------------------------------------
+    #----------------------------------------------------------------------
 
     def __init__(self, parent):
         """"""
@@ -68,11 +55,12 @@ class NestedPanel(wx.Panel):
 
 ########################################################################
 class NestedNotebookDemo(wx.Notebook):
+
     """
     Notebook class
     """
 
-    # ----------------------------------------------------------------------
+    #----------------------------------------------------------------------
     def __init__(self, parent):
         wx.Notebook.__init__(self, parent, id=wx.ID_ANY, style=wx.BK_DEFAULT
                              # wx.BK_TOP
@@ -121,11 +109,12 @@ class NestedNotebookDemo(wx.Notebook):
 
 ########################################################################
 class DemoFrame(wx.Frame):
+
     """
     Frame that holds all other widgets
     """
 
-    # ----------------------------------------------------------------------
+    #----------------------------------------------------------------------
     def __init__(self):
         """Constructor"""
         wx.Frame.__init__(self, None, wx.ID_ANY,
@@ -142,8 +131,7 @@ class DemoFrame(wx.Frame):
 
         self.Show()
 
-
-# ----------------------------------------------------------------------
+#----------------------------------------------------------------------
 if __name__ == "__main__":
     app = wx.PySimpleApp()
     frame = DemoFrame()

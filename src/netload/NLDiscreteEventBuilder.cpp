@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NLDiscreteEventBuilder.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,13 +9,29 @@
 ///
 // }
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
+#include "NLDiscreteEventBuilder.h"
 #include <utils/xml/SUMOXMLDefinitions.h>
 #include <microsim/MSNet.h>
 #include <microsim/actions/Command_SaveTLSState.h>
@@ -35,7 +43,6 @@
 #include <utils/common/FileHelpers.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/iodevices/OutputDevice.h>
-#include "NLDiscreteEventBuilder.h"
 
 
 // ===========================================================================
@@ -56,7 +63,7 @@ void
 NLDiscreteEventBuilder::addAction(const SUMOSAXAttributes& attrs,
                                   const std::string& basePath) {
     bool ok = true;
-    const std::string type = attrs.getOpt<std::string>(SUMO_ATTR_TYPE, nullptr, ok, "");
+    const std::string type = attrs.getOpt<std::string>(SUMO_ATTR_TYPE, 0, ok, "");
     // check whether the type was given
     if (type == "" || !ok) {
         throw InvalidArgument("An action's type is not given.");
@@ -85,11 +92,11 @@ void
 NLDiscreteEventBuilder::buildSaveTLStateCommand(const SUMOSAXAttributes& attrs,
         const std::string& basePath) {
     bool ok = true;
-    const std::string dest = attrs.getOpt<std::string>(SUMO_ATTR_DEST, nullptr, ok, "");
-    const std::string source = attrs.getOpt<std::string>(SUMO_ATTR_SOURCE, nullptr, ok, "");
+    const std::string dest = attrs.getOpt<std::string>(SUMO_ATTR_DEST, 0, ok, "");
+    const std::string source = attrs.getOpt<std::string>(SUMO_ATTR_SOURCE, 0, ok, "");
     // check the parameter
     if (dest == "" || !ok) {
-        throw InvalidArgument("Incomplete description of an 'SaveTLSState'-action occurred.");
+        throw InvalidArgument("Incomplete description of an 'SaveTLSState'-action occured.");
     }
     if (source == "") {
         const std::vector<std::string> ids = myNet.getTLSControl().getAllTLIds();
@@ -113,11 +120,11 @@ void
 NLDiscreteEventBuilder::buildSaveTLSwitchesCommand(const SUMOSAXAttributes& attrs,
         const std::string& basePath) {
     bool ok = true;
-    const std::string dest = attrs.getOpt<std::string>(SUMO_ATTR_DEST, nullptr, ok, "");
-    const std::string source = attrs.getOpt<std::string>(SUMO_ATTR_SOURCE, nullptr, ok, "");
+    const std::string dest = attrs.getOpt<std::string>(SUMO_ATTR_DEST, 0, ok, "");
+    const std::string source = attrs.getOpt<std::string>(SUMO_ATTR_SOURCE, 0, ok, "");
     // check the parameter
     if (dest == "" || !ok) {
-        throw InvalidArgument("Incomplete description of an 'SaveTLSSwitchTimes'-action occurred.");
+        throw InvalidArgument("Incomplete description of an 'SaveTLSSwitchTimes'-action occured.");
     }
     if (source == "") {
         const std::vector<std::string> ids = myNet.getTLSControl().getAllTLIds();
@@ -141,11 +148,11 @@ void
 NLDiscreteEventBuilder::buildSaveTLSwitchStatesCommand(const SUMOSAXAttributes& attrs,
         const std::string& basePath) {
     bool ok = true;
-    const std::string dest = attrs.getOpt<std::string>(SUMO_ATTR_DEST, nullptr, ok, "");
-    const std::string source = attrs.getOpt<std::string>(SUMO_ATTR_SOURCE, nullptr, ok, "");
+    const std::string dest = attrs.getOpt<std::string>(SUMO_ATTR_DEST, 0, ok, "");
+    const std::string source = attrs.getOpt<std::string>(SUMO_ATTR_SOURCE, 0, ok, "");
     // check the parameter
     if (dest == "" || !ok) {
-        throw InvalidArgument("Incomplete description of an 'SaveTLSSwitchStates'-action occurred.");
+        throw InvalidArgument("Incomplete description of an 'SaveTLSSwitchStates'-action occured.");
     }
     if (source == "") {
         const std::vector<std::string> ids = myNet.getTLSControl().getAllTLIds();

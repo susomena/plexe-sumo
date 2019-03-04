@@ -1,19 +1,23 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    costFunctionChecker.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@author  Jakob Erdmann
+@date    2009-08-31
+@version $Id$
 
-# @file    costFunctionChecker.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @author  Jakob Erdmann
-# @date    2009-08-31
-# @version $Id$
+Run duarouter repeatedly and simulate weight changes via a cost function.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import os
@@ -129,7 +133,6 @@ def generateWeights(step, options, edges, weights, costFunction):
     print('</netstats>', file=fd)
     fd.close()
 
-
 optParser = OptionParser()
 optParser.add_option("-v", "--verbose", action="store_true", dest="verbose",
                      default=False, help="tell me what you are doing")
@@ -227,8 +230,7 @@ for step in range(options.firstStep, options.lastStep):
     parser.setContentHandler(reader)
     for f in files:
         parser.parse(f)
-    # see evaluation of options.costfunc above
-    generateWeights(step, options, edges, reader, costFunction)  # noqa
+    generateWeights(step, options, edges, reader, costFunction)
     print("<<")
     print("< Step %s ended (duration: %s)" % (step, datetime.now() - btimeA))
     print("------------------\n")

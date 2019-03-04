@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RGBColor.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,21 +9,35 @@
 ///
 // A RGB-color definition
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cmath>
 #include <cassert>
 #include <string>
 #include <sstream>
-#include <utils/common/RandHelper.h>
 #include <utils/common/StringTokenizer.h>
 #include <utils/common/ToString.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/StdDefs.h>
 #include "RGBColor.h"
@@ -50,13 +56,10 @@ const RGBColor RGBColor::ORANGE = RGBColor(255, 128, 0, 255);
 const RGBColor RGBColor::WHITE = RGBColor(255, 255, 255, 255);
 const RGBColor RGBColor::BLACK = RGBColor(0, 0, 0, 255);
 const RGBColor RGBColor::GREY = RGBColor(128, 128, 128, 255);
-const RGBColor RGBColor::INVISIBLE = RGBColor(0, 0, 0, 0);
 
 const RGBColor RGBColor::DEFAULT_COLOR = RGBColor::YELLOW;
 const std::string RGBColor::DEFAULT_COLOR_STRING = toString(RGBColor::DEFAULT_COLOR);
 
-// random colors do not affect the simulation. No initialization is necessary
-std::mt19937 RGBColor::myRNG;
 
 // ===========================================================================
 // method definitions
@@ -211,7 +214,7 @@ RGBColor::parseColor(std::string coldef) {
     unsigned char b = 0;
     unsigned char a = 255;
     if (coldef[0] == '#') {
-        const int coldesc = StringUtils::hexToInt(coldef);
+        const int coldesc = TplConvert::_hex2int(coldef.c_str());
         if (coldef.length() == 7) {
             r = static_cast<unsigned char>((coldesc & 0xFF0000) >> 16);
             g = static_cast<unsigned char>((coldesc & 0x00FF00) >> 8);
@@ -228,21 +231,21 @@ RGBColor::parseColor(std::string coldef) {
         std::vector<std::string> st = StringTokenizer(coldef, ",").getVector();
         if (st.size() == 3 || st.size() == 4) {
             try {
-                r = static_cast<unsigned char>(StringUtils::toInt(st[0]));
-                g = static_cast<unsigned char>(StringUtils::toInt(st[1]));
-                b = static_cast<unsigned char>(StringUtils::toInt(st[2]));
+                r = static_cast<unsigned char>(TplConvert::_2int(st[0].c_str()));
+                g = static_cast<unsigned char>(TplConvert::_2int(st[1].c_str()));
+                b = static_cast<unsigned char>(TplConvert::_2int(st[2].c_str()));
                 if (st.size() == 4) {
-                    a = static_cast<unsigned char>(StringUtils::toInt(st[3]));
+                    a = static_cast<unsigned char>(TplConvert::_2int(st[3].c_str()));
                 }
                 if (r <= 1 && g <= 1 && b <= 1 && (st.size() == 3 || a <= 1)) {
-                    throw NumberFormatException("(color component) " + coldef);
+                    throw NumberFormatException();
                 }
             } catch (NumberFormatException&) {
-                r = static_cast<unsigned char>(StringUtils::toDouble(st[0]) * 255. + 0.5);
-                g = static_cast<unsigned char>(StringUtils::toDouble(st[1]) * 255. + 0.5);
-                b = static_cast<unsigned char>(StringUtils::toDouble(st[2]) * 255. + 0.5);
+                r = static_cast<unsigned char>(TplConvert::_2double(st[0].c_str()) * 255. + 0.5);
+                g = static_cast<unsigned char>(TplConvert::_2double(st[1].c_str()) * 255. + 0.5);
+                b = static_cast<unsigned char>(TplConvert::_2double(st[2].c_str()) * 255. + 0.5);
                 if (st.size() == 4) {
-                    a = static_cast<unsigned char>(StringUtils::toDouble(st[3]) * 255. + 0.5);
+                    a = static_cast<unsigned char>(TplConvert::_2double(st[3].c_str()) * 255. + 0.5);
                 }
             }
         } else {
@@ -266,11 +269,11 @@ RGBColor::parseColorReporting(
     ok = false;
     std::ostringstream oss;
     oss << "Attribute 'color' in definition of ";
-    if (objectid == nullptr) {
+    if (objectid == 0) {
         oss << "a ";
     }
     oss << objecttype;
-    if (objectid != nullptr) {
+    if (objectid != 0) {
         oss << " '" << objectid << "'";
     }
     oss << " is not a valid color.";
@@ -330,10 +333,6 @@ RGBColor::fromHSV(double h, double s, double v) {
     return RGBColor(255, 255, 255, 255);
 }
 
-RGBColor
-RGBColor::randomHue(double s, double v) {
-    return fromHSV(RandHelper::rand(360, &myRNG), s, v);
-}
 
 /****************************************************************************/
 

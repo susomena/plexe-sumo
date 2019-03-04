@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    Option.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,18 +8,33 @@
 ///
 // A class representing a single program option
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <exception>
 #include <sstream>
 #include "Option.h"
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/common/StringTokenizer.h>
 #include <utils/common/StringUtils.h>
@@ -100,10 +107,6 @@ Option::getIntVector() const {
     throw InvalidArgument("This is not an int vector-option");
 }
 
-const FloatVector&
-Option::getFloatVector() const {
-    throw InvalidArgument("This is not an float vector-option");
-}
 
 bool
 Option::markSet() {
@@ -216,7 +219,7 @@ Option_Integer::getInt() const {
 bool
 Option_Integer::set(const std::string& v) {
     try {
-        myValue = StringUtils::toInt(v);
+        myValue = TplConvert::_2int(v.c_str());
         return markSet();
     } catch (...) {
         std::string s = "'" + v + "' is not a valid integer.";
@@ -327,7 +330,7 @@ Option_Float::getFloat() const {
 bool
 Option_Float::set(const std::string& v) {
     try {
-        myValue = StringUtils::toDouble(v);
+        myValue = TplConvert::_2double(v.c_str());
         return markSet();
     } catch (...) {
         throw ProcessError("'" + v + "' is not a valid float.");
@@ -382,7 +385,7 @@ Option_Bool::getBool() const {
 bool
 Option_Bool::set(const std::string& v) {
     try {
-        myValue = StringUtils::toBool(v);
+        myValue = TplConvert::_2bool(v.c_str());
         return markSet();
     } catch (...) {
         throw ProcessError("'" + v + "' is not a valid bool.");
@@ -493,11 +496,11 @@ Option_IntVector::set(const std::string& v) {
         }
         StringTokenizer st(v, ";,", true);
         while (st.hasNext()) {
-            myValue.push_back(StringUtils::toInt(st.next()));
+            myValue.push_back(TplConvert::_2int(st.next().c_str()));
         }
         return markSet();
     } catch (EmptyData&) {
-        throw ProcessError("Empty element occurred in " + v);
+        throw ProcessError("Empty element occured in " + v);
     } catch (...) {
         throw ProcessError("'" + v + "' is not a valid integer vector.");
     }
@@ -509,67 +512,6 @@ Option_IntVector::getValueString() const {
     return joinToString(myValue, ',');
 }
 
-
-/* -------------------------------------------------------------------------
- * Option_UFloatVector - methods
- * ----------------------------------------------------------------------- */
-Option_FloatVector::Option_FloatVector()
-    : Option() {
-    myTypeName = "FLOAT[]";
-}
-
-
-Option_FloatVector::Option_FloatVector(const FloatVector& value)
-    : Option(true), myValue(value) {
-    myTypeName = "FLOAT[]";
-}
-
-
-Option_FloatVector::Option_FloatVector(const Option_FloatVector& s)
-    : Option(s), myValue(s.myValue) {}
-
-
-Option_FloatVector::~Option_FloatVector() {}
-
-
-Option_FloatVector&
-Option_FloatVector::operator=(const Option_FloatVector& s) {
-    Option::operator=(s);
-    myValue = s.myValue;
-    return (*this);
-}
-
-
-const FloatVector&
-Option_FloatVector::getFloatVector() const {
-    return myValue;
-}
-
-
-bool
-Option_FloatVector::set(const std::string& v) {
-    myValue.clear();
-    try {
-        if (v.find(';') != std::string::npos) {
-            WRITE_WARNING("Please note that using ';' as list separator is deprecated.\n From 1.0 onwards, only ',' will be accepted.");
-        }
-        StringTokenizer st(v, ";,", true);
-        while (st.hasNext()) {
-            myValue.push_back(StringUtils::toDouble(st.next()));
-        }
-        return markSet();
-    } catch (EmptyData&) {
-        throw ProcessError("Empty element occurred in " + v);
-    } catch (...) {
-        throw ProcessError("'" + v + "' is not a valid float vector.");
-    }
-}
-
-
-std::string
-Option_FloatVector::getValueString() const {
-    return joinToString(myValue, ',');
-}
 
 
 /****************************************************************************/

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSTriggeredRerouter.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // Reroutes vehicles passing an edge
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSTriggeredRerouter_h
 #define MSTriggeredRerouter_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -42,7 +49,6 @@ class MSNet;
 class MSLane;
 class MSRoute;
 class SUMOVehicle;
-class MSParkingArea;
 
 
 // ===========================================================================
@@ -75,15 +81,12 @@ public:
      */
     MSTriggeredRerouter(const std::string& id,
                         const MSEdgeVector& edges,
-                        double prob, const std::string& file, bool off,
-                        SUMOTime timeThreshold,
-                        const std::string& vTypes);
+                        double prob, const std::string& file, bool off);
 
 
     /** @brief Destructor */
     virtual ~MSTriggeredRerouter();
 
-    typedef std::pair<MSParkingArea*, bool> ParkingAreaVisible;
 
     /**
      * @struct RerouteInterval
@@ -91,7 +94,7 @@ public:
      */
     struct RerouteInterval {
         /// unique ID for this interval
-        long long id;
+        long id;
         /// The begin time these definitions are valid
         SUMOTime begin;
         /// The end time these definitions are valid
@@ -109,7 +112,7 @@ public:
         /// The permissions to use
         SVCPermissions permissions;
         /// The distributions of new parking areas to use as destinations
-        RandomDistributor<ParkingAreaVisible> parkProbs;
+        RandomDistributor<MSParkingArea*> parkProbs;
     };
 
     /** @brief Tries to reroute the vehicle
@@ -177,9 +180,7 @@ public:
 
     double getWeight(SUMOVehicle& veh, const std::string param, const double defaultWeight) const;
 
-    MSParkingArea* rerouteParkingArea(const MSTriggeredRerouter::RerouteInterval* rerouteDef,
-                                      SUMOVehicle& veh, bool& newDestination, ConstMSEdgeVector& newRoute) const;
-
+    MSParkingArea* rerouteParkingZone(const MSTriggeredRerouter::RerouteInterval* rerouteDef, SUMOVehicle& veh) const;
 
 protected:
     /// @name inherited from GenericSAXHandler
@@ -205,14 +206,6 @@ protected:
     virtual void myEndElement(int element);
     //@}
 
-    /** @brief Checks whether the detector measures vehicles of the given type.
-    *
-    * @param[in] veh the vehicle of which the type is checked.
-    * @return whether it should be measured
-    */
-    bool vehicleApplies(const SUMOVehicle& veh) const;
-
-
 protected:
     /// List of rerouting definition intervals
     std::vector<RerouteInterval> myIntervals;
@@ -222,12 +215,6 @@ protected:
 
     /// Information whether the current rerouting probability is the user-given
     bool myAmInUserMode;
-
-    // @brief waiting time threshold for activation
-    SUMOTime myTimeThreshold;
-
-    /// @brief The vehicle types to look for (empty means all)
-    std::set<std::string> myVehicleTypes;
 
     /// @name members used during loading
     //@{
@@ -241,7 +228,7 @@ protected:
     /// List of permissions for closed edges
     SVCPermissions myCurrentPermissions;
     /// new destinations with probabilities
-    RandomDistributor<ParkingAreaVisible> myCurrentParkProb;
+    RandomDistributor<MSParkingArea*> myCurrentParkProb;
     /// new destinations with probabilities
     RandomDistributor<MSEdge*> myCurrentEdgeProb;
     /// new routes with probabilities

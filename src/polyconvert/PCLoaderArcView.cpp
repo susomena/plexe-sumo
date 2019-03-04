@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PCLoaderArcView.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // A reader of pois and polygons from shape files
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/MsgHandler.h>
@@ -77,7 +84,7 @@ PCLoaderArcView::load(const std::string& file, OptionsCont& oc, PCPolyContainer&
     RGBColor color = RGBColor::parseColor(oc.getString("color"));
     double layer = oc.getFloat("layer");
     std::string idField = oc.getString("shapefile.id-column");
-    bool useRunningID = oc.getBool("shapefile.use-running-id") || idField == "";
+    bool useRunningID = oc.getBool("shapefile.use-running-id");
     // start parsing
     std::string shpName = file + ".shp";
     int fillType = -1;
@@ -147,7 +154,7 @@ PCLoaderArcView::load(const std::string& file, OptionsCont& oc, PCPolyContainer&
                 if (!geoConvHelper.x2cartesian(pos)) {
                     WRITE_ERROR("Unable to project coordinates for POI '" + id + "'.");
                 }
-                PointOfInterest* poi = new PointOfInterest(id, type, color, pos, false, "", 0, 0, layer);
+                PointOfInterest* poi = new PointOfInterest(id, type, color, pos, layer);
                 if (toFill.add(poi)) {
                     parCont.push_back(poi);
                 }
@@ -164,7 +171,7 @@ PCLoaderArcView::load(const std::string& file, OptionsCont& oc, PCPolyContainer&
                     }
                     shape.push_back_noDoublePos(pos);
                 }
-                SUMOPolygon* poly = new SUMOPolygon(id, type, color, shape, false, fill, 1, layer);
+                SUMOPolygon* poly = new SUMOPolygon(id, type, color, shape, fill, layer);
                 if (toFill.add(poly)) {
                     parCont.push_back(poly);
                 }
@@ -181,7 +188,7 @@ PCLoaderArcView::load(const std::string& file, OptionsCont& oc, PCPolyContainer&
                     }
                     shape.push_back_noDoublePos(pos);
                 }
-                SUMOPolygon* poly = new SUMOPolygon(id, type, color, shape, false, fill, 1, layer);
+                SUMOPolygon* poly = new SUMOPolygon(id, type, color, shape, fill, layer);
                 if (toFill.add(poly)) {
                     parCont.push_back(poly);
                 }
@@ -196,7 +203,7 @@ PCLoaderArcView::load(const std::string& file, OptionsCont& oc, PCPolyContainer&
                     if (!geoConvHelper.x2cartesian(pos)) {
                         WRITE_ERROR("Unable to project coordinates for POI '" + tid + "'.");
                     }
-                    PointOfInterest* poi = new PointOfInterest(tid, type, color, pos, "", 0, 0, layer);
+                    PointOfInterest* poi = new PointOfInterest(tid, type, color, pos, layer);
                     if (toFill.add(poi)) {
                         parCont.push_back(poi);
                     }
@@ -217,7 +224,7 @@ PCLoaderArcView::load(const std::string& file, OptionsCont& oc, PCPolyContainer&
                         }
                         shape.push_back_noDoublePos(pos);
                     }
-                    SUMOPolygon* poly = new SUMOPolygon(tid, type, color, shape, false, fill, 1, layer);
+                    SUMOPolygon* poly = new SUMOPolygon(tid, type, color, shape, fill, layer);
                     if (toFill.add(poly)) {
                         parCont.push_back(poly);
                     }
@@ -238,7 +245,7 @@ PCLoaderArcView::load(const std::string& file, OptionsCont& oc, PCPolyContainer&
                         }
                         shape.push_back_noDoublePos(pos);
                     }
-                    SUMOPolygon* poly = new SUMOPolygon(tid, type, color, shape, false, fill, 1, layer);
+                    SUMOPolygon* poly = new SUMOPolygon(tid, type, color, shape, fill, layer);
                     if (toFill.add(poly)) {
                         parCont.push_back(poly);
                     }
@@ -246,7 +253,7 @@ PCLoaderArcView::load(const std::string& file, OptionsCont& oc, PCPolyContainer&
             }
             break;
             default:
-                WRITE_WARNING("Unsupported shape type occurred (id='" + id + "').");
+                WRITE_WARNING("Unsupported shape type occured (id='" + id + "').");
                 break;
         }
         if (oc.getBool("shapefile.add-param")) {
@@ -256,9 +263,9 @@ PCLoaderArcView::load(const std::string& file, OptionsCont& oc, PCPolyContainer&
                     OGRFieldDefn* poFieldDefn = poFDefn->GetFieldDefn(iField);
                     if (poFieldDefn->GetNameRef() != idField) {
                         if (poFieldDefn->GetType() == OFTReal) {
-                            (*it)->setParameter(poFieldDefn->GetNameRef(), toString(poFeature->GetFieldAsDouble(iField)));
+                            (*it)->addParameter(poFieldDefn->GetNameRef(), toString(poFeature->GetFieldAsDouble(iField)));
                         } else {
-                            (*it)->setParameter(poFieldDefn->GetNameRef(), StringUtils::latin1_to_utf8(poFeature->GetFieldAsString(iField)));
+                            (*it)->addParameter(poFieldDefn->GetNameRef(), StringUtils::latin1_to_utf8(poFeature->GetFieldAsString(iField)));
                         }
                     }
                 }
@@ -273,9 +280,6 @@ PCLoaderArcView::load(const std::string& file, OptionsCont& oc, PCPolyContainer&
 #endif
     PROGRESS_DONE_MESSAGE();
 #else
-    UNUSED_PARAMETER(file);
-    UNUSED_PARAMETER(oc);
-    UNUSED_PARAMETER(toFill);
     WRITE_ERROR("SUMO was compiled without GDAL support.");
 #endif
 }

@@ -1,22 +1,23 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    schemaCheck.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    03.12.2009
-# @version $Id$
-
 """
+@file    schemaCheck.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    03.12.2009
+@version $Id$
+
 Checks schema for files matching certain file names using either
 lxml or SAX2Count.exe depending on availability.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -40,7 +41,6 @@ except ImportError:
 
 def validate(root, f):
     root = os.path.abspath(root)
-    normalized = os.path.abspath(f)[len(root) + 1:].replace('\\', '/')
     try:
         if os.path.getsize(f) < 80:
             # this is probably a texttest place holder file
@@ -49,9 +49,9 @@ def validate(root, f):
         doc = etree.parse(f)
         schemaLoc = doc.getroot().get(
             '{http://www.w3.org/2001/XMLSchema-instance}noNamespaceSchemaLocation')
-        if schemaLoc and '/xsd/' in schemaLoc:
+        if schemaLoc:
             localSchema = os.path.join(os.path.dirname(
-                __file__), '..', '..', 'data', schemaLoc[schemaLoc.find('/xsd/') + 1:])
+                __file__), '..', '..', 'data', 'xsd', os.path.basename(schemaLoc))
             if os.path.exists(localSchema):
                 schemaLoc = localSchema
 # if schemaLoc not in schemes: // temporarily disabled due to lxml bug
@@ -62,9 +62,11 @@ def validate(root, f):
                 s = unquote(str(entry))
                 # remove everything before (and including) the filename
                 s = s[s.find(f.replace('\\', '/')) + len(f):]
-                print(normalized + s, file=sys.stderr)
-    except Exception:
-        print("Error on parsing '%s'!" % normalized, file=sys.stderr)
+                print(os.path.abspath(
+                    f)[len(root) + 1:].replace('\\', '/') + s, file=sys.stderr)
+    except:
+        print("Error on parsing '%s'!" % os.path.abspath(
+            f)[len(root) + 1:].replace('\\', '/'), file=sys.stderr)
         traceback.print_exc()
 
 
@@ -86,13 +88,14 @@ def main(srcRoot, toCheck, err):
     fileNo = 0
     if os.path.exists(srcRoot):
         if os.path.isdir(srcRoot):
-            for root, dirs, _ in os.walk(srcRoot):
+            for root, dirs, files in os.walk(srcRoot):
                 for pattern in toCheck:
                     for name in glob.glob(os.path.join(root, pattern)):
                         if haveLxml:
                             validate(srcRoot, name)
                         elif os.name != "posix":
-                            subprocess.call(sax2count + " " + name, stdout=open(os.devnull), stderr=err)
+                            subprocess.call(
+                                sax2count + " " + name, stdout=open(os.devnull), stderr=err)
                         fileNo += 1
                     if '.svn' in dirs:
                         dirs.remove('.svn')
@@ -114,7 +117,6 @@ def main(srcRoot, toCheck, err):
                 print(scheme.error_log, file=err)
                 return 1
     return 0
-
 
 if __name__ == "__main__":
     if os.name == "posix" and not haveLxml:

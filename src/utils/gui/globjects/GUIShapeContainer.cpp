@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIShapeContainer.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,15 +8,29 @@
 ///
 // Storage for geometrical objects extended by mutexes
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "GUIShapeContainer.h"
-#include <utils/common/MsgHandler.h>
 #include <foreign/rtree/SUMORTree.h>
 #include <utils/gui/globjects/GUIPolygon.h>
 #include <utils/gui/globjects/GUIPointOfInterest.h>
@@ -33,67 +39,51 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-GUIShapeContainer::GUIShapeContainer(SUMORTree& vis) :
-    myVis(vis),
-    myAllowReplacement(false) {
-}
+GUIShapeContainer::GUIShapeContainer(SUMORTree& vis)
+    : myVis(vis) {}
 
 
 GUIShapeContainer::~GUIShapeContainer() {}
 
 
 bool
-GUIShapeContainer::addPOI(const std::string& id, const std::string& type, const RGBColor& color, const Position& pos, bool geo,
-                          const std::string& lane, double posOverLane, double posLat, double layer, double angle,
-                          const std::string& imgFile, bool relativePath, double width, double height, bool /* ignorePruning */) {
-    GUIPointOfInterest* p = new GUIPointOfInterest(id, type, color, pos, geo, lane, posOverLane, posLat, layer, angle, imgFile, relativePath, width, height);
-    FXMutexLock locker(myLock);
+GUIShapeContainer::addPOI(const std::string& id, const std::string& type,
+                          const RGBColor& color, double layer, double angle, const std::string& imgFile,
+                          const Position& pos, double width, double height, bool /* ignorePruning */) {
+    GUIPointOfInterest* p = new GUIPointOfInterest(id, type, color, pos, layer, angle, imgFile, width, height);
+    AbstractMutex::ScopedLocker locker(myLock);
     if (!myPOIs.add(id, p)) {
-        if (myAllowReplacement) {
-            GUIPointOfInterest* oldP = dynamic_cast<GUIPointOfInterest*>(myPOIs.get(id));
-            myVis.removeAdditionalGLObject(oldP);
-            myPOIs.remove(id);
-            myPOIs.add(id, p);
-            WRITE_WARNING("Replacing POI '" + id + "'");
-        } else {
-            delete p;
-            return false;
-        }
+        delete p;
+        return false;
+    } else {
+        myVis.addAdditionalGLObject(p);
+        return true;
     }
-    myVis.addAdditionalGLObject(p);
-    return true;
 }
 
 
 bool
 GUIShapeContainer::addPolygon(const std::string& id, const std::string& type,
                               const RGBColor& color, double layer,
-                              double angle, const std::string& imgFile, bool relativePath,
-                              const PositionVector& shape, bool geo, bool fill, double lineWidth, bool /* ignorePruning */) {
-    GUIPolygon* p = new GUIPolygon(id, type, color, shape, geo, fill, lineWidth, layer, angle, imgFile, relativePath);
-    FXMutexLock locker(myLock);
+                              double angle, const std::string& imgFile,
+                              const PositionVector& shape, bool fill, bool /* ignorePruning */) {
+    GUIPolygon* p = new GUIPolygon(id, type, color, shape, fill, layer, angle, imgFile);
+    AbstractMutex::ScopedLocker locker(myLock);
     if (!myPolygons.add(id, p)) {
-        if (myAllowReplacement) {
-            GUIPolygon* oldP = dynamic_cast<GUIPolygon*>(myPolygons.get(id));
-            myVis.removeAdditionalGLObject(oldP);
-            myPolygons.remove(id);
-            myPolygons.add(id, p);
-            WRITE_WARNING("Replacing polygon '" + id + "'");
-        } else {
-            delete p;
-            return false;
-        }
+        delete p;
+        return false;
+    } else {
+        myVis.addAdditionalGLObject(p);
+        return true;
     }
-    myVis.addAdditionalGLObject(p);
-    return true;
 }
 
 
 bool
 GUIShapeContainer::removePolygon(const std::string& id) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     GUIPolygon* p = dynamic_cast<GUIPolygon*>(myPolygons.get(id));
-    if (p == nullptr) {
+    if (p == 0) {
         return false;
     }
     myVis.removeAdditionalGLObject(p);
@@ -103,9 +93,9 @@ GUIShapeContainer::removePolygon(const std::string& id) {
 
 bool
 GUIShapeContainer::removePOI(const std::string& id) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     GUIPointOfInterest* p = dynamic_cast<GUIPointOfInterest*>(myPOIs.get(id));
-    if (p == nullptr) {
+    if (p == 0) {
         return false;
     }
     myVis.removeAdditionalGLObject(p);
@@ -115,9 +105,9 @@ GUIShapeContainer::removePOI(const std::string& id) {
 
 void
 GUIShapeContainer::movePOI(const std::string& id, const Position& pos) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     GUIPointOfInterest* p = dynamic_cast<GUIPointOfInterest*>(myPOIs.get(id));
-    if (p != nullptr) {
+    if (p != 0) {
         myVis.removeAdditionalGLObject(p);
         static_cast<Position*>(p)->set(pos);
         myVis.addAdditionalGLObject(p);
@@ -127,9 +117,9 @@ GUIShapeContainer::movePOI(const std::string& id, const Position& pos) {
 
 void
 GUIShapeContainer::reshapePolygon(const std::string& id, const PositionVector& shape) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     GUIPolygon* p = dynamic_cast<GUIPolygon*>(myPolygons.get(id));
-    if (p != nullptr) {
+    if (p != 0) {
         myVis.removeAdditionalGLObject(p);
         p->setShape(shape);
         myVis.addAdditionalGLObject(p);
@@ -140,10 +130,11 @@ GUIShapeContainer::reshapePolygon(const std::string& id, const PositionVector& s
 
 std::vector<GUIGlID>
 GUIShapeContainer::getPOIIds() const {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     std::vector<GUIGlID> ret;
-    for (const auto& poi : getPOIs()) {
-        ret.push_back(static_cast<GUIPointOfInterest*>(poi.second)->getGlID());
+    const std::map<std::string, PointOfInterest*>& pois = getPOIs().getMyMap();
+    for (std::map<std::string, PointOfInterest*>::const_iterator it = pois.begin(); it != pois.end(); ++it) {
+        ret.push_back(static_cast<GUIPointOfInterest*>(it->second)->getGlID());
     }
     return ret;
 }
@@ -151,10 +142,11 @@ GUIShapeContainer::getPOIIds() const {
 
 std::vector<GUIGlID>
 GUIShapeContainer::getPolygonIDs() const {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     std::vector<GUIGlID> ret;
-    for (const auto& poly : getPolygons()) {
-        ret.push_back(static_cast<GUIPolygon*>(poly.second)->getGlID());
+    const std::map<std::string, SUMOPolygon*>& polygons = getPolygons().getMyMap();
+    for (std::map<std::string, SUMOPolygon*>::const_iterator it = polygons.begin(); it != polygons.end(); ++it) {
+        ret.push_back(static_cast<GUIPolygon*>(it->second)->getGlID());
     }
     return ret;
 }

@@ -1,46 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<!-- generated on 09.07.2018 14:32:34 by Eclipse SUMO netedit Version 88bb7b0b92
-<configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
-
-    <input>
-        <sumo-net-file value="C:/Users/SUMO-Test/.texttest/tmp/netedit.gui.2_from_09Jul142807.2256/netedit.gui/additionalElements/detentry/lock_unlock\input_net.net.xml"/>
-    </input>
-
-    <output>
-        <additionals-output value="C:/Users/SUMO-Test/.texttest/tmp/netedit.gui.2_from_09Jul142807.2256/netedit.gui/additionalElements/detentry/lock_unlock\additionals.xml"/>
-        <shapes-output value="C:/Users/SUMO-Test/.texttest/tmp/netedit.gui.2_from_09Jul142807.2256/netedit.gui/additionalElements/detentry/lock_unlock\shapes.xml"/>
-        <output-file value="C:/Users/SUMO-Test/.texttest/tmp/netedit.gui.2_from_09Jul142807.2256/netedit.gui/additionalElements/detentry/lock_unlock\net.net.xml"/>
-    </output>
-
-    <processing>
-        <no-turnarounds value="true"/>
-        <offset.disable-normalization value="true"/>
-        <lefthand value="false"/>
-        <junctions.corner-detail value="5"/>
-        <rectangular-lane-cut value="false"/>
-        <walkingareas value="false"/>
-    </processing>
-
-    <visualisation>
-        <gui-settings-file value="C:/Users/SUMO-Test/.texttest/tmp/netedit.gui.2_from_09Jul142807.2256/netedit.gui/additionalElements/detentry/lock_unlock\gui-settings.xml"/>
-        <window-size value="700,500"/>
-        <window-pos value="50,50"/>
-        <gui-testing value="true"/>
-        <gui-testing-debug value="true"/>
-    </visualisation>
-
-    <report>
-        <no-warnings value="true"/>
-        <error-log value="C:/Users/SUMO-Test/.texttest/tmp/netedit.gui.2_from_09Jul142807.2256/netedit.gui/additionalElements/detentry/lock_unlock\log.txt"/>
-    </report>
-
-</configuration>
--->
-
-<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">
-    <e3Detector id="e3Detector_0" pos="22.00,6.00" freq="900.00" file="e3Detector_0.xml">
-        <detEntry lane="gneE1_0" pos="23.00"/>
-        <detExit lane="gneE0_0" pos="17.00"/>
+<additionals>
+    <e3Detector id="e3Detector_0" freq="100.00" file="e3Detector_0.txt" timeThreshold="1.00" speedThreshold="1.39" x="22.00" y="6.00">
+        <detEntry lane="gneE1_0" pos="22.58" friendlyPos="0"/>
     </e3Detector>
-</additional>
+</additionals>

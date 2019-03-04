@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIBusStop.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // A lane area vehicles can halt at (gui-version)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/MsgHandler.h>
@@ -43,7 +50,7 @@
 #include <gui/GUIApplicationWindow.h>
 #include <microsim/logging/FunctionBinding.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
-#include <foreign/fontstash/fontstash.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/geom/GeomHelper.h>
 #include <guisim/GUIBusStop.h>
 #include <utils/gui/globjects/GLIncludes.h>
@@ -56,7 +63,7 @@
 GUIBusStop::GUIBusStop(const std::string& id, const std::vector<std::string>& lines, MSLane& lane,
                        double frompos, double topos, const std::string name) :
     MSStoppingPlace(id, lines, lane, frompos, topos, name),
-    GUIGlObject_AbstractAdd(GLO_BUS_STOP, id) {
+    GUIGlObject_AbstractAdd("busStop", GLO_TRIGGER, id) {
     const double offsetSign = MSNet::getInstance()->lefthand() ? -1 : 1;
     myFGShape = lane.getShape();
     myFGShape.move2side(1.65 * offsetSign);
@@ -86,13 +93,10 @@ GUIBusStop::GUIBusStop(const std::string& id, const std::vector<std::string>& li
 GUIBusStop::~GUIBusStop() {}
 
 
-bool
-GUIBusStop::addAccess(MSLane* lane, const double pos, const double length) {
-    bool added = MSStoppingPlace::addAccess(lane, pos, length);
-    if (added) {
-        myAccessCoords.push_back(lane->geometryPositionAtOffset(pos));
-    }
-    return added;
+void
+GUIBusStop::addAccess(MSLane* lane, const double pos) {
+    MSStoppingPlace::addAccess(lane, pos);
+    myAccessCoords.push_back(lane->getShape().positionAtOffset(pos));
 }
 
 
@@ -114,14 +118,12 @@ GUIParameterTableWindow*
 GUIBusStop::getParameterWindow(GUIMainWindow& app,
                                GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 7);
+        new GUIParameterTableWindow(app, *this, 5);
     // add items
     ret->mkItem("name", false, getMyName());
     ret->mkItem("begin position [m]", false, myBegPos);
     ret->mkItem("end position [m]", false, myEndPos);
     ret->mkItem("person number [#]", true, new FunctionBinding<GUIBusStop, int>(this, &MSStoppingPlace::getTransportableNumber));
-    ret->mkItem("stopped vehicles[#]", true, new FunctionBinding<GUIBusStop, int>(this, &MSStoppingPlace::getStoppedVehicleNumber));
-    ret->mkItem("last free pos[m]", true, new FunctionBinding<GUIBusStop, double>(this, &MSStoppingPlace::getLastFreePos));
     // close building
     ret->closeBuilding();
     return ret;
@@ -132,26 +134,28 @@ void
 GUIBusStop::drawGL(const GUIVisualizationSettings& s) const {
     glPushName(getGlID());
     glPushMatrix();
+    RGBColor green(76, 170, 50, 255);
+    RGBColor yellow(255, 235, 0, 255);
     // draw the area
     glTranslated(0, 0, getType());
-    GLHelper::setColor(s.SUMO_color_busStop);
-    const double exaggeration = s.addSize.getExaggeration(s, this);
+    GLHelper::setColor(green);
+    const double exaggeration = s.addSize.getExaggeration(s);
     GLHelper::drawBoxLines(myFGShape, myFGShapeRotations, myFGShapeLengths, exaggeration);
     // draw details unless zoomed out to far
     if (s.scale * exaggeration >= 10) {
         glPushMatrix();
         // draw the lines
-        const double rotSign = MSNet::getInstance()->lefthand() ? 1 : -1;
-        // Iterate over every line
-        for (int i = 0; i < (int)myLines.size(); ++i) {
-            // push a new matrix for every line
+        const double rotSign = MSNet::getInstance()->lefthand() ? -1 : 1;
+        for (int i = 0; i != (int)myLines.size(); ++i) {
             glPushMatrix();
-            // traslate and rotate
             glTranslated(myFGSignPos.x(), myFGSignPos.y(), 0);
+            glRotated(180, 1, 0, 0);
             glRotated(rotSign * myFGSignRot, 0, 0, 1);
-            // draw line
-            GLHelper::drawText(myLines[i].c_str(), Position(1.2, (double)i), .1, 1.f, s.SUMO_color_busStop, 0, FONS_ALIGN_LEFT);
-            // pop matrix for every line
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            pfSetPosition(0, 0);
+            pfSetScale(1.f);
+            glTranslated(1.2, -(double)i, 0);
+            pfDrawString(myLines[i].c_str());
             glPopMatrix();
         }
         for (std::vector<Position>::const_iterator i = myAccessCoords.begin(); i != myAccessCoords.end(); ++i) {
@@ -166,19 +170,20 @@ GUIBusStop::drawGL(const GUIVisualizationSettings& s) const {
         glScaled(exaggeration, exaggeration, 1);
         GLHelper::drawFilledCircle((double) 1.1, noPoints);
         glTranslated(0, 0, .1);
-        GLHelper::setColor(s.SUMO_color_busStop_sign);
+        GLHelper::setColor(yellow);
         GLHelper::drawFilledCircle((double) 0.9, noPoints);
         if (s.scale * exaggeration >= 4.5) {
-            GLHelper::drawText("H", Position(), .1, 1.6, s.SUMO_color_busStop, myFGSignRot);
+            GLHelper::drawText("H", Position(), .1, 1.6, green, myFGSignRot);
         }
         glPopMatrix();
     }
-    if (s.addFullName.show && getMyName() != "") {
-        GLHelper::drawTextSettings(s.addFullName, getMyName(), myFGSignPos, s.scale, s.getTextAngle(myFGSignRot), GLO_MAX - getType());
+    //TODO: add pt stop show name options to gui settings [GL Mar '17]
+    if (s.streetName.show && getMyName() != "") {
+        GLHelper::drawText(getMyName(), myFGSignPos, GLO_MAX - getType(), s.streetName.size / s.scale, s.streetName.color, myFGSignRot);
     }
     glPopMatrix();
     glPopName();
-    drawName(myFGSignPos, s.scale, s.addName, s.angle);
+    drawName(getCenteringBoundary().getCenter(), s.scale, s.addName);
 }
 
 
@@ -186,11 +191,10 @@ Boundary
 GUIBusStop::getCenteringBoundary() const {
     Boundary b = myFGShape.getBoxBoundary();
     b.grow(SUMO_const_laneWidth);
-    for (const Position& p : myAccessCoords) {
-        b.add(p);
-    }
     return b;
 }
 
 
+
 /****************************************************************************/
+

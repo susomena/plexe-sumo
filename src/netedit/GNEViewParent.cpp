@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GNEViewParent.cpp
 /// @author  Jakob Erdmann
 /// @date    Feb 2011
@@ -17,81 +9,109 @@
 // While we don't actually need MDI for netedit it is easier to adapt existing
 // structures than to write everything from scratch.
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
-#include <netedit/additionals/GNEAdditional.h>
-#include <netedit/dialogs/GNEDialogACChooser.h>
-#include <netedit/frames/GNEAdditionalFrame.h>
-#include <netedit/frames/GNEConnectorFrame.h>
-#include <netedit/frames/GNECreateEdgeFrame.h>
-#include <netedit/frames/GNECrossingFrame.h>
-#include <netedit/frames/GNEDeleteFrame.h>
-#include <netedit/frames/GNEInspectorFrame.h>
-#include <netedit/frames/GNEPolygonFrame.h>
-#include <netedit/frames/GNEProhibitionFrame.h>
-#include <netedit/frames/GNERouteFrame.h>
-#include <netedit/frames/GNESelectorFrame.h>
-#include <netedit/frames/GNETAZFrame.h>
-#include <netedit/frames/GNETLSEditorFrame.h>
-#include <netedit/frames/GNEVehicleFrame.h>
-#include <netedit/frames/GNEVehicleTypeFrame.h>
-#include <netedit/netelements/GNEEdge.h>
-#include <netedit/netelements/GNEJunction.h>
-#include <utils/foxtools/MFXUtils.h>
-#include <utils/gui/div/GUIDesigns.h>
-#include <utils/gui/images/GUIIconSubSys.h>
-#include <utils/gui/windows/GUIAppEnum.h>
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
+#include <config.h>
+#endif
 
-#include "GNEApplicationWindow.h"
-#include "GNEViewNet.h"
+#include <string>
+#include <vector>
+#include <utils/foxtools/MFXUtils.h>
+#include <utils/foxtools/MFXCheckableButton.h>
+#include <utils/foxtools/MFXImageHelper.h>
+#include <utils/common/UtilExceptions.h>
+#include <utils/geom/Position.h>
+#include <utils/geom/Boundary.h>
+#include <utils/gui/globjects/GUIGlObjectTypes.h>
+#include <utils/gui/globjects/GUIGlObjectStorage.h>
+#include <utils/gui/images/GUIIcons.h>
+#include <utils/gui/images/GUIIconSubSys.h>
+#include <utils/gui/div/GUIGlobalSelection.h>
+#include <utils/gui/div/GUIDesigns.h>
+#include <utils/gui/globjects/GUIGlObjectStorage.h>
+#include <utils/gui/div/GUIIOGlobals.h>
+#include <utils/gui/windows/GUIAppEnum.h>
+#include <utils/gui/windows/GUIDialog_GLObjChooser.h>
+#include <utils/common/MsgHandler.h>
+
 #include "GNENet.h"
-#include "GNEUndoList.h"
+#include "GNEEdge.h"
+#include "GNEViewNet.h"
 #include "GNEViewParent.h"
+#include "GNEUndoList.h"
+#include "GNEApplicationWindow.h"
+#include "GNEInspectorFrame.h"
+#include "GNESelectorFrame.h"
+#include "GNEConnectorFrame.h"
+#include "GNETLSEditorFrame.h"
+#include "GNEAdditionalFrame.h"
+#include "GNECrossingFrame.h"
+#include "GNEDeleteFrame.h"
+#include "GNEPolygonFrame.h"
 
 
 // ===========================================================================
 // FOX callback mapping
 // ===========================================================================
-
 FXDEFMAP(GNEViewParent) GNEViewParentMap[] = {
-    FXMAPFUNC(SEL_COMMAND,  MID_MAKESNAPSHOT,                       GNEViewParent::onCmdMakeSnapshot),
-    FXMAPFUNC(SEL_COMMAND,  MID_LOCATEJUNCTION,                     GNEViewParent::onCmdLocate),
-    FXMAPFUNC(SEL_COMMAND,  MID_LOCATEEDGE,                         GNEViewParent::onCmdLocate),
-    FXMAPFUNC(SEL_COMMAND,  MID_LOCATETLS,                          GNEViewParent::onCmdLocate),
-    FXMAPFUNC(SEL_COMMAND,  MID_LOCATEADD,                          GNEViewParent::onCmdLocate),
-    FXMAPFUNC(SEL_COMMAND,  MID_LOCATEPOI,                          GNEViewParent::onCmdLocate),
-    FXMAPFUNC(SEL_COMMAND,  MID_LOCATEPOLY,                         GNEViewParent::onCmdLocate),
-    FXMAPFUNC(SEL_COMMAND,  FXMDIChild::ID_MDI_MENUCLOSE,           GNEViewParent::onCmdClose),
-    FXMAPFUNC(SEL_CHANGED,  MID_GNE_VIEWPARENT_FRAMEAREAWIDTH,      GNEViewParent::onCmdUpdateFrameAreaWidth),
+    FXMAPFUNC(SEL_COMMAND,  MID_MAKESNAPSHOT,                      GNEViewParent::onCmdMakeSnapshot),
+    //FXMAPFUNC(SEL_COMMAND,  MID_ALLOWROTATION,                   GNEViewParent::onCmdAllowRotation),
+    FXMAPFUNC(SEL_COMMAND,  MID_LOCATEJUNCTION,                    GNEViewParent::onCmdLocate),
+    FXMAPFUNC(SEL_COMMAND,  MID_LOCATEEDGE,                        GNEViewParent::onCmdLocate),
+    FXMAPFUNC(SEL_COMMAND,  MID_LOCATETLS,                         GNEViewParent::onCmdLocate),
+    FXMAPFUNC(SEL_COMMAND,  FXMDIChild::ID_MDI_MENUCLOSE,          GNEViewParent::onCmdClose),
+    FXMAPFUNC(SEL_CHANGED,  MID_GNE_SIZEOF_FRAMEAREAWIDTH_UPDATED, GNEViewParent::onCmdUpdateFrameAreaWidth),
 };
 
 // Object implementation
 FXIMPLEMENT(GNEViewParent, GUIGlChildWindow, GNEViewParentMap, ARRAYNUMBER(GNEViewParentMap))
 
-
 // ===========================================================================
 // member method definitions
 // ===========================================================================
-
-GNEViewParent::GNEViewParent(FXMDIClient* p, FXMDIMenu* mdimenu, const FXString& name, GNEApplicationWindow* parentWindow,
-                             FXGLCanvas* share, GNENet* net, GNEUndoList* undoList, FXIcon* ic, FXuint opts, FXint x, FXint y, FXint w, FXint h) :
-    GUIGlChildWindow(p, parentWindow, mdimenu, name, parentWindow->getToolbarsGrip().navigation, ic, opts, x, y, w, h),
+GNEViewParent::GNEViewParent(
+    FXMDIClient* p, FXMDIMenu* mdimenu,
+    const FXString& name,
+    GNEApplicationWindow* parentWindow,
+    FXGLCanvas* share, GNENet* net, GNEUndoList* undoList,
+    FXIcon* ic, FXuint opts,
+    FXint x, FXint y, FXint w, FXint h):
+    GUIGlChildWindow(p, parentWindow, mdimenu, name, ic, opts, x, y, w, h),
     myGNEAppWindows(parentWindow) {
     // Add child to parent
-    myParent->addGLChild(this);
+    myParent->addChild(this, false);
+
+    // disable coloring and screenshot
+    //for (int i=5; i < myNavigationToolBar->numChildren(); i++) {
+    //    myNavigationToolBar->childAtIndex(i)->hide();
+    //}
+
+    // add undo/redo buttons
+    new FXButton(myNavigationToolBar, "\tUndo\tUndo the last Change.", GUIIconSubSys::getIcon(ICON_UNDO), parentWindow->getUndoList(), FXUndoList::ID_UNDO, GUIDesignButtonToolbar);
+    new FXButton(myNavigationToolBar, "\tRedo\tRedo the last Change.", GUIIconSubSys::getIcon(ICON_REDO), parentWindow->getUndoList(), FXUndoList::ID_REDO, GUIDesignButtonToolbar);
 
     // Create Vertical separator
-    new FXVerticalSeparator(myGripNavigationToolbar, GUIDesignVerticalSeparator);
-
-    // add undo /redo buttons
-    new FXButton(myGripNavigationToolbar, "\tUndo\tUndo the last Change.", GUIIconSubSys::getIcon(ICON_UNDO), parentWindow->getUndoList(), FXUndoList::ID_UNDO, GUIDesignButtonToolbar);
-    new FXButton(myGripNavigationToolbar, "\tRedo\tRedo the last Change.", GUIIconSubSys::getIcon(ICON_REDO), parentWindow->getUndoList(), FXUndoList::ID_REDO, GUIDesignButtonToolbar);
+    new FXVerticalSeparator(myNavigationToolBar, GUIDesignVerticalSeparator);
 
     // Create Frame Splitter
-    myFramesSplitter = new FXSplitter(myContentFrame, this, MID_GNE_VIEWPARENT_FRAMEAREAWIDTH, GUIDesignSplitter | SPLITTER_HORIZONTAL);
+    myFramesSplitter = new FXSplitter(myContentFrame, this, MID_GNE_SIZEOF_FRAMEAREAWIDTH_UPDATED, GUIDesignSplitter | SPLITTER_HORIZONTAL);
 
     // Create frames Area
     myFramesArea = new FXHorizontalFrame(myFramesSplitter, GUIDesignFrameArea);
@@ -106,34 +126,23 @@ GNEViewParent::GNEViewParent(FXMDIClient* p, FXMDIMenu* mdimenu, const FXString&
     FXComposite* tmp = new FXComposite(this);
 
     // Create view net
-    GNEViewNet* viewNet = new GNEViewNet(tmp, myViewArea, *myParent, this, net, undoList, myParent->getGLVisual(), share);
-
-    // show toolbar grips
-    myGNEAppWindows->getToolbarsGrip().buildMenuToolbarsGrip();
+    GNEViewNet* viewNet = new GNEViewNet(tmp, myViewArea, *myParent, this, net, undoList, myParent->getGLVisual(), share, myNavigationToolBar);
 
     // Set pointer myView with the created view net
     myView = viewNet;
 
-    // Create Network frames
-    myFrames.inspectorFrame = new GNEInspectorFrame(myFramesArea, viewNet);
-    myFrames.selectorFrame = new GNESelectorFrame(myFramesArea, viewNet);
-    myFrames.connectorFrame = new GNEConnectorFrame(myFramesArea, viewNet);
-    myFrames.prohibitionFrame = new GNEProhibitionFrame(myFramesArea, viewNet);
-    myFrames.TLSEditorFrame = new GNETLSEditorFrame(myFramesArea, viewNet);
-    myFrames.additionalFrame = new GNEAdditionalFrame(myFramesArea, viewNet);
-    myFrames.crossingFrame = new GNECrossingFrame(myFramesArea, viewNet);
-    myFrames.TAZFrame = new GNETAZFrame(myFramesArea, viewNet);
-    myFrames.deleteFrame = new GNEDeleteFrame(myFramesArea, viewNet);
-    myFrames.polygonFrame = new GNEPolygonFrame(myFramesArea, viewNet);
-    myFrames.createEdgeFrame = new GNECreateEdgeFrame(myFramesArea, viewNet);
-
-    // Create Demand frames
-    myFrames.routeFrame = new GNERouteFrame(myFramesArea, viewNet);
-    myFrames.vehicleFrame = new GNEVehicleFrame(myFramesArea, viewNet);
-    myFrames.vehicleTypeFrame = new GNEVehicleTypeFrame(myFramesArea, viewNet);
+    // Create frames
+    myGNEFrames[MID_GNE_MODE_INSPECT] = new GNEInspectorFrame(myFramesArea, viewNet);
+    myGNEFrames[MID_GNE_MODE_SELECT] = new GNESelectorFrame(myFramesArea, viewNet);
+    myGNEFrames[MID_GNE_MODE_CONNECT] = new GNEConnectorFrame(myFramesArea, viewNet);
+    myGNEFrames[MID_GNE_MODE_TLS] = new GNETLSEditorFrame(myFramesArea, viewNet);
+    myGNEFrames[MID_GNE_MODE_ADDITIONAL] = new GNEAdditionalFrame(myFramesArea, viewNet);
+    myGNEFrames[MID_GNE_MODE_CROSSING] = new GNECrossingFrame(myFramesArea, viewNet);
+    myGNEFrames[MID_GNE_MODE_DELETE] = new GNEDeleteFrame(myFramesArea, viewNet);
+    myGNEFrames[MID_GNE_MODE_POLYGON] = new GNEPolygonFrame(myFramesArea, viewNet);
 
     // Update frame areas after creation
-    onCmdUpdateFrameAreaWidth(nullptr, 0, nullptr);
+    onCmdUpdateFrameAreaWidth(0, 0, 0);
 
     // Hidde all Frames Area
     hideFramesArea();
@@ -147,106 +156,77 @@ GNEViewParent::GNEViewParent(FXMDIClient* p, FXMDIMenu* mdimenu, const FXString&
 
 
 GNEViewParent::~GNEViewParent() {
-    // delete toolbar grips
-    myGNEAppWindows->getToolbarsGrip().destroyParentToolbarsGrips();
     // Remove child before remove
-    myParent->removeGLChild(this);
+    myParent->removeChild(this);
 }
 
 
 void
 GNEViewParent::hideAllFrames() {
-    myFrames.hideFrames();
+    for (auto i = myGNEFrames.begin(); i != myGNEFrames.end(); i++) {
+        i->second->hide();
+    }
 }
 
 GNEInspectorFrame*
 GNEViewParent::getInspectorFrame() const {
-    return myFrames.inspectorFrame;
+    return dynamic_cast<GNEInspectorFrame*>(myGNEFrames.at(MID_GNE_MODE_INSPECT));
 }
 
 
 GNESelectorFrame*
 GNEViewParent::getSelectorFrame() const {
-    return myFrames.selectorFrame;
+    return dynamic_cast<GNESelectorFrame*>(myGNEFrames.at(MID_GNE_MODE_SELECT));
 }
 
 
 GNEConnectorFrame*
 GNEViewParent::getConnectorFrame() const {
-    return myFrames.connectorFrame;
+    return dynamic_cast<GNEConnectorFrame*>(myGNEFrames.at(MID_GNE_MODE_CONNECT));
 }
 
 
 GNETLSEditorFrame*
 GNEViewParent::getTLSEditorFrame() const {
-    return myFrames.TLSEditorFrame;
+    return dynamic_cast<GNETLSEditorFrame*>(myGNEFrames.at(MID_GNE_MODE_TLS));
 }
 
 
 GNEAdditionalFrame*
 GNEViewParent::getAdditionalFrame() const {
-    return myFrames.additionalFrame;
+    return dynamic_cast<GNEAdditionalFrame*>(myGNEFrames.at(MID_GNE_MODE_ADDITIONAL));
 }
 
 
 GNECrossingFrame*
 GNEViewParent::getCrossingFrame() const {
-    return myFrames.crossingFrame;
-}
-
-
-GNETAZFrame*
-GNEViewParent::getTAZFrame() const {
-    return myFrames.TAZFrame;
+    return dynamic_cast<GNECrossingFrame*>(myGNEFrames.at(MID_GNE_MODE_CROSSING));
 }
 
 
 GNEDeleteFrame*
 GNEViewParent::getDeleteFrame() const {
-    return myFrames.deleteFrame;
+    return dynamic_cast<GNEDeleteFrame*>(myGNEFrames.at(MID_GNE_MODE_DELETE));
 }
 
 
 GNEPolygonFrame*
 GNEViewParent::getPolygonFrame() const {
-    return myFrames.polygonFrame;
+    return dynamic_cast<GNEPolygonFrame*>(myGNEFrames.at(MID_GNE_MODE_POLYGON));
 }
-
-
-GNEProhibitionFrame*
-GNEViewParent::getProhibitionFrame() const {
-    return myFrames.prohibitionFrame;
-}
-
-
-GNECreateEdgeFrame*
-GNEViewParent::getCreateEdgeFrame() const {
-    return myFrames.createEdgeFrame;
-}
-
-
-GNERouteFrame*
-GNEViewParent::getRouteFrame() const {
-    return myFrames.routeFrame;
-}
-
-
-GNEVehicleFrame*
-GNEViewParent::getVehicleFrame() const {
-    return myFrames.vehicleFrame;
-}
-
-
-GNEVehicleTypeFrame*
-GNEViewParent::getVehicleTypeFrame() const {
-    return myFrames.vehicleTypeFrame;
-}
-
 
 void
 GNEViewParent::showFramesArea() {
-    // show and recalc framesArea if at least there is a frame shown
-    if (myFrames.isFrameShown()) {
+    bool showFlag = false;
+    // Iterate over GNEFrames
+    for (auto i = myGNEFrames.begin(); i != myGNEFrames.end(); i++) {
+        // if at least one frame is shown, change showFlag
+        if (i->second->shown()) {
+            showFlag = true;
+        }
+    }
+    // show and recalc framesArea if showFlag is enabled
+    if (showFlag) {
         myFramesArea->recalc();
         myFramesArea->show();
     }
@@ -255,8 +235,16 @@ GNEViewParent::showFramesArea() {
 
 void
 GNEViewParent::hideFramesArea() {
-    // hide and recalc frames Area if all frames are hidden is enabled
-    if (!myFrames.isFrameShown()) {
+    bool hideFlag = true;
+    // Iterate over frames
+    for (auto i = myGNEFrames.begin(); i != myGNEFrames.end(); i++) {
+        // if at least one frame is shown,  change hideflag
+        if (i->second->shown()) {
+            hideFlag = false;
+        }
+    }
+    // hide and recalc frames Area if hideFlag is enabled
+    if (hideFlag) {
         myFramesArea->hide();
         myFramesArea->recalc();
     }
@@ -264,38 +252,14 @@ GNEViewParent::hideFramesArea() {
 
 
 GUIMainWindow*
-GNEViewParent::getGUIMainWindow() const {
+GNEViewParent::getApp() const {
     return myParent;
 }
 
 
-GNEApplicationWindow*
+GNEApplicationWindow* 
 GNEViewParent::getGNEAppWindows() const {
     return myGNEAppWindows;
-}
-
-
-void
-GNEViewParent::eraseACChooserDialog(GNEDialogACChooser* chooserDialog) {
-    if (chooserDialog == nullptr) {
-        throw ProcessError("ChooserDialog already deleted");
-    } else if (chooserDialog == myACChoosers.ACChooserJunction) {
-        myACChoosers.ACChooserJunction = nullptr;
-    } else if (chooserDialog == myACChoosers.ACChooserEdges) {
-        myACChoosers.ACChooserEdges = nullptr;
-    } else if (chooserDialog == myACChoosers.ACChooserTLS) {
-        myACChoosers.ACChooserTLS = nullptr;
-    } else if (chooserDialog == myACChoosers.ACChooserAdditional) {
-        myACChoosers.ACChooserAdditional = nullptr;
-    } else if (chooserDialog == myACChoosers.ACChooserPOI) {
-        myACChoosers.ACChooserPOI = nullptr;
-    } else if (chooserDialog == myACChoosers.ACChooserPolygon) {
-        myACChoosers.ACChooserPolygon = nullptr;
-    } else if (chooserDialog == myACChoosers.ACChooserProhibition) {
-        myACChoosers.ACChooserProhibition = nullptr;
-    } else {
-        throw ProcessError("Unregistered chooserDialog");
-    }
 }
 
 
@@ -323,11 +287,15 @@ GNEViewParent::onCmdMakeSnapshot(FXObject*, FXSelector, void*) {
     std::string error = myView->makeSnapshot(file);
     if (error != "") {
         // write warning if netedit is running in testing mode
-        WRITE_DEBUG("Opening FXMessageBox 'error saving snapshot'");
+        if (OptionsCont::getOptions().getBool("gui-testing-debug")) {
+            WRITE_WARNING("Opening FXMessageBox 'error saving snapshot'");
+        }
         // open message box
         FXMessageBox::error(this, MBOX_OK, "Saving failed.", "%s", error.c_str());
         // write warning if netedit is running in testing mode
-        WRITE_DEBUG("Closed FXMessageBox 'error saving snapshot' with 'OK'");
+        if (OptionsCont::getOptions().getBool("gui-testing-debug")) {
+            WRITE_WARNING("Closed FXMessageBox 'error saving snapshot' with 'OK'");
+        }
     }
     return 1;
 }
@@ -335,7 +303,7 @@ GNEViewParent::onCmdMakeSnapshot(FXObject*, FXSelector, void*) {
 
 long
 GNEViewParent::onCmdClose(FXObject*, FXSelector /* sel */, void*) {
-    myParent->handle(this, FXSEL(SEL_COMMAND, MID_HOTKEY_CTRL_W_CLOSESIMULATION), nullptr);
+    myParent->handle(this, FXSEL(SEL_COMMAND, MID_CLOSE), 0);
     return 1;
 }
 
@@ -344,104 +312,59 @@ long
 GNEViewParent::onCmdLocate(FXObject*, FXSelector sel, void*) {
     GNEViewNet* view = dynamic_cast<GNEViewNet*>(myView);
     assert(view);
-    std::vector<GNEAttributeCarrier*> ACsToLocate;
+    GUIGlObjectType type;
+    GUIIcon icon;
+    std::string dialogtitle;
     switch (FXSELID(sel)) {
-        case MID_LOCATEJUNCTION: {
-            if (myACChoosers.ACChooserJunction) {
-                // set focus in the existent chooser dialog
-                myACChoosers.ACChooserJunction->setFocus();
-            } else {
-                // fill ACsToLocate with junctions
-                std::vector<GNEJunction*> junctions = view->getNet()->retrieveJunctions();
-                ACsToLocate.reserve(junctions.size());
-                for (auto i : junctions) {
-                    ACsToLocate.push_back(i);
-                }
-                myACChoosers.ACChooserJunction = new GNEDialogACChooser(this, GUIIconSubSys::getIcon(ICON_LOCATEJUNCTION), "Junction Chooser", ACsToLocate);
-            }
+        case MID_LOCATEJUNCTION:
+            type = GLO_JUNCTION;
+            icon = ICON_LOCATEJUNCTION;
+            dialogtitle = "Junction Chooser";
             break;
-        }
-        case MID_LOCATEEDGE: {
-            if (myACChoosers.ACChooserEdges) {
-                // set focus in the existent chooser dialog
-                myACChoosers.ACChooserEdges->setFocus();
-            } else {
-                // fill ACsToLocate with edges
-                std::vector<GNEEdge*> edges = view->getNet()->retrieveEdges();
-                ACsToLocate.reserve(edges.size());
-                for (auto i : edges) {
-                    ACsToLocate.push_back(i);
-                }
-                myACChoosers.ACChooserEdges = new GNEDialogACChooser(this, GUIIconSubSys::getIcon(ICON_LOCATEEDGE), "Edge Chooser", ACsToLocate);
-            }
+        case MID_LOCATEEDGE:
+            type = GLO_EDGE;
+            icon = ICON_LOCATEEDGE;
+            dialogtitle = "Edge Chooser";
             break;
-        }
-        case MID_LOCATETLS: {
-            if (myACChoosers.ACChooserTLS) {
-                // set focus in the existent chooser dialog
-                myACChoosers.ACChooserTLS->setFocus();
-            } else {
-                // fill ACsToLocate with junctions that haven TLS
-                std::vector<GNEJunction*> junctions = view->getNet()->retrieveJunctions();
-                ACsToLocate.reserve(junctions.size());
-                for (auto i : junctions) {
-                    if (i->getNBNode()->getControllingTLS().size() > 0) {
-                        ACsToLocate.push_back(i);
-                    }
-                }
-                myACChoosers.ACChooserTLS = new GNEDialogACChooser(this, GUIIconSubSys::getIcon(ICON_LOCATETLS), "TLS Chooser", ACsToLocate);
-            }
+        case MID_LOCATETLS:
+            type = GLO_TLLOGIC;
+            icon = ICON_LOCATETLS;
+            dialogtitle = "Traffic-Light-Junctions Chooser";
             break;
-        }
-        case MID_LOCATEADD: {
-            if (myACChoosers.ACChooserAdditional) {
-                // set focus in the existent chooser dialog
-                myACChoosers.ACChooserAdditional->setFocus();
-            } else {
-                // fill ACsToLocate with additionals
-                std::vector<GNEAdditional*> additionals = view->getNet()->retrieveAdditionals();
-                ACsToLocate.reserve(additionals.size());
-                for (auto i : additionals) {
-                    ACsToLocate.push_back(i);
-                }
-                myACChoosers.ACChooserAdditional = new GNEDialogACChooser(this, GUIIconSubSys::getIcon(ICON_LOCATEADD), "Additional Chooser", ACsToLocate);
-            }
-            break;
-        }
-        case MID_LOCATEPOI: {
-            if (myACChoosers.ACChooserPOI) {
-                // set focus in the existent chooser dialog
-                myACChoosers.ACChooserPOI->setFocus();
-            } else {
-                // fill ACsToLocate with POIs
-                for (auto i : view->getNet()->getPOIs()) {
-                    ACsToLocate.push_back(dynamic_cast<GNEAttributeCarrier*>(i.second));
-                }
-                myACChoosers.ACChooserPOI = new GNEDialogACChooser(this, GUIIconSubSys::getIcon(ICON_LOCATEPOI), "POI Chooser", ACsToLocate);
-            }
-            break;
-        }
-        case MID_LOCATEPOLY: {
-            if (myACChoosers.ACChooserPolygon) {
-                // set focus in the existent chooser dialog
-                myACChoosers.ACChooserPolygon->setFocus();
-            } else {
-                // fill ACsToLocate with polys
-                for (auto i : view->getNet()->getPolygons()) {
-                    ACsToLocate.push_back(dynamic_cast<GNEAttributeCarrier*>(i.second));
-                }
-                myACChoosers.ACChooserPolygon = new GNEDialogACChooser(this, GUIIconSubSys::getIcon(ICON_LOCATEPOLY), "Poly Chooser", ACsToLocate);
-            }
-            break;
-        }
         default:
             throw ProcessError("Unknown Message ID in onCmdLocate");
     }
-    // update locator popup
+    std::set<GUIGlID> idSet = view->getNet()->getGlIDs(type);
+    std::vector<GUIGlID> ids(idSet.begin(), idSet.end());
     myLocatorPopup->popdown();
     myLocatorButton->killFocus();
     myLocatorPopup->update();
+    GUIDialog_GLObjChooser* chooser = new GUIDialog_GLObjChooser(
+        this, GUIIconSubSys::getIcon(icon), dialogtitle.c_str(), ids, GUIGlObjectStorage::gIDStorage);
+    chooser->create();
+    chooser->show();
     return 1;
+}
+
+
+bool
+GNEViewParent::isSelected(GUIGlObject* o) const {
+    GUIGlObjectType type = o->getType();
+    if (gSelected.isSelected(type, o->getGlID())) {
+        return true;
+    } else if (type == GLO_EDGE) {
+        GNEEdge* edge = dynamic_cast<GNEEdge*>(o);
+        assert(edge);
+        const std::set<GUIGlID> laneIDs = edge->getLaneGlIDs();
+        for (std::set<GUIGlID>::const_iterator it = laneIDs.begin(); it != laneIDs.end(); it++) {
+            if (gSelected.isSelected(GLO_LANE, *it)) {
+                return true;
+            }
+        }
+        return false;
+    } else {
+        return false;
+    }
 }
 
 
@@ -461,152 +384,11 @@ GNEViewParent::onKeyRelease(FXObject* o, FXSelector sel, void* eventData) {
 
 long
 GNEViewParent::onCmdUpdateFrameAreaWidth(FXObject*, FXSelector, void*) {
-    // set width of FramesArea in all frames
-    myFrames.setWidth(myFramesArea->getWidth());
+    for (auto i = myGNEFrames.begin(); i != myGNEFrames.end(); i++) {
+        // update size of all GNEFrame
+        i->second->setFrameWidth(myFramesArea->getWidth());
+    }
     return 0;
-}
-
-// ---------------------------------------------------------------------------
-// GNEViewParent::Frames - methods
-// ---------------------------------------------------------------------------
-
-GNEViewParent::Frames::Frames() :
-    inspectorFrame(nullptr),
-    selectorFrame(nullptr),
-    connectorFrame(nullptr),
-    TLSEditorFrame(nullptr),
-    additionalFrame(nullptr),
-    crossingFrame(nullptr),
-    TAZFrame(nullptr),
-    deleteFrame(nullptr),
-    polygonFrame(nullptr),
-    prohibitionFrame(nullptr),
-    createEdgeFrame(nullptr),
-    routeFrame(nullptr),
-    vehicleFrame(nullptr),
-    vehicleTypeFrame(nullptr) {
-}
-
-
-void
-GNEViewParent::Frames::hideFrames() {
-    inspectorFrame->hide();
-    selectorFrame->hide();
-    connectorFrame->hide();
-    TLSEditorFrame->hide();
-    additionalFrame->hide();
-    crossingFrame->hide();
-    TAZFrame->hide();
-    deleteFrame->hide();
-    polygonFrame->hide();
-    prohibitionFrame->hide();
-    /** currently createEdgeFrame unused
-    createEdgeFrame->hide();
-    **/
-    routeFrame->hide();
-    vehicleFrame->hide();
-    vehicleTypeFrame->hide();
-}
-
-
-void
-GNEViewParent::Frames::setWidth(int frameWidth) {
-    // set width in all frames
-    inspectorFrame->setFrameWidth(frameWidth);
-    selectorFrame->setFrameWidth(frameWidth);
-    connectorFrame->setFrameWidth(frameWidth);
-    TLSEditorFrame->setFrameWidth(frameWidth);
-    additionalFrame->setFrameWidth(frameWidth);
-    crossingFrame->setFrameWidth(frameWidth);
-    TAZFrame->setFrameWidth(frameWidth);
-    deleteFrame->setFrameWidth(frameWidth);
-    polygonFrame->setFrameWidth(frameWidth);
-    prohibitionFrame->setFrameWidth(frameWidth);
-    /** currently createEdgeFrame unused
-    createEdgeFrame->setFrameWidth(frameWidth);
-    **/
-    routeFrame->setFrameWidth(frameWidth);
-    vehicleFrame->setFrameWidth(frameWidth);
-    vehicleTypeFrame->setFrameWidth(frameWidth);
-}
-
-
-bool
-GNEViewParent::Frames::isFrameShown() const {
-    // check all frames
-    if (inspectorFrame->shown()) {
-        return true;
-    } else if (selectorFrame->shown()) {
-        return true;
-    } else if (connectorFrame->shown()) {
-        return true;
-    } else if (TLSEditorFrame->shown()) {
-        return true;
-    } else if (additionalFrame->shown()) {
-        return true;
-    } else if (crossingFrame->shown()) {
-        return true;
-    } else if (TAZFrame->shown()) {
-        return true;
-    } else if (deleteFrame->shown()) {
-        return true;
-    } else if (polygonFrame->shown()) {
-        return true;
-    } else if (prohibitionFrame->shown()) {
-        return true;
-        /** currently createEdgeFrame unused
-        } else if (createEdgeFrame->shown()) {
-            return true;
-        **/
-    } else if (routeFrame->shown()) {
-        return true;
-    } else if (vehicleFrame->shown()) {
-        return true;
-    } else if (vehicleTypeFrame->shown()) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-// ---------------------------------------------------------------------------
-// GNEViewParent::ACChoosers - methods
-// ---------------------------------------------------------------------------
-
-GNEViewParent::ACChoosers::ACChoosers() :
-    ACChooserJunction(nullptr),
-    ACChooserEdges(nullptr),
-    ACChooserTLS(nullptr),
-    ACChooserAdditional(nullptr),
-    ACChooserPOI(nullptr),
-    ACChooserPolygon(nullptr),
-    ACChooserProhibition(nullptr) {
-}
-
-
-GNEViewParent::ACChoosers::~ACChoosers() {
-    // remove all  dialogs if are active
-    if (ACChooserJunction) {
-        delete ACChooserJunction ;
-    }
-    if (ACChooserEdges) {
-        delete ACChooserEdges ;
-    }
-    if (ACChooserTLS) {
-        delete ACChooserTLS ;
-    }
-    if (ACChooserAdditional) {
-        delete ACChooserAdditional ;
-    }
-    if (ACChooserPOI) {
-        delete ACChooserPOI ;
-    }
-    if (ACChooserPolygon) {
-        delete ACChooserPolygon ;
-    }
-    if (ACChooserProhibition) {
-        delete ACChooserProhibition;
-    }
 }
 
 /****************************************************************************/

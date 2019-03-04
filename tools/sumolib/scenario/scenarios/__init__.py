@@ -1,21 +1,24 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    __init__.py
+@author  Daniel Krajzewicz
+@date    2014-07-01
+@version $Id$
 
-# @file    __init__.py
-# @author  Daniel Krajzewicz
-# @date    2014-07-01
-# @version $Id$
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2016 DLR (http://www.dlr.de/) and contributors
 
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 from __future__ import absolute_import
 from __future__ import print_function
-import sumolib.net.generator.cross as netGenerator  # noqa
+import sumolib.net.generator.cross as netGenerator
 import sumolib.net.generator.demand as demandGenerator
+from sumolib.net.generator.network import *
 import sumolib
 import os
 
@@ -122,8 +125,7 @@ def extrapolateDemand(stream, freq, probs, pivot=demandGenerator.PIVOT__PEAK, tB
         # ok, this works just if _numberModel is a number
         num = float(stream._numberModel) * p / probs[pivot]
         ret.addStream(demandGenerator.Stream(stream.sid + "_" + str(i), t, t + freq,
-                                             num, stream._departEdgeModel, stream._arrivalEdgeModel,
-                                             stream._vTypeModel))
+                                             num, stream._departEdgeModel, stream._arrivalEdgeModel, stream._vTypeModel))
         t = t + freq
     return ret
 
@@ -141,7 +143,7 @@ class Scenario:
         self.addAdditionalFile("vtypes")
         try:
             os.makedirs(os.path.join(SANDBOX_PATH, self.name))
-        except OSError:
+        except:
             pass
 
     def addAdditionalFile(self, name):

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBConnection.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // The class holds a description of a connection between two edges
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <sstream>
 #include <iostream>
@@ -35,7 +42,7 @@
 // static members
 // ===========================================================================
 const int NBConnection::InvalidTlIndex = -1;
-const NBConnection NBConnection::InvalidConnection("invalidFrom", nullptr, "invalidTo", nullptr);
+const NBConnection NBConnection::InvalidConnection("invalidFrom", 0, "invalidTo", 0);
 
 // ===========================================================================
 // method definitions
@@ -67,7 +74,7 @@ NBConnection::NBConnection(NBEdge* from, int fromLane,
     assert(myToLane<0||to->getNumLanes()>(int) myToLane);
     */
     myFromID = from->getID();
-    myToID = to != nullptr ? to->getID() : "";
+    myToID = to != 0 ? to->getID() : "";
 }
 
 
@@ -98,7 +105,7 @@ bool
 NBConnection::replaceFrom(NBEdge* which, NBEdge* by) {
     if (myFrom == which) {
         myFrom = by;
-        if (myFrom != nullptr) {
+        if (myFrom != 0) {
             myFromID = myFrom->getID();
         } else {
             myFromID = "invalidFrom";
@@ -114,7 +121,7 @@ NBConnection::replaceFrom(NBEdge* which, int whichLane,
                           NBEdge* by, int byLane) {
     if (myFrom == which && (myFromLane == whichLane || myFromLane < 0 || whichLane < 0)) {
         myFrom = by;
-        if (myFrom != nullptr) {
+        if (myFrom != 0) {
             myFromID = myFrom->getID();
         } else {
             myFromID = "invalidFrom";
@@ -132,7 +139,7 @@ bool
 NBConnection::replaceTo(NBEdge* which, NBEdge* by) {
     if (myTo == which) {
         myTo = by;
-        if (myTo != nullptr) {
+        if (myTo != 0) {
             myToID = myTo->getID();
         } else {
             myToID = "invalidTo";
@@ -148,7 +155,7 @@ NBConnection::replaceTo(NBEdge* which, int whichLane,
                         NBEdge* by, int byLane) {
     if (myTo == which && (myToLane == whichLane || myFromLane < 0 || whichLane < 0)) {
         myTo = by;
-        if (myTo != nullptr) {
+        if (myTo != 0) {
             myToID = myTo->getID();
         } else {
             myToID = "invalidTo";
@@ -190,7 +197,7 @@ bool
 NBConnection::check(const NBEdgeCont& ec) {
     myFrom = checkFrom(ec);
     myTo = checkTo(ec);
-    return myFrom != nullptr && myTo != nullptr;
+    return myFrom != 0 && myTo != 0;
 }
 
 
@@ -239,10 +246,10 @@ NBConnection::getToLane() const {
 
 
 void
-NBConnection::shiftLaneIndex(NBEdge* edge, int offset, int threshold) {
-    if (myFrom == edge && myFromLane > threshold) {
+NBConnection::shiftLaneIndex(NBEdge* edge, int offset) {
+    if (myFrom == edge) {
         myFromLane += offset;
-    } else if (myTo == edge && myToLane > threshold) {
+    } else if (myTo == edge) {
         myToLane += offset;
     }
 }

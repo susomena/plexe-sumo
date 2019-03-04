@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIE2Collector.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,12 +9,27 @@
 ///
 // The gui-version of the MSE2Collector
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/geom/PositionVector.h>
@@ -65,29 +72,25 @@ GUIE2Collector::buildDetectorGUIRepresentation() {
     return new MyWrapper(*this);
 }
 
-// -------------------------------------------------------------------------
-// GUIE2Collector::MyWrapper-methods
-// -------------------------------------------------------------------------
 
-GUIE2Collector::MyWrapper::MyWrapper(GUIE2Collector& detector) :
-    GUIDetectorWrapper(GLO_E2DETECTOR, detector.getID()),
-    myDetector(detector) {
+
+/* -------------------------------------------------------------------------
+ * GUIE2Collector::MyWrapper-methods
+ * ----------------------------------------------------------------------- */
+GUIE2Collector::MyWrapper::MyWrapper(GUIE2Collector& detector)
+    : GUIDetectorWrapper("E2 detector", detector.getID()),
+      myDetector(detector) {
+
     // collect detector shape into one vector (v)
     PositionVector v;
     const std::vector<MSLane*> lanes = detector.getLanes();
-    double detectorLength = detector.getLength();
     for (std::vector<MSLane*>::const_iterator li = lanes.begin(); li != lanes.end(); ++li) {
         const PositionVector& shape = (*li)->getShape();
-        // account for gaps between lanes (e.g. in networks without internal lanes)
-        if (v.size() > 0) {
-            detectorLength += v.back().distanceTo2D(shape.front());
-        }
         v.insert(v.end(), shape.begin(), shape.end());
     }
+
     // build geometry
-    myFullGeometry = v.getSubpart(
-                         lanes.front()->interpolateLanePosToGeometryPos(detector.getStartPos()),
-                         lanes.back()->interpolateLanePosToGeometryPos(detector.getStartPos() + detectorLength));
+    myFullGeometry = v.getSubpart(detector.getStartPos(), detector.getStartPos() + detector.getLength());
     //
     myShapeRotations.reserve(myFullGeometry.size() - 1);
     myShapeLengths.reserve(myFullGeometry.size() - 1);
@@ -160,7 +163,7 @@ GUIE2Collector::MyWrapper::drawGL(const GUIVisualizationSettings& s) const {
     glPushMatrix();
     glTranslated(0, 0, getType());
     double dwidth = 1;
-    const double exaggeration = s.addSize.getExaggeration(s, this);
+    const double exaggeration = s.addSize.getExaggeration(s);
     if (exaggeration > 0) {
         if (myDetector.getUsageType() == DU_TL_CONTROL) {
             dwidth = (double) 0.3;

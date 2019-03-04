@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSPModel.h
 /// @author  Jakob Erdmann
 /// @date    Mon, 13 Jan 2014
@@ -14,19 +6,33 @@
 ///
 // The pedestrian following model (prototype)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSPModel_h
 #define MSPModel_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <limits>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/Command.h>
-#include <utils/common/MsgHandler.h>
 #include <utils/geom/GeomHelper.h>
 #include <microsim/pedestrians/MSPerson.h>
 
@@ -110,13 +116,8 @@ public:
     /// @brief the offset for computing person positions when walking on edges without a sidewalk
     static const double SIDEWALK_OFFSET;
 
-    /* @brief return the arrival direction if the route may be traversed with the given starting direction.
-     * returns UNDEFINED_DIRECTION if the route cannot be traversed
-     */
-    static int canTraverse(int dir, const ConstMSEdgeVector& route);
-
-    /// @brief whether movements on intersections are modelled
-    virtual bool usingInternalLanes() = 0;
+    /// @brief return whether the route may traversed with the given starting direction
+    static bool canTraverse(int dir, const ConstMSEdgeVector& route);
 
 private:
     static MSPModel* myModel;
@@ -146,48 +147,8 @@ public:
 
     /// @brief return the list of internal edges if the pedestrian is on an intersection
     virtual const MSEdge* getNextEdge(const MSPerson::MSPersonStage_Walking& stage) const = 0;
-
-    /// @brief try to move person to the given position
-    virtual void moveToXY(MSPerson* p, Position pos, MSLane* lane, double lanePos,
-                          double lanePosLat, double angle, int routeOffset,
-                          const ConstMSEdgeVector& edges, SUMOTime t) {
-        UNUSED_PARAMETER(p);
-        UNUSED_PARAMETER(pos);
-        UNUSED_PARAMETER(lane);
-        UNUSED_PARAMETER(lanePos);
-        UNUSED_PARAMETER(lanePosLat);
-        UNUSED_PARAMETER(angle);
-        UNUSED_PARAMETER(routeOffset);
-        UNUSED_PARAMETER(edges);
-        UNUSED_PARAMETER(t);
-        WRITE_WARNING("moveToXY is ignored by the current pedestrian model");
-    }
-
 };
 
-
-class DummyState : public PedestrianState {
-
-public:
-    double getEdgePos(const MSPerson::MSPersonStage_Walking&, SUMOTime) const {
-        return 0.;
-    }
-    Position getPosition(const MSPerson::MSPersonStage_Walking&, SUMOTime) const {
-        return Position::INVALID;
-    }
-    double getAngle(const MSPerson::MSPersonStage_Walking&, SUMOTime) const {
-        return 0.;
-    }
-    SUMOTime getWaitingTime(const MSPerson::MSPersonStage_Walking&, SUMOTime) const {
-        return 0;
-    }
-    double getSpeed(const MSPerson::MSPersonStage_Walking&) const {
-        return 0.;
-    }
-    const MSEdge* getNextEdge(const MSPerson::MSPersonStage_Walking&) const {
-        return nullptr;
-    }
-};
 
 
 #endif /* MSPModel_h */

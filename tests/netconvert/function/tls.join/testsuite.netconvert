@@ -1,9 +1,6 @@
 # join traffic lights within the default distance
 basic
 
-# join traffic lights within the default distance, select unique id
-id_exists
-
 # set a lower maxdist and test that nothing is joined
 option_join-dist
 
@@ -22,9 +19,6 @@ specified_controlledInner
 
 # test heuristic for interpreting tls-nodes as signal locations
 guess-signals
-
-# test heuristic for interpreting tls-nodes as signal locations in a multimodal network
-guess-signals_multimodal
 
 # exclude nodes from receiving a traffic light via tls.unset
 guess-signals_unset

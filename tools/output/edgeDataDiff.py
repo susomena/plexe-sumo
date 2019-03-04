@@ -1,82 +1,53 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    edgeDataDiff.py
+@author  Jakob Erdmann
+@date    2015-08-14
+@version $Id$
 
-# @file    edgeDataDiff.py
-# @author  Jakob Erdmann
-# @date    2015-08-14
-# @version $Id$
+Compute differences between two edgeData-output files
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
 from collections import defaultdict
-import optparse
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-from sumolib.output import parse  # noqa
-from sumolib.miscutils import Statistics, geh  # noqa
+from sumolib.output import parse
+from sumolib.miscutils import Statistics
 
 
-def get_options(args=None):
-    optParser = optparse.OptionParser()
-    optParser.add_option("--relative", action="store_true",
-                         default=False, help="write relative instead of absolute differences")
-    optParser.add_option("--geh", action="store_true",
-                         default=False, help="write geh value instead of absolute differences")
-    optParser.add_option("--undefined", type="float", default=-1001, help="value to use if the difference is undefined")
-    (options, args) = optParser.parse_args(args=args)
-
-    if len(args) == 3:
-        options.orig, options.new, options.out = args
-    else:
-        optParser.print_help()
-        sys.exit(1)
-
-    return options
-
-
-def write_diff(options):
+def write_diff(orig, new, out):
 
     diffStats = defaultdict(Statistics)
 
-    with open(options.out, 'w') as f:
+    with open(out, 'w') as f:
         f.write("<meandata>\n")
-        for interval_old, interval_new in zip(
-                parse(options.orig, 'interval', heterogeneous=True),
-                parse(options.new, 'interval', heterogeneous=True)):
+        for interval_old, interval_new in zip(parse(orig, 'interval'), parse(new, 'interval')):
             f.write('    <interval begin="%s" end="%s">\n' %
                     (interval_old.begin, interval_old.end))
-            interval_new_edges = dict([(e.id, e) for e in interval_new.edge])
-            for edge_old in interval_old.edge:
-                edge_new = interval_new_edges.get(edge_old.id, None)
-                if edge_new is None:
-                    continue
+            for edge_old, edge_new in zip(interval_old.edge, interval_new.edge):
                 assert(edge_old.id == edge_new.id)
                 f.write('    <edge id="%s"' % edge_old.id)
                 for attr in edge_old._fields:
                     if attr == 'id':
                         continue
                     try:
-                        val_new = float(getattr(edge_new, attr))
-                        val_old = float(getattr(edge_old, attr))
-                        delta = val_new - val_old
-                        if options.relative:
-                            if val_old != 0:
-                                delta /= abs(val_old)
-                            else:
-                                delta = options.undefined
-                        elif options.geh:
-                            delta = geh(val_new, val_old)
+                        delta = float(getattr(edge_new, attr)) - \
+                            float(getattr(edge_old, attr))
                         diffStats[attr].add(delta, edge_old.id)
                         f.write(' %s="%s"' % (attr, delta))
-                    except Exception:
+                    except:
                         pass
                 f.write("/>\n")
             f.write("</interval>\n")
@@ -88,4 +59,9 @@ def write_diff(options):
 
 
 if __name__ == "__main__":
-    write_diff(get_options())
+    try:
+        orig, new, out = sys.argv[1:]
+    except ValueError:
+        print("USAGE: %s <edgedata1.xml> <edgedata2.xml> <output_diff.xml>")
+        sys.exit()
+    write_diff(orig, new, out)

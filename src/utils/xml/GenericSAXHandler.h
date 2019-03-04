@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GenericSAXHandler.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // A handler which converts occuring elements and attributes into enums
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GenericSAXHandler_h
 #define GenericSAXHandler_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -83,14 +90,13 @@ public:
      * @param[in] attrs The list of known attributes
      * @param[in] terminatorAttr The attr which signales the end of attrs (usually the last entry)
      * @param[in] file The name of the processed file
-     * @param[in] expectedRoot The expected root element, empty string disables the check
      *
      * @todo Why are both lists non-const and given as pointers?
      */
     GenericSAXHandler(
         StringBijection<int>::Entry* tags, int terminatorTag,
         StringBijection<int>::Entry* attrs, int terminatorAttr,
-        const std::string& file, const std::string& expectedRoot = "");
+        const std::string& file);
 
 
     /** @brief Destructor */
@@ -114,7 +120,7 @@ public:
 
 
     /**
-     * @brief The inherited method called when characters occurred
+     * @brief The inherited method called when characters occured
      *
      * The retrieved characters are converted into a string and appended into a
      *  private buffer. They are reported as soon as the element ends.
@@ -174,7 +180,7 @@ public:
      * The message is built using buildErrorMessage and reported
      *  to the warning-instance of the MsgHandler.
      *
-     * @param[in] exception The occurred exception to process
+     * @param[in] exception The occured exception to process
      */
     void warning(const XERCES_CPP_NAMESPACE::SAXParseException& exception);
 
@@ -184,7 +190,7 @@ public:
      *
      * The message is built using buildErrorMessage and thrown within a ProcessError.
      *
-     * @param[in] exception The occurred exception to process
+     * @param[in] exception The occured exception to process
      * @exception ProcessError On any call
      */
     void error(const XERCES_CPP_NAMESPACE::SAXParseException& exception);
@@ -196,7 +202,7 @@ public:
      * The message is built using buildErrorMessage and thrown within a ProcessError.
      *
      * @exception ProcessError On any call
-     * @param[in] exception The occurred exception to process
+     * @param[in] exception The occured exception to process
      */
     void fatalError(const XERCES_CPP_NAMESPACE::SAXParseException& exception);
     //@}
@@ -251,10 +257,6 @@ protected:
      */
     virtual void myEndElement(int element);
 
-
-    void setSchemaSeen(const bool schemaSeen = true) {
-        mySchemaSeen = schemaSeen;
-    }
 
 private:
     /**
@@ -314,12 +316,6 @@ private:
 
     /// @brief The name of the currently parsed file
     std::string myFileName;
-
-    /// @brief The root element to expect, empty string disables the check
-    std::string myExpectedRoot;
-
-    /// @brief whether the reader has already seen a schema
-    bool mySchemaSeen;
 
 private:
     /// @brief invalidated copy constructor

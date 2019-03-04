@@ -1,24 +1,28 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    netstats.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2008-08-13
+@version $Id$
 
-# @file    netstats.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2008-08-13
-# @version $Id$
+Prints some information about a given network
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import sumolib.net  # noqa
+import sumolib.net
 
 
 def renderHTML(values):
@@ -38,7 +42,7 @@ def renderHTML(values):
 
 
 def renderPNG(values):
-    from pylab import bar, show
+    from pylab import *
     bar([0], [values["edgeNumber"]], 1, color='r')
     show()
 

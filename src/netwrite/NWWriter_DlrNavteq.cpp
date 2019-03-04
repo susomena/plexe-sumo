@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NWWriter_DlrNavteq.cpp
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
@@ -15,12 +7,27 @@
 ///
 // Exporter writing networks using DlrNavteq (Elmar) format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 #include <algorithm>
 #include <ctime>
 #include <cmath>
@@ -39,6 +46,8 @@
 #include <utils/geom/GeoConvHelper.h>
 #include "NWFrame.h"
 #include "NWWriter_DlrNavteq.h"
+
+#define OUTPUT_VERSION "6.5"
 
 
 // ---------------------------------------------------------------------------
@@ -65,7 +74,12 @@ NWWriter_DlrNavteq::writeNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
 
 
 void NWWriter_DlrNavteq::writeHeader(OutputDevice& device, const OptionsCont& oc) {
-    device << "# Format matches Extraction version: V6.5 \n";
+    time_t rawtime;
+    time(&rawtime);
+    char buffer [80];
+    strftime(buffer, 80, "on %c", localtime(&rawtime));
+    device << "# Generated " << buffer << " by " << oc.getFullName() << "\n";
+    device << "# Format matches Extraction version: V" << OUTPUT_VERSION << " \n";
     std::stringstream tmp;
     oc.writeConfiguration(tmp, true, false, false);
     tmp.seekg(std::ios_base::beg);
@@ -147,7 +161,7 @@ NWWriter_DlrNavteq::writeNodesUnsplitted(const OptionsCont& oc, NBNodeCont& nc, 
             // the import NIImporter_DlrNavteq checks for the presence of a
             // negated edge id to determine spread type. We may need to do some
             // shifting to make this consistent
-            const bool hasOppositeID = ec.getOppositeByID(e->getID()) != nullptr;
+            const bool hasOppositeID = ec.getOppositeByID(e->getID()) != 0;
             if (e->getLaneSpreadFunction() == LANESPREAD_RIGHT && !hasOppositeID) {
                 // need to write center-line geometry instead
                 try {
@@ -166,7 +180,7 @@ NWWriter_DlrNavteq::writeNodesUnsplitted(const OptionsCont& oc, NBNodeCont& nc, 
 
             std::string internalNodeID = e->getID();
             if (internalNodeID == UNDEFINED
-                    || (nc.retrieve(internalNodeID) != nullptr)
+                    || (nc.retrieve(internalNodeID) != 0)
                     || reservedNodeIDs.count(internalNodeID) > 0
                ) {
                 // need to invent a new name to avoid clashing with the id of a 'real' node or a reserved name
@@ -206,11 +220,9 @@ NWWriter_DlrNavteq::writeLinksUnsplitted(const OptionsCont& oc, NBEdgeCont& ec, 
         std::string nameID = UNDEFINED;
         if (oc.getBool("output.street-names")) {
             const std::string& name = i->second->getStreetName();
-            if (name != "") {
-                if (nameIDs.count(name) == 0) {
-                    nameIDs[name] = toString(nameIDs.size());
-                }
-                nameID = nameIDs[name];
+            if (name != "" && nameIDs.count(name) == 0) {
+                nameID = toString(nameIDs.size());
+                nameIDs[name] = nameID;
             }
         }
         device << e->getID() << "\t"
@@ -226,8 +238,8 @@ NWWriter_DlrNavteq::writeLinksUnsplitted(const OptionsCont& oc, NBEdgeCont& ec, 
                << getNavteqLaneCode(e->getNumLanes()) << "\t"
                << getSpeedCategoryUpperBound(kph) << "\t"
                << kph << "\t"
-               << UNDEFINED << "\t" // NAME_ID1_REGIONAL XXX
-               << nameID << "\t" // NAME_ID2_LOCAL
+               << nameID << "\t" // NAME_ID1_REGIONAL XXX
+               << UNDEFINED << "\t" // NAME_ID2_LOCAL XXX
                << UNDEFINED << "\t" // housenumbers_right
                << UNDEFINED << "\t" // housenumbers_left
                << getSinglePostalCode(e->getParameter("postal_code", UNDEFINED), e->getID()) << "\t" // ZIP_CODE

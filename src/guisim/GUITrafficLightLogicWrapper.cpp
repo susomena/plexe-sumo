@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUITrafficLightLogicWrapper.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,15 +9,29 @@
 ///
 // A wrapper for tl-logics to allow their visualisation and interaction
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
-#include <utils/geom/GeomHelper.h>
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/gui/div/GLObjectValuePassConnector.h>
 #include <utils/gui/windows/GUIAppEnum.h>
@@ -149,17 +155,13 @@ GUITrafficLightLogicWrapper::getPopUpMenu(GUIMainWindow& app,
         new FXMenuSeparator(ret);
     }
     new FXMenuCommand(ret, "Switch off", GUIIconSubSys::getIcon(ICON_FLAG_MINUS), ret, MID_SWITCH_OFF);
-    new FXMenuCommand(ret, "Track Phases", nullptr, ret, MID_TRACKPHASES);
-    new FXMenuCommand(ret, "Show Phases", nullptr, ret, MID_SHOWPHASES);
+    new FXMenuCommand(ret, "Track Phases", 0, ret, MID_TRACKPHASES);
+    new FXMenuCommand(ret, "Show Phases", 0, ret, MID_SHOWPHASES);
     new FXMenuSeparator(ret);
     MSTrafficLightLogic* tll = myTLLogicControl.getActive(myTLLogic.getID());
     buildNameCopyPopupEntry(ret);
     buildSelectionPopupEntry(ret);
-    new FXMenuCommand(ret, ("phase: " + toString(tll->getCurrentPhaseIndex())).c_str(), nullptr, nullptr, 0);
-    const std::string& name =  myTLLogic.getCurrentPhaseDef().getName();
-    if (name != "") {
-        new FXMenuCommand(ret, ("phase name: " + name).c_str(), nullptr, nullptr, 0);
-    }
+    new FXMenuCommand(ret, ("phase: " + toString(tll->getCurrentPhaseIndex())).c_str(), 0, 0, 0);
     new FXMenuSeparator(ret);
     buildShowParamsPopupEntry(ret, false);
     buildPositionCopyEntry(ret, false);
@@ -193,7 +195,7 @@ GUIParameterTableWindow*
 GUITrafficLightLogicWrapper::getParameterWindow(GUIMainWindow& app,
         GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 3 + (int)myTLLogic.getParametersMap().size());
+        new GUIParameterTableWindow(app, *this, 3 + (int)myTLLogic.getMap().size());
     ret->mkItem("tlLogic [id]", false, myTLLogic.getID());
     ret->mkItem("program", false, myTLLogic.getProgramID());
     // close building
@@ -268,15 +270,10 @@ GUITrafficLightLogicWrapper::drawGL(const GUIVisualizationSettings& s) const {
                 const MSTrafficLightLogic::LaneVector& lanes = myTLLogic.getLanesAt(*it_idx);
                 for (MSTrafficLightLogic::LaneVector::const_iterator it_lane = lanes.begin(); it_lane != lanes.end(); it_lane++) {
                     glPushMatrix();
-                    // split circle in red and yellow
+                    glColor3d(0, 1, 0);
                     Position pos = (*it_lane)->getShape().back();
                     glTranslated(pos.x(), pos.y(), GLO_MAX);
-                    double rot = RAD2DEG((*it_lane)->getShape().angleAt2D((int)(*it_lane)->getShape().size() - 2)) - 90;
-                    glRotated(rot, 0, 0, 1);
-                    GLHelper::setColor(s.getLinkColor(LINKSTATE_TL_RED));
-                    GLHelper::drawFilledCircle((*it_lane)->getWidth() / 2., 8, -90, 90);
-                    GLHelper::setColor(s.getLinkColor(LINKSTATE_TL_YELLOW_MAJOR));
-                    GLHelper::drawFilledCircle((*it_lane)->getWidth() / 2., 8, 90, 270);
+                    GLHelper::drawFilledCircle((*it_lane)->getWidth() / 2.);
                     glPopMatrix();
                 }
             }

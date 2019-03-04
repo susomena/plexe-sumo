@@ -1,18 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIXMLTrafficLightsHandler.h
 /// @author  Jakob Erdmann
 /// @date    2011-10-05
 /// @version $Id$
 ///
 // Importer for traffic lights stored in XML
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef NIXMLTrafficLightsHandler_h
 #define NIXMLTrafficLightsHandler_h
@@ -21,7 +24,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/xml/SUMOSAXHandler.h>
 #include <netbuild/NBConnection.h>
@@ -52,7 +59,7 @@ public:
     /** @brief Constructor
      * @param[in] ec The traffic light container into which to load logics
      */
-    NIXMLTrafficLightsHandler(NBTrafficLightLogicCont& tlCont, NBEdgeCont& ec, bool ignoreUnknown = false);
+    NIXMLTrafficLightsHandler(NBTrafficLightLogicCont& tlCont, NBEdgeCont& ec);
 
 
     /// @brief Destructor
@@ -115,8 +122,6 @@ private:
     /// parses a lane index and verifies its correctness
     int retrieveLaneIndex(const SUMOSAXAttributes& attrs, SumoXMLAttr attr, NBEdge* edge, bool& ok);
 
-    /// @brief whether definitions for unknown traffic lights shall be silently ignored
-    bool myIgnoreUnknown;
 
 
 private:

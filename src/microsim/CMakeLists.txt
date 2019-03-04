@@ -1,9 +1,7 @@
 add_subdirectory(actions)
 add_subdirectory(cfmodels)
 add_subdirectory(devices)
-add_subdirectory(engine)
 add_subdirectory(lcmodels)
-add_subdirectory(logging)
 add_subdirectory(output)
 add_subdirectory(pedestrians)
 add_subdirectory(traffic_lights)
@@ -81,8 +79,6 @@ set(microsim_STAT_SRCS
    MSVehicleType.h
    MSStateHandler.h
    MSStateHandler.cpp
-   MSDriverState.h
-   MSDriverState.cpp
    MSTransportable.h
    MSTransportable.cpp
    MSTransportableControl.h

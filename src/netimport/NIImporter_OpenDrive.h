@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIImporter_OpenDrive.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Importer for networks stored in openDrive format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NIImporter_OpenDrive_h
 #define NIImporter_OpenDrive_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -104,10 +111,7 @@ protected:
         OPENDRIVE_TAG_LANELINK,
         OPENDRIVE_TAG_WIDTH,
         OPENDRIVE_TAG_SPEED,
-        OPENDRIVE_TAG_ELEVATION,
-        OPENDRIVE_TAG_GEOREFERENCE,
-        OPENDRIVE_TAG_OBJECT,
-        OPENDRIVE_TAG_REPEAT
+        OPENDRIVE_TAG_ELEVATION
     };
 
 
@@ -122,18 +126,11 @@ protected:
         OPENDRIVE_ATTR_REVMINOR,
         OPENDRIVE_ATTR_ID,
         OPENDRIVE_ATTR_LENGTH,
-        OPENDRIVE_ATTR_WIDTH,
-        OPENDRIVE_ATTR_DISTANCE,
-        OPENDRIVE_ATTR_TSTART,
-        OPENDRIVE_ATTR_TEND,
-        OPENDRIVE_ATTR_WIDTHSTART,
-        OPENDRIVE_ATTR_WIDTHEND,
         OPENDRIVE_ATTR_JUNCTION,
         OPENDRIVE_ATTR_ELEMENTTYPE,
         OPENDRIVE_ATTR_ELEMENTID,
         OPENDRIVE_ATTR_CONTACTPOINT,
         OPENDRIVE_ATTR_S,
-        OPENDRIVE_ATTR_T,
         OPENDRIVE_ATTR_X,
         OPENDRIVE_ATTR_Y,
         OPENDRIVE_ATTR_HDG,
@@ -373,10 +370,10 @@ protected:
          * @param[in] dynamicArg Whether the signal is dynamic
          * @param[in] sArg The offset from the start, counted from the begin
          */
-        OpenDriveSignal(const std::string& idArg, const std::string typeArg, const std::string nameArg, int orientationArg, bool dynamicArg, double sArg)
+        OpenDriveSignal(int idArg, const std::string typeArg, const std::string nameArg, int orientationArg, bool dynamicArg, double sArg)
             : id(idArg), type(typeArg), name(nameArg), orientation(orientationArg), dynamic(dynamicArg), s(sArg) { }
 
-        std::string id;
+        int id;
         std::string type;
         std::string name;
         int orientation;
@@ -399,36 +396,8 @@ protected:
         bool all;
         std::string origID;
         int origLane;
-        PositionVector shape;
-
-        std::string getDescription() const {
-            return "Connection from=" + fromEdge + "_" + toString(fromLane)
-                   + " to=" + toEdge + "_" + toString(toLane)
-                   + " fromCP=" + (fromCP == OPENDRIVE_CP_START ? "start" : fromCP == OPENDRIVE_CP_END ? "end" : "unknown")
-                   + " toCP=" + (toCP == OPENDRIVE_CP_START ? "start" : toCP == OPENDRIVE_CP_END ? "end" : "unknown")
-                   + " all=" + toString(all);
-            //+ " origID=" + origID + " origLane=" + toString(origLane);
-        }
     };
 
-    /**
-     * @struct Object
-     * @brief A road object (e.g. parkingSpace)
-     */
-    struct OpenDriveObject {
-        std::string type;
-        std::string name;
-        std::string id;
-        double s;
-        double t;
-        double zOffset;
-        double length;
-        double width;
-        double height;
-        double hdg;
-        double pitch;
-        double roll;
-    };
 
     /**
      * @struct OpenDriveEdge
@@ -473,7 +442,6 @@ protected:
         std::vector<OpenDriveLaneSection> laneSections;
         std::vector<OpenDriveSignal> signals;
         std::set<Connection> connections;
-        std::vector<OpenDriveObject> objects;
         bool isInner;
     };
 
@@ -537,16 +505,6 @@ protected:
      */
     void myStartElement(int element, const SUMOSAXAttributes& attrs);
 
-    /**
-     * @brief Callback method for characters to implement by derived classes
-     *
-     * Called by "endElement" (see there).
-     * @param[in] element The opened element, given as a int
-     * @param[in] chars The complete embedded character string
-     * @exceptions ProcessError These method may throw a ProcessError if something fails
-     */
-    void myCharacters(int element, const std::string& chars);
-
 
     /** @brief Called when a closing tag occurs
      *
@@ -565,7 +523,6 @@ private:
     void addGeometryShape(GeometryType type, const std::vector<double>& vals);
     static void setEdgeLinks2(OpenDriveEdge& e, const std::map<std::string, OpenDriveEdge*>& edges);
     static void buildConnectionsToOuter(const Connection& c, const std::map<std::string, OpenDriveEdge*>& innerEdges, std::vector<Connection>& into, std::set<Connection>& seen);
-    static bool laneSectionsConnected(OpenDriveEdge* edge, int in, int out);
     friend bool operator<(const Connection& c1, const Connection& c2);
     static std::string revertID(const std::string& id);
     const NBTypeCont& myTypeContainer;
@@ -583,7 +540,6 @@ private:
     static bool myImportAllTypes;
     static bool myImportWidths;
     static double myMinWidth;
-    static bool myImportInternalShapes;
 
 
 protected:

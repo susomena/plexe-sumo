@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIVissimTL.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // -------------------
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 
 #include <map>
@@ -98,11 +105,11 @@ NIVissimTL::NIVissimTLSignal*
 NIVissimTL::NIVissimTLSignal::dictionary(int lsaid, int id) {
     SignalDictType::iterator i = myDict.find(lsaid);
     if (i == myDict.end()) {
-        return nullptr;
+        return 0;
     }
     SSignalDictType::iterator j = (*i).second.find(id);
     if (j == (*i).second.end()) {
-        return nullptr;
+        return 0;
     }
     return (*j).second;
 }
@@ -112,7 +119,7 @@ void
 NIVissimTL::NIVissimTLSignal::clearDict() {
     for (SignalDictType::iterator i = myDict.begin(); i != myDict.end(); i++) {
         for (SSignalDictType::iterator j = (*i).second.begin(); j != (*i).second.end(); j++) {
-            delete (*j).second;
+            delete(*j).second;
         }
     }
     myDict.clear();
@@ -133,10 +140,10 @@ bool
 NIVissimTL::NIVissimTLSignal::addTo(NBEdgeCont& ec, NBLoadedTLDef* tl) const {
     NIVissimConnection* c = NIVissimConnection::dictionary(myEdgeID);
     NBConnectionVector assignedConnections;
-    if (c == nullptr) {
+    if (c == 0) {
         // What to do if on an edge? -> close all outgoing connections
         NBEdge* edge = ec.retrievePossiblySplit(toString<int>(myEdgeID), myPosition);
-        if (edge == nullptr) {
+        if (edge == 0) {
             WRITE_WARNING("Could not set tls signal at edge '" + toString(myEdgeID) + "' - the edge was not built.");
             return false;
         }
@@ -165,7 +172,7 @@ NIVissimTL::NIVissimTLSignal::addTo(NBEdgeCont& ec, NBLoadedTLDef* tl) const {
         NBEdge* tmpFrom = ec.retrievePossiblySplit(toString<int>(c->getFromEdgeID()), toString<int>(c->getToEdgeID()), true);
         NBEdge* tmpTo = ec.retrievePossiblySplit(toString<int>(c->getToEdgeID()), toString<int>(c->getFromEdgeID()), false);
         // check whether the edges are known
-        if (tmpFrom != nullptr && tmpTo != nullptr) {
+        if (tmpFrom != 0 && tmpTo != 0) {
             // add connections this signal is responsible for
             assignedConnections.push_back(NBConnection(tmpFrom, -1, tmpTo, -1));
         } else {
@@ -240,11 +247,11 @@ NIVissimTL::NIVissimTLSignalGroup*
 NIVissimTL::NIVissimTLSignalGroup::dictionary(int lsaid, int id) {
     GroupDictType::iterator i = myDict.find(lsaid);
     if (i == myDict.end()) {
-        return nullptr;
+        return 0;
     }
     SGroupDictType::iterator j = (*i).second.find(id);
     if (j == (*i).second.end()) {
-        return nullptr;
+        return 0;
     }
     return (*j).second;
 }
@@ -253,7 +260,7 @@ void
 NIVissimTL::NIVissimTLSignalGroup::clearDict() {
     for (GroupDictType::iterator i = myDict.begin(); i != myDict.end(); i++) {
         for (SGroupDictType::iterator j = (*i).second.begin(); j != (*i).second.end(); j++) {
-            delete (*j).second;
+            delete(*j).second;
         }
     }
     myDict.clear();
@@ -306,7 +313,7 @@ NIVissimTL::NIVissimTL(int id, const std::string& type,
                        const std::string& name, SUMOTime absdur,
                        SUMOTime offset)
     : myID(id), myName(name), myAbsDuration(absdur), myOffset(offset),
-      myCurrentGroup(nullptr), myType(type)
+      myCurrentGroup(0), myType(type)
 
 {}
 
@@ -344,7 +351,7 @@ NIVissimTL*
 NIVissimTL::dictionary(int id) {
     DictType::iterator i = myDict.find(id);
     if (i == myDict.end()) {
-        return nullptr;
+        return 0;
     }
     return (*i).second;
 }
@@ -353,7 +360,7 @@ NIVissimTL::dictionary(int id) {
 void
 NIVissimTL::clearDict() {
     for (DictType::iterator i = myDict.begin(); i != myDict.end(); i++) {
-        delete (*i).second;
+        delete(*i).second;
     }
     myDict.clear();
 }

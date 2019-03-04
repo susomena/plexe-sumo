@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSPhaseDefinition.h
 /// @author  Daniel Krajzewicz
 /// @author  Julia Ringel
@@ -17,6 +9,17 @@
 /// @version $Id$
 ///
 // The definition of a single phase of a tls logic
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef MSPhaseDefinition_h
 #define MSPhaseDefinition_h
@@ -31,7 +34,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <bitset>
 #include <string>
@@ -82,12 +89,6 @@ public:
     /// @brief Stores the timestep of the last on-switched of the phase
     SUMOTime myLastSwitch;
 
-    /// @brief The index of the phase that suceeds this one (or -1)
-    int nextPhase;
-
-    /// @brief Optional name or description for the current phase
-    std::string name;
-
 private:
     /// @brief The phase definition
     std::string state;
@@ -107,25 +108,21 @@ private:
      */
     LaneIdVector targetLaneSet;
 
-    void init(SUMOTime durationArg, const std::string& stateArg, SUMOTime minDurationArg, SUMOTime maxDurationArg, int nextPhase, const std::string& name) {
+    void init(SUMOTime durationArg, SUMOTime minDurationArg, SUMOTime maxDurationArg, const std::string& stateArg) {
         this->duration = durationArg;
-        this->state = stateArg;
         this->minDuration = minDurationArg < 0 ? durationArg : minDurationArg;
         this->maxDuration = (maxDurationArg < 0 || maxDurationArg < minDurationArg) ? durationArg : maxDurationArg;
         // assert(this->minDuration <= this->maxDuration); // not ensured by the previous lines
+        this->state = stateArg;
         this->myLastSwitch = string2time(OptionsCont::getOptions().getString("begin")); // SUMOTime-option
         //For SOTL phases
         //this->phaseType = phaseTypeArg;
-        this->nextPhase = nextPhase;
-        this->name = name;
     }
 
-    void init(SUMOTime durationArg, SUMOTime minDurationArg, SUMOTime maxDurationArg, const std::string& stateArg, int nextPhase, const std::string& name, LaneIdVector* targetLaneSetArg) {
-        init(durationArg, stateArg, minDurationArg, maxDurationArg, nextPhase, name);
+    void init(SUMOTime durationArg, SUMOTime minDurationArg, SUMOTime maxDurationArg, const std::string& stateArg, LaneIdVector& targetLaneSetArg) {
+        init(durationArg, minDurationArg, maxDurationArg, stateArg);
         //For SOTL target phases
-        if (targetLaneSetArg != nullptr) {
-            this->targetLaneSet = *targetLaneSetArg;
-        }
+        this->targetLaneSet = targetLaneSetArg;
     }
 
 
@@ -137,33 +134,70 @@ public:
      * @param[in] durationArg The duration of the phase
      * @param[in] stateArg The state in the phase
      */
-    MSPhaseDefinition(SUMOTime durationArg, const std::string& stateArg, int nextPhase, const std::string& name = "") {
+    MSPhaseDefinition(SUMOTime durationArg, const std::string& stateArg) {
         //PhaseType phaseType;
         phaseType = PhaseType();
         phaseType[UNDEFINED_BIT] = 1;
         phaseType[TRANSIENT_NOTDECISIONAL_BIT] = 0;
         phaseType[TARGET_BIT] = 0;
         phaseType[COMMIT_BIT] = 0;
-        init(durationArg, stateArg, durationArg, durationArg, nextPhase, name);
+        init(durationArg, durationArg, durationArg, stateArg);
     }
 
 
     /** @brief Constructor
      * In this phase the duration is constrained between min and max duration
      * @param[in] durationArg The duration of the phase
-     * @param[in] stateArg The state in the phase
      * @param[in] minDurationArg The minimum duration of the phase
      * @param[in] maxDurationArg The maximum duration of the phase
+     * @param[in] stateArg The state in the phase
      */
-    MSPhaseDefinition(SUMOTime durationArg, const std::string& stateArg, SUMOTime minDurationArg = -1, SUMOTime maxDurationArg = -1, int nextPhase = -1, const std::string& name = "") {
+    MSPhaseDefinition(SUMOTime durationArg, SUMOTime minDurationArg, SUMOTime maxDurationArg, const std::string& stateArg) throw() {
         //PhaseType phaseType;
         phaseType = PhaseType();
         phaseType[UNDEFINED_BIT] = 1;
         phaseType[TRANSIENT_NOTDECISIONAL_BIT] = 0;
         phaseType[TARGET_BIT] = 0;
         phaseType[COMMIT_BIT] = 0;
-        init(durationArg, stateArg, minDurationArg, maxDurationArg, nextPhase, name);
+        init(durationArg, minDurationArg, maxDurationArg, stateArg);
     }
+
+    /*
+     * @brief Constructor for definitions for SOTL target step
+     * In this phase the duration is fixed, because min and max duration are unspecified
+     * @param[in] transient_notdecisional true means this is a transient phase, false is a decisional one
+     * @param[in] commit true means this is a commit phase, i.e. the traffic light logic can jump to a target phase form this phase
+     * @param[in] targetLaneSet identifies the lane-set to be considered when deciding the target phase to jump to
+     * @see MSPhaseDefinition::PhaseType
+     */
+    MSPhaseDefinition(SUMOTime durationArg, const std::string& stateArg, bool transient_notdecisional, bool commit, LaneIdVector& targetLaneSetArg) throw() {
+        if (targetLaneSetArg.size() == 0) {
+            MsgHandler::getErrorInstance()->inform("MSPhaseDefinition::MSPhaseDefinition -> targetLaneSetArg cannot be empty for a target phase");
+        }
+        //PhaseType phaseType;
+        phaseType = PhaseType();
+        phaseType[UNDEFINED_BIT] = 0;
+        phaseType[TRANSIENT_NOTDECISIONAL_BIT] = transient_notdecisional;
+        phaseType[TARGET_BIT] = 1;
+        phaseType[COMMIT_BIT] = commit;
+        init(durationArg, durationArg, durationArg, stateArg, targetLaneSetArg);
+    }
+
+    /*
+     * @brief Constructor for definitions for SOTL non-target step
+     * In this phase the duration is fixed, because min and max duration are unspecified
+     * @param[in] phaseType Indicates the type of the step
+     */
+    MSPhaseDefinition(SUMOTime durationArg, const std::string& stateArg, bool transient_notdecisional, bool commit) throw() {
+        //PhaseType phaseType;
+        phaseType = PhaseType();
+        phaseType[UNDEFINED_BIT] = 0;
+        phaseType[TRANSIENT_NOTDECISIONAL_BIT] = transient_notdecisional;
+        phaseType[TARGET_BIT] = 0;
+        phaseType[COMMIT_BIT] = commit;
+        init(durationArg, durationArg, durationArg, stateArg);
+    }
+
 
     /*
      * @brief Constructor for definitions for SOTL target step
@@ -172,8 +206,8 @@ public:
      * @param[in] targetLaneSet If not null, specifies this MSPhaseDefinition is a target step
      * @see MSPhaseDefinition::PhaseType
      */
-    MSPhaseDefinition(SUMOTime durationArg, const std::string& stateArg, SUMOTime minDurationArg, SUMOTime maxDurationArg, int nextPhase, const std::string& name, bool transient_notdecisional, bool commit, LaneIdVector* targetLaneSetArg = nullptr) {
-        if (targetLaneSetArg != nullptr && targetLaneSetArg->size() == 0) {
+    MSPhaseDefinition(SUMOTime durationArg, SUMOTime minDurationArg, SUMOTime maxDurationArg, const std::string& stateArg, bool transient_notdecisional, bool commit, LaneIdVector& targetLaneSetArg) throw() {
+        if (targetLaneSetArg.size() == 0) {
             MsgHandler::getErrorInstance()->inform("MSPhaseDefinition::MSPhaseDefinition -> targetLaneSetArg cannot be empty for a target phase");
         }
         //PhaseType phaseType;
@@ -181,10 +215,28 @@ public:
         phaseType = PhaseType();
         phaseType[UNDEFINED_BIT] = 0;
         phaseType[TRANSIENT_NOTDECISIONAL_BIT] = transient_notdecisional;
-        phaseType[TARGET_BIT] = targetLaneSetArg == nullptr ? 0 : 1;
+        phaseType[TARGET_BIT] = 1;
         phaseType[COMMIT_BIT] = commit;
-        init(durationArg, minDurationArg, maxDurationArg, stateArg, nextPhase, name, targetLaneSetArg);
+        init(durationArg, minDurationArg, maxDurationArg, stateArg, targetLaneSetArg);
     }
+
+    /*
+     * @brief Constructor for definitions for SOTL target step
+     * In this phase the duration is constrained between min and max duration
+     * @param[in] phaseType Indicates the type of the step
+     * @see MSPhaseDefinition::PhaseType
+     */
+    MSPhaseDefinition(SUMOTime durationArg, SUMOTime minDurationArg, SUMOTime maxDurationArg, const std::string& stateArg, bool transient_notdecisional, bool commit) throw() {
+        //PhaseType phaseType;
+        phaseType = PhaseType();
+        phaseType[UNDEFINED_BIT] = 0;
+        phaseType[TRANSIENT_NOTDECISIONAL_BIT] = transient_notdecisional;
+        phaseType[TARGET_BIT] = 0;
+        phaseType[COMMIT_BIT] = commit;
+        init(durationArg, minDurationArg, maxDurationArg, stateArg);
+
+    }
+
 
     /// @brief Destructor
     virtual ~MSPhaseDefinition() { }
@@ -197,24 +249,8 @@ public:
         return state;
     }
 
-    void setState(const std::string& _state) {
-        state = _state;
-    }
-
-    const LaneIdVector& getTargetLaneSet() const {
+    const LaneIdVector& getTargetLaneSet() const throw() {
         return targetLaneSet;
-    }
-
-    int getNextPhase() const {
-        return nextPhase;
-    }
-
-    const std::string& getName() const {
-        return name;
-    }
-
-    void setName(const std::string& _name) {
-        name = _name;
     }
 
     /** @brief Returns whether this phase is a pure "green" phase
@@ -258,35 +294,35 @@ public:
     /*
     * @return true if the phase type is undefined
     */
-    bool isUndefined() const {
+    bool isUndefined() const throw() {
         return phaseType[UNDEFINED_BIT];
     }
 
     /*
     * @return true if this is a target phase
     */
-    bool isTarget() const {
+    bool isTarget() const throw() {
         return phaseType[TARGET_BIT];
     }
 
     /*
     * @return true if this is a transient phase
     */
-    bool isTransient() const {
+    bool isTransient() const throw() {
         return phaseType[TRANSIENT_NOTDECISIONAL_BIT];
     }
 
     /*
     * @return true if this is a decisional phase
     */
-    bool isDecisional() const {
+    bool isDecisional() const throw() {
         return !phaseType[TRANSIENT_NOTDECISIONAL_BIT];
     }
 
     /*
     * @return true if this is a commit phase
     */
-    bool isCommit() const {
+    bool isCommit() const throw() {
         return phaseType[COMMIT_BIT];
     }
 

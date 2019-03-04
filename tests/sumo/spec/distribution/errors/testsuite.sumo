@@ -1,6 +1,3 @@
-# check speed distribution for consistency
-speedDev_invalid
-
 # checks using route distribution with invalid ref
 route_invalid_ref
 

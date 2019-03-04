@@ -1,23 +1,9 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2016-2019 German Aerospace Center (DLR) and others.
-# SUMOPy module
-# Copyright (C) 2012-2017 University of Bologna - DICAM
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    arrayman.py
-# @author  Joerg Schweizer
-# @date
-# @version $Id$
-
 from classman import *
 import numpy as np
 
 
 class ArrayConfMixin:
+
     def __init__(self, attrname, default, dtype=None, is_index=False, **attrs):
         self._is_index = is_index
         self._dtype = dtype
@@ -27,6 +13,28 @@ class ArrayConfMixin:
 
         if is_index:
             self._init_indexing()
+
+    # use original one from AttrConfig
+    # def _write_xml_value(self,val,fd):
+    #    #print 'write_xml',self.xmltag,type(val),hasattr(val, '__iter__')
+    #    if hasattr(val, '__iter__'):
+    #        if len(val)>0:
+    #            if hasattr(val[0], '__iter__'):
+    #                # matrix
+    #                fd.write(xm.mat(self.xmltag,val))
+    #            else:
+    #                if type(val)==np.ndarray:
+    #                    # vector
+    #                    fd.write(xm.arr(self.xmltag,val,sep=','))
+    #                else:
+    #                    # list
+    #                    fd.write(xm.arr(self.xmltag,val))
+    #        else:
+    #            # empty list
+    #            fd.write(xm.arr(self.xmltag,val))
+    #    else:
+    #        # scalar number or string
+    #        fd.write(xm.num(self.xmltag,val))
 
     def get_dtype(self):
         return self._dtype
@@ -42,27 +50,28 @@ class ArrayConfMixin:
 
         if hasattr(default, '__iter__'):
             default = np.asarray(default)
-            if self._dtype is not None:
+            if self._dtype != None:
                 dtype = self._dtype
             else:
                 dtype = type(default.flatten()[0])
             # print ' default=',default,len(default)
             if len(ids) > 0:
-                defaults = np.array(len(ids)*[default], dtype)
-                # print '  size,type',len(ids)*[default], type(default.flatten()[0])
+                defaults = np.array(len(ids) * [default], dtype)
+                # print '  size,type',len(ids)*[default],
+                # type(default.flatten()[0])
             else:
                 #defaults = np.zeros(  (0,len(default)),type(default.flatten()[0]) )
-                defaults = np.zeros((0,)+default.shape, dtype)
+                defaults = np.zeros((0,) + default.shape, dtype)
             # print '  return',defaults,defaults.shape,defaults.dtype
             return defaults
         else:
-            if self._dtype is not None:
+            if self._dtype != None:
                 dtype = self._dtype
             else:
                 dtype = type(default)
             #defaults=  np.array(  len(ids)*[default], dtype )
             # print '  return 1D',defaults,defaults.shape,defaults.dtype
-            return np.array(len(ids)*[default], dtype)
+            return np.array(len(ids) * [default], dtype)
 
     def get_init(self):
         """
@@ -94,7 +103,7 @@ class ArrayConfMixin:
             _id = self._manager._ids[i]
             self.del_index(_id)
         arr = self.get_value()
-        self.set_value(np.concatenate((arr[:i], arr[i+1:])))
+        self.set_value(np.concatenate((arr[:i], arr[i + 1:])))
 
     def __delitem__(self, ids):
         # print '        before=\n',self.__dict__[attr]
@@ -110,7 +119,8 @@ class ArrayConfMixin:
         return self.get_value()[self._manager._inds[ids]]
 
     def __setitem__(self, ids, values):
-        # print '__setitem__',ids,values,type(self.get_value()),self.get_value().dtype
+        # print
+        # '__setitem__',ids,values,type(self.get_value()),self.get_value().dtype
 
         if self._is_index:
             if hasattr(ids, '__iter__'):
@@ -122,7 +132,7 @@ class ArrayConfMixin:
         self.get_value()[self._manager._inds[ids]] = values
 
     def set(self, ids, values):
-        if values is None:
+        if values == None:
             return
 
         if not hasattr(ids, '__iter__'):
@@ -156,20 +166,20 @@ class ArrayConfMixin:
     def add(self, ids, values=None):
         if not hasattr(ids, '__iter__'):
             _ids = [ids]
-            if values is not None:
+            if values != None:
                 _values = np.array([values], self._dtype)
             else:
                 _values = self.get_defaults(_ids)
 
         else:
-            # if values is None:
+            # if values==None:
             #    print 'WARNING:',self.attrname, ids,self._dtype
             _ids = ids
-            if values is not None:
+            if values != None:
                 _values = np.array(values, self._dtype)
             else:
                 _values = self.get_defaults(_ids)
-        # if values  is None:
+        # if values == None:
         #    _values = self.get_defaults(_ids)
 
         # print 'add ids',self.attrname,ids,_ids,self._is_modified
@@ -177,7 +187,8 @@ class ArrayConfMixin:
         # print '  _values',_values
         # print '  self.get_value()',self.get_value()
         # print '  type(_values),type(self.get_value())',type(_values),type(self.get_value())
-        # print '  _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
+        # print '
+        # _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
 
         #newvalue = np.concatenate((self.get_value(),_values))
         # print '  ', type(newvalue),newvalue.dtype
@@ -191,15 +202,15 @@ class ArrayConfMixin:
         # print 'add_plugin',self.attrname
         if not hasattr(ids, '__iter__'):
             _ids = [ids]
-            if values is not None:
+            if values != None:
                 _values = np.array([values], self._dtype)
 
         else:
             _ids = ids
-            if values is not None:
+            if values != None:
                 _values = np.array(values, self._dtype)
 
-        if values is None:
+        if values == None:
             _values = self.get_defaults(_ids)
         self._is_modified = True
         # print 'add ids',self.attrname,ids,_ids,self._is_modified
@@ -207,7 +218,8 @@ class ArrayConfMixin:
         # print '  _values',_values
         # print '  self.get_value()',self.get_value()
         # print '  type(_values),type(self.get_value())',type(_values),type(self.get_value())
-        # print '  _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
+        # print '
+        # _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
 
         #newvalue = np.concatenate((self.get_value(),_values))
         # print '  ', type(newvalue),newvalue.dtype
@@ -219,31 +231,9 @@ class ArrayConfMixin:
 
         self.plugin.exec_events_ids(EVTADDITEM, _ids)
 
-    # use original one from AttrConfig
-    # def _write_xml_value(self,val,fd):
-    #    #print 'write_xml',self.xmltag,type(val),hasattr(val, '__iter__')
-    #    if hasattr(val, '__iter__'):
-    #        if len(val)>0:
-    #            if hasattr(val[0], '__iter__'):
-    #                # matrix
-    #                fd.write(xm.mat(self.xmltag,val))
-    #            else:
-    #                if type(val)==np.ndarray:
-    #                    # vector
-    #                    fd.write(xm.arr(self.xmltag,val,sep=','))
-    #                else:
-    #                    # list
-    #                    fd.write(xm.arr(self.xmltag,val))
-    #        else:
-    #            # empty list
-    #            fd.write(xm.arr(self.xmltag,val))
-    #    else:
-    #        # scalar number or string
-    #        fd.write(xm.num(self.xmltag,val))
-
     def format_value(self, _id, show_unit=False, show_parentesis=False):
         if show_unit:
-            unit = ' '+self.format_unit(show_parentesis)
+            unit = ' ' + self.format_unit(show_parentesis)
         else:
             unit = ''
         # return repr(self[_id])+unit
@@ -256,21 +246,21 @@ class ArrayConfMixin:
         tt = type(val)
 
         if tt in (np.int, np.int32, np.float64):
-            return str(val)+unit
+            return str(val) + unit
 
         elif tt in (np.float, np.float32, np.float64):
-            if hasattr(self, 'digits_fraction'):
+            if hasattr(attrconf, 'digits_fraction'):
                 digits_fraction = self.digits_fraction
             else:
                 digits_fraction = 3
-            s = "%."+str(digits_fraction)+"f"
-            return s % (val)+unit
+            return "%." + str(digits_fraction) + "f" % (val) + unit
 
         else:
-            return str(val)+unit
+            return str(val) + unit
 
 
 class ArrayConf(ArrayConfMixin, ColConf):
+
     """
     Column made of numeric array.
 
@@ -279,29 +269,31 @@ class ArrayConf(ArrayConfMixin, ColConf):
 
 
 class ListArrayConf(ArrayConfMixin, ColConf):
+
     """
     Column made of an array of lists.
 
     """
 
     def __init__(self, attrname, dtype=None,  **attrs):
-        ArrayConfMixin.__init__(self,  attrname, None, dtype=np.object,  **attrs)
+        ArrayConfMixin.__init__(self,  attrname, None,
+                                dtype=np.object,  **attrs)
 
     def add(self, ids, values=None):
         if not hasattr(ids, '__iter__'):
             _ids = [ids]
-            if values is not None:
+            if values != None:
                 _values = np.zeros(1, self._dtype)
                 _values[0] = values
 
         else:
 
             _ids = ids
-            if values is not None:
+            if values != None:
                 _values = np.zeros(len(ids), self._dtype)
                 _values[:] = values
 
-        if values is None:
+        if values == None:
             _values = self.get_defaults(_ids)
 
         # print 'add ids, _values',self.attrname,ids
@@ -309,7 +301,8 @@ class ListArrayConf(ArrayConfMixin, ColConf):
         # print '  _values',_values
         # print '  self.get_value()',self.get_value()
         # print '  type(_values),type(self.get_value())',type(_values),type(self.get_value())
-        # print '  _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
+        # print '
+        # _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
 
         newvalue = np.concatenate((self.get_value(), _values))
         # print '  ', type(newvalue),newvalue.dtype
@@ -319,21 +312,21 @@ class ListArrayConf(ArrayConfMixin, ColConf):
             self.add_indices(_ids, _values)
 
     def add_plugin(self, ids, values=None):
-        # print 'add_plugin',self.attrname,ids
+        # print 'add_plugin',self.attrname
         if not hasattr(ids, '__iter__'):
             _ids = [ids]
-            if values is not None:
+            if values != None:
                 _values = np.zeros(1, self._dtype)
                 _values[0] = values
 
         else:
 
             _ids = ids
-            if values is not None:
+            if values != None:
                 _values = np.zeros(len(ids), self._dtype)
                 _values[:] = values
 
-        if values is None:
+        if values == None:
             _values = self.get_defaults(_ids)
 
         # print 'add ids, _values',self.attrname,ids
@@ -341,7 +334,8 @@ class ListArrayConf(ArrayConfMixin, ColConf):
         # print '  _values',_values
         # print '  self.get_value()',self.get_value()
         # print '  type(_values),type(self.get_value())',type(_values),type(self.get_value())
-        # print '  _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
+        # print '
+        # _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
 
         newvalue = np.concatenate((self.get_value(), _values))
         # print '  ', type(newvalue),newvalue.dtype
@@ -355,6 +349,7 @@ class ListArrayConf(ArrayConfMixin, ColConf):
 
 
 class NumArrayConf(ArrayConfMixin, ColConf):
+
     """
     Column made of numeric array.
 
@@ -372,21 +367,23 @@ class NumArrayConf(ArrayConfMixin, ColConf):
         self.digits_integer = digits_integer
         self.digits_fraction = digits_fraction
 
-        ArrayConfMixin.__init__(self,  attrname, default, metatype='number', **attrs)
+        ArrayConfMixin.__init__(self,  attrname, default,
+                                metatype='number', **attrs)
 
 
 class IdsArrayConf(ArrayConfMixin, ColConf):
+
     """
     Column, where each entry is the id of a single Table. 
     """
 
-    def __init__(self, attrname, tab,  is_index=False, id_default=-1, perm='r', **kwargs):
+    def __init__(self, attrname, tab,  is_index=False, id_default=-1, **kwargs):
         self._tab = tab
         ArrayConfMixin.__init__(self,  attrname,
                                 id_default,  # default id
-                                dtype=np.int32,
+                                dtype=int,
                                 metatype='id',
-                                perm=perm,
+                                perm='r',
                                 is_index=is_index,
                                 **kwargs
                                 )
@@ -398,10 +395,10 @@ class IdsArrayConf(ArrayConfMixin, ColConf):
         # create a list, should work for all types and dimensions
         # default can be scalar or an array of any dimension
         # print '\n\nget_defaults',self.attrname,ids,self.get_default()
-        return self.get_default()*np.ones(len(ids), dtype=self._dtype)
+        return -np.ones(len(ids), dtype=self._dtype)
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
     # copied from IdsConf!!!
     def set_linktab(self, tab):
         self._tab = tab
@@ -410,18 +407,21 @@ class IdsArrayConf(ArrayConfMixin, ColConf):
         return self._tab
 
     def init_xml(self):
-        # print 'init_xml',self.attrname,self._tab
-        if self._tab.xmltag is not None:
+        # print 'init_xml',self.attrname
+        if self._tab.xmltag != None:
             xmltag_tab, xmltag_item_tab, attrname_id_tab = self._tab.xmltag
             if (attrname_id_tab is None) | (attrname_id_tab is ''):
                 self._attrconfig_id_tab = None
             else:
-                self._attrconfig_id_tab = getattr(self._tab, attrname_id_tab)  # tab = tabman !
+                self._attrconfig_id_tab = getattr(
+                    self._tab, attrname_id_tab)  # tab = tabman !
 
             if not hasattr(self, 'is_xml_include_tab'):
                 # this means that entire table rows will be included
                 self.is_xml_include_tab = False
-            # print '  xmltag_tab, xmltag_item_tab, attrname_id_tab',xmltag_tab, xmltag_item_tab, attrname_id_tab,self.is_xml_include_tab
+            # print '  xmltag_tab, xmltag_item_tab,
+            # attrname_id_tab',xmltag_tab, xmltag_item_tab,
+            # attrname_id_tab,self.is_xml_include_tab
 
         else:
             self._attrconfig_id_tab = None
@@ -431,7 +431,7 @@ class IdsArrayConf(ArrayConfMixin, ColConf):
         # print 'write_xml',self.attrname
         if (self.xmltag is not None) & (np.all(self[_id] >= 0)):
             # print 'write_xml',self.attrname, _id,'value',self[_id]
-            if self._attrconfig_id_tab is None:
+            if self._attrconfig_id_tab == None:
                 self._write_xml_value(self[_id], fd)
             elif self.is_xml_include_tab:
                 # print '    write table row(s)',self[_id]
@@ -477,23 +477,15 @@ class IdsArrayConf(ArrayConfMixin, ColConf):
             #    pass
             # else:
             #    # remove table reference and create ident
-            # print '_getstate_specific',self.attrname
-            # print '  self._tab',self._tab
-            # print '_getstate_specific',self._tab.ident, self._tab.get_ident_abs()
             state['_tab'] = None
-            # try:
             state['_ident_tab'] = self._tab.get_ident_abs()
-            # except:
-            # print 'WARNING:_getstate_specific',self._tab,self._tab.attrname
 
     def init_postload_internal(self, man, obj):
-        # print 'IdsConf.init_postload_internal',self.attrname,hasattr(self,'value'),self._is_save,self._is_localvalue,'obj:',obj.ident
+        # print
+        # 'IdsConf.init_postload_internal',self.attrname,hasattr(self,'value'),self._is_save,self._is_localvalue,'obj:',obj.ident
 
         AttrConf.init_postload_internal(self, man, obj)
-        # print 'IdsConf.init_postload_internal',self.attrname,self.get_value().dtype,self.get_value().dtype == np.int64
-        if self.get_value().dtype == np.int64:
-            print 'WARNING in init_postload_internal: convert ids array to 32 bit'
-            self.set_value(np.array(self.get_value(), dtype=np.int32))
+
         # if self._is_child:
         #    print '  make sure children get initialized'
         #    print '  call init_postload_internal of',self._tab.ident
@@ -510,10 +502,10 @@ class IdsArrayConf(ArrayConfMixin, ColConf):
         # Called from init_postload_external of attrsman during load_obj
         #
         ident_abs = self._ident_tab
-        # print 'init_postload_external',self.attrname,ident_abs
+        # print 'reset_linkobj',self.attrname,ident_abs
         obj = self.get_obj()
         rootobj = obj.get_root()
-        # print '  obj,rootobj',obj,rootobj
+        # print '  rootobj',rootobj.ident
         linkobj = rootobj.get_obj_from_ident(ident_abs)
         # print '  linkobj',linkobj.ident
         self._tab = linkobj
@@ -527,30 +519,32 @@ class IdsArrayConf(ArrayConfMixin, ColConf):
 
 
 class IdlistsArrayConf(IdsArrayConf):
+
     """
     Column, where each entry is a list of ids of a single Table. 
     """
 
-    def __init__(self, attrname, tab, metatype=None, perm='r', **kwargs):
+    def __init__(self, attrname, tab, metatype=None, **kwargs):
         self._is_index = False
         self._tab = tab
         ArrayConfMixin.__init__(self,  attrname,
-                                None,  # default, will be substituted by id list
+                                # default, will be substituted by id list
+                                None,
                                 dtype='object',
                                 metatype='ids',
-                                perm=perm,
+                                perm='r',
                                 **kwargs
                                 )
         self.init_xml()
 
     def get_defaults(self, ids):
         # here we initialize with None for reach element
-        return np.array(len(ids)*[None, ], self._dtype)
+        return np.array(len(ids) * [None, ], self._dtype)
 
     def add(self, ids, values=None):
         if not hasattr(ids, '__iter__'):
             _ids = [ids]
-            if values is not None:
+            if values != None:
                 _values = np.zeros(1, self._dtype)
                 _values[0] = values
 
@@ -560,7 +554,7 @@ class IdlistsArrayConf(IdsArrayConf):
             _values = np.zeros(len(ids), self._dtype)
             _values[:] = values
 
-        if values is None:
+        if values == None:
             _values = self.get_defaults(_ids)
 
         # print 'add ids, _values',self.attrname,ids
@@ -568,7 +562,8 @@ class IdlistsArrayConf(IdsArrayConf):
         # print '  _values',_values
         # print '  self.get_value()',self.get_value()
         # print '  type(_values),type(self.get_value())',type(_values),type(self.get_value())
-        # print '  _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
+        # print '
+        # _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
 
         newvalue = np.concatenate((self.get_value(), _values))
         # print '  ', type(newvalue),newvalue.dtype
@@ -579,21 +574,22 @@ class IdlistsArrayConf(IdsArrayConf):
 
 
 class TabIdListArrayConf(ArrayConfMixin, ColConf):
+
     """
     Column made of an array of lists with (table,id) tupels.
     The tables are linked, and will not be saved.
     """
 
-    def __init__(self, attrname, dtype=None, perm='r',  **attrs):
+    def __init__(self, attrname, dtype=None,  **attrs):
         ArrayConfMixin.__init__(self, attrname,  None,  # default, will be substituted by (table,id) list
                                 dtype='object',
                                 metatype='tabidlist',
-                                perm=perm, **attrs)
+                                perm='r', **attrs)
 
     def add(self, ids, values=None):
         if not hasattr(ids, '__iter__'):
             _ids = [ids]
-            if values is not None:
+            if values != None:
                 _values = np.zeros(1, self._dtype)
                 _values[0] = values
 
@@ -603,7 +599,7 @@ class TabIdListArrayConf(ArrayConfMixin, ColConf):
             _values = np.zeros(len(ids), self._dtype)
             _values[:] = values
 
-        if values is None:
+        if values == None:
             _values = self.get_defaults(_ids)
 
         # print 'add ids, _values',self.attrname,ids
@@ -611,7 +607,8 @@ class TabIdListArrayConf(ArrayConfMixin, ColConf):
         # print '  _values',_values
         # print '  self.get_value()',self.get_value()
         # print '  type(_values),type(self.get_value())',type(_values),type(self.get_value())
-        # print '  _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
+        # print '
+        # _values.shape,self.get_value().shape',_values.shape,self.get_value().shape
 
         newvalue = np.concatenate((self.get_value(), _values))
         # print '  ', type(newvalue),newvalue.dtype
@@ -623,7 +620,7 @@ class TabIdListArrayConf(ArrayConfMixin, ColConf):
     def add_plugin(self, ids, values=None):
         if not hasattr(ids, '__iter__'):
             _ids = [ids]
-            if values is not None:
+            if values != None:
                 _values = np.zeros(1, self._dtype)
                 _values[0] = values
 
@@ -633,7 +630,7 @@ class TabIdListArrayConf(ArrayConfMixin, ColConf):
             _values = np.zeros(len(ids), self._dtype)
             _values[:] = values
 
-        if values is None:
+        if values == None:
             _values = self.get_defaults(_ids)
 
     ###
@@ -641,20 +638,18 @@ class TabIdListArrayConf(ArrayConfMixin, ColConf):
     def format_value(self, _id, show_unit=False, show_parentesis=False):
         s = ''
         rowlist = self[_id]
-        if rowlist is None:
+        if rowlist == None:
             return s
-        # elif (type(rowlist)in STRINGTYPES):
-        #    return rowlist
         elif len(rowlist) == 0:
             return s
         elif len(rowlist) == 1:
             tab, ids = rowlist[0]
-            return str(tab)+'['+str(ids)+']'
+            return str(tab) + '[' + str(ids) + ']'
         elif len(rowlist) > 1:
             tab, ids = rowlist[0]
-            s = str(tab)+'['+str(ids)+']'
+            s = str(tab) + '[' + str(ids) + ']'
             for tab, ids in rowlist[1:]:
-                s += ','+str(tab)+'['+str(ids)+']'
+                s += ',' + str(tab) + '[' + str(ids) + ']'
             return s
 
     def _getstate_specific(self, state):
@@ -663,22 +658,19 @@ class TabIdListArrayConf(ArrayConfMixin, ColConf):
         before returning states.
         To be overridden.
         """
-        # print '_getstate_specific',self.attrname, self._is_save
-        # print '  self.get_value',self.get_value()
-        # print len(self.get_value())
+        # print '_getstate_specific',self.attrname,
+        # self._is_save,len(self.get_value())
         if self._is_save:
             n = len(state['value'])
             state['value'] = None
-            _tabidlists_save = n*[None]
+            _tabidlists_save = n * [None]
             i = 0
             for rowlist in self.get_value():
-                if rowlist is not None:
-                    rowlist_save = []
-                    for tab, ids in rowlist:
-                        rowlist_save.append([tab.get_ident_abs(), ids])
-                        # print '    tab.get_ident'.get_ident()
-                        # print '    appended',[tab.get_ident_abs(), ids]
-                    _tabidlists_save[i] = rowlist_save
+                rowlist_save = []
+                for tab, ids in rowlist:
+                    rowlist_save.append([tab.get_ident_abs(), ids])
+                    # print '    append',[tab.get_ident_abs(), ids]
+                _tabidlists_save[i] = rowlist_save
                 # print '  ',i,rowlist_save
                 i += 1
             state['_tabidlists_save'] = _tabidlists_save
@@ -710,14 +702,11 @@ class TabIdListArrayConf(ArrayConfMixin, ColConf):
         for rowlist_save in _tabidlists_save:
             rowlist = []
             # print '  rowlist_save',rowlist_save
-            if rowlist_save is not None:
-                for tabident, ids in rowlist_save:
-                    tab = rootobj.get_obj_from_ident(tabident)
-                    # print '  recovered tab',tab.get_ident_abs(), ids
-                    rowlist.append([tab, ids])
-                tabidlists[i] = rowlist
-            else:
-                tabidlists[i] = None
+            for tabident, ids in rowlist_save:
+                tab = rootobj.get_obj_from_ident(tabident)
+                # print '  ',tab.get_ident_abs(), ids
+                rowlist.append([tab, ids])
+            tabidlists[i] = rowlist
             i += 1
         # print '  tabidlists', tabidlists
         self.set_value(tabidlists)
@@ -730,18 +719,19 @@ class TabIdListArrayConf(ArrayConfMixin, ColConf):
 
 
 class TabIdsArrayConf(ArrayConfMixin, ColConf):
+
     """
     Column, where each entry contains a tuple with table object and id. 
     The tables are linked, and will not be saved.
     """
 
-    def __init__(self, attrname,  is_index=False, perm='r', **kwargs):
+    def __init__(self, attrname,  is_index=False, **kwargs):
         self._is_index = is_index
         ArrayConfMixin.__init__(self,  attrname,
                                 (None, -1),  # default id
                                 dtype=[('ob', object), ('id', np.int)],
                                 metatype='tabid',
-                                perm=perm,
+                                perm='r',
                                 **kwargs
                                 )
 
@@ -760,7 +750,7 @@ class TabIdsArrayConf(ArrayConfMixin, ColConf):
         if self._is_save:
             n = len(state['value'])
             state['value'] = None
-            _tabids_save = n*[None]
+            _tabids_save = n * [None]
             i = 0
             for tab, ids in self.get_value():
                 _tabids_save[i] = [tab.get_ident_abs(), ids]
@@ -814,6 +804,7 @@ class TabIdsArrayConf(ArrayConfMixin, ColConf):
 
 
 class Arrayman(Tabman):
+
     """
     Manages all table attributes of an object.
 
@@ -835,17 +826,17 @@ class Arrayman(Tabman):
 
         Attrsman.__init__(self, obj, **kwargs)
         self._colconfigs = []
-        self._inds = np.zeros((0,), dtype=np.int32)
-        self._ids = np.zeros((0,), dtype=np.int32)
+        self._inds = np.zeros((0,), int)
+        self._ids = np.zeros((0,), int)
 
     def get_inds(self, ids=None):
-        if ids is not None:
+        if ids != None:
             return self._inds[ids]
         else:
             return self._inds[self._ids]
 
     def get_ids(self, inds=None):
-        if inds is not None:
+        if inds != None:
             return self._ids[inds]
         else:
             return self._ids
@@ -874,24 +865,6 @@ class Arrayman(Tabman):
         """
         return self.suggest_ids(1, is_zeroid)[0]
 
-    def format_id(self, id):
-        return self.format_ids([id])
-
-    def format_ids(self, ids):
-        return ', '.join(np.array(ids, dtype='|S24'))
-
-    def get_id_from_formatted(self, idstr):
-        return int(idstr)
-
-    def get_ids_from_formatted(self, idstrs):
-        idstrs_arr = idstrs.split(',')
-        ids = np.zeros(len(idstrs_arr), dtype=np.float32)
-        i = 0
-        for idstr in idstrs_arr:
-            ids[i] = int[idstr]
-
-        return ids
-
     def suggest_ids(self, n, is_zeroid=False):
         """
         Returns a list of n availlable ids.
@@ -901,7 +874,8 @@ class Arrayman(Tabman):
             is_zeroid=True allows id to be zero.
         """
         # TODO: does always return 1 if is_index is True ?????
-        # print 'suggest_ids',n,is_zeroid,self._inds,len(self._inds),self._inds.dtype
+        # print
+        # 'suggest_ids',n,is_zeroid,self._inds,len(self._inds),self._inds.dtype
         ids_unused_orig = np.flatnonzero(np.less(self._inds, 0))
 
         if not is_zeroid:
@@ -915,8 +889,11 @@ class Arrayman(Tabman):
                 # print '  greater(ids_unused_orig,0)',greater(ids_unused_orig,0)
                 # print '  len(greater(ids_unused_orig,0))',len(greater(ids_unused_orig,0))
                 # print '  flatnonzero(greater(ids_unused_orig,0))',flatnonzero(greater(ids_unused_orig,0))
-                # print '  len(flatnonzero(greater(ids_unused_orig,0)))=',len(flatnonzero(greater(ids_unused_orig,0)) )
-                ids_unused = ids_unused_orig[np.flatnonzero(np.greater(ids_unused_orig, 0))]
+                # print '
+                # len(flatnonzero(greater(ids_unused_orig,0)))=',len(flatnonzero(greater(ids_unused_orig,0))
+                # )
+                ids_unused = ids_unused_orig[
+                    np.flatnonzero(np.greater(ids_unused_orig, 0))]
             zid = 1
         else:
             if len(self._inds) == 0:
@@ -927,7 +904,7 @@ class Arrayman(Tabman):
             zid = 0
 
         n_unused = len(ids_unused)
-        n_max = len(self._inds)-1
+        n_max = len(self._inds) - 1
         # print '  ids_unused',ids_unused
         # print '  ids_unused.shape',ids_unused.shape
         # print '  len(ids_unused)',len(ids_unused)
@@ -935,7 +912,7 @@ class Arrayman(Tabman):
 
         if n_max < zid:
             # first id generation
-            ids = np.arange(zid, n+zid, dtype=np.int32)
+            ids = np.arange(zid, n + zid, dtype=np.int32)
 
         elif n_unused > 0:
             if n_unused >= n:
@@ -946,10 +923,11 @@ class Arrayman(Tabman):
                 # print '  arange=',arange(n_max+1,n_max+1+n-n_unused)
                 # print '  type(ids_unused)',type(ids_unused)
                 # print '  dtype(ids_unused)',ids_unused.dtype
-                ids = np.concatenate((ids_unused, np.arange(n_max+1, n_max+1+n-n_unused)))
+                ids = np.concatenate((ids_unused, np.arange(
+                    n_max + 1, n_max + 1 + n - n_unused)))
 
         else:
-            ids = np.arange(n_max+1, n_max+1+n, dtype=np.int32)
+            ids = np.arange(n_max + 1, n_max + 1 + n, dtype=np.int32)
 
         return ids
 
@@ -959,7 +937,7 @@ class Arrayman(Tabman):
             return
 
         id_max = max(ids)
-        id_max_old = len(self._inds)-1
+        id_max_old = len(self._inds) - 1
         n_array_old = len(self)
 
         ids_existing = np.take(ids, np.flatnonzero(np.less(ids, id_max_old)))
@@ -973,10 +951,11 @@ class Arrayman(Tabman):
         # extend index map with -1 as necessary
         if id_max > id_max_old:
             # print 'ext',-1*ones(id_max-id_max_old)
-            self._inds = np.concatenate((self._inds, -1*np.ones(id_max-id_max_old, int)))
+            self._inds = np.concatenate(
+                (self._inds, -1 * np.ones(id_max - id_max_old, int)))
 
         # assign n new indexes to new ids
-        ind_new = np.arange(n_array_old, n_array_old+n, dtype=np.int32)
+        ind_new = np.arange(n_array_old, n_array_old + n)
 
         # print 'ind_new',ind_new
         np.put(self._inds, ids, ind_new)
@@ -986,12 +965,12 @@ class Arrayman(Tabman):
 
     def add_rows(self, n=None, ids=[], **attrs):
 
-        if n is not None:
+        if n != None:
             ids = self.suggest_ids(n)
         elif (len(ids) == 0) & (len(attrs) > 0):
             # get number of rows from any valye vector provided
             ids = self.suggest_ids(len(attrs.values()[0]))
-        elif (n is None) & (len(ids) == 0) & (len(attrs) > 0):
+        elif (n == None) & (len(ids) == 0) & (len(attrs) > 0):
             # nothing given really-> do nothing
             return np.zeros((0), np.int)
 
@@ -1008,22 +987,6 @@ class Arrayman(Tabman):
             self.plugin.exec_events_ids(EVTADDITEM, ids)
         return ids
 
-    def copy_cols(self, attrman2, ids=None):
-        # print 'copy_cols'
-        if ids is None:
-            ids2 = attrman2.get_ids()
-        else:
-            ids2 = ids
-        #ids_new = self.suggest_ids(ids2)
-        ids_new = self.add_rows(n=len(ids2))
-
-        for colconfig2 in attrman2._colconfigs:
-            if hasattr(self, colconfig2.attrname):
-                colconfig = getattr(self, colconfig2.attrname)
-                colconfig.set(ids_new, values=colconfig2[ids2].copy())
-
-        return ids_new
-
     def set_rows(self, ids, **attrs):
 
         for colconfig in self._colconfigs:
@@ -1032,13 +995,14 @@ class Arrayman(Tabman):
             self.plugin.exec_events_ids(EVTSETITEM, ids)
 
     def add_row(self, _id=None, **attrs):
-        if _id is None:
+        if _id == None:
             _id = self.suggest_id()
 
         self._add_ids([_id])
         #ids = self.add_rows(1, **attrs)
         for colconfig in self._colconfigs:
-            # print '  add_row',colconfig.attrname,attrs.get(colconfig.attrname, None )
+            # print '
+            # add_row',colconfig.attrname,attrs.get(colconfig.attrname, None )
             colconfig.add(_id, values=attrs.get(colconfig.attrname, None))
 
         if self.plugin:
@@ -1046,7 +1010,7 @@ class Arrayman(Tabman):
         return _id
 
     def set_row(self, _id, **attrs):
-        # if _id  is None:
+        # if _id == None:
         # print ' set_row ',self.get_ident(),attrs
         for colconfig in self._colconfigs:  # TODO: run through keys!!!!
             # print '  add_row',_id,colconfig.attrname,attrs.get(colconfig.attrname, None )
@@ -1062,26 +1026,22 @@ class Arrayman(Tabman):
         self.del_rows([_id])
 
     def del_rows(self, ids):
-        # print '\n\ndel_rows',self.ident,ids
-        # print '  self._ids',self._ids
-        # print '  self._inds',self._inds
+        # print 'del_rows',ids
         # TODO: this could be done in with array methods
 
         for _id in ids:
             i = self._inds[_id]
-            # print '    id to eliminate _id=',_id
-            # print '    index to eliminate i=',i
+
             for colconfig in self._colconfigs:
                 # print '  colconfig',colconfig.attrname,i
                 # colconfig.delete_ind(i)
                 del colconfig[_id]  # this is universal, also for cm.ColConfigs
 
             # print '    del from id lookup'
-            self._ids = np.concatenate((self._ids[:i], self._ids[i+1:]))
-            # print '  ids after cut',self._ids
+            self._ids = np.concatenate((self._ids[:i], self._ids[i + 1:]))
 
             # print '    free index',id
-            if _id == len(self._inds)-1:
+            if _id == len(self._inds) - 1:
                 # id is highest, let's shrink index array by 1
                 self._inds = self._inds[:-1]
             else:
@@ -1094,8 +1054,6 @@ class Arrayman(Tabman):
             #put(self._inds, ids_above,take(self._inds,ids_above)-1)
             self._inds[ids_above] -= 1
 
-            # print '  inds after cut',self._inds
-
             # print '    self._inds',self._inds
 
         if self.plugin:
@@ -1104,7 +1062,7 @@ class Arrayman(Tabman):
         # print '  del',ids,' done.'
 
     def clear_rows(self):
-        # print 'clear_rows',self.ident
+        print 'clear_rows', self.ident
 
         if self.plugin:
             self.plugin.exec_events_ids(EVTDELITEM, self.get_ids())
@@ -1113,12 +1071,13 @@ class Arrayman(Tabman):
         self._ids = np.zeros((0,), int)
 
         for colconfig in self._colconfigs:
-            # print 'clear_rows',colconfig.attrname,len(colconfig.get_value())
+            print 'clear_rows', colconfig.attrname, len(colconfig.get_value())
             colconfig.clear()
-            # print '  done',len(colconfig.get_value())
+            print '  done', len(colconfig.get_value())
 
 
 class ArrayObjman(Arrayman, TableMixin):
+
     """
     Array Object management manages objects with numeric Python arrays
      based columns. Can also handle list and dict based columns. 
@@ -1138,14 +1097,6 @@ class ArrayObjman(Arrayman, TableMixin):
         Link internal states.
         """
         TableMixin.init_postload_internal(self, parent)
-        attrman = self.get_attrsman()
-
-        # this should no longer happen in the future as ind and ids
-        # have been formatted propperly
-        if attrman._inds.dtype != np.int32:
-            print 'WARNING: 64 bit ids and inds...will adjust to 32 bit'
-            attrman._inds = np.array(attrman._inds, dtype=np.int32)
-            attrman._ids = np.array(attrman._ids, dtype=np.int32)
 
     def init_postload_external(self):
         """
@@ -1159,10 +1110,11 @@ class ArrayObjman(Arrayman, TableMixin):
     def clear_rows(self):
         if self.plugin:
             self.plugin.exec_events_ids(EVTDELITEM, self.get_ids())
-        self._inds = np.zeros((0,), dtype=np.int32)
-        self._ids = np.zeros((0,), dtype=np.int32)
+        self._inds = np.zeros((0,), int)
+        self._ids = np.zeros((0,), int)
         for colconfig in self.get_attrsman()._colconfigs:
-            # print 'ArrayObjman.clear_rows',colconfig.attrname,len(colconfig.get_value())
+            # print
+            # 'ArrayObjman.clear_rows',colconfig.attrname,len(colconfig.get_value())
             colconfig.clear()
             # print '  done',len(colconfig.get_value())
 
@@ -1172,5 +1124,4 @@ class ArrayObjman(Arrayman, TableMixin):
         for attrconfig in self.get_attrsman().get_configs(structs=STRUCTS_SCALAR):
             attrconfig.clear()
         self.clear_rows()
-        self._init_constants()
         self.set_modified()

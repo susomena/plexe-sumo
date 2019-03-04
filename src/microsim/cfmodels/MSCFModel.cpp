@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel.cpp
 /// @author  Tobias Mayer
 /// @author  Daniel Krajzewicz
@@ -19,49 +11,48 @@
 ///
 // The car-following model abstraction
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cmath>
 #include <microsim/MSGlobals.h>
 #include <microsim/MSVehicleType.h>
 #include <microsim/MSVehicle.h>
-#include <microsim/MSNet.h>
 #include <microsim/MSLane.h>
 #include <microsim/lcmodels/MSAbstractLaneChangeModel.h>
-#include <microsim/MSDriverState.h>
 #include "MSCFModel.h"
-
-// ===========================================================================
-// DEBUG constants
-// ===========================================================================
-//#define DEBUG_FINALIZE_SPEED
-//#define DEBUG_DRIVER_ERRORS
-//#define DEBUG_EMERGENCYDECEL
-//#define DEBUG_COND (true)
-#define DEBUG_COND (veh->isSelected())
-//#define DEBUG_COND (veh->getID() == "follower")
-//#define DEBUG_COND2 (SIMTIME == 176)
-#define DEBUG_COND2 (gDebugFlag1)
-
 
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
-MSCFModel::MSCFModel(const MSVehicleType* vtype) :
+MSCFModel::MSCFModel(const MSVehicleType* vtype, double accel,
+                     double decel, double emergencyDecel, double apparentDecel, double headwayTime) :
     myType(vtype),
-    myAccel(vtype->getParameter().getCFParam(SUMO_ATTR_ACCEL, SUMOVTypeParameter::getDefaultAccel(vtype->getParameter().vehicleClass))),
-    myDecel(vtype->getParameter().getCFParam(SUMO_ATTR_DECEL, SUMOVTypeParameter::getDefaultDecel(vtype->getParameter().vehicleClass))),
-    myEmergencyDecel(vtype->getParameter().getCFParam(SUMO_ATTR_EMERGENCYDECEL,
-                     SUMOVTypeParameter::getDefaultEmergencyDecel(vtype->getParameter().vehicleClass, myDecel, MSGlobals::gDefaultEmergencyDecel))),
-    myApparentDecel(vtype->getParameter().getCFParam(SUMO_ATTR_APPARENTDECEL, myDecel)),
-    myCollisionMinGapFactor(vtype->getParameter().getCFParam(SUMO_ATTR_COLLISION_MINGAP_FACTOR, 1)),
-    myHeadwayTime(vtype->getParameter().getCFParam(SUMO_ATTR_TAU, 1.0)) {
+    myAccel(accel),
+    myDecel(decel),
+    myEmergencyDecel(emergencyDecel),
+    myApparentDecel(apparentDecel),
+    myHeadwayTime(headwayTime) {
 }
 
 
@@ -97,7 +88,7 @@ MSCFModel::brakeGapEuler(const double speed, const double decel, const double he
 
 
 double
-MSCFModel::freeSpeed(const double currentSpeed, const double decel, const double dist, const double targetSpeed, const bool onInsertion, const double actionStepLength) {
+MSCFModel::freeSpeed(const double currentSpeed, const double decel, const double dist, const double targetSpeed, const bool onInsertion) {
     // XXX: (Leo) This seems to be exclusively called with decel = myDecel (max deceleration) and is not overridden
     // by any specific CFModel. That may cause undesirable hard braking (at junctions where the vehicle
     // changes to a road with a lower speed limit).
@@ -122,7 +113,7 @@ MSCFModel::freeSpeed(const double currentSpeed, const double decel, const double
         // ballistic update (Leo)
         // calculate maximum next speed vN that is adjustable to vT=targetSpeed after a distance d=dist
         // and given a maximal deceleration b=decel, denote the current speed by v0.
-        // the distance covered by a trajectory that attains vN in the next action step (length=dt) and decelerates afterwards
+        // the distance covered by a trajectory that attains vN in the next timestep and decelerates afterwards
         // with b is given as
         // d = 0.5*dt*(v0+vN) + (t-dt)*vN - 0.5*b*(t-dt)^2, (1)
         // where time t of arrival at d with speed vT is
@@ -135,7 +126,7 @@ MSCFModel::freeSpeed(const double currentSpeed, const double decel, const double
         assert(currentSpeed >= 0);
         assert(targetSpeed >= 0);
 
-        const double dt = onInsertion ? 0 : actionStepLength; // handles case that vehicle is inserted just now (at the end of move)
+        const double dt = onInsertion ? 0 : TS; // handles case that vehicle is inserted just now (at the end of move)
         const double v0 = currentSpeed;
         const double vT = targetSpeed;
         const double b = decel;
@@ -146,76 +137,46 @@ MSCFModel::freeSpeed(const double currentSpeed, const double decel, const double
         // (In case vT<v0, this implies that on the interpolated trajectory there are points beyond d where
         //  the interpolated velocity is larger than vT, but at least on the temporal discretization grid, vT is not exceeded)
         // 2) We ignore the (possible) constraint vN >= v0 - b*dt, which could lead to a problem if v0 - t*b > vT.
-        //    (finalizeSpeed() is responsible for assuring that the next velocity is chosen in accordance with maximal decelerations)
+        //    (moveHelper() is responsible for assuring that the next velocity is chosen in accordance with maximal decelerations)
 
-        // If implied accel a leads to v0 + a*asl < vT, choose acceleration s.th. v0 + a*asl = vT
         if (0.5 * (v0 + vT)*dt >= d) {
-            // Attain vT after time asl
-            return v0 + TS * (vT - v0) / actionStepLength;
-        } else {
-            const double q = ((dt * v0 - 2 * d) * b - vT * vT); // (q < 0 is fulfilled because of (#))
-            const double p = 0.5 * b * dt;
-            const double vN = -p + sqrt(p * p - q); // target speed at time t0+asl
-            return v0 + TS * (vN - v0) / actionStepLength;
+            return vT;    // (#)
         }
+
+        const double q = ((dt * v0 - 2 * d) * b - vT * vT); // (q < 0 is fulfilled because of (#))
+        const double p = 0.5 * b * dt;
+        return -p + sqrt(p * p - q);
     }
 }
 
 double
-MSCFModel::finalizeSpeed(MSVehicle* const veh, double vPos) const {
-    // save old v for optional acceleration computation
-    const double oldV = veh->getSpeed();
-    // process stops (includes update of stopping state)
-    const double vStop = MIN2(vPos, veh->processNextStop(vPos));
-    // apply deceleration bounds
-    const double vMinEmergency = minNextSpeedEmergency(oldV, veh);
-    // vPos contains the uppper bound on safe speed. allow emergency braking here
-    const double vMin = MIN2(minNextSpeed(oldV, veh), MAX2(vPos, vMinEmergency));
-    // aMax: Maximal admissible acceleration until the next action step, such that the vehicle's maximal
-    // desired speed on the current lane will not be exceeded when the
-    // acceleration is maintained until the next action step.
-    double aMax = (veh->getLane()->getVehicleMaxSpeed(veh) - oldV) / veh->getActionStepLengthSecs();
-    // apply planned speed constraints and acceleration constraints
-    double vMax = MIN3(oldV + ACCEL2SPEED(aMax), maxNextSpeed(oldV, veh), vStop);
-    // do not exceed max decel even if it is unsafe
-#ifdef _DEBUG
-    //if (vMin > vMax) {
-    //    WRITE_WARNING("Maximum speed of vehicle '" + veh->getID() + "' is lower than the minimum speed (min: " + toString(vMin) + ", max: " + toString(vMax) + ").");
-    //}
-#endif
-
-#ifdef DEBUG_FINALIZE_SPEED
-    if DEBUG_COND {
-    std::cout << "\n" << SIMTIME << " FINALIZE_SPEED\n";
-}
-#endif
-
-vMax = MAX2(vMin, vMax);
-    // apply further speed adaptations
-    double vNext = patchSpeedBeforeLC(veh, vMin, vMax);
-#ifdef DEBUG_FINALIZE_SPEED
-    double vDawdle = vNext;
-#endif
-    assert(vNext >= vMin);
-    assert(vNext <= vMax);
-    // apply lane-changing related speed adaptations
-    vNext = veh->getLaneChangeModel().patchSpeed(vMin, vNext, vMax, *this);
-    assert(vNext >= vMin);
-    assert(vNext <= vMax);
-
-#ifdef DEBUG_FINALIZE_SPEED
-    if DEBUG_COND {
-    std::cout << std::setprecision(gPrecision)
-                  << "veh '" << veh->getID() << "' oldV=" << oldV
-                  << " vPos" << vPos
-                  << " vMin=" << vMin
-                  << " vMax=" << vMax
-                  << " vStop=" << vStop
-                  << " vDawdle=" << vDawdle
-                  << " vNext=" << vNext
-                  << "\n";
+MSCFModel::moveHelper(MSVehicle* const veh, double vPos) const {
+    const double oldV = veh->getSpeed(); // save old v for optional acceleration computation
+    const double vSafe = MIN2(vPos, veh->processNextStop(vPos)); // process stops
+    // we need the acceleration for emission computation;
+    //  in this case, we neglect dawdling, nonetheless, using
+    //  vSafe does not incorporate speed reduction due to interaction
+    //  on lane changing
+    double vMin, vNext;
+    const double vMax = MIN3(veh->getMaxSpeedOnLane(), maxNextSpeed(oldV, veh), vSafe);
+    if (MSGlobals::gSemiImplicitEulerUpdate) {
+        // we cannot rely on never braking harder than maxDecel because TraCI or strange cf models may decide to do so
+        // vMin = MIN2(getSpeedAfterMaxDecel(oldV), vMax);
+        vMin =  MIN2(minNextSpeed(oldV, veh), vMax);
+        vNext = veh->getLaneChangeModel().patchSpeed(vMin, vMax, vMax, *this);
+    } else {
+        // for ballistic update, negative vnext must be allowed to
+        // indicate a stop within the coming timestep (i.e., to attain negative values)
+        vMin =  MIN2(minNextSpeed(oldV, veh), vMax);
+        vNext = veh->getLaneChangeModel().patchSpeed(vMin, vMax, vMax, *this);
+        // (Leo) moveHelper() is responsible for assuring that the next
+        // velocity is chosen in accordance with maximal decelerations.
+        // At this point vNext may also be negative indicating a stop within next step.
+        // Moreover, because maximumSafeStopSpeed() does not consider deceleration bounds
+        // vNext can be a large negative value at this point. We cap vNext here.
+        vNext = MAX2(vNext, vMin);
     }
-#endif
+
     return vNext;
 }
 
@@ -244,33 +205,19 @@ MSCFModel::maxNextSpeed(double speed, const MSVehicle* const /*veh*/) const {
 double
 MSCFModel::minNextSpeed(double speed, const MSVehicle* const /*veh*/) const {
     if (MSGlobals::gSemiImplicitEulerUpdate) {
-        return MAX2(speed - ACCEL2SPEED(myDecel), 0.);
-    } else {
-        // NOTE: ballistic update allows for negative speeds to indicate a stop within the next timestep
-        return speed - ACCEL2SPEED(myDecel);
-    }
-}
-
-
-double
-MSCFModel::minNextSpeedEmergency(double speed, const MSVehicle* const /*veh*/) const {
-    if (MSGlobals::gSemiImplicitEulerUpdate) {
+//        return MAX2(speed - ACCEL2SPEED(getMaxDecel()), 0.);
         return MAX2(speed - ACCEL2SPEED(myEmergencyDecel), 0.);
     } else {
         // NOTE: ballistic update allows for negative speeds to indicate a stop within the next timestep
+//        return speed - ACCEL2SPEED(getMaxDecel());
         return speed - ACCEL2SPEED(myEmergencyDecel);
     }
 }
 
 
-
 double
-MSCFModel::freeSpeed(const MSVehicle* const veh, double speed, double seen, double maxSpeed, const bool onInsertion) const {
-    if (maxSpeed < 0.) {
-        // can occur for ballistic update (in context of driving at red light)
-        return maxSpeed;
-    }
-    double vSafe = freeSpeed(speed, myDecel, seen, maxSpeed, onInsertion, veh->getActionStepLengthSecs());
+MSCFModel::freeSpeed(const MSVehicle* const /* veh */, double speed, double seen, double maxSpeed, const bool onInsertion) const {
+    double vSafe = freeSpeed(speed, myDecel, seen, maxSpeed, onInsertion);
     return vSafe;
 }
 
@@ -278,7 +225,7 @@ MSCFModel::freeSpeed(const MSVehicle* const veh, double speed, double seen, doub
 double
 MSCFModel::insertionFollowSpeed(const MSVehicle* const /* v */, double speed, double gap2pred, double predSpeed, double predMaxDecel) const {
     if (MSGlobals::gSemiImplicitEulerUpdate) {
-        return maximumSafeFollowSpeed(gap2pred, speed, predSpeed, predMaxDecel, true);
+        return maximumSafeFollowSpeed(gap2pred, speed, predSpeed, predMaxDecel);
     } else {
         // NOTE: Even for ballistic update, the current speed is irrelevant at insertion, therefore passing 0. (Leo)
         return maximumSafeFollowSpeed(gap2pred, 0., predSpeed, predMaxDecel, true);
@@ -299,7 +246,7 @@ MSCFModel::insertionStopSpeed(const MSVehicle* const veh, double speed, double g
 double
 MSCFModel::followSpeedTransient(double duration, const MSVehicle* const /*veh*/, double /*speed*/, double gap2pred, double predSpeed, double predMaxDecel) const {
     // minimium distance covered by the leader if braking
-    double leaderMinDist = gap2pred + distAfterTime(duration, predSpeed, -predMaxDecel);
+    double leaderMinDist = gap2pred + distAfterTime(duration, predSpeed, predMaxDecel);
     // if ego would not brake it could drive with speed leaderMinDist / duration
     // due to potentential ego braking it can safely drive faster
     if (MSGlobals::gSemiImplicitEulerUpdate) {
@@ -348,11 +295,8 @@ MSCFModel::followSpeedTransient(double duration, const MSVehicle* const /*veh*/,
 }
 
 double
-MSCFModel::distAfterTime(double t, double speed, const double accel) {
-    if (accel >= 0.) {
-        return (speed + 0.5 * accel * t) * t;
-    }
-    const double decel = -accel;
+MSCFModel::distAfterTime(double t, double speed, double decel) {
+    assert(decel > 0);
     if (speed <= decel * t) {
         // braking to a full stop
         return brakeGap(speed, decel, 0);
@@ -386,7 +330,7 @@ MSCFModel::getMinimalArrivalTime(double dist, double currentSpeed, double arriva
 
 
 double
-MSCFModel::estimateArrivalTime(double dist, double speed, double maxSpeed, double accel) {
+MSCFModel::estimateArrivalTime(double dist, double speed, double maxSpeed, double accel) const {
     assert(speed >= 0.);
     assert(dist >= 0.);
 
@@ -424,53 +368,6 @@ MSCFModel::estimateArrivalTime(double dist, double speed, double maxSpeed, doubl
 
 }
 
-double
-MSCFModel::estimateArrivalTime(double dist, double initialSpeed, double arrivalSpeed, double maxSpeed, double accel, double decel) {
-    UNUSED_PARAMETER(arrivalSpeed); // only in assertion
-    UNUSED_PARAMETER(decel); // only in assertion
-    if (dist <= 0) {
-        return 0.;
-    }
-
-    // stub-assumptions
-    assert(accel == decel);
-    assert(accel > 0);
-    assert(initialSpeed == 0);
-    assert(arrivalSpeed == 0);
-    assert(maxSpeed > 0);
-
-
-    double accelTime = (maxSpeed - initialSpeed) / accel;
-    // "ballistic" estimate for the distance covered during acceleration phase
-    double accelDist = accelTime * (initialSpeed + 0.5 * (maxSpeed - initialSpeed));
-    double arrivalTime;
-    if (accelDist >= dist * 0.5) {
-        // maximal speed will not be attained during maneuver
-        arrivalTime = 4 * sqrt(accelDist) / accel;
-    } else {
-        // Calculate time to move with constant, maximal lateral speed
-        const double constSpeedTime = (dist - accelDist * 2) / maxSpeed;
-        arrivalTime = accelTime + constSpeedTime;
-    }
-    return arrivalTime;
-}
-
-
-double
-MSCFModel::avoidArrivalAccel(double dist, double time, double speed) {
-    assert(time > 0 || dist == 0);
-    if (dist <= 0) {
-        return -std::numeric_limits<double>::max();
-    } else if (time * speed > 2 * dist) {
-        // stop before dist is necessary. We need
-        //            d = v*v/(2*a)
-        return - 0.5 * speed * speed / dist;
-    } else {
-        // we seek the solution a of
-        //            d = v*t + a*t*t/2
-        return 2 * (dist / time - speed) / time;
-    }
-}
 
 
 double
@@ -596,9 +493,7 @@ MSCFModel::gapExtrapolation(const double duration, const double currentGap, doub
 double
 MSCFModel::passingTime(const double lastPos, const double passedPos, const double currentPos, const double lastSpeed, const double currentSpeed) {
 
-    assert(passedPos <= currentPos);
-    assert(passedPos >= lastPos);
-    assert(currentPos > lastPos);
+    assert(passedPos <= currentPos && passedPos >= lastPos && currentPos > lastPos);
     assert(currentSpeed >= 0);
 
     if (passedPos > currentPos || passedPos < lastPos) {
@@ -679,13 +574,13 @@ MSCFModel::speedAfterTime(const double t, const double v0, const double dist) {
         // We reconstruct acceleration at time t=0. Note that the covered distance in case
         // of a stop exactly at t=TS is TS*v0/2.
         if (dist <  TS * v0 / 2) {
-            // stop must have occurred within [0,TS], use dist = -v0^2/(2a) (stopping dist),
+            // stop must have occured within [0,TS], use dist = -v0^2/(2a) (stopping dist),
             // i.e., a = -v0^2/(2*dist)
             const double accel = - v0 * v0 / (2 * dist);
             // The speed at time t is then
             return v0 + accel * t;
         } else {
-            // no stop occurred within [0,TS], thus (from dist = v0*TS + accel*TS^2/2)
+            // no stop occured within [0,TS], thus (from dist = v0*TS + accel*TS^2/2)
             const double accel = 2 * (dist / TS - v0) / TS;
             // The speed at time t is then
             return v0 + accel * t;
@@ -707,63 +602,26 @@ MSCFModel::estimateSpeedAfterDistance(const double dist, const double v, const d
 
 double
 MSCFModel::maximumSafeStopSpeed(double g /*gap*/, double v /*currentSpeed*/, bool onInsertion, double headway) const {
-    double vsafe;
     if (MSGlobals::gSemiImplicitEulerUpdate) {
-        vsafe = maximumSafeStopSpeedEuler(g, headway);
+        return maximumSafeStopSpeedEuler(g);
     } else {
-        vsafe = maximumSafeStopSpeedBallistic(g, v, onInsertion, headway);
+        return maximumSafeStopSpeedBallistic(g, v, onInsertion, headway);
     }
-
-//    if (myDecel != myEmergencyDecel) {
-//#ifdef DEBUG_EMERGENCYDECEL
-//        if (true) {
-//            std::cout << SIMTIME << " maximumSafeStopSpeed()"
-//                    << " g=" << g
-//                    << " v=" << v
-//                    << " initial vsafe=" << vsafe << "(decel=" << SPEED2ACCEL(v-vsafe) << ")" << std::endl;
-//        }
-//#endif
-//
-//        if (vsafe < v - ACCEL2SPEED(myDecel + NUMERICAL_EPS)) {
-//            // emergency deceleration required
-//
-//#ifdef DEBUG_EMERGENCYDECEL
-//            if (true) {
-//                std::cout << SIMTIME << " maximumSafeStopSpeed() results in emergency deceleration "
-//                        << "initial vsafe=" << vsafe  << " egoSpeed=" << v << "(decel=" << SPEED2ACCEL(v-vsafe) << ")" << std::endl;
-//            }
-//#endif
-//
-//            const double safeDecel = calculateEmergencyDeceleration(g, v, 0., 1);
-//            assert(myDecel <= safeDecel);
-//            vsafe = v - ACCEL2SPEED(myDecel + EMERGENCY_DECEL_AMPLIFIER * (safeDecel - myDecel));
-//
-//            if(MSGlobals::gSemiImplicitEulerUpdate) {
-//                vsafe = MAX2(vsafe,0.);
-//            }
-//
-//#ifdef DEBUG_EMERGENCYDECEL
-//            if (true) {
-//                std::cout << "     -> corrected emergency deceleration: " << SPEED2ACCEL(v-vsafe) << std::endl;
-//            }
-//#endif
-//
-//        }
-//    }
-
-    return vsafe;
 }
 
 
 double
-MSCFModel::maximumSafeStopSpeedEuler(double gap, double headway) const {
+MSCFModel::maximumSafeStopSpeedEuler(double gap) const {
     gap -= NUMERICAL_EPS; // lots of code relies on some slack XXX: it shouldn't...
     if (gap <= 0) {
         return 0;
+    } else if (gap <= ACCEL2SPEED(myDecel)) {
+        // workaround for #2310
+        return MIN2(ACCEL2SPEED(myDecel), DIST2SPEED(gap));
     }
     const double g = gap;
     const double b = ACCEL2SPEED(myDecel);
-    const double t = headway >= 0 ? headway : myHeadwayTime;
+    const double t = myHeadwayTime;
     const double s = TS;
 
 
@@ -809,7 +667,7 @@ MSCFModel::maximumSafeStopSpeedBallistic(double g /*gap*/, double v /*currentSpe
 
     // In the usual case during the driving task, the vehicle goes by
     // a current speed v0=v, and we seek to determine a safe acceleration a (possibly <0)
-    // such that starting to break after accelerating with a for the time tau=headway
+    // such that starting to break after accelerating with a for the time tau
     // still allows us to stop in time.
 
     const double tau = headway;
@@ -819,7 +677,7 @@ MSCFModel::maximumSafeStopSpeedBallistic(double g /*gap*/, double v /*currentSpe
         if (g == 0.) {
             if (v0 > 0.) {
                 // indicate to brake as hard as possible
-                return -std::numeric_limits<double>::max();
+                return -INVALID_SPEED;
             } else {
                 // stay stopped
                 return 0.;
@@ -861,9 +719,6 @@ MSCFModel::maximumSafeFollowSpeed(double gap, double egoSpeed, double predSpeed,
 
 //    // For negative gaps, we return the lowest meaningful value by convention
 //    // XXX: check whether this is desireable (changes test results, therefore I exclude it for now (Leo), refs. #2575)
-
-//    //      It must be done. Otherwise, negative gaps at high speeds can create nonsense results from the call to maximumSafeStopSpeed() below
-
 //    if(gap<0){
 //        if(MSGlobals::gSemiImplicitEulerUpdate){
 //            return 0.;
@@ -876,168 +731,14 @@ MSCFModel::maximumSafeFollowSpeed(double gap, double egoSpeed, double predSpeed,
     // if leader is stopped, calculate stopSpeed without time-headway to prevent creeping stop
     // NOTE: this can lead to the strange phenomenon (for the Krauss-model at least) that if the leader comes to a stop,
     //       the follower accelerates for a short period of time. Refs #2310 (Leo)
-    //    const double headway = predSpeed > 0. ? myHeadwayTime : 0.;
+//    const double headway = predSpeed > 0. ? myHeadwayTime : 0.;
 
     const double headway = myHeadwayTime;
-    double x = maximumSafeStopSpeed(gap + brakeGap(predSpeed, MAX2(myDecel, predMaxDecel), 0), egoSpeed, onInsertion, headway);
-
-    if (myDecel != myEmergencyDecel && !onInsertion && !MSGlobals::gComputeLC) {
-        double origSafeDecel = SPEED2ACCEL(egoSpeed - x);
-        if (origSafeDecel > myDecel + NUMERICAL_EPS) {
-            // Braking harder than myDecel was requested -> calculate required emergency deceleration.
-            // Note that the resulting safeDecel can be smaller than the origSafeDecel, since the call to maximumSafeStopSpeed() above
-            // can result in corrupted values (leading to intersecting trajectories) if, e.g. leader and follower are fast (leader still faster) and the gap is very small,
-            // such that braking harder than myDecel is required.
-
-#ifdef DEBUG_EMERGENCYDECEL
-            if (DEBUG_COND2) {
-                std::cout << SIMTIME << " initial vsafe=" << x
-                          << " egoSpeed=" << egoSpeed << " (origSafeDecel=" << origSafeDecel << ")"
-                          << " predSpeed=" << predSpeed << " (predDecel=" << predMaxDecel << ")"
-                          << std::endl;
-            }
-#endif
-
-            double safeDecel = EMERGENCY_DECEL_AMPLIFIER * calculateEmergencyDeceleration(gap, egoSpeed, predSpeed, predMaxDecel);
-            // Don't be riskier than the usual method (myDecel <= safeDecel may occur, because a headway>0 is used above)
-            safeDecel = MAX2(safeDecel, myDecel);
-            // don't brake harder than originally planned (possible due to euler/ballistic mismatch)
-            safeDecel = MIN2(safeDecel, origSafeDecel);
-            x = egoSpeed - ACCEL2SPEED(safeDecel);
-            if (MSGlobals::gSemiImplicitEulerUpdate) {
-                x = MAX2(x, 0.);
-            }
-
-#ifdef DEBUG_EMERGENCYDECEL
-            if (DEBUG_COND2) {
-                std::cout << "     -> corrected emergency deceleration: " << safeDecel << " newVSafe=" << x << std::endl;
-            }
-#endif
-
-        }
-    }
+    const double x = maximumSafeStopSpeed(gap + brakeGap(predSpeed, MAX2(myDecel, predMaxDecel), 0), egoSpeed, onInsertion, headway);
     assert(x >= 0 || !MSGlobals::gSemiImplicitEulerUpdate);
     assert(!ISNAN(x));
     return x;
 }
-
-
-double
-MSCFModel::calculateEmergencyDeceleration(double gap, double egoSpeed, double predSpeed, double predMaxDecel) const {
-    // There are two cases:
-    // 1) Either, stopping in time is possible with a deceleration b <= predMaxDecel, then this value is returned
-    // 2) Or, b > predMaxDecel is required in this case the minimal value b allowing to stop safely under the assumption maxPredDecel=b is returned
-
-    // Apparent braking distance for the leader
-    const double predBrakeDist = 0.5 * predSpeed * predSpeed / predMaxDecel;
-    // Required deceleration according to case 1)
-    const double b1 = 0.5 * egoSpeed * egoSpeed / (gap + predBrakeDist);
-
-#ifdef DEBUG_EMERGENCYDECEL
-    if (DEBUG_COND2) {
-        std::cout << SIMTIME << " calculateEmergencyDeceleration()"
-                  << " gap=" << gap << " egoSpeed=" << egoSpeed << " predSpeed=" << predSpeed
-                  << " predBrakeDist=" << predBrakeDist
-                  << " b1=" << b1
-                  << std::endl;
-    }
-#endif
-
-    if (b1 <= predMaxDecel) {
-        // Case 1) applies
-#ifdef DEBUG_EMERGENCYDECEL
-        if (DEBUG_COND2) {
-            std::cout << "       case 1 ..." << std::endl;
-        }
-#endif
-        return b1;
-    }
-#ifdef DEBUG_EMERGENCYDECEL
-    if (DEBUG_COND2) {
-        std::cout << "       case 2 ...";
-    }
-#endif
-
-    // Case 2) applies
-    assert(gap < 0 || predSpeed < egoSpeed);
-    if (gap <= 0.) {
-        return - std::numeric_limits<double>::max();
-    }
-    // Required deceleration according to case 2)
-    const double b2 = 0.5 * (egoSpeed * egoSpeed - predSpeed * predSpeed) / gap;
-
-#ifdef DEBUG_EMERGENCYDECEL
-    if (DEBUG_COND2) {
-        std::cout << " b2=" << b2 << std::endl;
-    }
-#endif
-    return b2;
-}
-
-
-
-void
-MSCFModel::applyHeadwayAndSpeedDifferencePerceptionErrors(const MSVehicle* const veh, double speed, double& gap, double& predSpeed, double predMaxDecel, const MSVehicle* const pred) const {
-    UNUSED_PARAMETER(speed);
-    UNUSED_PARAMETER(predMaxDecel);
-    assert(veh->hasDriverState());
-
-    // Obtain perceived gap and headway from the driver state
-    const double perceivedGap = veh->getDriverState()->getPerceivedHeadway(gap, pred);
-    const double perceivedSpeedDifference = veh->getDriverState()->getPerceivedSpeedDifference(predSpeed - speed, gap, pred);
-
-#ifdef DEBUG_DRIVER_ERRORS
-    if DEBUG_COND {
-    if (!veh->getDriverState()->debugLocked()) {
-            veh->getDriverState()->lockDebug();
-            std::cout << SIMTIME << " veh '" << veh->getID() << "' -> MSCFModel_Krauss::applyHeadwayAndSpeedDifferencePerceptionErrors()\n"
-                      << "  speed=" << speed << " gap=" << gap << " leaderSpeed=" << predSpeed
-                      << "\n  perceivedGap=" << perceivedGap << " perceivedLeaderSpeed=" << speed + perceivedSpeedDifference
-                      << " perceivedSpeedDifference=" << perceivedSpeedDifference
-                      << std::endl;
-            const double exactFollowSpeed = followSpeed(veh, speed, gap, predSpeed, predMaxDecel);
-            const double errorFollowSpeed = followSpeed(veh, speed, perceivedGap, speed + perceivedSpeedDifference, predMaxDecel);
-            const double accelError = SPEED2ACCEL(errorFollowSpeed - exactFollowSpeed);
-            std::cout << "  gapError=" << perceivedGap - gap << "  dvError=" << perceivedSpeedDifference - (predSpeed - speed)
-                      << "\n  resulting accelError: " << accelError << std::endl;
-            veh->getDriverState()->unlockDebug();
-        }
-    }
-#endif
-
-    gap = perceivedGap;
-    predSpeed = speed + perceivedSpeedDifference;
-}
-
-
-void
-MSCFModel::applyHeadwayPerceptionError(const MSVehicle* const veh, double speed, double& gap) const {
-    UNUSED_PARAMETER(speed);
-    assert(veh->hasDriverState());
-
-    // Obtain perceived gap from driver state
-    const double perceivedGap = veh->getDriverState()->getPerceivedHeadway(gap);
-
-#ifdef DEBUG_DRIVER_ERRORS
-    if DEBUG_COND {
-    if (!veh->getDriverState()->debugLocked()) {
-            veh->getDriverState()->lockDebug();
-            std::cout << SIMTIME << " veh '" << veh->getID() << "' -> MSCFModel_Krauss::applyHeadwayPerceptionError()\n"
-                      << "  speed=" << speed << " gap=" << gap << "\n  perceivedGap=" << perceivedGap << std::endl;
-            const double exactStopSpeed = stopSpeed(veh, speed, gap);
-            const double errorStopSpeed = stopSpeed(veh, speed, perceivedGap);
-            const double accelError = SPEED2ACCEL(errorStopSpeed - exactStopSpeed);
-            std::cout << "  gapError=" << perceivedGap - gap << "\n  resulting accelError: " << accelError << std::endl;
-            veh->getDriverState()->unlockDebug();
-        }
-    }
-#endif
-
-    gap = perceivedGap;
-}
-
-
-
 
 
 /****************************************************************************/

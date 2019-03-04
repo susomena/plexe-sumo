@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSPModel.cpp
 /// @author  Jakob Erdmann
 /// @date    Mon, 13 Jan 2014
@@ -14,11 +6,26 @@
 ///
 // The pedestrian following model (prototype)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cmath>
 #include <algorithm>
@@ -38,7 +45,7 @@
 // ===========================================================================
 // static members
 // ===========================================================================
-MSPModel* MSPModel::myModel(nullptr);
+MSPModel* MSPModel::myModel(0);
 
 // named constants
 const int MSPModel::FORWARD(1);
@@ -57,7 +64,7 @@ const double MSPModel::SIDEWALK_OFFSET(3);
 
 MSPModel*
 MSPModel::getModel() {
-    if (myModel == nullptr) {
+    if (myModel == 0) {
         const OptionsCont& oc = OptionsCont::getOptions();
         MSNet* net = MSNet::getInstance();
         const std::string model = oc.getString("pedestrian.model");
@@ -80,32 +87,32 @@ MSPModel::getModel() {
 
 void
 MSPModel::cleanup() {
-    if (myModel != nullptr) {
+    if (myModel != 0) {
         myModel->cleanupHelper();
         delete myModel;
-        myModel = nullptr;
+        myModel = 0;
     }
 }
 
 
-int
+bool
 MSPModel::canTraverse(int dir, const ConstMSEdgeVector& route) {
-    const MSJunction* junction = nullptr;
+    const MSJunction* junction = 0;
     for (ConstMSEdgeVector::const_iterator it = route.begin(); it != route.end(); ++it) {
         const MSEdge* edge = *it;
-        if (junction != nullptr) {
+        if (junction != 0) {
             //std::cout << " junction=" << junction->getID() << " edge=" << edge->getID() << "\n";
             if (junction == edge->getFromJunction()) {
                 dir = FORWARD;
             } else if (junction == edge->getToJunction()) {
                 dir = BACKWARD;
             } else {
-                return UNDEFINED_DIRECTION;
+                return false;
             }
         }
         junction = dir == FORWARD ? edge->getToJunction() : edge->getFromJunction();
     }
-    return dir;
+    return true;
 }
 
 /****************************************************************************/

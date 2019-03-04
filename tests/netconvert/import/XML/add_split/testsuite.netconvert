@@ -36,9 +36,6 @@ speed_navteq
 # split edge into 3 parts with custom ids
 3_parts_rename
 
-# split edge and set new permissions
-split_and_permissions
-
 # split an edge that is part of a roundabout
 roundabout
 
@@ -50,12 +47,3 @@ double_split
 
 # split a two-way road with a common node and attach a new edge to the newly created node
 double_split_attach
-
-# split a two-way road with a common node and attach an existing edge by reusing an existing node id for the split node
-double_split_attach_existing
-
-# see #3905
-pos0
-
-# trying to re-use one of the existing end points as split id should result in error
-attach_invalid

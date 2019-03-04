@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOXMLDefinitions.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -19,6 +11,17 @@
 ///
 // Definitions of elements and attributes known by SUMO
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef SUMOXMLDefinitions_h
 #define SUMOXMLDefinitions_h
 
@@ -26,7 +29,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/common/StringBijection.h>
 
@@ -50,10 +57,8 @@ enum SumoXMLTag {
     SUMO_TAG_LANE,
     /// @brief begin/end of the description of a neighboring lane
     SUMO_TAG_NEIGH,
-    /// @brief begin/end of the description of a Point of interest
+    /// @brief begin/end of the description of a polygon
     SUMO_TAG_POI,
-    /// @brief begin/end of the description of a Point of interest over Lane (used by Netedit)
-    SUMO_TAG_POILANE,
     /// @brief begin/end of the description of a polygon
     SUMO_TAG_POLY,
     /// @brief begin/end of the description of a junction
@@ -66,8 +71,6 @@ enum SumoXMLTag {
     SUMO_TAG_INDUCTION_LOOP,
     /// @brief an e2 detector
     SUMO_TAG_E2DETECTOR,
-    /// @brief an e2 detector over multiple lanes (used by Netedit)
-    SUMO_TAG_E2DETECTOR_MULTILANE,
     /// @brief alternative tag for e2 detector
     SUMO_TAG_LANE_AREA_DETECTOR,
     /// @brief an e3 detector
@@ -84,14 +87,12 @@ enum SumoXMLTag {
     SUMO_TAG_DET_EXIT,
     /// @brief  An edge-following detector
     SUMO_TAG_EDGEFOLLOWDETECTOR,
-    /// @brief An instantenous induction loop
+    /// @brief  An instantenous induction loop
     SUMO_TAG_INSTANT_INDUCTION_LOOP,
-    /// @brief A variable speed sign
+    /// @brief  A variable speed sign
     SUMO_TAG_VSS,
-    /// @brief A calibrator placed over edge
+    /// @brief  A calibrator
     SUMO_TAG_CALIBRATOR,
-    /// @brief A calibrator placed over lane (used in netedit)
-    SUMO_TAG_LANECALIBRATOR,
     /// @brief  A rerouter
     SUMO_TAG_REROUTER,
     /// @brief  A bus stop
@@ -142,10 +143,6 @@ enum SumoXMLTag {
     SUMO_TAG_TRIP,
     /// @brief a flow definition (used by router)
     SUMO_TAG_FLOW,
-    /// @brief a flow definition within in Calibrator (used in NETEDIT)
-    SUMO_TAG_CALIBRATORFLOW,
-    /// @brief a flow state definition (used when saving and loading simulatino state)
-    SUMO_TAG_FLOWSTATE,
     /// @brief trigger: a step description
     SUMO_TAG_STEP,
     /// @brief an aggreagated-output interval
@@ -207,10 +204,8 @@ enum SumoXMLTag {
     SUMO_TAG_JOINEXCLUDE,
     /// @brief crossing between edges for pedestrians
     SUMO_TAG_CROSSING,
-    /// @brief walking area for pedestrians
-    SUMO_TAG_WALKINGAREA,
-    /// @brief Information on vClass specific stop offsets at lane end
-    SUMO_TAG_STOPOFFSET,
+    /// @brief Custom shape for an element
+    SUMO_TAG_CUSTOMSHAPE,
 
     SUMO_TAG_WAY,
     SUMO_TAG_ND,
@@ -242,12 +237,10 @@ enum SumoXMLTag {
     SUMO_TAG_VIEWPORT,
     SUMO_TAG_SNAPSHOT,
     SUMO_TAG_BREAKPOINTS_FILE,
-    SUMO_TAG_BREAKPOINT,
     SUMO_TAG_LOCATION,
     SUMO_TAG_COLORSCHEME,
     SUMO_TAG_SCALINGSCHEME,
     SUMO_TAG_ENTRY,
-    SUMO_TAG_RNGSTATE,
     /// @}
 
     SUMO_TAG_VEHICLETRANSFER,
@@ -266,8 +259,6 @@ enum SumoXMLTag {
     SUMO_TAG_CF_PWAGNER2009,
     SUMO_TAG_CF_BKERNER,
     SUMO_TAG_CF_WIEDEMANN,
-    SUMO_TAG_CF_ACC,
-    SUMO_TAG_CF_CACC,
     SUMO_TAG_CF_RAIL,
     SUMO_TAG_CF_CC,
     /// @}
@@ -355,7 +346,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_BIKELANEWIDTH,
     SUMO_ATTR_REMOVE,
     SUMO_ATTR_LENGTH,
-    SUMO_ATTR_BIDI,
     SUMO_ATTR_ID_BEFORE,
     SUMO_ATTR_ID_AFTER,
     SUMO_ATTR_X,
@@ -409,18 +399,13 @@ enum SumoXMLAttr {
     SUMO_ATTR_DECEL,
     SUMO_ATTR_EMERGENCYDECEL,
     SUMO_ATTR_APPARENTDECEL,
-    SUMO_ATTR_HASDRIVERSTATE,
-    SUMO_ATTR_ACTIONSTEPLENGTH,
     SUMO_ATTR_VCLASS,
-    SUMO_ATTR_VCLASSES,
-    SUMO_ATTR_EXCEPTIONS,
     SUMO_ATTR_REPNUMBER,
     SUMO_ATTR_SPEEDFACTOR,
     SUMO_ATTR_SPEEDDEV,
     SUMO_ATTR_LANE_CHANGE_MODEL,
     SUMO_ATTR_CAR_FOLLOW_MODEL,
     SUMO_ATTR_MINGAP,
-    SUMO_ATTR_COLLISION_MINGAP_FACTOR,
     SUMO_ATTR_BOARDING_DURATION,
     SUMO_ATTR_LOADING_DURATION,
     /// @}
@@ -514,29 +499,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_TMP5,
     /// @}
 
-    // @name Train ACC model attributes
-    /// @{
-    SUMO_ATTR_SC_GAIN,
-    SUMO_ATTR_GCC_GAIN_SPEED,
-    SUMO_ATTR_GCC_GAIN_SPACE,
-    SUMO_ATTR_GC_GAIN_SPEED,
-    SUMO_ATTR_GC_GAIN_SPACE,
-    SUMO_ATTR_CA_GAIN_SPEED,
-    SUMO_ATTR_CA_GAIN_SPACE,
-    /// @}
-
-    // @name Train CACC model attributes
-    /// @{
-    SUMO_ATTR_SC_GAIN_CACC,
-    SUMO_ATTR_GCC_GAIN_GAP_CACC,
-    SUMO_ATTR_GCC_GAIN_GAP_DOT_CACC,
-    SUMO_ATTR_GC_GAIN_GAP_CACC,
-    SUMO_ATTR_GC_GAIN_GAP_DOT_CACC,
-    SUMO_ATTR_CA_GAIN_GAP_CACC,
-    SUMO_ATTR_CA_GAIN_GAP_DOT_CACC,
-    /// @}
-
-
     /// @name Train model attributes
     /// @{
     SUMO_ATTR_TRAIN_TYPE, //used by: Rail
@@ -549,18 +511,11 @@ enum SumoXMLAttr {
     SUMO_ATTR_LCA_SPEEDGAIN_PARAM,
     SUMO_ATTR_LCA_KEEPRIGHT_PARAM,
     SUMO_ATTR_LCA_SUBLANE_PARAM,
-    SUMO_ATTR_LCA_OPPOSITE_PARAM,
     SUMO_ATTR_LCA_PUSHY,
-    SUMO_ATTR_LCA_PUSHYGAP,
     SUMO_ATTR_LCA_ASSERTIVE,
     SUMO_ATTR_LCA_IMPATIENCE,
     SUMO_ATTR_LCA_TIME_TO_IMPATIENCE,
     SUMO_ATTR_LCA_ACCEL_LAT,
-    SUMO_ATTR_LCA_LOOKAHEADLEFT,
-    SUMO_ATTR_LCA_SPEEDGAINRIGHT,
-    SUMO_ATTR_LCA_MAXSPEEDLATSTANDING,
-    SUMO_ATTR_LCA_MAXSPEEDLATFACTOR,
-    SUMO_ATTR_LCA_TURN_ALIGNMENT_DISTANCE,
     SUMO_ATTR_LCA_EXPERIMENTAL1,
     /// @}
 
@@ -572,15 +527,12 @@ enum SumoXMLAttr {
     SUMO_ATTR_JM_IGNORE_KEEPCLEAR_TIME,
     SUMO_ATTR_JM_IGNORE_FOE_SPEED,
     SUMO_ATTR_JM_IGNORE_FOE_PROB,
-    SUMO_ATTR_JM_SIGMA_MINOR,
-    SUMO_ATTR_JM_TIMEGAP_MINOR,
     /// @}
 
     /// @name route alternatives / distribution attributes
     /// @{
     SUMO_ATTR_LAST,
     SUMO_ATTR_COST,
-    SUMO_ATTR_SAVINGS,
     SUMO_ATTR_PROB,
     SUMO_ATTR_PROBS,
     SUMO_ATTR_ROUTES,
@@ -593,10 +545,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_LANES,
     SUMO_ATTR_FROM,
     SUMO_ATTR_TO,
-    SUMO_ATTR_FROMLONLAT,
-    SUMO_ATTR_TOLONLAT,
-    SUMO_ATTR_FROMXY,
-    SUMO_ATTR_TOXY,
     SUMO_ATTR_PERIOD,
     SUMO_ATTR_FROM_TAZ,
     SUMO_ATTR_TO_TAZ,
@@ -638,8 +586,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_TLTYPE,
     /// @brief link: the index of the link within the traffic light
     SUMO_ATTR_TLLINKINDEX,
-    /// @brief link: the index of the opposite direction link of a pedestrian crossing
-    SUMO_ATTR_TLLINKINDEX2,
     /// @brief edge: the shape in xml-definition
     SUMO_ATTR_SHAPE,
     /// @brief The information about how to spread the lanes from the given position
@@ -648,8 +594,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_RADIUS,
     /// @brief Whether vehicles must keep the junction clear
     SUMO_ATTR_KEEP_CLEAR,
-    /// @brief How to compute right of way
-    SUMO_ATTR_RIGHT_OF_WAY,
     /// @brief whether a given shape is user-defined
     SUMO_ATTR_CUSTOMSHAPE,
     /// @brief A color information
@@ -664,7 +608,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_LAYER,
     /// @brief Fill the polygon
     SUMO_ATTR_FILL,
-    SUMO_ATTR_LINEWIDTH,
     SUMO_ATTR_PREFIX,
     SUMO_ATTR_DISCARD,
 
@@ -673,8 +616,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_DEST,
     SUMO_ATTR_SOURCE,
     SUMO_ATTR_VIA,
-    SUMO_ATTR_VIALONLAT,
-    SUMO_ATTR_VIAXY,
     /// @brief a list of node ids, used for controlling joining
     SUMO_ATTR_NODES,
 
@@ -684,8 +625,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_MINDURATION,
     /// @brief maximum duration of a phase
     SUMO_ATTR_MAXDURATION,
-    /// @brief succesor phase index
-    SUMO_ATTR_NEXT,
     /// @}
 
     /// @name Attributes for junction-internal lanes
@@ -702,8 +641,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_HALTING_TIME_THRESHOLD,
     SUMO_ATTR_HALTING_SPEED_THRESHOLD,
     SUMO_ATTR_JAM_DIST_THRESHOLD,
-    SUMO_ATTR_SHOW_DETECTOR,
-    SUMO_ATTR_OPEN_ENTRY,
     /// @}
 
     SUMO_ATTR_WAUT_ID,
@@ -722,11 +659,9 @@ enum SumoXMLAttr {
     SUMO_ATTR_CONTAINER_STOP,
     SUMO_ATTR_PARKING_AREA,
     SUMO_ATTR_ROADSIDE_CAPACITY,
-    SUMO_ATTR_ONROAD,
     SUMO_ATTR_CHARGING_STATION,
     SUMO_ATTR_LINE,
     SUMO_ATTR_LINES,
-    SUMO_ATTR_INTENDED,
     SUMO_ATTR_VALUE,
     SUMO_ATTR_PROHIBITOR,
     SUMO_ATTR_PROHIBITED,
@@ -740,7 +675,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_GUISHAPE,
     SUMO_ATTR_OSGFILE,
     SUMO_ATTR_IMGFILE,
-    SUMO_ATTR_RELATIVEPATH,
     SUMO_ATTR_ANGLE,
     SUMO_ATTR_EMISSIONCLASS,
     SUMO_ATTR_IMPATIENCE,
@@ -763,8 +697,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_LON,
     SUMO_ATTR_LAT,
     SUMO_ATTR_GEO,
-    SUMO_ATTR_GEOSHAPE,
-    SUMO_ATTR_GEOPOSITION,
     SUMO_ATTR_K,
     SUMO_ATTR_V,
     SUMO_ATTR_REF,
@@ -800,14 +732,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_CF_CC_TAU,
     SUMO_ATTR_CF_CC_LANES_COUNT,
     SUMO_ATTR_CF_CC_CCACCEL,
-    SUMO_ATTR_CF_CC_PLOEG_KP,
-    SUMO_ATTR_CF_CC_PLOEG_KD,
-    SUMO_ATTR_CF_CC_PLOEG_H,
-    SUMO_ATTR_CF_CC_FLATBED_KA,
-    SUMO_ATTR_CF_CC_FLATBED_KV,
-    SUMO_ATTR_CF_CC_FLATBED_KP,
-    SUMO_ATTR_CF_CC_FLATBED_D,
-    SUMO_ATTR_CF_CC_FLATBED_H,
     /// @}
 
     SUMO_ATTR_GENERATE_WALKS,
@@ -819,9 +743,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_RECTANGULAR_LANE_CUT,
     SUMO_ATTR_WALKINGAREAS,
     SUMO_ATTR_LEFTHAND,
-    SUMO_ATTR_LIMIT_TURN_SPEED,
-    SUMO_ATTR_CHECKLANEFOES_ALL,
-    SUMO_ATTR_CHECKLANEFOES_ROUNDABOUT,
     SUMO_ATTR_COMMAND,
 
     SUMO_ATTR_ACTORCONFIG,
@@ -833,7 +754,6 @@ enum SumoXMLAttr {
     SUMO_ATTR_AMOUNT,
     SUMO_ATTR_ORIGIN,
     SUMO_ATTR_DESTINATION,
-    SUMO_ATTR_VISIBLE,
 
 
     /// @name ActivityGen Tags
@@ -847,7 +767,6 @@ enum SumoXMLAttr {
     AGEN_ATTR_RETIREMENT,
     AGEN_ATTR_CARS,
     AGEN_ATTR_UNEMPLOYEMENT,
-    AGEN_ATTR_LABORDEMAND,
     AGEN_ATTR_MAX_FOOT_DIST,
     AGEN_ATTR_IN_TRAFFIC,
     AGEN_ATTR_OUT_TRAFFIC,
@@ -907,16 +826,12 @@ enum SumoXMLAttr {
 
     //@name Netedit Attributes (used as virtual property holders, must be in SumoXMLAttr)
     //@{
-    /// @brief element is selected
-    GNE_ATTR_SELECTED,
     /// @brief whether a feature has been loaded,guessed,modified or approved
     GNE_ATTR_MODIFICATION_STATUS,
     /// @brief first coordinate of edge shape
     GNE_ATTR_SHAPE_START,
     /// @brief last coordinate of edge shape
     GNE_ATTR_SHAPE_END,
-    /// @brief whether an edge is part of a bidirectional railway
-    GNE_ATTR_BIDIR,
     /// @brief block movement of a graphic element
     GNE_ATTR_BLOCK_MOVEMENT,
     /// @brief block shape of a graphic element (Used mainly in GNEShapes)
@@ -925,39 +840,12 @@ enum SumoXMLAttr {
     GNE_ATTR_CLOSE_SHAPE,
     /// @brief parent of an additional element
     GNE_ATTR_PARENT,
-    /// @brief generic attribute
-    GNE_ATTR_GENERIC,
-    /// @brief min source (used only by TAZs)
-    GNE_ATTR_MIN_SOURCE,
-    /// @brief min sink (used only by TAZs)
-    GNE_ATTR_MIN_SINK,
-    /// @brief max source (used only by TAZs)
-    GNE_ATTR_MAX_SOURCE,
-    /// @brief max sink (used only by TAZs)
-    GNE_ATTR_MAX_SINK,
-    /// @brief average source (used only by TAZs)
-    GNE_ATTR_AVERAGE_SOURCE,
-    /// @brief average sink (used only by TAZs)
-    GNE_ATTR_AVERAGE_SINK,
-    /// @brief Color of TAZSources/TAZChilds
-    GNE_ATTR_TAZCOLOR,
     // @}
 
     SUMO_ATTR_TARGETLANE,
     SUMO_ATTR_CROSSING,
     SUMO_ATTR_XMLNS,
-    SUMO_ATTR_SCHEMA_LOCATION,
-
-    //@name RNG state saving attributes
-    // @{
-    SUMO_ATTR_RNG_DEFAULT,
-    SUMO_ATTR_RNG_ROUTEHANDLER,
-    SUMO_ATTR_RNG_INSERTIONCONTROL,
-    SUMO_ATTR_RNG_DEVICE,
-    SUMO_ATTR_RNG_DEVICE_BT,
-    SUMO_ATTR_RNG_DRIVERSTATE
-    // @}
-
+    SUMO_ATTR_SCHEMA_LOCATION
 };
 
 /*
@@ -1026,13 +914,6 @@ enum LaneSpreadFunction {
 };
 
 
-/// @brief algorithms for computing right of way
-enum RightOfWay {
-    RIGHT_OF_WAY_DEFAULT,
-    RIGHT_OF_WAY_EDGEPRIORITY
-};
-
-
 /**
  * @enum LinkState
  * @brief The right-of-way state of a link between two lanes
@@ -1078,6 +959,7 @@ enum LinkState {
     LINKSTATE_DEADEND = '-'
 };
 
+
 /**
  * @enum LinkDirection
  * @brief The different directions a link between two lanes may take (or a
@@ -1107,8 +989,7 @@ enum LinkDirection {
 /// @enum TrafficLightType
 enum TrafficLightType {
     TLTYPE_STATIC,
-    TLTYPE_RAIL_SIGNAL,
-    TLTYPE_RAIL_CROSSING,
+    TLTYPE_RAIL,
     TLTYPE_ACTUATED,
     TLTYPE_DELAYBASED,
     TLTYPE_SOTL_PHASE,
@@ -1118,7 +999,6 @@ enum TrafficLightType {
     TLTYPE_SOTL_MARCHING,
     TLTYPE_SWARM_BASED,
     TLTYPE_HILVL_DETERMINISTIC,
-    TLTYPE_OFF,
     TLTYPE_INVALID //< must be the last one
 };
 
@@ -1165,12 +1045,10 @@ enum LaneChangeAction {
     LCA_BLOCKED_BY_RIGHT_FOLLOWER = 1 << 12,
     /// @brief The vehicle is blocked being overlapping
     LCA_OVERLAPPING = 1 << 13,
-    /// @brief The vehicle does not have enough space to complete a continuous change before the next turn
+    /// @brief The vehicle does not have enough space to complete a continuous lane and change before the next turning movement
     LCA_INSUFFICIENT_SPACE = 1 << 14,
     /// @brief used by the sublane model
     LCA_SUBLANE = 1 << 15,
-    /// @brief Vehicle is too slow to complete a continuous lane change (in case that maxSpeedLatStanding==0)
-    LCA_INSUFFICIENT_SPEED = 1 << 28,
     /// @brief lane can change
     LCA_WANTS_LANECHANGE = LCA_LEFT | LCA_RIGHT,
     /// @brief lane can change or stay
@@ -1184,29 +1062,12 @@ enum LaneChangeAction {
     /// @brief blocker by follower
     LCA_BLOCKED_BY_FOLLOWER = LCA_BLOCKED_BY_LEFT_FOLLOWER | LCA_BLOCKED_BY_RIGHT_FOLLOWER,
     /// @brief blocked in all directions
-    LCA_BLOCKED = LCA_BLOCKED_LEFT | LCA_BLOCKED_RIGHT | LCA_INSUFFICIENT_SPACE | LCA_INSUFFICIENT_SPEED,
+    LCA_BLOCKED = LCA_BLOCKED_LEFT | LCA_BLOCKED_RIGHT | LCA_INSUFFICIENT_SPACE,
     /// @brief reasons of lane change
-    LCA_CHANGE_REASONS = (LCA_STRATEGIC | LCA_COOPERATIVE | LCA_SPEEDGAIN | LCA_KEEPRIGHT | LCA_SUBLANE | LCA_TRACI),
-    // LCA_BLOCKED_BY_CURRENT_LEADER = 1 << 28
-    // LCA_BLOCKED_BY_CURRENT_FOLLOWER = 1 << 29
-    /// @}
-
-    /// @name originally model specific states (migrated here since
-    ///       they were duplicated in all current models)
-    /// @{
-    LCA_AMBLOCKINGLEADER = 1 << 16,
-    LCA_AMBLOCKINGFOLLOWER = 1 << 17,
-    LCA_MRIGHT = 1 << 18,
-    LCA_MLEFT = 1 << 19,
-    // !!! never set LCA_UNBLOCK = 1 << 20,
-    LCA_AMBLOCKINGFOLLOWER_DONTBRAKE = 1 << 21,
-    // !!! never used LCA_AMBLOCKINGSECONDFOLLOWER = 1 << 22,
-    LCA_CHANGE_TO_HELP = 1 << 23,
-    // !!! never read LCA_KEEP1 = 1 << 24,
-    // !!! never used LCA_KEEP2 = 1 << 25,
-    LCA_AMBACKBLOCKER = 1 << 26,
-    LCA_AMBACKBLOCKER_STANDING = 1 << 27
-                                 /// @}
+    LCA_CHANGE_REASONS = (LCA_STRATEGIC | LCA_COOPERATIVE | LCA_SPEEDGAIN | LCA_KEEPRIGHT | LCA_SUBLANE)
+                         // LCA_BLOCKED_BY_CURRENT_LEADER = 1 << 28
+                         // LCA_BLOCKED_BY_CURRENT_FOLLOWER = 1 << 29
+                         /// @}
 };
 
 
@@ -1271,9 +1132,6 @@ public:
     /// @brief lane spread functions
     static StringBijection<LaneSpreadFunction> LaneSpreadFunctions;
 
-    /// @brief lane spread functions
-    static StringBijection<RightOfWay> RightOfWayValues;
-
     /// @brief link states
     static StringBijection<LinkState> LinkStates;
 
@@ -1298,48 +1156,12 @@ public:
 
     /// @name Helper functions for ID-string manipulations
     /// @{
-
-    /// @brief whether the given string is a valid id for a network element
-    static bool isValidNetID(const std::string& value);
-
-    /// @brief whether the given string is a valid id for a vehicle or flow
-    static bool isValidVehicleID(const std::string& value);
-
-    /// @brief whether the given string is a valid id for an edge or vehicle type
-    static bool isValidTypeID(const std::string& value);
-
-    /// @brief whether the given string is a valid id for an detector
-    static bool isValidDetectorID(const std::string& value);
-
-    /// @brief whether the given string is a valid attribute for a certain key (for example, a name)
-    static bool isValidAttribute(const std::string& value);
-
-    /// @brief whether the given string is a valid attribute for a filename (for example, a name)
-    static bool isValidFilename(const std::string& value);
-
-    /// @brief whether the given string is a valid list of id for a network (empty aren't allowed)
-    static bool isValidListOfNetIDs(const std::string& value);
-
-    /// @brief whether the given string is a valid list of ids for an edge or vehicle type (empty aren't allowed)
-    static bool isValidListOfTypeID(const std::string& value);
-
-    /// @brief whether the given string is a valid key for a generic parameter
-    static bool isValidGenericParameterKey(const std::string& value);
-
-    /// @brief whether the given string is a valid value for a generic parameter
-    static bool isValidGenericParameterValue(const std::string& value);
-
     /// @brief return the junction id when given an edge of type internal, crossing or WalkingArea
     static std::string getJunctionIDFromInternalEdge(const std::string internalEdge);
 
     /// @brief return edge id when given the lane ID
     static std::string getEdgeIDFromLane(const std::string laneID);
     /// @}
-
-    /// @brief all allowed characters for phase state
-    static const std::string ALLOWED_TLS_LINKSTATES;
-
-
 
 private:
     /// @brief containers for the different SUMOXMLDefinitions
@@ -1353,9 +1175,6 @@ private:
 
     /// @brief lane spread function values
     static StringBijection<LaneSpreadFunction>::Entry laneSpreadFunctionValues[];
-
-    /// @brief lane spread function values
-    static StringBijection<RightOfWay>::Entry rightOfWayValuesInitializer[];
 
     /// @brief link state values
     static StringBijection<LinkState>::Entry linkStateValues[];
@@ -1378,9 +1197,6 @@ private:
     /// @brief lane change action values
     static StringBijection<LaneChangeAction>::Entry laneChangeActionValues[];
     /// @}
-
-    /// @brief all allowed characters for phase state
-    static const char AllowedTLS_linkStatesInitializer[];
 };
 
 #endif

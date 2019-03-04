@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NGFrame.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Sets and checks options for netgen
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include "NGFrame.h"
@@ -39,23 +46,6 @@
 void
 NGFrame::fillOptions() {
     OptionsCont& oc = OptionsCont::getOptions();
-    oc.doRegister("alphanumerical-ids", new Option_Bool(true));
-    oc.addDescription("alphanumerical-ids", "Output", "The Ids of generated nodes use an alphanumerical code for easier readability when possible");
-
-    // register processing options
-    oc.doRegister("turn-lanes", new Option_Integer(0));
-    oc.addDescription("turn-lanes", "Processing", "Generate INT left-turn lanes");
-    oc.doRegister("turn-lanes.length", new Option_Float(20));
-    oc.addDescription("turn-lanes.length", "Processing", "Set the length of generated turning lanes to FLOAT");
-
-    oc.doRegister("perturb-x", new Option_String("0"));
-    oc.addDescription("perturb-x", "Processing", "Apply random spatial pertubation in x direction according the the given distribution");
-    oc.doRegister("perturb-y", new Option_String("0"));
-    oc.addDescription("perturb-y", "Processing", "Apply random spatial pertubation in y direction according the the given distribution");
-    oc.doRegister("perturb-z", new Option_String("0"));
-    oc.addDescription("perturb-z", "Processing", "Apply random spatial pertubation in z direction according the the given distribution");
-
-
     //  register grid-net options
     oc.doRegister("grid", 'g', new Option_Bool(false));
     oc.addSynonyme("grid", "grid-net", true);
@@ -94,6 +84,9 @@ NGFrame::fillOptions() {
     oc.doRegister("grid.attach-length", new Option_Float(0));
     oc.addSynonyme("grid.attach-length", "attach-length", true);
     oc.addDescription("grid.attach-length", "Grid Network", "The length of streets attached at the boundary; 0 means no streets are attached");
+
+    oc.doRegister("grid.alphanumerical-ids", new Option_Bool(false));
+    oc.addDescription("grid.alphanumerical-ids", "Grid Network", "The Ids of generated nodes use letters for the X axis");
 
     //  register spider-net options
     oc.doRegister("spider", 's', new Option_Bool(false));
@@ -190,15 +183,6 @@ NGFrame::fillOptions() {
     oc.addSynonyme("rand.neighbor-dist6", "rand-neighbor-dist6", true);
     oc.addSynonyme("rand.neighbor-dist6", "dist6");
     oc.addDescription("rand.neighbor-dist6", "Random Network", "Probability for a node having exactly 6 neighbors");
-
-    oc.doRegister("rand.random-lanenumber", new Option_Bool(false));
-    oc.addDescription("rand.random-lanenumber", "Random Network", "Draw lane numbers randomly from [1,default.lanenumber]");
-
-    oc.doRegister("rand.random-priority", new Option_Bool(false));
-    oc.addDescription("rand.random-priority", "Random Network", "Draw edge priority randomly from [1,default.priority]");
-
-    oc.doRegister("rand.grid", new Option_Bool(false));
-    oc.addDescription("rand.grid", "Random Network", "Place nodes on a regular grid with spacing rand.min-distance");
 }
 
 

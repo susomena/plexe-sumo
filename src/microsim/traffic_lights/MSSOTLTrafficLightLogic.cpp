@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSSOTLTrafficLightLogic.cpp
 /// @author  Gianfilippo Slager
 /// @author  Anna Chiara Bellini
@@ -15,6 +7,17 @@
 /// @version $Id$
 ///
 // The base abstract class for SOTL logics
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 
 #include "MSSOTLTrafficLightLogic.h"
@@ -33,15 +36,14 @@
 MSSOTLTrafficLightLogic::MSSOTLTrafficLightLogic(
     MSTLLogicControl& tlcontrol,
     const std::string& id,
-    const std::string& programID,
-    const TrafficLightType logicType,
+    const std::string& subid,
     const Phases& phases,
     int step,
     SUMOTime delay,
     const std::map<std::string, std::string>& parameters)
-    : MSPhasedTrafficLightLogic(tlcontrol, id, programID, logicType, phases, step, delay, parameters) {
-    this->mySensors = nullptr;
-    this->myCountSensors = nullptr;
+    : MSPhasedTrafficLightLogic(tlcontrol, id, subid, phases, step, delay, parameters) {
+    this->mySensors = NULL;
+    this->myCountSensors = NULL;
     sensorsSelfBuilt = true;
     checkPhases();
     setupCTS();
@@ -51,14 +53,13 @@ MSSOTLTrafficLightLogic::MSSOTLTrafficLightLogic(
 MSSOTLTrafficLightLogic::MSSOTLTrafficLightLogic(
     MSTLLogicControl& tlcontrol,
     const std::string& id,
-    const std::string& programID,
-    const TrafficLightType logicType,
+    const std::string& subid,
     const Phases& phases,
     int step,
     SUMOTime delay,
     const std::map<std::string, std::string>& parameters,
     MSSOTLSensors* sensors)
-    : MSPhasedTrafficLightLogic(tlcontrol, id, programID, logicType, phases, step, delay, parameters) {
+    : MSPhasedTrafficLightLogic(tlcontrol, id, subid, phases, step, delay, parameters) {
     this->mySensors = sensors;
     sensorsSelfBuilt = false;
     checkPhases();
@@ -119,7 +120,7 @@ MSSOTLTrafficLightLogic::setToATargetPhase() {
 
 
 void
-MSSOTLTrafficLightLogic::init(NLDetectorBuilder& nb) {
+MSSOTLTrafficLightLogic::init(NLDetectorBuilder& nb) throw(ProcessError) {
 
     MSTrafficLightLogic::init(nb);
 

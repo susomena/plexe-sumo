@@ -1,22 +1,23 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    routeStats.py
-# @author  Jakob Erdmann
-# @date    2014-12-18
-# @version $Id$
-
 """
+@file    routeStats.py
+@author  Jakob Erdmann
+@date    2014-12-18
+@version $Id$
+
 compute statistics on route lengths for a single route or
 for the lenght-difference between two sets of routes.
 Routes must be children of <vehicle> elements and when comparing two sets of
 routes, the same vehicle ids must appear.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -70,15 +71,11 @@ def main():
     attribute_retriever = None
     if options.attribute == "length":
         net = readNet(options.network)
-
-        def attribute_retriever(vehicle):
-            return sum([net.getEdge(e).getLength() for e in vehicle.route[0].edges.split()])
+        attribute_retriever = lambda vehicle: sum([net.getEdge(e).getLength() for e in vehicle.route[0].edges.split()])
     elif options.attribute == "depart":
-        def attribute_retriever(vehicle):
-            return float(vehicle.depart)
+        attribute_retriever = lambda vehicle: float(vehicle.depart)
     elif options.attribute == "numEdges":
-        def attribute_retriever(vehicle):
-            return len(vehicle.route[0].edges.split())
+        attribute_retriever = lambda vehicle: len(vehicle.route[0].edges.split())
     else:
         sys.exit("Invalid value '%s' for option --attribute" % options.attribute)
 
@@ -119,7 +116,6 @@ def main():
                         for id in lengths.keys()]
             for val, id in sorted(data):
                 f.write("%s %s\n" % (val, id))
-
 
 if __name__ == "__main__":
     main()

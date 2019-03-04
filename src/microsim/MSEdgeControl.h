@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSEdgeControl.h
 /// @author  Christian Roessel
 /// @author  Daniel Krajzewicz
@@ -19,6 +11,17 @@
 ///
 // Stores edges and lanes, performs moving of vehicle
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSEdgeControl_h
 #define MSEdgeControl_h
 
@@ -26,7 +29,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <map>
@@ -34,14 +41,8 @@
 #include <iostream>
 #include <list>
 #include <set>
-#include <queue>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/Named.h>
-
-#include <utils/foxtools/FXSynchQue.h>
-#ifdef HAVE_FOX
-#include <utils/foxtools/FXWorkerThread.h>
-#endif
 
 
 // ===========================================================================
@@ -108,13 +109,6 @@ public:
      */
     void planMovements(SUMOTime t);
 
-    /** @brief Register junction approaches for all vehicles after velocities
-     * have been planned. This is a prerequisite for executeMovements
-     *
-     * This method goes through all active lanes calling their "setJunctionApproaches" method.
-     */
-    void setJunctionApproaches(SUMOTime t);
-
 
     /** @brief Executes planned vehicle movements with regards to right-of-way
      *
@@ -127,12 +121,9 @@ public:
      *
      * @see MSLane::executeMovements
      * @see MSLane::integrateNewVehicle
+     * @todo When moving to parallel processing, the usage of myWithVehicles2Integrate would get insecure!!
      */
     void executeMovements(SUMOTime t);
-
-    void needsVehicleIntegration(MSLane* const l) {
-        myWithVehicles2Integrate.push_back(l);
-    }
     /// @}
 
 
@@ -144,7 +135,7 @@ public:
      *
      * @see MSEdge::changeLanes
      */
-    void changeLanes(const SUMOTime t);
+    void changeLanes(SUMOTime t);
 
 
     /** @brief Detect collisions
@@ -203,6 +194,10 @@ public:
     struct LaneUsage {
         /// @brief The described lane
         MSLane* lane;
+        /// @brief The lane left to the described lane (==lastNeigh if none)
+        std::vector<MSLane*>::const_iterator firstNeigh;
+        /// @brief The end of this lane's edge's lane container
+        std::vector<MSLane*>::const_iterator lastNeigh;
         /// @brief Information whether this lane is active
         bool amActive;
         /// @brief Information whether this lane belongs to a multi-lane edge
@@ -223,19 +218,13 @@ private:
     std::list<MSLane*> myActiveLanes;
 
     /// @brief A storage for lanes which shall be integrated because vehicles have moved onto them
-    FXSynchQue<MSLane*, std::vector<MSLane*> > myWithVehicles2Integrate;
+    std::vector<MSLane*> myWithVehicles2Integrate;
 
     /// @brief Lanes which changed the state without informing the control
-    std::set<MSLane*, ComparatorNumericalIdLess> myChangedStateLanes;
+    std::set<MSLane*, Named::ComparatorIdLess> myChangedStateLanes;
 
     /// @brief The list of active (not empty) lanes
     std::vector<SUMOTime> myLastLaneChange;
-
-#ifdef HAVE_FOX
-    FXWorkerThread::Pool myThreadPool;
-#endif
-
-    std::priority_queue<std::pair<int, int> > myRNGLoad;
 
 private:
     /// @brief Copy constructor.

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBEdgeCont.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Storage for edges, including some functionality operating on multiple edges
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBEdgeCont_h
 #define NBEdgeCont_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include <iostream>
@@ -34,21 +41,19 @@
 #include <utils/common/SUMOVehicleClass.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/geom/PositionVector.h>
-#include <utils/common/NamedRTree.h>
 
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
-class OptionsCont;
-class OutputDevice;
 class NBNodeCont;
 class NBTypeCont;
 class NBEdge;
 class NBNode;
+class OptionsCont;
 class NBDistrictCont;
 class NBTrafficLightLogicCont;
-class NBPTStopCont;
+class OutputDevice;
 
 
 // ===========================================================================
@@ -199,35 +204,6 @@ public:
 
     /// @name explicit edge manipulation methods
     /// @{
-
-    /** @struct Split
-     * @brief A structure which describes changes of lane number or speed along the road
-     */
-    struct Split {
-        Split() : offset(0), offsetFactor(1) {}
-        /// @brief The lanes after this change
-        std::vector<int> lanes;
-        /// @brief The position of this change
-        double pos;
-        /// @brief The speed after this change
-        double speed;
-        /// @brief The new node that is created for this split
-        NBNode* node;
-        /// @brief The id for the edge before the split
-        std::string idBefore;
-        /// @brief The id for the edge after the split
-        std::string idAfter;
-        /// @brief the default node id
-        std::string nameID;
-        /// @brief lateral offset to edge geometry
-        double offset;
-        /// @brief direction in which to apply the offset (used by netgenerate for lefthand networks)
-        int offsetFactor;
-    };
-
-    void processSplits(NBEdge* e, std::vector<Split> splits,
-                       NBNodeCont& nc, NBDistrictCont& dc, NBTrafficLightLogicCont& tlc);
-
 
     /** @brief Splits the edge at the position nearest to the given node
      *
@@ -413,11 +389,10 @@ public:
      * Calls "NBEdge::appendTurnaround" for all edges within the container.
      *
      * @param[in] noTLSControlled Whether the turnaround shall not be connected if the edge is controlled by a tls
-     * @param[in] exceptDeadends Whether the turnaround shall only be built at deadends
      * @todo Recheck whether a visitor-pattern should be used herefor
      * @see NBEdge::appendTurnaround
      */
-    void appendTurnarounds(bool noTLSControlled, bool onlyDeadends, bool noGeometryLike);
+    void appendTurnarounds(bool noTLSControlled);
 
 
     /** @brief Appends turnarounds to all edges stored in the container
@@ -428,10 +403,6 @@ public:
      */
     void appendTurnarounds(const std::set<std::string>& ids, bool noTLSControlled);
 
-    /** @brief Appends turnarounds to all bidiRail edges with stops
-     */
-    void appendRailwayTurnarounds(const NBPTStopCont& sc);
-
 
     /** @brief Computes the shapes of all edges stored in the container
      *
@@ -441,7 +412,7 @@ public:
      * @todo Recheck usage
      * @see NBEdge::computeEdgeShape
      */
-    void computeEdgeShapes(double smoothElevationThreshold = -1);
+    void computeEdgeShapes();
 
 
     /** @brief Computes the shapes of all lanes of all edges stored in the container
@@ -533,15 +504,10 @@ public:
      * @param[in] keepClear Whether the connection must check to keep the junction clear
      * @param[in] contPos Custom position for internal junction
      * @param[in] visibility Custom foe visiblity connection
-     * @param[in] speed Custom speed
-     * @param[in] customShape Custom shape
      * @param[in] warnOnly Whether a failure to set this connection should only result in a warning
      */
-    void addPostProcessConnection(const std::string& from, int fromLane, const std::string& to, int toLane, bool mayDefinitelyPass,
-                                  bool keepClear, double contPos, double visibility, double speed,
-                                  const PositionVector& customShape,
-                                  bool uncontrolled,
-                                  bool warnOnly);
+    void addPostProcessConnection(const std::string& from, int fromLane, const std::string& to, int toLane, bool mayDefinitelyPass, bool keepClear, double contPos, double visibility,
+                                  bool warnOnly = false);
 
 
     /** @brief Try to set any stored connections
@@ -574,7 +540,7 @@ public:
     bool ignoreFilterMatch(NBEdge* edge);
 
     /// @brief remap node IDs accoring to options --numerical-ids and --reserved-ids
-    int remapIDs(bool numericaIDs, bool reservedIDs, const std::string& prefix, NBPTStopCont& sc);
+    int remapIDs(bool numericaIDs, bool reservedIDs);
 
     /// @brief check whether edges overlap
     void checkOverlap(double threshold, double zThreshold) const;
@@ -590,9 +556,6 @@ public:
      * @todo Recheck usage
      */
     EdgeVector getGeneratedFrom(const std::string& id) const;
-
-    /// @brief return all edges
-    EdgeVector getAllEdges() const;
 
 private:
     /// @brief compute the form factor for a loop of edges
@@ -614,16 +577,10 @@ private:
          * @param[in] toLane The number of the lane the connection ends at
          * @param[in] mayDefinitelyPass Whether the connection may be passed without braking
          */
-        PostProcessConnection(const std::string& from_, int fromLane_, const std::string& to_, int toLane_,
-                              bool mayDefinitelyPass_, bool keepClear_, double contPos_, double visibility_, double speed_,
-                              const PositionVector& customShape_,
-                              bool uncontrolled_,
-                              bool warnOnly_) :
+        PostProcessConnection(const std::string& from_, int fromLane_, const std::string& to_, int toLane_, bool mayDefinitelyPass_, bool keepClear_, double contPos_, double visibility_,
+                              bool warnOnly_ = false) :
             from(from_), fromLane(fromLane_), to(to_), toLane(toLane_), mayDefinitelyPass(mayDefinitelyPass_), keepClear(keepClear_), contPos(contPos_),
             visibility(visibility_),
-            speed(speed_),
-            customShape(customShape_),
-            uncontrolled(uncontrolled_),
             warnOnly(warnOnly_) {
         }
         /// @brief The id of the edge the connection starts at
@@ -642,12 +599,6 @@ private:
         double contPos;
         /// @brief custom foe visiblity for connection
         double visibility;
-        /// @brief custom speed for connection
-        double speed;
-        /// @brief custom shape for connection
-        PositionVector customShape;
-        /// @brief whether this connection shall not be controlled by a traffic light
-        bool uncontrolled;
         /// @brief whether a failure to set this connection is a warning or an error
         bool warnOnly;
     };
@@ -710,20 +661,6 @@ private:
     /// @brief Edges marked as belonging to a roundabout after guessing
     std::set<EdgeSet> myGuessedRoundabouts;
 
-    /** @class split_sorter
-     * @brief Sorts splits by their position (increasing)
-     */
-    class split_sorter {
-    public:
-        /// @brief Constructor
-        explicit split_sorter() { }
-
-        /// @brief Comparing operator
-        int operator()(const Split& e1, const Split& e2) const {
-            return e1.pos < e2.pos;
-        }
-    };
-
 
 private:
     /// @brief invalidated copy constructor
@@ -731,6 +668,7 @@ private:
 
     /// @brief invalidated assignment operator
     NBEdgeCont& operator=(const NBEdgeCont& s);
+
 
 };
 

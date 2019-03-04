@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSPModel_NonInteracting.cpp
 /// @author  Jakob Erdmann
 /// @date    Mon, 13 Jan 2014
@@ -14,18 +6,32 @@
 ///
 // The pedestrian following model (prototype)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cmath>
 #include <algorithm>
 #include <utils/common/RandHelper.h>
 #include <utils/geom/GeomHelper.h>
 #include <utils/options/OptionsCont.h>
-#include <utils/router/IntermodalNetwork.h>
 #include <microsim/MSNet.h>
 #include <microsim/MSEdge.h>
 #include <microsim/MSLane.h>
@@ -41,6 +47,15 @@
 #define DEBUG1 "disabled"
 #define DEBUG2 "disabled"
 #define DEBUGCOND(PEDID) (PEDID == DEBUG1 || PEDID == DEBUG2)
+
+// ===========================================================================
+// named (internal) constants
+// ===========================================================================
+
+
+// ===========================================================================
+// static members
+// ===========================================================================
 
 
 // ===========================================================================
@@ -62,7 +77,7 @@ PedestrianState*
 MSPModel_NonInteracting::add(MSPerson* person, MSPerson::MSPersonStage_Walking* stage, SUMOTime now) {
     MoveToNextEdge* cmd = new MoveToNextEdge(person, *stage);
     PState* state = new PState(cmd);
-    const SUMOTime firstEdgeDuration = state->computeWalkingTime(nullptr, *stage, now);
+    const SUMOTime firstEdgeDuration = state->computeWalkingTime(0, *stage, now);
     myNet->getBeginOfTimestepEvents()->addEvent(cmd, now + firstEdgeDuration);
 
     //if DEBUGCOND(person->getID()) std::cout << SIMTIME << " " << person->getID() << " inserted on " << stage->getEdge()->getID() << "\n";
@@ -78,14 +93,15 @@ MSPModel_NonInteracting::remove(PedestrianState* state) {
 
 SUMOTime
 MSPModel_NonInteracting::MoveToNextEdge::execute(SUMOTime currentTime) {
-    if (myPerson == nullptr) {
+    if (myPerson == 0) {
         return 0; // descheduled
     }
     PState* state = dynamic_cast<PState*>(myParent.getPedestrianState());
     const MSEdge* old = myParent.getEdge();
     const bool arrived = myParent.moveToNextEdge(myPerson, currentTime);
     if (arrived) {
-        // walk finished
+        // walk finished. clean up state
+        delete state;
         //if DEBUGCOND(myPerson->getID()) std::cout << SIMTIME << " " << myPerson->getID() << " arrived on " << old->getID() << "\n";
         return 0;
     } else {
@@ -101,14 +117,14 @@ MSPModel_NonInteracting::PState::computeWalkingTime(const MSEdge* prev, const MS
     const MSEdge* edge = stage.getEdge();
     const MSEdge* next = stage.getNextRouteEdge();
     int dir = UNDEFINED_DIRECTION;
-    if (prev == nullptr) {
+    if (prev == 0) {
         myCurrentBeginPos = stage.getDepartPos();
     } else {
         // default to FORWARD if not connected
         dir = (edge->getToJunction() == prev->getToJunction() || edge->getToJunction() == prev->getFromJunction()) ? BACKWARD : FORWARD;
         myCurrentBeginPos = dir == FORWARD ? 0 : edge->getLength();
     }
-    if (next == nullptr) {
+    if (next == 0) {
         myCurrentEndPos = stage.getArrivalPos();
     } else {
         if (dir == UNDEFINED_DIRECTION) {
@@ -118,20 +134,15 @@ MSPModel_NonInteracting::PState::computeWalkingTime(const MSEdge* prev, const MS
         myCurrentEndPos = dir == FORWARD ? edge->getLength() : 0;
     }
     // ensure that a result > 0 is returned even if the walk ends immediately
-    // adding 0.5ms is done to ensure proper rounding
-    myCurrentDuration = MAX2((SUMOTime)1, TIME2STEPS(fabs(myCurrentEndPos - myCurrentBeginPos) / stage.getMaxSpeed(myCommand->getPerson())));
-    //std::cout << std::setprecision(8) << SIMTIME << " curBeg=" << myCurrentBeginPos << " curEnd=" << myCurrentEndPos << " speed=" << stage.getMaxSpeed(myCommand->getPerson()) << " dur=" << myCurrentDuration << "\n";
-    // round to the next timestep to avoid systematic higher walking speed
-    if ((myCurrentDuration % DELTA_T) > 0) {
-        myCurrentDuration += DELTA_T;
-    }
+    myCurrentDuration = MAX2((SUMOTime)1, TIME2STEPS(fabs(myCurrentEndPos - myCurrentBeginPos) / stage.getMaxSpeed()));
+    //std::cout << SIMTIME << " dir=" << dir << " curBeg=" << myCurrentBeginPos << " curEnd=" << myCurrentEndPos << " speed=" << stage.getMaxSpeed() << " dur=" << myCurrentDuration << "\n";
     return myCurrentDuration;
 }
 
 
 double
 MSPModel_NonInteracting::PState::getEdgePos(const MSPerson::MSPersonStage_Walking&, SUMOTime now) const {
-    //std::cout << SIMTIME << " lastEntryTime=" << myLastEntryTime << " pos=" << (myCurrentBeginPos + (myCurrentEndPos - myCurrentBeginPos) / myCurrentDuration * (now - myLastEntryTime)) << "\n";
+    //std::cout << SIMTIME << " pos=" << (myCurrentBeginPos + (myCurrentEndPos - myCurrentBeginPos) / myCurrentDuration * (now - myLastEntryTime)) << "\n";
     return myCurrentBeginPos + (myCurrentEndPos - myCurrentBeginPos) / myCurrentDuration * (now - myLastEntryTime);
 }
 
@@ -139,7 +150,7 @@ MSPModel_NonInteracting::PState::getEdgePos(const MSPerson::MSPersonStage_Walkin
 Position
 MSPModel_NonInteracting::PState::getPosition(const MSPerson::MSPersonStage_Walking& stage, SUMOTime now) const {
     const MSLane* lane = getSidewalk<MSEdge, MSLane>(stage.getEdge());
-    if (lane == nullptr) {
+    if (lane == 0) {
         //std::string error = "Pedestrian '" + myCommand->myPerson->getID() + "' could not find sidewalk on edge '" + state.getEdge()->getID() + "', time="
         //    + time2string(MSNet::getInstance()->getCurrentTimeStep()) + ".";
         //if (!OptionsCont::getOptions().getBool("ignore-route-errors")) {
@@ -172,7 +183,7 @@ MSPModel_NonInteracting::PState::getWaitingTime(const MSPerson::MSPersonStage_Wa
 
 double
 MSPModel_NonInteracting::PState::getSpeed(const MSPerson::MSPersonStage_Walking& stage) const {
-    return stage.getMaxSpeed(myCommand->getPerson());
+    return stage.getMaxSpeed();
 }
 
 

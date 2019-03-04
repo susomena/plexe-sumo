@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2006-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ODMatrix.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,6 +8,17 @@
 ///
 // An O/D (origin/destination) matrix
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2006-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef ODMatrix_h
 #define ODMatrix_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <sstream>
@@ -103,8 +110,7 @@ public:
      */
     bool add(double vehicleNumber, SUMOTime begin,
              SUMOTime end, const std::string& origin, const std::string& destination,
-             const std::string& vehicleType,
-             const bool originIsEdge = false, const bool destinationIsEdge = false);
+             const std::string& vehicleType);
 
     /** @brief Adds a single vehicle with departure time
      *
@@ -118,9 +124,8 @@ public:
      * @return whether the vehicle could be added
      */
     bool add(const std::string& id, const SUMOTime depart,
-             const std::string& fromTaz, const std::string& toTaz,
-             const std::string& vehicleType,
-             const bool originIsEdge = false, const bool destinationIsEdge = false);
+             const std::pair<const std::string, const std::string>& od,
+             const std::string& vehicleType);
 
     /** @brief Helper function for flow and trip output writing the depart
      *   and arrival attributes
@@ -436,3 +441,4 @@ private:
 #endif
 
 /****************************************************************************/
+

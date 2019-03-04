@@ -1,27 +1,30 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    sort_routes.py
+@author  Jakob Erdmann
+@author  Michael Behrisch
+@author  Pieter Loof
+@date    2011-07-14
+@version $Id$
 
-# @file    sort_routes.py
-# @author  Jakob Erdmann
-# @author  Michael Behrisch
-# @author  Pieter Loof
-# @date    2011-07-14
-# @version $Id$
+This script sorts the vehicles in the given route file by their depart time
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2007-2017 DLR (http://www.dlr.de/) and contributors
 
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
 from xml.dom import pulldom
 from xml.sax import handler
 from xml.sax import make_parser
+from xml.sax import handler
 from optparse import OptionParser
-import time
 
 DEPART_ATTRS = {'vehicle': 'depart', 'flow': 'begin', 'person': 'depart'}
 
@@ -54,11 +57,7 @@ def sort_departs(routefilename, outfile):
             routes_doc.expandNode(parsenode)
             departAttr = DEPART_ATTRS.get(parsenode.localName)
             if departAttr is not None:
-                startString = parsenode.getAttribute(departAttr)
-                if ':' in startString:
-                    start = time.strptime(startString, "%d:%H:%M:%S")
-                else:
-                    start = float(startString)
+                start = float(parsenode.getAttribute(departAttr))
                 vehicles.append(
                     (start, parsenode.toprettyxml(indent="", newl="")))
             else:

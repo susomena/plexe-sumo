@@ -25,6 +25,9 @@ ticket38
 # Test for #193 invalid traffic lights at dead ends
 ticket193
 
+# Test for #252 false offset in written network
+ticket252
+
 # Test for #267 keep-edges (postload) breaks on connections given for a removed edge
 ticket267
 
@@ -44,6 +47,10 @@ ticket850
 ticket854
 ticket866
 ticket867
+ticket868
+ticket869
+ticket870
+ticket871
 ticket916
 ticket921
 ticket936
@@ -71,6 +78,7 @@ ticket1586c
 ticket1674
 ticket1678
 ticket1689
+ticket1755
 ticket1855
 ticket1907
 ticket2015
@@ -80,8 +88,5 @@ ticket2141
 ticket2094
 ticket2459
 ticket2631
+ticket2790
 ticket3385
-
-# For merging right turning lanes the right lane should  have priority, i.e.  0>3 and 11>14
-ticket4188
-ticket5159

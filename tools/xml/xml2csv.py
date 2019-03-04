@@ -1,20 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    xml2csv.py
+@author  Jakob Erdmann
+@author  Michael Behrisch
+@author  Laura Bieker
+@date    2013-12-08
+@version $Id$
 
-# @file    xml2csv.py
-# @author  Jakob Erdmann
-# @author  Michael Behrisch
-# @author  Laura Bieker
-# @date    2013-12-08
-# @version $Id$
+Convert hierarchical xml files to csv. This only makes sense if the hierarchy has low depth.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 from __future__ import print_function
 from __future__ import absolute_import
@@ -191,8 +195,7 @@ class CSVWriter(NestingHandler):
     def endElement(self, name):
         if self.depth() >= self.rootDepth:
             root = self.tagstack[self.rootDepth]
-            # print("end", name, root, self.depth(), self.attrFinder.depthTags[root][self.depth()],
-            # self.haveUnsavedValues)
+#            print("end", name, root, self.depth(), self.attrFinder.depthTags[root][self.depth()], self.haveUnsavedValues)
             if name in self.attrFinder.depthTags[root][self.depth()]:
                 if self.haveUnsavedValues:
                     if(PY3):
@@ -269,7 +272,6 @@ def main():
         lxml.sax.saxify(tree, handler)
     else:
         xml.sax.parse(options.source, handler)
-
 
 if __name__ == "__main__":
     main()

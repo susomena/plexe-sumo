@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIRunThread.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // The thread that runs the simulation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <string>
@@ -43,18 +50,21 @@
 #include <utils/common/MsgHandler.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/iodevices/OutputDevice.h>
+
+#ifndef NO_TRACI
 #include <traci-server/TraCIServer.h>
-#include <libsumo/Simulation.h>
+#include <traci-server/lib/TraCI.h>
+#endif
 
 
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 GUIRunThread::GUIRunThread(FXApp* app, MFXInterThreadEventClient* parent,
-                           double& simDelay, FXSynchQue<GUIEvent*>& eq,
+                           FXRealSpinDial& simDelay, MFXEventQue<GUIEvent*>& eq,
                            FXEX::FXThreadEvent& ev)
     : FXSingleEventThread(app, parent),
-      myNet(nullptr), myHalting(true), myQuit(false), mySimulationInProgress(false), myOk(true), myHaveSignaledEnd(false),
+      myNet(0), myHalting(true), myQuit(false), mySimulationInProgress(false), myOk(true), myHaveSignaledEnd(false),
       mySimDelay(simDelay), myEventQue(eq), myEventThrow(ev) {
     myErrorRetriever = new MsgRetrievingFunction<GUIRunThread>(this, &GUIRunThread::retrieveMessage, MsgHandler::MT_ERROR);
     myMessageRetriever = new MsgRetrievingFunction<GUIRunThread>(this, &GUIRunThread::retrieveMessage, MsgHandler::MT_MESSAGE);
@@ -70,7 +80,7 @@ GUIRunThread::~GUIRunThread() {
     delete myMessageRetriever;
     delete myWarningRetriever;
     // wait for the thread
-    while (mySimulationInProgress || myNet != nullptr);
+    while (mySimulationInProgress || myNet != 0);
 }
 
 
@@ -103,7 +113,6 @@ GUIRunThread::init(GUINet* net, SUMOTime start, SUMOTime end) {
         mySimulationInProgress = false;
 #ifndef _DEBUG
     } catch (...) {
-        MsgHandler::getErrorInstance()->inform("Quitting (on error).", false);
         myHalting = true;
         myOk = false;
         mySimulationInProgress = false;
@@ -121,14 +130,16 @@ GUIRunThread::run() {
     // perform an endless loop
     while (!myQuit) {
         // if the simulation shall be perfomed, do it
-        if (!myHalting && myNet != nullptr && myOk) {
-            beg = SysUtils::getCurrentMillis();
-            if (end != -1) {
-                getNet().setIdleDuration((int)(beg - end));
+        if (!myHalting && myNet != 0 && myOk) {
+            if (getNet().logSimulationDuration()) {
+                beg = SysUtils::getCurrentMillis();
+                if (end != -1) {
+                    getNet().setIdleDuration((int)(beg - end));
+                }
             }
             // check whether we shall stop at this step
             myBreakpointLock.lock();
-            const bool haltAfter = std::find(myBreakpoints.begin(), myBreakpoints.end(), myNet->getCurrentTimeStep()) != myBreakpoints.end();
+            const bool haltAfter = find(myBreakpoints.begin(), myBreakpoints.end(), myNet->getCurrentTimeStep()) != myBreakpoints.end();
             myBreakpointLock.unlock();
             // do the step
             makeStep();
@@ -137,11 +148,13 @@ GUIRunThread::run() {
             if (haltAfter) {
                 stop();
             }
-            // wait if wanted (delay is per simulated second)
-            long wait = (long)(mySimDelay * TS);
-            end = SysUtils::getCurrentMillis();
-            getNet().setSimDuration((int)(end - beg));
-            wait -= (end - beg);
+            // wait if wanted
+            long wait = (long) mySimDelay.getValue();
+            if (getNet().logSimulationDuration()) {
+                end = SysUtils::getCurrentMillis();
+                getNet().setSimDuration((int)(end - beg));
+                wait -= (end - beg);
+            }
             if (wait > 0) {
                 sleep(wait);
             }
@@ -158,7 +171,7 @@ GUIRunThread::run() {
 
 void
 GUIRunThread::makeStep() {
-    GUIEvent* e = nullptr;
+    GUIEvent* e = 0;
     // simulation is being perfomed
     mySimulationInProgress = true;
     // execute a single step
@@ -170,19 +183,21 @@ GUIRunThread::makeStep() {
 
         // inform parent that a step has been performed
         e = new GUIEvent_SimulationStep();
-        myEventQue.push_back(e);
+        myEventQue.add(e);
         myEventThrow.signal();
 
-        e = nullptr;
+        e = 0;
         MSNet::SimulationState state = myNet->simulationState(mySimEndTime);
+#ifndef NO_TRACI
         if (state == MSNet::SIMSTATE_LOADING) {
-            OptionsIO::setArgs(TraCIServer::getInstance()->getLoadArgs());
-            TraCIServer::getInstance()->getLoadArgs().clear();
+            OptionsIO::setArgs(TraCI::getLoadArgs());
+            TraCI::getLoadArgs().clear();
         } else if (state != MSNet::SIMSTATE_RUNNING) {
-            if (TraCIServer::getInstance() != nullptr && !TraCIServer::wasClosed()) {
+            if (TraCIServer::getInstance() != 0 && !TraCIServer::wasClosed()) {
                 state = MSNet::SIMSTATE_RUNNING;
             }
         }
+#endif
         switch (state) {
             case MSNet::SIMSTATE_LOADING:
             case MSNet::SIMSTATE_END_STEP_REACHED:
@@ -193,17 +208,14 @@ GUIRunThread::makeStep() {
                     WRITE_MESSAGE("Simulation ended at time: " + time2string(myNet->getCurrentTimeStep()));
                     WRITE_MESSAGE("Reason: " + MSNet::getStateMessage(state));
                     e = new GUIEvent_SimulationEnded(state, myNet->getCurrentTimeStep() - DELTA_T);
-                    // ensure that files are closed (deleteSim is called a bit later by the gui thread)
-                    // MSNet destructor may trigger MsgHandler (via routing device cleanup). Closing output devices here is not safe
-                    // OutputDevice::closeAll();
                     myHaveSignaledEnd = true;
                 }
                 break;
             default:
                 break;
         }
-        if (e != nullptr) {
-            myEventQue.push_back(e);
+        if (e != 0) {
+            myEventQue.add(e);
             myEventThrow.signal();
             myHalting = true;
         }
@@ -222,17 +234,16 @@ GUIRunThread::makeStep() {
         mySimulationLock.unlock();
         mySimulationInProgress = false;
         e = new GUIEvent_SimulationEnded(MSNet::SIMSTATE_ERROR_IN_SIM, myNet->getCurrentTimeStep());
-        myEventQue.push_back(e);
+        myEventQue.add(e);
         myEventThrow.signal();
         myHalting = true;
         myOk = false;
 #ifndef _DEBUG
     } catch (...) {
-        MsgHandler::getErrorInstance()->inform("Quitting (on error).", false);
         mySimulationLock.unlock();
         mySimulationInProgress = false;
         e = new GUIEvent_SimulationEnded(MSNet::SIMSTATE_ERROR_IN_SIM, myNet->getCurrentTimeStep());
-        myEventQue.push_back(e);
+        myEventQue.add(e);
         myEventThrow.signal();
         myHalting = true;
         myOk = false;
@@ -272,7 +283,7 @@ GUIRunThread::stop() {
 
 bool
 GUIRunThread::simulationAvailable() const {
-    return myNet != nullptr;
+    return myNet != 0;
 }
 
 
@@ -285,13 +296,13 @@ GUIRunThread::deleteSim() {
     MsgHandler::getMessageInstance()->removeRetriever(myMessageRetriever);
     //
     mySimulationLock.lock();
-    if (myNet != nullptr) {
+    if (myNet != 0) {
         myNet->closeSimulation(mySimStartTime);
     }
     while (mySimulationInProgress);
     delete myNet;
     GUIGlObjectStorage::gIDStorage.clear();
-    myNet = nullptr;
+    myNet = 0;
     OutputDevice::closeAll();
     mySimulationLock.unlock();
     MsgHandler::cleanupOnEnd();
@@ -314,38 +325,40 @@ GUIRunThread::prepareDestruction() {
 void
 GUIRunThread::retrieveMessage(const MsgHandler::MsgType type, const std::string& msg) {
     GUIEvent* e = new GUIEvent_Message(type, msg);
-    myEventQue.push_back(e);
+    myEventQue.add(e);
     myEventThrow.signal();
 }
 
 
 bool
 GUIRunThread::simulationIsStartable() const {
-    return myNet != nullptr && myHalting;
+    return myNet != 0 && myHalting;
 }
 
 
 bool
 GUIRunThread::simulationIsStopable() const {
-    return myNet != nullptr && (!myHalting);
+    return myNet != 0 && (!myHalting);
 }
 
 
 bool
 GUIRunThread::simulationIsStepable() const {
-    return myNet != nullptr && myHalting;
+    return myNet != 0 && myHalting;
 }
 
 
 void
-GUIRunThread::waitForSnapshots(const SUMOTime snapshotTime) {
-    GUIMainWindow* const mw = GUIMainWindow::getInstance();
-    if (mw != nullptr) {
-        for (GUIGlChildWindow* const window : mw->getViews()) {
-            window->getView()->waitForSnapshots(snapshotTime);
-        }
+GUIRunThread::waitForSnapshots(SUMOTime snapShotTime) {
+    myApplicationSnapshotsLock.lock();
+    const bool wait = find(myApplicationSnapshots.begin(), myApplicationSnapshots.end(), snapShotTime) != myApplicationSnapshots.end();
+    //std::cout << SIMTIME << "waitForSnapshots " << toString(myApplicationSnapshots) << "\n";
+    myApplicationSnapshotsLock.unlock();
+    if (wait && !myHalting) {
+        sleep(50);
+        waitForSnapshots(snapShotTime);
     }
 }
 
-
 /****************************************************************************/
+

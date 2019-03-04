@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIXMLNodesHandler.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Importer for network nodes stored in XML
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NIXMLNodesHandler_h
 #define NIXMLNodesHandler_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/xml/SUMOSAXHandler.h>
 #include <utils/geom/Position.h>
@@ -70,9 +77,9 @@ public:
 
     /** @brief parses node attributes (not related to positioning)
      */
-    static NBNode* processNodeType(const SUMOSAXAttributes& attrs, NBNode* node, const std::string& nodeID, const Position& position,
-                                   bool updateEdgeGeometries,
-                                   NBNodeCont& nc, NBTrafficLightLogicCont& tlc);
+    static void processNodeType(const SUMOSAXAttributes& attrs, NBNode* node, const std::string& nodeID, const Position& position,
+                                bool updateEdgeGeometries,
+                                NBNodeCont& nc, NBTrafficLightLogicCont& tlc);
 
 protected:
     /// @name inherited from GenericSAXHandler
@@ -90,13 +97,6 @@ protected:
      */
     void myStartElement(int element,
                         const SUMOSAXAttributes& attrs);
-    /** @brief Called when a closing tag occurs
-     *
-     * @param[in] element ID of the currently opened element
-     * @exception ProcessError If something fails
-     * @see GenericSAXHandler::myEndElement
-     */
-    void myEndElement(int element);
     //@}
 
 
@@ -153,8 +153,6 @@ private:
     /// @brief The coordinate transformation which was used compute the node coordinates
     GeoConvHelper* myLocation;
 
-    /// @brief last item the could receive parameters
-    Parameterised* myLastParameterised;
 
 private:
     /** @brief invalid copy constructor */

@@ -1,20 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    generateE2TLSDetectors.py
+@author  Daniel Krajzewicz
+@author  Karol Stosiek
+@author  Lena Kalleske
+@author  Michael Behrisch
+@date    2007-10-25
+@version $Id$
 
-# @file    generateTLSE2Detectors.py
-# @author  Daniel Krajzewicz
-# @author  Karol Stosiek
-# @author  Lena Kalleske
-# @author  Michael Behrisch
-# @date    2007-10-25
-# @version $Id$
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
 
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -24,7 +26,20 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import sumolib.xml  # noqa
+import sumolib.xml
+
+
+def get_net_file_directory(net_file):
+    """ Returns the directory containing the net file given. """
+
+    dirname = os.path.split(net_file)[0]
+    return dirname
+
+
+def open_detector_file(destination_dir, detector_file_name):
+    """ Opens a new detector file in given directory. """
+
+    return open(os.path.join(destination_dir, detector_file_name), "w")
 
 
 def adjust_detector_length(requested_detector_length,
@@ -63,7 +78,6 @@ def adjust_detector_position(final_detector_length,
 
     return max(0,
                lane_length - final_detector_length - requested_distance_to_tls)
-
 
 if __name__ == "__main__":
     # pylint: disable-msg=C0103
@@ -152,7 +166,9 @@ if __name__ == "__main__":
             detector_xml.setAttribute("length", str(final_detector_length))
             detector_xml.setAttribute("pos", str(final_detector_position))
 
-    detector_file = open(options.output, 'w')
+    detector_file = open_detector_file(
+        get_net_file_directory(options.net_file),
+        options.output)
     detector_file.write(detectors_xml.toXML())
     detector_file.close()
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RandHelper.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,6 +8,17 @@
 ///
 //
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2005-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef RandHelper_h
 #define RandHelper_h
 
@@ -23,15 +26,16 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <vector>
 #include <random>
-#include <sstream>
-#include <iostream>
 
-//#define DEBUG_RANDCALLS
 
 // ===========================================================================
 // class declarations
@@ -62,15 +66,7 @@ public:
         if (rng == 0) {
             rng = &myRandomNumberGenerator;
         }
-        const double res = double((*rng)() / 4294967296.0);
-#ifdef DEBUG_RANDCALLS
-        myCallCount++;
-        if (myCallCount == myDebugIndex) {
-            std::cout << "DEBUG\n"; // for setting breakpoint
-        }
-        std::cout << " rand call=" << myCallCount << " val=" << res << "\n";
-#endif
-        return res;
+        return double((*rng)() / 4294967296.0);
     }
 
     /// @brief Returns a random real number in [0, maxV)
@@ -157,33 +153,10 @@ public:
         return v[rand((int)v.size(), rng)];
     }
 
-    /// @brief save rng state to string
-    static std::string saveState(std::mt19937* rng = 0) {
-        if (rng == 0) {
-            rng = &myRandomNumberGenerator;
-        }
-        std::ostringstream oss;
-        oss << (*rng);
-        return oss.str();
-    }
-
-    /// @brief load rng state from string
-    static void loadState(const std::string& state, std::mt19937* rng = 0) {
-        if (rng == 0) {
-            rng = &myRandomNumberGenerator;
-        }
-        std::istringstream iss(state);
-        iss >> (*rng);
-    }
-
 
 protected:
     /// @brief the random number generator to use
     static std::mt19937 myRandomNumberGenerator;
-
-    /// @brief only used for debugging;
-    static int myCallCount;
-    static int myDebugIndex;
 
 };
 

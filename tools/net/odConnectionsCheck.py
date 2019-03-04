@@ -1,19 +1,23 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    odConnectionsCheck.py
+@author  Daniel Krajzewicz
+@author  Yun-Pang Floetteroed
+@author  Michael Behrisch
+@date    2007-03-20
+@version $Id$
 
-# @file    odConnectionsCheck.py
-# @author  Daniel Krajzewicz
-# @author  Yun-Pang Floetteroed
-# @author  Michael Behrisch
-# @date    2007-03-20
-# @version $Id$
+This script checks if at least one route for a given OD pair exists.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2007-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -26,7 +30,7 @@ from optparse import OptionParser
 pyPath = os.path.dirname(sys.argv[0])
 sys.path.append(
     os.path.join("..", "..", "..", "..", "extern", "sumo", "tools", "assign"))
-from dijkstra import dijkstraPlain  # noqa
+from dijkstra import dijkstraPlain
 
 # This class is used to build the nodes in the investigated network and
 # includes the update-function for searching the k shortest paths.
@@ -82,9 +86,9 @@ class Edge:
             self.helpacttime = self.freeflowtime
 
     def __repr__(self):
-        str(self.capacity)
+        cap = str(self.capacity)
         if self.capacity == sys.maxsize or self.connection != 0:
-            pass
+            cap = "inf"
         return "%s_<%s|%s|%s>" % (self.label, self.kind, self.source, self.target)
 
 
@@ -170,13 +174,13 @@ class NetworkReader(handler.ContentHandler):
             if self._edge[0] != ':':
                 self._edgeObj = self._net.getEdge(self._edge)
         elif name == 'succlane' and self._edge != "":
-            lane = attrs['lane']
-            if lane != "SUMO_NO_DESTINATION":
-                toEdge = self._net.getEdge(lane[:lane.rfind('_')])
+            l = attrs['lane']
+            if l != "SUMO_NO_DESTINATION":
+                toEdge = self._net.getEdge(l[:l.rfind('_')])
                 newEdge = Edge(
-                    self._edge + "_" + lane[:lane.rfind('_')], self._edgeObj.target, toEdge.source)
+                    self._edge + "_" + l[:l.rfind('_')], self._edgeObj.target, toEdge.source)
                 self._net.addEdge(newEdge)
-                self._edgeObj.finalizer = lane[:lane.rfind('_')]
+                self._edgeObj.finalizer = l[:l.rfind('_')]
         elif name == 'lane' and self._edge != '':
             self._maxSpeed = max(self._maxSpeed, float(attrs['speed']))
             self._laneNumber = self._laneNumber + 1
@@ -200,7 +204,7 @@ class DistrictsReader(handler.ContentHandler):
         self._net = net
         self._StartDTIn = None
         self._StartDTOut = None
-        self.index = 100
+        self.I = 100
 
     def startElement(self, name, attrs):
         if name == 'taz':
@@ -212,16 +216,16 @@ class DistrictsReader(handler.ContentHandler):
             self._net._endVertices.append(self._StartDTOut)
         elif name == 'tazSink':
             sinklink = self._net.getEdge(attrs['id'])
-            self.index += 1
-            conlink = self._StartDTOut.label + str(self.index)
+            self.I += 1
+            conlink = self._StartDTOut.label + str(self.I)
             newEdge = Edge(conlink, sinklink.target, self._StartDTOut, "real")
             self._net.addEdge(newEdge)
             newEdge.weight = attrs['weight']
             newEdge.connection = 1
         elif name == 'tazSource':
             sourcelink = self._net.getEdge(attrs['id'])
-            self.index += 1
-            conlink = self._StartDTIn.label + str(self.index)
+            self.I += 1
+            conlink = self._StartDTIn.label + str(self.I)
             newEdge = Edge(conlink, self._StartDTIn, sourcelink.source, "real")
             self._net.addEdge(newEdge)
             newEdge.weight = attrs['weight']
@@ -240,6 +244,7 @@ def getMatrix(net, verbose, matrix, MatrixSum):  # , mtxplfile, mtxtfile):
 
     ODpairs = 0
     origins = 0
+    dest = 0
     CurrentMatrixSum = 0.0
     skipCount = 0
     zones = 0
@@ -270,7 +275,7 @@ def getMatrix(net, verbose, matrix, MatrixSum):  # , mtxplfile, mtxtfile):
                                 if endVertex.label == elem:
                                     endVertices.append(endVertex)
                     origins = len(startVertices)
-                    len(endVertices)
+                    dest = len(endVertices)
                 elif len(startVertices) == zones:
                     if ODpairs % origins == 0:
                         matrixPshort.append([])
@@ -284,19 +289,20 @@ def getMatrix(net, verbose, matrix, MatrixSum):  # , mtxplfile, mtxtfile):
                         if float(item) < 1. and float(item) > 0.:
                             smallDemandNum += 1
     begintime = int(periodList[0])
-    int(periodList[1]) - begintime
-    float(smallDemandNum) / float(Pshort_EffCells)
+    assignPeriod = int(periodList[1]) - begintime
+    smallDemandRatio = float(smallDemandNum) / float(Pshort_EffCells)
 
     return matrixPshort, startVertices, endVertices
 
 
 def main():
     parser = make_parser()
-    os.getcwd()
+    tripDir = os.getcwd()
     dataDir = options.datadir
     districts = os.path.join(dataDir, options.districtfile)
     netfile = os.path.join(dataDir, options.netfile)
     sumDemand = 0.
+    count = 0
     MatrixSum = 0.
     totalCounts = 0
     subCounts = 0
@@ -351,8 +357,7 @@ def main():
             for endVertex in separateZones:
                 if startVertex.label != endVertex.label:
                     totalCounts, subCounts, odPairSet = net.checkRoute(
-                        startVertex, endVertex, totalCounts, subCounts, P, odPairSet, matrixPshort[start][end],
-                        skipList)
+                        startVertex, endVertex, totalCounts, subCounts, P, odPairSet, matrixPshort[start][end], skipList)
 
     print('total OD connections:', totalCounts)
     if len(odPairSet) > 0:

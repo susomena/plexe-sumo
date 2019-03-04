@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDevice_Vehroutes.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,6 +8,17 @@
 ///
 // A device which collects info on the vehicle trip
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSDevice_Vehroutes_h
 #define MSDevice_Vehroutes_h
 
@@ -23,13 +26,15 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include "MSVehicleDevice.h"
+#include "MSDevice.h"
 #include <microsim/MSNet.h>
-#include <microsim/MSVehicle.h>
 #include <utils/common/SUMOTime.h>
-#include <utils/iodevices/OutputDevice_String.h>
 
 
 // ===========================================================================
@@ -50,7 +55,7 @@ class MSRoute;
  *
  * @see MSDevice
  */
-class MSDevice_Vehroutes : public MSVehicleDevice {
+class MSDevice_Vehroutes : public MSDevice {
 public:
     /** @brief Static intialization
      */
@@ -67,7 +72,7 @@ public:
      * @param[in] v The vehicle for which a device may be built
      * @param[filled] into The vector to store the built device in
      */
-    static MSDevice_Vehroutes* buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into, int maxRoutes = std::numeric_limits<int>::max());
+    static MSDevice_Vehroutes* buildVehicleDevices(SUMOVehicle& v, std::vector<MSDevice*>& into, int maxRoutes = std::numeric_limits<int>::max());
 
 
     /// @brief generate vehroute output for vehicles which are still in the network
@@ -113,7 +118,6 @@ public:
         return "vehroute";
     }
 
-    void stopEnded(const SUMOVehicleParameter::Stop& stop);
 
     /** @brief Called on writing vehroutes output
      *
@@ -170,7 +174,7 @@ private:
 
     /** @brief Called on route change
      */
-    void addRoute(const std::string& info);
+    void addRoute();
 
 
 
@@ -184,9 +188,6 @@ private:
     /// @brief A shortcut for the Option "vehroute-output.dua"
     static bool myDUAStyle;
 
-    /// @brief A shortcut for the Option "vehroute-output.costs"
-    static bool myWriteCosts;
-
     /// @brief A shortcut for the Option "vehroute-output.sorted"
     static bool mySorted;
 
@@ -195,9 +196,6 @@ private:
 
     /// @brief A shortcut for the Option "vehroute-output.route-length"
     static bool myRouteLength;
-
-    /// @brief A shortcut for the Option "vehroute-output.skip-ptlines"
-    static bool mySkipPTLines;
 
 
     /** @class StateListener
@@ -212,10 +210,10 @@ private:
          * @param[in] vehicle The vehicle which changed its state
          * @param[in] to The state the vehicle has changed to
          */
-        void vehicleStateChanged(const SUMOVehicle* const vehicle, MSNet::VehicleState to, const std::string& info = "");
+        void vehicleStateChanged(const SUMOVehicle* const vehicle, MSNet::VehicleState to);
 
         /// @brief A map for internal notification
-        std::map<const SUMOVehicle*, MSDevice_Vehroutes*, ComparatorNumericalIdLess> myDevices;
+        std::map<const SUMOVehicle*, MSDevice_Vehroutes*, SUMOVehicle::ComparatorIdLess> myDevices;
 
     };
 
@@ -246,8 +244,8 @@ private:
          * @param[in] time_ The time the route was replaced
          * @param[in] route_ The prior route
          */
-        RouteReplaceInfo(const MSEdge* const edge_, const SUMOTime time_, const MSRoute* const route_, const std::string& info_)
-            : edge(edge_), time(time_), route(route_), info(info_) {}
+        RouteReplaceInfo(const MSEdge* const edge_, const SUMOTime time_, const MSRoute* const route_)
+            : edge(edge_), time(time_), route(route_) {}
 
         /// @brief Destructor
         ~RouteReplaceInfo() { }
@@ -260,9 +258,6 @@ private:
 
         /// @brief The prior route
         const MSRoute* route;
-
-        /// @brief Information regarding rerouting
-        std::string info;
 
     };
 
@@ -292,8 +287,6 @@ private:
 
     /// @brief The lateral depart position
     double myDepartPosLat;
-
-    OutputDevice_String myStopOut;
 
 private:
     /// @brief Invalidated copy constructor.

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ROFrame.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Sets and checks options for routing
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <ctime>
@@ -47,7 +54,7 @@ ROFrame::fillOptions(OptionsCont& oc) {
     oc.addSynonyme("output-file", "output");
     oc.addDescription("output-file", "Output", "Write generated routes to FILE");
 
-    oc.doRegister("vtype-output", new Option_FileName());
+    oc.doRegister("vtype-output", new Option_FileName(""));
     oc.addSynonyme("vtype-output", "vtype");
     oc.addDescription("vtype-output", "Output", "Write used vehicle types into separate FILE");
 
@@ -85,7 +92,7 @@ ROFrame::fillOptions(OptionsCont& oc) {
     // register the processing options
     oc.doRegister("ignore-errors", new Option_Bool(false));
     oc.addSynonyme("ignore-errors", "continue-on-unbuild", true);
-    oc.addDescription("ignore-errors", "Report", "Continue if a route could not be build");
+    oc.addDescription("ignore-errors", "Processing", "Continue if a route could not be build");
 
     oc.doRegister("unsorted-input", new Option_Bool(false));
     oc.addSynonyme("unsorted-input", "unsorted");
@@ -93,9 +100,6 @@ ROFrame::fillOptions(OptionsCont& oc) {
 
     oc.doRegister("route-steps", 's', new Option_String("200", "TIME"));
     oc.addDescription("route-steps", "Processing", "Load routes for the next number of seconds ahead");
-
-    oc.doRegister("no-internal-links", new Option_Bool(false));
-    oc.addDescription("no-internal-links", "Processing", "Disable (junction) internal links");
 
     oc.doRegister("randomize-flows", new Option_Bool(false));
     oc.addDescription("randomize-flows", "Processing", "generate random departure times for flow input");
@@ -118,9 +122,6 @@ ROFrame::fillOptions(OptionsCont& oc) {
     oc.doRegister("weights.interpolate", new Option_Bool(false));
     oc.addSynonyme("weights.interpolate", "interpolate", true);
     oc.addDescription("weights.interpolate", "Processing", "Interpolate edge weights at interval boundaries");
-
-    oc.doRegister("weights.minor-penalty", new Option_Float(1.5));
-    oc.addDescription("weights.minor-penalty", "Processing", "Apply the given time penalty when computing routing costs for minor-link internal lanes");
 
     oc.doRegister("with-taz", new Option_Bool(false));
     oc.addDescription("with-taz", "Processing", "Use origin and destination zones (districts) for in- and output");

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSLaneSpeedTrigger.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // Changes the speed allowed on a set of lanes
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/MsgHandler.h>
@@ -31,7 +38,7 @@
 #include <utils/xml/SUMOXMLDefinitions.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/xml/XMLSubSys.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <microsim/MSEventControl.h>
 #include <microsim/MSLane.h>
 #include <microsim/MSNet.h>
@@ -108,7 +115,7 @@ MSLaneSpeedTrigger::processCommand(bool move2next, SUMOTime currentTime) {
         if (myDestLanes.size() > 0 && myDestLanes.front()->getSpeedLimit() != speed) {
             myDestLanes.front()->getEdge().setMaxSpeed(speed);
             MESegment* first = MSGlobals::gMesoNet->getSegmentForEdge(myDestLanes.front()->getEdge());
-            while (first != nullptr) {
+            while (first != 0) {
                 first->setSpeed(speed, currentTime, -1);
                 first = first->getNextSegment();
             }

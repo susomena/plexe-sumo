@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSRightOfWayJunction.cpp
 /// @author  Christian Roessel
 /// @author  Daniel Krajzewicz
@@ -17,12 +9,27 @@
 ///
 // junction.
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSRightOfWayJunction.h"
 #include "MSLane.h"
@@ -78,7 +85,7 @@ MSRightOfWayJunction::postloadInit() {
     for (i = myIncomingLanes.begin(); i != myIncomingLanes.end(); ++i) {
         const MSLinkCont& links = (*i)->getLinkCont();
         // ... set information for every link
-        const MSLane* walkingAreaFoe = nullptr;
+        const MSLane* walkingAreaFoe = 0;
         for (MSLinkCont::const_iterator j = links.begin(); j != links.end(); j++) {
             if ((*j)->getLane()->getEdge().isWalkingArea()) {
                 if ((*i)->getPermissions() != SVC_PEDESTRIAN) {
@@ -100,11 +107,11 @@ MSRightOfWayJunction::postloadInit() {
                 if (linkResponse.test(c)) {
                     MSLink* foe = sortedLinks[c].second;
                     myLinkFoeLinks[*j].push_back(foe);
-                    if (MSGlobals::gUsingInternalLanes && foe->getViaLane() != nullptr) {
+                    if (MSGlobals::gUsingInternalLanes && foe->getViaLane() != 0) {
                         assert(foe->getViaLane()->getLinkCont().size() == 1);
                         MSLink* foeExitLink = foe->getViaLane()->getLinkCont()[0];
                         // add foe links after an internal junction
-                        if (foeExitLink->getViaLane() != nullptr) {
+                        if (foeExitLink->getViaLane() != 0) {
                             myLinkFoeLinks[*j].push_back(foeExitLink);
                         }
                     }
@@ -116,13 +123,13 @@ MSRightOfWayJunction::postloadInit() {
                     MSLink* foe = sortedLinks[c].second;
                     foes.push_back(foe);
                     MSLane* l = foe->getViaLane();
-                    if (l == nullptr) {
+                    if (l == 0) {
                         continue;
                     }
                     // add foe links after an internal junction
                     const MSLinkCont& lc = l->getLinkCont();
                     for (MSLinkCont::const_iterator q = lc.begin(); q != lc.end(); ++q) {
-                        if ((*q)->getViaLane() != nullptr) {
+                        if ((*q)->getViaLane() != 0) {
                             foes.push_back(*q);
                         }
                     }
@@ -133,7 +140,7 @@ MSRightOfWayJunction::postloadInit() {
             if (MSGlobals::gUsingInternalLanes && myInternalLanes.size() > 0) {
                 int li = 0;
                 for (int c = 0; c < (int)sortedLinks.size(); ++c) {
-                    if (sortedLinks[c].second->getLane() == nullptr) { // dead end
+                    if (sortedLinks[c].second->getLane() == 0) { // dead end
                         continue;
                     }
                     if (linkFoes.test(c)) {
@@ -151,7 +158,7 @@ MSRightOfWayJunction::postloadInit() {
             (*j)->setRequestInformation((int)requestPos, hasFoes, cont, myLinkFoeLinks[*j], myLinkFoeInternalLanes[*j]);
             // the exit link for a link before an internal junction is handled in MSInternalJunction
             // so we need to skip if cont=true
-            if (MSGlobals::gUsingInternalLanes && (*j)->getViaLane() != nullptr && !cont) {
+            if (MSGlobals::gUsingInternalLanes && (*j)->getViaLane() != 0 && !cont) {
                 assert((*j)->getViaLane()->getLinkCont().size() == 1);
                 MSLink* exitLink = (*j)->getViaLane()->getLinkCont()[0];
                 exitLink->setRequestInformation((int)requestPos, false, false, std::vector<MSLink*>(),
@@ -169,7 +176,7 @@ MSRightOfWayJunction::postloadInit() {
             }
             requestPos++;
         }
-        if (walkingAreaFoe != nullptr && links.size() > 1) {
+        if (walkingAreaFoe != 0 && links.size() > 1) {
             for (MSLinkCont::const_iterator j = links.begin(); j != links.end(); j++) {
                 if (!(*j)->getLane()->getEdge().isWalkingArea()) {
                     MSLink* exitLink = (*j)->getViaLane()->getLinkCont()[0];

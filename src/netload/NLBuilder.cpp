@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NLBuilder.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // The main interface for loading a microsim
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <vector>
@@ -35,12 +42,12 @@
 #include <utils/options/Option.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/options/OptionsIO.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/FileHelpers.h>
 #include <utils/common/SysUtils.h>
 #include <utils/common/ToString.h>
-#include <utils/vehicle/SUMORouteLoaderControl.h>
-#include <utils/vehicle/SUMORouteLoader.h>
+#include <utils/xml/SUMORouteLoaderControl.h>
+#include <utils/xml/SUMORouteLoader.h>
 #include <utils/xml/XMLSubSys.h>
 #include <mesosim/MEVehicleControl.h>
 #include <microsim/MSVehicleControl.h>
@@ -53,7 +60,6 @@
 #include <microsim/MSFrame.h>
 #include <microsim/MSEdgeWeightsStorage.h>
 #include <microsim/MSStateHandler.h>
-#include <traci-server/TraCIServer.h>
 
 #include "NLHandler.h"
 #include "NLEdgeControlBuilder.h"
@@ -62,6 +68,9 @@
 #include "NLTriggerBuilder.h"
 #include "NLBuilder.h"
 
+#ifndef NO_TRACI
+#include <traci-server/TraCIServer.h>
+#endif
 
 // ===========================================================================
 // method definitions
@@ -73,7 +82,7 @@ void
 NLBuilder::EdgeFloatTimeLineRetriever_EdgeEffort::addEdgeWeight(const std::string& id,
         double value, double begTime, double endTime) const {
     MSEdge* edge = MSEdge::dictionary(id);
-    if (edge != nullptr) {
+    if (edge != 0) {
         myNet.getWeightsStorage().addEffort(edge, begTime, endTime, value);
     } else {
         WRITE_ERROR("Trying to set the effort for the unknown edge '" + id + "'.");
@@ -88,7 +97,7 @@ void
 NLBuilder::EdgeFloatTimeLineRetriever_EdgeTravelTime::addEdgeWeight(const std::string& id,
         double value, double begTime, double endTime) const {
     MSEdge* edge = MSEdge::dictionary(id);
-    if (edge != nullptr) {
+    if (edge != 0) {
         myNet.getWeightsStorage().addTravelTime(edge, begTime, endTime, value);
     } else {
         WRITE_ERROR("Trying to set the travel time for the unknown edge '" + id + "'.");
@@ -119,9 +128,6 @@ NLBuilder::build() {
     if (!load("net-file", true)) {
         return false;
     }
-    if (myXMLHandler.networkVersion() == 0.) {
-        throw ProcessError("Invalid network, no network version declared.");
-    }
     // check whether the loaded net agrees with the simulation options
     if (myOptions.getBool("no-internal-links") && myXMLHandler.haveSeenInternalEdge()) {
         WRITE_WARNING("Network contains internal links but option --no-internal-links is set. Vehicles will 'jump' across junctions and thus underestimate route lengths and travel times.");
@@ -132,22 +138,8 @@ NLBuilder::build() {
     buildNet();
     // @note on loading order constraints:
     // - additional-files before route-files and state-files due to referencing
-    // - additional-files before weight-files since the latter might contain intermodal edge data and the intermodal net depends on the stops and public transport from the additionals
+    // - weight-files before additional-files since the latter might contain trips which depend on the weights
 
-    // load additional net elements (sources, detectors, ...)
-    if (myOptions.isSet("additional-files")) {
-        if (!load("additional-files")) {
-            return false;
-        }
-        // load shapes with separate handler
-        NLShapeHandler sh("", myNet.getShapeContainer());
-        if (!ShapeHandler::loadFiles(myOptions.getStringVector("additional-files"), sh)) {
-            return false;
-        }
-        if (myXMLHandler.haveSeenAdditionalSpeedRestrictions()) {
-            myNet.getEdgeControl().setAdditionalRestrictions();
-        }
-    }
     // load weights if wished
     if (myOptions.isSet("weight-files")) {
         if (!myOptions.isUsableFileList("weight-files")) {
@@ -180,6 +172,20 @@ NLBuilder::build() {
             }
         }
     }
+    // load additional net elements (sources, detectors, ...)
+    if (myOptions.isSet("additional-files")) {
+        if (!load("additional-files")) {
+            return false;
+        }
+        // load shapes with separate handler
+        NLShapeHandler sh("", myNet.getShapeContainer());
+        if (!ShapeHandler::loadFiles(myOptions.getStringVector("additional-files"), sh)) {
+            return false;
+        }
+        if (myXMLHandler.haveSeenAdditionalSpeedRestrictions()) {
+            myNet.getEdgeControl().setAdditionalRestrictions();
+        }
+    }
     // load the previous state if wished
     if (myOptions.isSet("load-state")) {
         long before = SysUtils::getCurrentMillis();
@@ -189,9 +195,6 @@ NLBuilder::build() {
         XMLSubSys::runParser(h, f);
         if (myOptions.isDefault("begin")) {
             myOptions.set("begin", time2string(h.getTime()));
-            if (TraCIServer::getInstance() != nullptr) {
-                TraCIServer::getInstance()->setTargetTime(h.getTime());
-            }
         }
         if (MsgHandler::getErrorInstance()->wasInformed()) {
             return false;
@@ -216,74 +219,76 @@ NLBuilder::build() {
 }
 
 
-MSNet*
-NLBuilder::init() {
-    OptionsCont& oc = OptionsCont::getOptions();
-    oc.clear();
-    MSFrame::fillOptions();
-    OptionsIO::getOptions();
-    if (oc.processMetaOptions(OptionsIO::getArgC() < 2)) {
-        SystemFrame::close();
-        return nullptr;
-    }
-    XMLSubSys::setValidation(oc.getString("xml-validation"), oc.getString("xml-validation.net"));
-    if (!MSFrame::checkOptions()) {
-        throw ProcessError();
-    }
-    MsgHandler::initOutputOptions();
-    initRandomness();
-    MSFrame::setMSGlobals(oc);
-    MSVehicleControl* vc = nullptr;
-    if (MSGlobals::gUseMesoSim) {
-        vc = new MEVehicleControl();
-    } else {
-        vc = new MSVehicleControl();
-    }
-    MSNet* net = new MSNet(vc, new MSEventControl(), new MSEventControl(), new MSEventControl());
-    // need to init TraCI-Server before loading routes to catch VEHICLE_STATE_BUILT
-    TraCIServer::openSocket(std::map<int, TraCIServer::CmdExecutor>());
+int
+NLBuilder::loadAndRun() {
+    MSNet::SimulationState state = MSNet::SIMSTATE_LOADING;
+    while (state == MSNet::SIMSTATE_LOADING) {
+        OptionsCont& oc = OptionsCont::getOptions();
+        oc.clear();
+        MSFrame::fillOptions();
+        OptionsIO::getOptions();
+        if (oc.processMetaOptions(OptionsIO::getArgC() < 2)) {
+            SystemFrame::close();
+            return 0;
+        }
+        XMLSubSys::setValidation(oc.getString("xml-validation"), oc.getString("xml-validation.net"));
+        if (!MSFrame::checkOptions()) {
+            throw ProcessError();
+        }
+        MsgHandler::initOutputOptions();
+        RandHelper::initRandGlobal();
+        RandHelper::initRandGlobal(MSRouteHandler::getParsingRNG());
+        RandHelper::initRandGlobal(MSDevice::getEquipmentRNG());
+        MSFrame::setMSGlobals(oc);
+        MSVehicleControl* vc = 0;
+        if (MSGlobals::gUseMesoSim) {
+            vc = new MEVehicleControl();
+        } else {
+            vc = new MSVehicleControl();
+        }
+        MSNet* net = new MSNet(vc, new MSEventControl(), new MSEventControl(), new MSEventControl());
+#ifndef NO_TRACI
+        // need to init TraCI-Server before loading routes to catch VEHICLE_STATE_BUILT
+        TraCIServer::openSocket(std::map<int, TraCIServer::CmdExecutor>());
+#endif
 
-    NLEdgeControlBuilder eb;
-    NLDetectorBuilder db(*net);
-    NLJunctionControlBuilder jb(*net, db);
-    NLTriggerBuilder tb;
-    NLHandler handler("", *net, db, tb, eb, jb);
-    tb.setHandler(&handler);
-    NLBuilder builder(oc, *net, eb, jb, db, handler);
-    MsgHandler::getErrorInstance()->clear();
-    MsgHandler::getWarningInstance()->clear();
-    MsgHandler::getMessageInstance()->clear();
-    if (builder.build()) {
-        // preload the routes especially for TraCI
-        net->loadRoutes();
-        return net;
+        NLEdgeControlBuilder eb;
+        NLDetectorBuilder db(*net);
+        NLJunctionControlBuilder jb(*net, db);
+        NLTriggerBuilder tb;
+        NLHandler handler("", *net, db, tb, eb, jb);
+        tb.setHandler(&handler);
+        NLBuilder builder(oc, *net, eb, jb, db, handler);
+        MsgHandler::getErrorInstance()->clear();
+        MsgHandler::getWarningInstance()->clear();
+        MsgHandler::getMessageInstance()->clear();
+        if (builder.build()) {
+            state = net->simulate(string2time(oc.getString("begin")), string2time(oc.getString("end")));
+            delete net;
+        } else {
+            MsgHandler::getErrorInstance()->inform("Quitting (on error).", false);
+            delete net;
+            return 1;
+        }
     }
-    delete net;
-    throw ProcessError();
+    return 0;
 }
 
-void
-NLBuilder::initRandomness() {
-    RandHelper::initRandGlobal();
-    RandHelper::initRandGlobal(MSRouteHandler::getParsingRNG());
-    RandHelper::initRandGlobal(MSDevice::getEquipmentRNG());
-    MSLane::initRNGs(OptionsCont::getOptions());
-}
 
 void
 NLBuilder::buildNet() {
-    MSEdgeControl* edges = nullptr;
-    MSJunctionControl* junctions = nullptr;
-    SUMORouteLoaderControl* routeLoaders = nullptr;
-    MSTLLogicControl* tlc = nullptr;
-    std::vector<SUMOTime> stateDumpTimes;
-    std::vector<std::string> stateDumpFiles;
+    MSEdgeControl* edges = 0;
+    MSJunctionControl* junctions = 0;
+    SUMORouteLoaderControl* routeLoaders = 0;
+    MSTLLogicControl* tlc = 0;
     try {
-        MSFrame::buildStreams(); // ensure streams are ready for output during building
-        edges = myEdgeBuilder.build(myXMLHandler.networkVersion());
+        edges = myEdgeBuilder.build();
         junctions = myJunctionBuilder.build();
         routeLoaders = buildRouteLoaderControl(myOptions);
         tlc = myJunctionBuilder.buildTLLogics();
+        MSFrame::buildStreams();
+        std::vector<SUMOTime> stateDumpTimes;
+        std::vector<std::string> stateDumpFiles;
         const std::vector<int> times = myOptions.getIntVector("save-state.times");
         for (std::vector<int>::const_iterator i = times.begin(); i != times.end(); ++i) {
             stateDumpTimes.push_back(TIME2STEPS(*i));
@@ -300,6 +305,11 @@ NLBuilder::buildNet() {
                 stateDumpFiles.push_back(prefix + "_" + time2string(*i) + suffix);
             }
         }
+        myNet.closeBuilding(myOptions, edges, junctions, routeLoaders, tlc, stateDumpTimes, stateDumpFiles,
+                            myXMLHandler.haveSeenInternalEdge(),
+                            myXMLHandler.haveSeenNeighs(),
+                            myXMLHandler.lefthand(),
+                            myXMLHandler.networkVersion());
     } catch (IOError& e) {
         delete edges;
         delete junctions;
@@ -313,12 +323,6 @@ NLBuilder::buildNet() {
         delete tlc;
         throw;
     }
-    // if anthing goes wrong after this point, the net is responsible for cleaning up
-    myNet.closeBuilding(myOptions, edges, junctions, routeLoaders, tlc, stateDumpTimes, stateDumpFiles,
-                        myXMLHandler.haveSeenInternalEdge(),
-                        myXMLHandler.haveSeenNeighs(),
-                        myXMLHandler.lefthand(),
-                        myXMLHandler.networkVersion());
 }
 
 

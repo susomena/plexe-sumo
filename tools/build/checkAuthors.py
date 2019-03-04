@@ -1,18 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    checkAuthors.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@date    2011-11-07
+@version $Id$
 
-# @file    checkAuthors.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @date    2011-11-07
-# @version $Id$
+Checks authors for all files.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -127,7 +131,6 @@ def setAuthors(fullName, removal, add, pattern):
     if options.fix:
         out.close()
         os.rename(out.name, fullName)
-
 
 ignoreRevisions = set(["12129", "12128", "11445", "10974", "9705", "9477", "9429", "9348", "8566",
                        "8439", "8000", "7728", "7533", "6958", "6589", "6537",

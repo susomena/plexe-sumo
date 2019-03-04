@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSLeaderInfo.cpp
 /// @author  Jakob Erdmann
 /// @date    Oct 2015
@@ -15,19 +7,33 @@
 // Information about vehicles ahead (may be multiple vehicles if
 // lateral-resolution is active)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <cmath>
 #include <utils/common/ToString.h>
 #include <microsim/MSGlobals.h>
 #include <microsim/MSVehicle.h>
-#include <microsim/lcmodels/MSAbstractLaneChangeModel.h>
 #include <microsim/MSNet.h>
 #include "MSLeaderInfo.h"
 
@@ -42,12 +48,12 @@
 // ===========================================================================
 MSLeaderInfo::MSLeaderInfo(const MSLane* lane, const MSVehicle* ego, double latOffset) :
     myWidth(lane->getWidth()),
-    myVehicles(MAX2(1, int(ceil(myWidth / MSGlobals::gLateralResolution))), (MSVehicle*)nullptr),
+    myVehicles(MAX2(1, int(ceil(myWidth / MSGlobals::gLateralResolution))), (MSVehicle*)0),
     myFreeSublanes((int)myVehicles.size()),
     egoRightMost(-1),
     egoLeftMost(-1),
     myHasVehicles(false) {
-    if (ego != nullptr) {
+    if (ego != 0) {
         getSubLanes(ego, latOffset, egoRightMost, egoLeftMost);
         // filter out sublanes not of interest to ego
         myFreeSublanes -= egoRightMost;
@@ -61,7 +67,7 @@ MSLeaderInfo::~MSLeaderInfo() { }
 
 int
 MSLeaderInfo::addLeader(const MSVehicle* veh, bool beyond, double latOffset) {
-    if (veh == nullptr) {
+    if (veh == 0) {
         return myFreeSublanes;
     }
     if (myVehicles.size() == 1) {
@@ -93,7 +99,7 @@ MSLeaderInfo::addLeader(const MSVehicle* veh, bool beyond, double latOffset) {
 
 void
 MSLeaderInfo::clear() {
-    myVehicles.assign(myVehicles.size(), (MSVehicle*)nullptr);
+    myVehicles.assign(myVehicles.size(), (MSVehicle*)0);
     myFreeSublanes = (int)myVehicles.size();
     if (egoRightMost >= 0) {
         myFreeSublanes -= egoRightMost;
@@ -113,21 +119,9 @@ MSLeaderInfo::getSubLanes(const MSVehicle* veh, double latOffset, int& rightmost
     // map center-line based coordinates into [0, myWidth] coordinates
     const double vehCenter = veh->getLateralPositionOnLane() + 0.5 * myWidth + latOffset;
     const double vehHalfWidth = 0.5 * veh->getVehicleType().getWidth();
-    double rightVehSide = MAX2(0.,  vehCenter - vehHalfWidth);
-    double leftVehSide = MIN2(myWidth, vehCenter + vehHalfWidth);
-    // Reserve some additional space if the vehicle is performing a maneuver continuation.
-    if (veh->getActionStepLength() != DELTA_T) {
-        if (veh->getLaneChangeModel().getManeuverDist() < 0. || veh->getLaneChangeModel().getSpeedLat() < 0.) {
-            const double maneuverDist = MIN2(veh->getVehicleType().getMaxSpeedLat() * veh->getActionStepLengthSecs(), -MIN2(0., veh->getLaneChangeModel().getManeuverDist()));
-            rightVehSide -= maneuverDist;
-        }
-        if (veh->getLaneChangeModel().getManeuverDist() > 0. || veh->getLaneChangeModel().getSpeedLat() > 0.) {
-            const double maneuverDist = MIN2(veh->getVehicleType().getMaxSpeedLat() * veh->getActionStepLengthSecs(), MAX2(0., veh->getLaneChangeModel().getManeuverDist()));
-            leftVehSide += maneuverDist;
-        }
-    }
-
-    rightmost = MAX2(0, (int)floor((rightVehSide + NUMERICAL_EPS) / MSGlobals::gLateralResolution));
+    const double rightVehSide = MAX2(0.,  vehCenter - vehHalfWidth);
+    const double leftVehSide = MIN2(myWidth, vehCenter + vehHalfWidth);
+    rightmost = (int)floor((rightVehSide + NUMERICAL_EPS) / MSGlobals::gLateralResolution);
     leftmost = MIN2((int)myVehicles.size() - 1, (int)floor((leftVehSide - NUMERICAL_EPS) / MSGlobals::gLateralResolution));
     //if (veh->getID() == "Pepoli_11_41") std::cout << SIMTIME << " veh=" << veh->getID()
     //    << std::setprecision(10)
@@ -162,7 +156,7 @@ MSLeaderInfo::operator[](int sublane) const {
 std::string
 MSLeaderInfo::toString() const {
     std::ostringstream oss;
-    oss.setf(std::ios::fixed, std::ios::floatfield);
+    oss.setf(std::ios::fixed , std::ios::floatfield);
     oss << std::setprecision(2);
     for (int i = 0; i < (int)myVehicles.size(); ++i) {
         oss << Named::getIDSecure(myVehicles[i]);
@@ -200,11 +194,10 @@ MSLeaderDistanceInfo::MSLeaderDistanceInfo(const MSLane* lane, const MSVehicle* 
 
 
 MSLeaderDistanceInfo::MSLeaderDistanceInfo(const CLeaderDist& cLeaderDist, const MSLane* dummy) :
-    MSLeaderInfo(dummy, nullptr, 0),
+    MSLeaderInfo(dummy, 0, 0),
     myDistances(1, cLeaderDist.second) {
     assert(myVehicles.size() == 1);
     myVehicles[0] = cLeaderDist.first;
-    myHasVehicles = true;
 }
 
 MSLeaderDistanceInfo::~MSLeaderDistanceInfo() { }
@@ -215,7 +208,7 @@ MSLeaderDistanceInfo::addLeader(const MSVehicle* veh, double gap, double latOffs
     //if (SIMTIME == 31 && gDebugFlag1 && veh != 0 && veh->getID() == "cars.8") {
     //    std::cout << " BREAKPOINT\n";
     //}
-    if (veh == nullptr) {
+    if (veh == 0) {
         return myFreeSublanes;
     }
     if (myVehicles.size() == 1) {
@@ -269,7 +262,7 @@ MSLeaderDistanceInfo::operator[](int sublane) const {
 std::string
 MSLeaderDistanceInfo::toString() const {
     std::ostringstream oss;
-    oss.setf(std::ios::fixed, std::ios::floatfield);
+    oss.setf(std::ios::fixed , std::ios::floatfield);
     oss << std::setprecision(2);
     for (int i = 0; i < (int)myVehicles.size(); ++i) {
         oss << Named::getIDSecure(myVehicles[i]) << ":";
@@ -303,7 +296,7 @@ MSCriticalFollowerDistanceInfo::~MSCriticalFollowerDistanceInfo() { }
 
 int
 MSCriticalFollowerDistanceInfo::addFollower(const MSVehicle* veh, const MSVehicle* ego, double gap, double latOffset, int sublane) {
-    if (veh == nullptr) {
+    if (veh == 0) {
         return myFreeSublanes;
     }
     const double requiredGap = veh->getCarFollowModel().getSecureGap(veh->getSpeed(), ego->getSpeed(), ego->getCarFollowModel().getMaxDecel());
@@ -335,13 +328,8 @@ MSCriticalFollowerDistanceInfo::addFollower(const MSVehicle* veh, const MSVehicl
     if (sublane >= 0 && sublane < (int)myVehicles.size()) {
         // sublane is already given
         // overlapping vehicles are stored preferably
-        // among those vehicles with missing gap, closer ones are preferred
-        if ((missingGap > myMissingGaps[sublane]
-                || (missingGap > 0 && gap < myDistances[sublane])
-                || (gap < 0 && myDistances[sublane] > 0))
-                && !(gap > 0 && myDistances[sublane] < 0)
-                && !(myMissingGaps[sublane] > 0 && myDistances[sublane] < gap)
-           ) {
+        if ((missingGap > myMissingGaps[sublane] || (gap < 0 && myDistances[sublane] > 0))
+                && !(gap > 0 && myDistances[sublane] < 0)) {
             if (myVehicles[sublane] == 0) {
                 myFreeSublanes--;
             }
@@ -357,13 +345,8 @@ MSCriticalFollowerDistanceInfo::addFollower(const MSVehicle* veh, const MSVehicl
     for (int sublane = rightmost; sublane <= leftmost; ++sublane) {
         if ((egoRightMost < 0 || (egoRightMost <= sublane && sublane <= egoLeftMost))
                 // overlapping vehicles are stored preferably
-                // among those vehicles with missing gap, closer ones are preferred
-                && (missingGap > myMissingGaps[sublane]
-                    || (missingGap > 0 && gap < myDistances[sublane])
-                    || (gap < 0 && myDistances[sublane] > 0))
-                && !(gap > 0 && myDistances[sublane] < 0)
-                && !(myMissingGaps[sublane] > 0 && myDistances[sublane] < gap)
-           ) {
+                && (missingGap > myMissingGaps[sublane] || (gap < 0 && myDistances[sublane] > 0))
+                && !(gap > 0 && myDistances[sublane] < 0)) {
             if (myVehicles[sublane] == 0) {
                 myFreeSublanes--;
             }
@@ -387,7 +370,7 @@ MSCriticalFollowerDistanceInfo::clear() {
 std::string
 MSCriticalFollowerDistanceInfo::toString() const {
     std::ostringstream oss;
-    oss.setf(std::ios::fixed, std::ios::floatfield);
+    oss.setf(std::ios::fixed , std::ios::floatfield);
     oss << std::setprecision(2);
     for (int i = 0; i < (int)myVehicles.size(); ++i) {
         oss << Named::getIDSecure(myVehicles[i]) << ":";

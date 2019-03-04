@@ -1,18 +1,3 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2016-2019 German Aerospace Center (DLR) and others.
-# SUMOPy module
-# Copyright (C) 2012-2017 University of Bologna - DICAM
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    toolbox.py
-# @author  Joerg Schweizer
-# @date
-# @version $Id$
-
 import sys
 import os
 import string
@@ -36,6 +21,7 @@ import agilepy.lib_base.arrayman as am
 
 
 class BaseTool(am.ArrayObjman):
+
     """
     This is a base tool class for Agilecanvas.
     It must handle all mouse or keyboard events,
@@ -55,12 +41,14 @@ class BaseTool(am.ArrayObjman):
 
     def set_button_info(self, bsize=(32, 32)):
         # print 'set_button_info select tool'
-        self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'selectIcon.bmp'), wx.BITMAP_TYPE_BMP)
-        self._bitmap_sel = wx.Bitmap(os.path.join(IMAGEDIR, 'selectIconSel.bmp'), wx.BITMAP_TYPE_BMP)
+        self._bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'selectIcon.bmp'), wx.BITMAP_TYPE_BMP)
+        self._bitmap_sel = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'selectIconSel.bmp'), wx.BITMAP_TYPE_BMP)
 
     def set_cursor(self):
         # http://www.wxpython.org/docs/api/wx.Cursor-class.html
-        if self._canvas is not None:
+        if self._canvas != None:
             # self._canvas.SetCursor(wx.StockCursor(wx.CURSOR_QUESTION_ARROW))
             pass
 
@@ -76,22 +64,24 @@ class BaseTool(am.ArrayObjman):
         bitmap = self._bitmap
 
         if self._is_textbutton:
-            b = GenBitmapTextToggleButton(parent, id, bitmap, self.ident.title(), name=self.get_name())
+            b = GenBitmapTextToggleButton(
+                parent, id, bitmap, self.ident.title(), name=self.get_name())
         else:
             b = GenBitmapToggleButton(parent, id, bitmap,
-                                      (bitmap.GetWidth()+bottonborder, bitmap.GetHeight()+bottonborder),
+                                      (bitmap.GetWidth() + bottonborder,
+                                       bitmap.GetHeight() + bottonborder),
                                       name=self.get_name())
         #b=GenBitmapToggleButton(self, wx.ID_DELETE)
         #b = GenBitmapTextToggleButton(self, id, None, tool.get('name',''), size = (200, 45))
 
-        if bitmap is not None:
+        if bitmap != None:
             #mask = wx.Mask(bitmap, wx.BLUE)
             # bitmap.SetMask(mask)
             b.SetBitmapLabel(bitmap)
             # bmp=wx.NullBitmap
 
         bitmap_sel = self._bitmap_sel
-        if bitmap_sel is not None:
+        if bitmap_sel != None:
             #mask = wx.Mask(bmp, wx.BLUE)
             # bmp.SetMask(mask)
             b.SetBitmapSelected(bitmap_sel)
@@ -132,7 +122,8 @@ class BaseTool(am.ArrayObjman):
                                       show_groupnames=False, show_title=True, is_modal=False,
                                       mainframe=self.parent.get_mainframe(),
                                       pos=wx.DefaultPosition, size=size, style=wx.MAXIMIZE_BOX | wx.RESIZE_BORDER,
-                                      immediate_apply=False, panelstyle='default',  # 'instrumental'
+                                      # 'instrumental'
+                                      immediate_apply=False, panelstyle='default',
                                       standartbuttons=['apply', 'restore'])
 
         return self._optionspanel
@@ -148,12 +139,6 @@ class BaseTool(am.ArrayObjman):
         # self._canvas.del_handles()
         canvas.activate_tool(self)
         self.set_cursor()
-
-    def get_drawing(self):
-        return self.parent.get_drawing()
-
-    def get_drawobj_by_ident(self, ident):
-        return self.get_drawing().get_drawobj_by_ident(ident)
 
     def deactivate(self):
         """
@@ -199,11 +184,13 @@ class BaseTool(am.ArrayObjman):
 
 
 class DelTool(BaseTool):
+
     def __init__(self, parent):
         """
         To be overridden by specific tool.
         """
-        self.init_common('delete', parent, 'Delete', info='Delete objects in cancvas')
+        self.init_common('delete', parent, 'Delete',
+                         info='Delete objects in cancvas')
 
     def set_button_info(self, bsize=(32, 32)):
         # print 'set_button_info select tool'
@@ -224,6 +211,7 @@ class DelTool(BaseTool):
 
 
 class ToolPalett(wx.Panel):
+
     """
     This is a panel where tools are represented by images and/or text.
     The tools are selected in a radio-button-fashion.
@@ -284,7 +272,8 @@ class ToolPalett(wx.Panel):
             bottonborder = 10
             toolbarborder = 1
 
-            b = tool.get_button(self, bottonsize=bottonsize, bottonborder=bottonborder)
+            b = tool.get_button(self, bottonsize=bottonsize,
+                                bottonborder=bottonborder)
             self.Bind(wx.EVT_BUTTON, self.on_select, b)
 
             _id = b.GetId()
@@ -332,7 +321,7 @@ class ToolPalett(wx.Panel):
                 # this will cause the main OGL editor to activate the
                 # tool with the current canvas
                 self.GetParent().set_tool(tool)
-                # if self._callback is not None:
+                # if self._callback!=None:
                 #    self._callback(tool)
                 event.Skip()
                 return tool
@@ -363,7 +352,7 @@ class ToolPalett(wx.Panel):
                 self._id = _id
 
                 self.GetParent().set_tool(tool)
-                # if self._callback is not None:
+                # if self._callback!=None:
                 #    self._callback(tool)
                 return tool
 
@@ -389,6 +378,7 @@ class ToolPalett(wx.Panel):
 
 
 class __ToggleMixin:
+
     def SetToggle(self, flag):
         self.up = not flag
         self.Refresh()
@@ -421,16 +411,19 @@ class __ToggleMixin:
 
 
 class GenBitmapTextToggleButton(__ToggleMixin, GenBitmapTextButton):
+
     """A generic toggle bitmap button with text label"""
     pass
 
 
 class GenBitmapToggleButton(__ToggleMixin, GenBitmapButton):
+
     """A generic toggle bitmap button with text label"""
     pass
 
 
 class ToolsPanel(wx.Panel):
+
     """
     Shows a toolpallet with different tools and an options panel.
     """
@@ -442,7 +435,8 @@ class ToolsPanel(wx.Panel):
         wx.Panel.__init__(self, parent, wx.NewId(), wx.DefaultPosition, size)
         # wx.DefaultSize
         # sizer=wx.BoxSizer(wx.VERTICAL)
-        sizer = wx.StaticBoxSizer(wx.StaticBox(parent, wx.NewId(), "test"), wx.VERTICAL)
+        sizer = wx.StaticBoxSizer(wx.StaticBox(
+            parent, wx.NewId(), "test"), wx.VERTICAL)
 
         self._toolspalett = ToolPalett(self, **kwargs)
 
@@ -471,24 +465,18 @@ class ToolsPanel(wx.Panel):
         # ask the OGL editor for the currently active canvas in focus
         return self.GetParent().get_canvas()
 
-    def get_drawing(self):
-        return self.get_canvas().get_drawing()
-
     def get_mainframe(self):
         return self.GetParent().get_mainframe()
 
     def add_tool(self, tool):
         return self._toolspalett.add_tool(tool)
 
-    def add_toolclass(self, ToolClass, **kwargs):
+    def add_toolclass(self, ToolClass):
         # init and add
-        return self._toolspalett.add_tool(ToolClass(self, **kwargs))
+        return self._toolspalett.add_tool(ToolClass(self))
 
     def add_initial_tool(self, tool):
         self._id_initialtool = self.add_tool(tool)
-
-    def reset_initial_tool(self):
-        self.set_tool_with_id(self._id_initialtool)
 
     def reset_initial_tool(self):
         self.set_tool_with_id(self._id_initialtool)
@@ -520,9 +508,10 @@ class ToolsPanel(wx.Panel):
         sizer.Remove(1)
         self._optionspanel.Destroy()
 
-        self._optionspanel = tool.get_optionspanel(self)  # , size = self.GetSize())
+        self._optionspanel = tool.get_optionspanel(
+            self)  # , size = self.GetSize())
         # self._optionspanel.SetSize((100,0))
-        # if id is not None:
+        # if id!=None:
         #    self.objpanel=ObjPanel(self,obj,id=id,func_change_obj=self.change_obj)
         # else:
         #    self.objpanel=ObjPanel(self,obj,func_change_obj=self.change_obj)

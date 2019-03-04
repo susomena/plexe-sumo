@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUICompleteSchemeStorage.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,12 +9,27 @@
 ///
 // Storage for available visualization settings
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "GUICompleteSchemeStorage.h"
 #include <utils/common/ToString.h>
@@ -165,7 +172,7 @@ GUICompleteSchemeStorage::init(FXApp* app, bool netedit) {
                 try {
                     GUISettingsHandler handler(content, false, netedit);
                     handler.addSettings();
-                } catch (ProcessError&) { }
+                } catch (ProcessError) { }
             }
         }
     }
@@ -207,7 +214,7 @@ void
 GUICompleteSchemeStorage::setViewport(GUISUMOAbstractView* view) {
     if (myLookFrom.z() > 0) {
         // look straight down
-        view->setViewportFromToRot(myLookFrom, Position(myLookFrom.x(), myLookFrom.y(), 0), 0);
+        view->setViewportFromTo(myLookFrom, Position(myLookFrom.x(), myLookFrom.y(), 0));
     } else {
         view->recenterView();
     }

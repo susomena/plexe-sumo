@@ -1,13 +1,6 @@
+# Generated on Tue Feb 21 13:13:15 2017 by SUMO netconvert Version dev-SVN-r23030
 # Format matches Extraction version: V6.5 
 # <?xml version="1.0" encoding="UTF-8"?>
-# 
-# <!-- generated on Wed Aug 15 14:52:45 2018 by Eclipse SUMO netconvert Version feccab3
-# This data file and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-# -->
 # 
 # <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 # 
@@ -16,7 +9,6 @@
 #     </input>
 # 
 #     <output>
-#         <write-license value="true"/>
 #         <output-file value="net.net.xml"/>
 #         <plain-output-prefix value="plain"/>
 #         <dlr-navteq-output value="elmar_output"/>
@@ -27,21 +19,14 @@
 #         <proj.utm value="true"/>
 #     </projection>
 # 
-#     <processing>
-#         <numerical-ids value="true"/>
-#     </processing>
-# 
 #     <ramp_guessing>
 #         <ramps.guess value="true"/>
 #     </ramp_guessing>
 # 
-#     <junctions>
+#     <processing>
+#         <numerical-ids value="true"/>
 #         <junctions.join value="true"/>
-#     </junctions>
-# 
-#     <formats>
-#         <osm.all-attributes value="true"/>
-#     </formats>
+#     </processing>
 # 
 #     <report>
 #         <verbose value="true"/>
@@ -55,10 +40,10 @@
 #column format like pointcollection.
 #DESCRIPTION->LOCATION: 1-rechts von LINK; 2-links von LINK; 3-oberhalb LINK -1-keineAngabe
 #RELATREC_ID	POICOL_TYPE	DESCRIPTION	LONGITUDE	LATITUDE	LINK_ID
-27445073	12	LSA;NODEIDS#261599791#;LOCATION#-1#;	1352015.35	5242682.13	27445073
+27445075	12	LSA;NODEIDS#261599791#;LOCATION#-1#;	1352015.35	5242682.13	27445075
 27445017	12	LSA;NODEIDS#261599791#;LOCATION#-1#;	1352015.35	5242682.13	27445017
-27445165	12	LSA;NODEIDS#32266935#;LOCATION#-1#;	1352671.27	5242640.38	27445165
-27445161	12	LSA;NODEIDS#32266935#;LOCATION#-1#;	1352671.27	5242640.38	27445161
+27445169	12	LSA;NODEIDS#32266935#;LOCATION#-1#;	1352671.27	5242640.38	27445169
+27445166	12	LSA;NODEIDS#32266935#;LOCATION#-1#;	1352671.27	5242640.38	27445166
 -24214694	12	LSA;NODEIDS#32266935#;LOCATION#-1#;	1352671.27	5242640.38	-24214694
 27445016	12	LSA;NODEIDS#32266935#;LOCATION#-1#;	1352671.27	5242640.38	27445016
-27445063	12	LSA;NODEIDS#94487954#;LOCATION#-1#;	1354524.79	5242572.21	27445063
+27445066	12	LSA;NODEIDS#94487954#;LOCATION#-1#;	1354524.79	5242572.21	27445066

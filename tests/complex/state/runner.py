@@ -1,18 +1,21 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2009-11-04
+@version $Id$
 
-# @file    runner.py
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2009-11-04
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 
 import os
@@ -27,8 +30,8 @@ if '--mesosim' in loadParams:
 
 # need to add runner.py again in options.complex.meso to ensure it is the
 # last  entry
-saveParams = [p for p in saveParams if 'runner.py' not in p]
-loadParams = [p for p in loadParams if 'runner.py' not in p]
+saveParams = [p for p in saveParams if not 'runner.py' in p]
+loadParams = [p for p in loadParams if not 'runner.py' in p]
 
 # print "save:", saveParams
 # print "load:", loadParams

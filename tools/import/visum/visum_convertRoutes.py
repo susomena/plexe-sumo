@@ -1,18 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    visum_convertRoutes.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2007-02-21
+@version $Id$
 
-# @file    visum_convertRoutes.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2007-02-21
-# @version $Id$
+This script converts given VISUM-routes for a given SUMO-network.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 from __future__ import print_function
 from __future__ import absolute_import
@@ -29,7 +33,6 @@ class Statistics:
     foundN = 0
     missing = 0
     missingN = 0
-
 
 stats = Statistics()
 routes = []
@@ -107,8 +110,7 @@ optParser.add_option("-p", "--prefix",
 optParser.add_option("-t", "--type",
                      help="The type to use for vehicles", type="string")
 optParser.add_option("-u", "--uniform",
-                     help="Whether departures shall be distributed uniform in each interval", action="store_true",
-                     default=False)
+                     help="Whether departures shall be distributed uniform in each interval", action="store_true", default=False)
 optParser.add_option("-l", "--timeline",
                      help="Percentages over a day", type="string")
 optParser.add_option("-a", "--tabs", action="store_true",
@@ -120,13 +122,11 @@ optParser.add_option("-2", "--net2",
 optParser.add_option("-s", "--step", default="10",
                      type="float", help="distance between successive trace points")
 optParser.add_option("-d", "--delta", default="1",
-                     type="float", help="maximum distance between edge and trace points when matching " +
-                                        " to the second net")
+                     type="float", help="maximum distance between edge and trace points when matching to the second net")
 optParser.add_option("-i", "--distribution", action="store_true",
                      default=False, help="write route distributions only")
 optParser.add_option("-c", "--cutoff",
-                     help="Keep only one route when less than CUTOFF vehicles drive the OD", type="int",
-                     default=0)
+                     help="Keep only one route when less than CUTOFF vehicles drive the OD", type="int", default=0)
 
 optParser.set_usage(
     '\nvisum_convertRoutes.py -n visum.net.xml -r visum_routes.att -o visum.rou.xml')
@@ -162,9 +162,7 @@ parse = False
 ok = True
 route = ""
 id = ""
-attributes = []
 count = 0
-no = 0
 fd = open(options.routes)
 fdo = open(options.output, "w")
 fdo.write("<routes>\n")

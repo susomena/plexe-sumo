@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ShapeContainer.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,6 +8,17 @@
 ///
 // Storage for geometrical objects, sorted by the layers they are in
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2005-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef ShapeContainer_h
 #define ShapeContainer_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/NamedObjectCont.h>
@@ -58,39 +65,31 @@ public:
      * @param[in] layer The layer of the polygon
      * @param[in] angle The rotation of the polygon
      * @param[in] imgFile The raster image of the polygon
-     * @param[in] relativePath set image file as relative path
      * @param[in] shape The shape of the polygon
-     * @param[in] geo specify if shape was loaded as GEO coordinate
      * @param[in] fill Whether the polygon shall be filled
-     * @param[in] lineWidth Line width when drawing unfilled polygon
      * @return whether the polygon could be added
      */
     virtual bool addPolygon(const std::string& id, const std::string& type,
                             const RGBColor& color, double layer,
                             double angle, const std::string& imgFile,
-                            bool relativePath, const PositionVector& shape, bool geo,
-                            bool fill, double lineWidth, bool ignorePruning = false);
+                            const PositionVector& shape, bool fill,
+                            bool ignorePruning = false);
 
     /** @brief Builds a POI using the given values and adds it to the container
      * @param[in] id The name of the POI
      * @param[in] type The (abstract) type of the POI
      * @param[in] color The color of the POI
-     * @param[in] pos The position of the POI
-     * @param[in[ geo use GEO coordinates (lon/lat)
-     * @param[in] lane The Lane in which this POI is placed
-     * @param[in] posOverLane The position over Lane
-     * @param[in] posLat The position lateral over Lane
      * @param[in] layer The layer of the POI
      * @param[in] angle The rotation of the POI
      * @param[in] imgFile The raster image of the POI
-     * @param[in] relativePath set image file as relative path
+     * @param[in] pos The position of the POI
      * @param[in] width The width of the POI image
      * @param[in] height The height of the POI image
      * @return whether the poi could be added
      */
-    virtual bool addPOI(const std::string& id, const std::string& type, const RGBColor& color, const Position& pos, bool geo,
-                        const std::string& lane, double posOverLane, double posLat, double layer, double angle,
-                        const std::string& imgFile, bool relativePath, double width, double height, bool ignorePruning = false);
+    virtual bool addPOI(const std::string& id, const std::string& type,
+                        const RGBColor& color, double layer, double angle, const std::string& imgFile,
+                        const Position& pos, double width, double height, bool ignorePruning = false);
 
     /** @brief Removes a polygon from the container
      * @param[in] id The id of the polygon

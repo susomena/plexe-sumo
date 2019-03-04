@@ -1,31 +1,16 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2016-2019 German Aerospace Center (DLR) and others.
-# SUMOPy module
-# Copyright (C) 2012-2017 University of Bologna - DICAM
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    ogleditor.py
-# @author  Joerg Schweizer
-# @date
-# @version $Id$
-
 #!/usr/bin/env python;
 """OpenGL editor"""
 if __name__ == '__main__':
     __version__ = "0.1a"
     __licence__ = """licensed under the GPL."""
-    __copyright__ = "(c) 2012-2016 University of Bologna - DICAM"
+    __copyright__ = "(c) 2012-2017 University of Bologna - DICAM"
     __author__ = "Joerg Schweizer"
 
     __usage__ = """USAGE:
     from command line:
     python ogleditor.py
     python ogleditor.py <scenariobasename> <scenariodir>
-
+    
     use for debugging
     python ogleditor.py --debug > debug.txt 2>&1
     """
@@ -125,14 +110,8 @@ LINEHEADS = {  # 'flat':0,# not a style
 # self._colorvbo.unbind()
 
 
-def normalize(v):
-    norm = np.linalg.norm(v)
-    if norm == 0:
-        return v
-    return v/norm
-
-
 class Vbo:
+
     def __init__(self, ident, glelement, n_vpe, objtype=''):
         self._ident = ident
         self._glelement = glelement
@@ -186,7 +165,8 @@ class Vbo:
         # print '  vertices=\n',vertices
         # print '  vertices.reshape((-1,3))=\n',vertices.reshape((-1,3))
         self._vertexvbo = vbo.VBO(vertices.reshape((-1, 3)))
-        self._indexvbo = vbo.VBO(np.arange(len(self._vertexvbo), dtype=np.int32), target=GL_ELEMENT_ARRAY_BUFFER)
+        self._indexvbo = vbo.VBO(np.arange(
+            len(self._vertexvbo), dtype=np.int32), target=GL_ELEMENT_ARRAY_BUFFER)
         #self._indexvbo = vbo.VBO(np.arange(len(vertices.reshape((-1,3)) ), dtype=np.int32), target=GL_ELEMENT_ARRAY_BUFFER)
 
     def destroy(self):
@@ -197,23 +177,25 @@ class Vbo:
 
     def update_colors(self, colors):
 
-        if self._vertexvbo is None:
+        if self._vertexvbo == None:
             return
         # print 'update_colors',self._n_drawobjs,len(colors)
         if len(colors) == 0:
             return
-        if self._n_drawobjs is None:
-            n_repreat = len(self._vertexvbo)/len(self._inds)  # self._n_drawobjs
-            self._colorvbo = vbo.VBO(np.repeat(colors[self._inds], n_repreat, 0))
+        if self._n_drawobjs == None:
+            n_repreat = len(self._vertexvbo) / \
+                len(self._inds)  # self._n_drawobjs
+            self._colorvbo = vbo.VBO(
+                np.repeat(colors[self._inds], n_repreat, 0))
         else:
-            n_repreat = len(self._vertexvbo)/self._n_drawobjs
+            n_repreat = len(self._vertexvbo) / self._n_drawobjs
             self._colorvbo = vbo.VBO(np.repeat(colors, n_repreat, 0))
 
     def draw(self, resolution):
 
         # glEnableClientState(GL_VERTEX_ARRAY)
         # glEnableClientState(GL_COLOR_ARRAY)
-        if self._vertexvbo is None:
+        if self._vertexvbo == None:
             return
         # print 'Vbo.draw',self.get_ident(),self._n_drawobjs,len(self._vertexvbo)
         # if self._n_drawobjs in (0,None): return
@@ -232,7 +214,8 @@ class Vbo:
         # print '  len(self._colorvbo)',len(self._colorvbo)
         #n_vpo = len(self._vertexvbo)/self._n_vpe/self._n_drawobjs+1
         #glDrawElements(self._glelement, self._n_vpo *(self._n_vpo-1)*self._n_drawobjs, GL_UNSIGNED_INT, None)
-        glDrawElements(self._glelement, len(self._vertexvbo), GL_UNSIGNED_INT, None)
+        glDrawElements(self._glelement, len(
+            self._vertexvbo), GL_UNSIGNED_INT, None)
 
         # glDisableClientState(GL_VERTEX_ARRAY)
         # glDisableClientState(GL_COLOR_ARRAY)
@@ -243,6 +226,7 @@ class Vbo:
 
 
 class SelectToolMixin(BaseTool):
+
     """
     Mixin for Selection tools for OGL canvas.
     """
@@ -283,7 +267,8 @@ class SelectToolMixin(BaseTool):
         if len(self) > 0:
             # ungighlight selected objects
             is_draw = False
-            for drawobj, _id in self.drawobjects.value:  # drawing.get_drawobjs():
+            # drawing.get_drawobjs():
+            for drawobj, _id in self.drawobjects.value:
                 is_draw |= drawobj.unhighlight([_id], is_update=True)
             if is_draw:
                 self._canvas.draw()
@@ -323,11 +308,10 @@ class SelectToolMixin(BaseTool):
 
             if not event.ShiftDown():
                 if self.is_preselected():
-                    self.coord_last = self._canvas.unproject(event.GetPosition())
+                    self.coord_last = self._canvas.unproject(
+                        event.GetPosition())
                     # print '  on_execute_selection 2'
                     is_draw |= self.on_execute_selection(event)
-                    # attention: on_execute_selection must take care of selected
-                    # objects in list with self.unselect_all()
 
             else:
                 self.coord_last = self._canvas.unproject(event.GetPosition())
@@ -348,7 +332,6 @@ class SelectToolMixin(BaseTool):
         Definively execute operation on currently selected drawobjects.
         """
         self.set_objbrowser()
-
         return False
 
     def on_change_selection(self, event):
@@ -376,7 +359,7 @@ class SelectToolMixin(BaseTool):
 
     def is_tool_allowed_on_selection(self):
         drawobj, _id = self.get_current_selection()
-        if drawobj is not None:
+        if drawobj != None:
             return drawobj.is_tool_allowed(self, _id)
         else:
             False
@@ -392,9 +375,10 @@ class SelectToolMixin(BaseTool):
         if self.detectpix > 0:
             # detect pixel sensitivity is given
             # calculate detectwidth based on current resolution
-            self.detectwidth = self._canvas.get_resolution()*self.detectpix
+            self.detectwidth = self._canvas.get_resolution() * self.detectpix
 
-        # print 'pick_all',self.detectwidth,self.detectpix,self._canvas.get_resolution()
+        # print
+        # 'pick_all',self.detectwidth,self.detectpix,self._canvas.get_resolution()
 
         self._idcounter = 0
         is_draw = False
@@ -440,7 +424,7 @@ class SelectToolMixin(BaseTool):
         # print '  len should be 0:',len(self),is_draw
         return is_draw
 
-    def add_selection(self, drawobj, id_pick, event=None):
+    def add_selection(self, drawobj, id_pick, event):
         is_draw = False
         drawobjid = self.drawobjects.convert_type((drawobj, id_pick))
         ids_match = self.select_ids(self.drawobjects.value == drawobjid)
@@ -451,6 +435,7 @@ class SelectToolMixin(BaseTool):
 
 
 class AddLineTool(BaseTool):
+
     """
     Mixin for Selection tools for OGL canvas.
     """
@@ -491,12 +476,14 @@ class AddLineTool(BaseTool):
 
     def set_button_info(self, bsize=(32, 32)):
         # print 'set_button_info select tool'
-        self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'line_24px.png'), wx.BITMAP_TYPE_PNG)
-        self._bitmap_sel = wx.Bitmap(os.path.join(IMAGEDIR, 'line_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'line_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap_sel = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'line_24px.png'), wx.BITMAP_TYPE_PNG)
 
     def set_cursor(self):
         # http://www.wxpython.org/docs/api/wx.Cursor-class.html
-        if self._canvas is not None:
+        if self._canvas != None:
             self._canvas.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
 
     def activate(self, canvas=None):
@@ -541,9 +528,11 @@ class AddLineTool(BaseTool):
     def begin_animation(self, event):
         # print 'AddLineTool'
         #self.drawobj_anim, _id, self.ind_vert =  self.get_current_vertexselection()
-        self.drawobj_anim = self._canvas.get_drawing().get_drawobj_by_ident('fancylines')
+        self.drawobj_anim = self._canvas.get_drawing().get_drawobj_by_ident(
+            'fancylines')
         self.coord_last = self._canvas.unproject(event.GetPosition())
-        vert = np.concatenate((self.coord_last, self.coord_last), 1).reshape((2, 3))
+        vert = np.concatenate(
+            (self.coord_last, self.coord_last), 1).reshape((2, 3))
         # print '  vert ',vert#,self.width.get_value(),self.color.get_value(),
         _id = self.drawobj_anim.add_drawobj(vert,
                                             self.width.get_value(),  # width
@@ -576,9 +565,10 @@ class AddLineTool(BaseTool):
         # print 'animate'
         is_draw = False
         coords = self._canvas.unproject(event.GetPosition())
-        vertex_delta = coords-self.coord_last
+        vertex_delta = coords - self.coord_last
         if np.any(np.abs(vertex_delta) > 0):
-            is_draw = self.drawobj_anim.stretch_animation(coords, vertex_delta, self.ind_vert)
+            is_draw = self.drawobj_anim.stretch_animation(
+                coords, vertex_delta, self.ind_vert)
             if is_draw:
                 self.coord_last = coords
         return is_draw
@@ -616,7 +606,8 @@ class AddLineTool(BaseTool):
                                           mainframe=self.parent.get_mainframe(),
                                           pos=wx.DefaultPosition, size=size, style=wx.MAXIMIZE_BOX | wx.RESIZE_BORDER,
                                           func_apply=self.on_apply_option,
-                                          immediate_apply=False, panelstyle='default',  # 'instrumental'
+                                          # 'instrumental'
+                                          immediate_apply=False, panelstyle='default',
                                           standartbuttons=['apply', 'restore'])
         else:
 
@@ -631,7 +622,8 @@ class AddLineTool(BaseTool):
                                           mainframe=self.parent.get_mainframe(),
                                           pos=wx.DefaultPosition, size=size, style=wx.MAXIMIZE_BOX | wx.RESIZE_BORDER,
                                           func_apply=self.on_apply_option,
-                                          immediate_apply=False, panelstyle='default',  # 'instrumental'
+                                          # 'instrumental'
+                                          immediate_apply=False, panelstyle='default',
                                           standartbuttons=['apply', 'restore'])
 
         return self._optionspanel
@@ -647,6 +639,7 @@ class AddLineTool(BaseTool):
 
 
 class AddCircleTool(AddLineTool):
+
     """
     Mixin for Selection tools for OGL canvas.
     """
@@ -680,18 +673,21 @@ class AddCircleTool(AddLineTool):
 
     def set_button_info(self, bsize=(32, 32)):
         # print 'set_button_info select tool'
-        self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'circle_empty_24px.png'), wx.BITMAP_TYPE_PNG)
-        self._bitmap_sel = wx.Bitmap(os.path.join(IMAGEDIR, 'circle_empty_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'circle_empty_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap_sel = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'circle_empty_24px.png'), wx.BITMAP_TYPE_PNG)
 
     def begin_animation(self, event):
         # print 'AddLineTool'
         #self.drawobj_anim, _id, self.ind_vert =  self.get_current_vertexselection()
-        self.drawobj_anim = self._canvas.get_drawing().get_drawobj_by_ident('circles')
+        self.drawobj_anim = self._canvas.get_drawing().get_drawobj_by_ident(
+            'circles')
         self.coord_last = self._canvas.unproject(event.GetPosition())
         #vert = np.concatenate((self.coord_last,self.coord_last),1).reshape((2,3))
         # print '  vert ',vert#,self.width.get_value(),self.color.get_value(),
 
-        _id = self.drawobj_anim.add_drawobj(1.0*self.coord_last,
+        _id = self.drawobj_anim.add_drawobj(1.0 * self.coord_last,
                                             0.0,
                                             self.color.get_value(),
                                             self.color_fill.get_value(),
@@ -721,15 +717,17 @@ class AddCircleTool(AddLineTool):
         # print 'animate'
         is_draw = False
         coords = self._canvas.unproject(event.GetPosition())
-        vertex_delta = coords-self.coord_last
+        vertex_delta = coords - self.coord_last
         if np.any(np.abs(vertex_delta) > 0):
-            is_draw = self.drawobj_anim.stretch_animation(coords, vertex_delta, 1)
+            is_draw = self.drawobj_anim.stretch_animation(
+                coords, vertex_delta, 1)
             if is_draw:
                 self.coord_last = coords
         return is_draw
 
 
 class AddPolylineTool(AddLineTool):
+
     """
     Mixin for Selection tools for OGL canvas.
     """
@@ -743,8 +741,10 @@ class AddPolylineTool(AddLineTool):
 
     def set_button_info(self, bsize=(32, 32)):
         # print 'set_button_info select tool'
-        self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'polyline_24px.png'), wx.BITMAP_TYPE_PNG)
-        self._bitmap_sel = wx.Bitmap(os.path.join(IMAGEDIR, 'polyline_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'polyline_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap_sel = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'polyline_24px.png'), wx.BITMAP_TYPE_PNG)
 
     def on_left_down(self, event):
         if not self.is_animated:
@@ -756,11 +756,14 @@ class AddPolylineTool(AddLineTool):
     def begin_animation(self, event):
         # print 'AddLineTool.begin_animation'
         #self.drawobj_anim, _id, self.ind_vert =  self.get_current_vertexselection()
-        self.drawobj_anim = self._canvas.get_drawing().get_drawobj_by_ident('polylines')
+        self.drawobj_anim = self._canvas.get_drawing().get_drawobj_by_ident(
+            'polylines')
         self.coord_last = self._canvas.unproject(event.GetPosition())
         #vertices = [list(self.coord_last),list(self.coord_last) ]
-        vertices = [1.0*self.coord_last, 1.0*self.coord_last]  # attention, we need copies here!!
-        # print '  vertices ',vertices#,self.width.get_value(),self.color.get_value(),
+        # attention, we need copies here!!
+        vertices = [1.0 * self.coord_last, 1.0 * self.coord_last]
+        # print '  vertices
+        # ',vertices#,self.width.get_value(),self.color.get_value(),
 
         _id = self.drawobj_anim.add_drawobj(vertices,
                                             self.width.get_value(),  # width
@@ -792,12 +795,14 @@ class AddPolylineTool(AddLineTool):
     def append_vert_to_anim(self, event):
         self.coord_last = self._canvas.unproject(event.GetPosition())
 
-        self.ind_vert = self.drawobj_anim.append_vert_to_animation(self.coord_last)
+        self.ind_vert = self.drawobj_anim.append_vert_to_animation(
+            self.coord_last)
 
         return True
 
 
 class AddPolygonTool(AddPolylineTool):
+
     """
     Mixin for Selection tools for OGL canvas.
     """
@@ -830,17 +835,22 @@ class AddPolygonTool(AddPolylineTool):
 
     def set_button_info(self, bsize=(32, 32)):
         # print 'set_button_info select tool'
-        self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'polygon2_24px.png'), wx.BITMAP_TYPE_PNG)
-        self._bitmap_sel = wx.Bitmap(os.path.join(IMAGEDIR, 'polygon2_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'polygon2_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap_sel = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'polygon2_24px.png'), wx.BITMAP_TYPE_PNG)
 
     def begin_animation(self, event):
         # print 'AddLineTool.begin_animation'
         #self.drawobj_anim, _id, self.ind_vert =  self.get_current_vertexselection()
-        self.drawobj_anim = self._canvas.get_drawing().get_drawobj_by_ident('polygons')
+        self.drawobj_anim = self._canvas.get_drawing().get_drawobj_by_ident(
+            'polygons')
         self.coord_last = self._canvas.unproject(event.GetPosition())
         #vertices = [list(self.coord_last),list(self.coord_last) ]
-        vertices = [1.0*self.coord_last, 1.0*self.coord_last, ]  # attention, we need copies here!!
-        # print '  vertices ',vertices#,self.width.get_value(),self.color.get_value(),
+        # attention, we need copies here!!
+        vertices = [1.0 * self.coord_last, 1.0 * self.coord_last, ]
+        # print '  vertices
+        # ',vertices#,self.width.get_value(),self.color.get_value(),
 
         _id = self.drawobj_anim.add_drawobj(vertices,
                                             color=self.color.get_value(),
@@ -857,6 +867,7 @@ class AddPolygonTool(AddPolylineTool):
 
 
 class SelectTool(SelectToolMixin):
+
     """
     Selection tool for OGL canvas.
     """
@@ -869,14 +880,17 @@ class SelectTool(SelectToolMixin):
                          info='Select objects in cancvas',
                          is_textbutton=False,
                          )
-        self._init_select(is_show_selected=True, detectwidth=detectwidth, detectpix=detectpix)
+        self._init_select(is_show_selected=True,
+                          detectwidth=detectwidth, detectpix=detectpix)
 
     def set_button_info(self, bsize=(32, 32)):
         # print 'set_button_info select tool'  Select_32px
 
         # wx.ART_INFORMATION
-        self._bitmap = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_TOOLBAR)
-        self._bitmap_sel = wx.ArtProvider.GetBitmap(wx.ART_INFORMATION, wx.ART_TOOLBAR)
+        self._bitmap = wx.ArtProvider.GetBitmap(
+            wx.ART_INFORMATION, wx.ART_TOOLBAR)
+        self._bitmap_sel = wx.ArtProvider.GetBitmap(
+            wx.ART_INFORMATION, wx.ART_TOOLBAR)
 
         #self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR,'Cursor-Click-icon_24px.png'),wx.BITMAP_TYPE_PNG)
         # self._bitmap_sel=wx.Bitmap(os.path.join(IMAGEDIR,'Cursor-Click-icon_24px.png'),wx.BITMAP_TYPE_PNG)
@@ -886,7 +900,7 @@ class SelectTool(SelectToolMixin):
 
     def set_cursor(self):
         # http://www.wxpython.org/docs/api/wx.Cursor-class.html
-        if self._canvas is not None:
+        if self._canvas != None:
             self._canvas.SetCursor(wx.StockCursor(wx.CURSOR_QUESTION_ARROW))
 
     def deactivate(self):
@@ -914,6 +928,7 @@ class SelectTool(SelectToolMixin):
 
 
 class ConfigureTool(SelectToolMixin):
+
     """
     Selection tool for OGL canvas.
     """
@@ -927,7 +942,8 @@ class ConfigureTool(SelectToolMixin):
                          is_textbutton=False,
                          )
 
-        self._init_select(is_show_selected=False, detectwidth=detectwidth, detectpix=detectpix)
+        self._init_select(is_show_selected=False,
+                          detectwidth=detectwidth, detectpix=detectpix)
 
         # self.drawing =
         #attrsman.add(   cm.ObjConf( Nodes(self) ) )
@@ -940,12 +956,14 @@ class ConfigureTool(SelectToolMixin):
 
     def set_button_info(self, bsize=(32, 32)):
         # print 'set_button_info select tool'
-        self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'gtk_configure_24px.png'), wx.BITMAP_TYPE_PNG)
-        self._bitmap_sel = wx.Bitmap(os.path.join(IMAGEDIR, 'gtk_configure_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'gtk_configure_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap_sel = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'gtk_configure_24px.png'), wx.BITMAP_TYPE_PNG)
 
     def set_cursor(self):
         # http://www.wxpython.org/docs/api/wx.Cursor-class.html
-        if self._canvas is not None:
+        if self._canvas != None:
             self._canvas.SetCursor(wx.StockCursor(wx.CURSOR_QUESTION_ARROW))
 
     def deactivate(self):
@@ -979,7 +997,7 @@ class ConfigureTool(SelectToolMixin):
         Return tool option widgets on given parent
         """
         drawobj, _id = self.get_current_selection()
-        if drawobj is None:
+        if drawobj == None:
             # no current selection-> show options of whole drawing
             size = (200, -1)
             self._optionspanel = NaviPanel(parent, obj=self._canvas.get_drawing(),
@@ -990,7 +1008,8 @@ class ConfigureTool(SelectToolMixin):
                                            mainframe=self.parent.get_mainframe(),
                                            #pos=wx.DefaultPosition, size=size, style = wx.MAXIMIZE_BOX|wx.RESIZE_BORDER,
                                            func_apply=self.on_apply_option,
-                                           immediate_apply=False, panelstyle='default',  # 'instrumental'
+                                           # 'instrumental'
+                                           immediate_apply=False, panelstyle='default',
                                            standartbuttons=['apply', 'restore'])
         else:
             # show option of currently selected drawobj
@@ -1006,7 +1025,8 @@ class ConfigureTool(SelectToolMixin):
                                           mainframe=self.parent.get_mainframe(),
                                           pos=wx.DefaultPosition, size=size, style=wx.MAXIMIZE_BOX | wx.RESIZE_BORDER,
                                           func_apply=self.on_apply_option,
-                                          immediate_apply=False, panelstyle='default',  # 'instrumental'
+                                          # 'instrumental'
+                                          immediate_apply=False, panelstyle='default',
                                           standartbuttons=['apply', 'restore'])
 
         return self._optionspanel
@@ -1024,6 +1044,7 @@ class ConfigureTool(SelectToolMixin):
 
 
 class HandleTool(SelectTool):
+
     """
     General  tool to help select handles.
     """
@@ -1041,9 +1062,11 @@ class HandleTool(SelectTool):
 
     def _init_select(self, is_show_selected=True, detectwidth=0.1,  detectpix=5):
 
-        SelectTool._init_select(self, is_show_selected, detectwidth=detectwidth, detectpix=detectpix)
+        SelectTool._init_select(self, is_show_selected,
+                                detectwidth=detectwidth, detectpix=detectpix)
         self.add_col(am.ArrayConf('inds_vertex', -1,
-                                  groupnames=['options'],  # ['_private_'], #'options',
+                                  # ['_private_'], #'options',
+                                  groupnames=['options'],
                                   name='Vertex index',
                                   info='Vertex index.',
                                   ))
@@ -1052,15 +1075,17 @@ class HandleTool(SelectTool):
         # print 'set_button_info select tool'  Select_32px
 
         # wx.ART_INFORMATION
-        self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'Cursor-Click-icon_24px.png'), wx.BITMAP_TYPE_PNG)
-        self._bitmap_sel = wx.Bitmap(os.path.join(IMAGEDIR, 'Cursor-Click-icon_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'Cursor-Click-icon_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap_sel = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'Cursor-Click-icon_24px.png'), wx.BITMAP_TYPE_PNG)
 
         #self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR,'selectIcon.bmp'),wx.BITMAP_TYPE_BMP)
         # self._bitmap_sel=wx.Bitmap(os.path.join(IMAGEDIR,'selectIconSel.bmp'),wx.BITMAP_TYPE_BMP)
 
     def set_cursor(self):
         # http://www.wxpython.org/docs/api/wx.Cursor-class.html
-        if self._canvas is not None:
+        if self._canvas != None:
             self._canvas.SetCursor(wx.StockCursor(wx.CURSOR_RIGHT_ARROW))
 
     def get_current_vertexselection(self):
@@ -1083,7 +1108,7 @@ class HandleTool(SelectTool):
         if self.detectpix > 0:
             # detect pixel sensitivity is given
             # calculate detectwidth based on current resolution
-            self.detectwidth = self._canvas.get_resolution()*self.detectpix
+            self.detectwidth = self._canvas.get_resolution() * self.detectpix
 
         self._idcounter = 0
         is_draw = False
@@ -1097,7 +1122,8 @@ class HandleTool(SelectTool):
                 if len(handles) > 0:
                     # print '  handles',drawobj.get_ident(),handles
                     for id_handle, ind_vertex in handles:
-                        is_draw |= self.add_selection(drawobj, id_handle, ind_vertex, event)
+                        is_draw |= self.add_selection(
+                            drawobj, id_handle, ind_vertex, event)
                         #is_draw |= self.select(drawobj,id_pick, event)
                         # break
         return is_draw
@@ -1107,12 +1133,14 @@ class HandleTool(SelectTool):
         drawobjid = self.drawobjects.convert_type((drawobj, id_handle))
         ids_match = self.select_ids(self.drawobjects.value == drawobjid)
         if len(ids_match) == 0:
-            self.add_rows(1, drawobjects=[(drawobj, id_handle)], inds_vertex=[ind_vertex])
+            self.add_rows(1, drawobjects=[
+                          (drawobj, id_handle)], inds_vertex=[ind_vertex])
             is_draw = True
         return is_draw
 
 
 class DeleteTool(SelectTool):
+
     """
     Delete tool for OGL canvas.
     """
@@ -1125,15 +1153,17 @@ class DeleteTool(SelectTool):
                          info='Select and delete objects in canvas.',
                          is_textbutton=False,
                          )
-        self._init_select(is_show_selected=True, detectwidth=detectwidth, detectpix=detectpix)
+        self._init_select(is_show_selected=True,
+                          detectwidth=detectwidth, detectpix=detectpix)
 
     def set_button_info(self, bsize=(32, 32)):
         self._bitmap = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR)
-        self._bitmap_sel = wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_TOOLBAR)
+        self._bitmap_sel = wx.ArtProvider.GetBitmap(
+            wx.ART_DELETE, wx.ART_TOOLBAR)
 
     def set_cursor(self):
         # http://www.wxpython.org/docs/api/wx.Cursor-class.html
-        if self._canvas is not None:
+        if self._canvas != None:
             # self._canvas.SetCursor(wx.StockCursor(wx.CURSOR_RIGHT_ARROW))
             pass
 
@@ -1144,7 +1174,7 @@ class DeleteTool(SelectTool):
         if self.is_tool_allowed_on_selection():
             drawobj, _id = self.get_current_selection()
 
-            if drawobj is not None:
+            if drawobj != None:
                 drawobj.del_drawobj(_id)
                 self.unselect_all()
                 is_draw = True
@@ -1163,6 +1193,7 @@ class DeleteTool(SelectTool):
 
 
 class MoveTool(SelectTool):
+
     """
     Move tool for OGL canvas.
     """
@@ -1177,11 +1208,14 @@ class MoveTool(SelectTool):
                          info='Select and drag objects in cancvas.',
                          is_textbutton=False,
                          )
-        self._init_select(is_show_selected=True, detectwidth=detectwidth, detectpix=detectpix)
+        self._init_select(is_show_selected=True,
+                          detectwidth=detectwidth, detectpix=detectpix)
 
     def set_button_info(self, bsize=(32, 32)):
-        self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'arrow_cursor_drag_24px.png'), wx.BITMAP_TYPE_PNG)
-        self._bitmap_sel = wx.Bitmap(os.path.join(IMAGEDIR, 'arrow_cursor_drag_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'arrow_cursor_drag_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap_sel = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'arrow_cursor_drag_24px.png'), wx.BITMAP_TYPE_PNG)
 
     def activate(self, canvas=None):
         """
@@ -1194,7 +1228,7 @@ class MoveTool(SelectTool):
 
     def set_cursor(self):
         # http://www.wxpython.org/docs/api/wx.Cursor-class.html
-        if self._canvas is not None:
+        if self._canvas != None:
             self._canvas.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
 
     def deactivate(self):
@@ -1272,7 +1306,7 @@ class MoveTool(SelectTool):
     def animate(self, event):
         is_draw = False
         coords = self._canvas.unproject(event.GetPosition())
-        vertex_delta = coords-self.coord_last
+        vertex_delta = coords - self.coord_last
         if np.any(np.abs(vertex_delta) > 0):
             is_draw = self.drawobj_anim.move_animation(coords, vertex_delta)
             if is_draw:
@@ -1294,6 +1328,7 @@ class MoveTool(SelectTool):
 
 
 class StretchTool(HandleTool):
+
     """
     Stretch tool for OGL canvas.
     """
@@ -1309,20 +1344,23 @@ class StretchTool(HandleTool):
                          is_textbutton=False,
                          )
 
-        self._init_select(is_show_selected=True, detectwidth=detectwidth, detectpix=detectpix)
+        self._init_select(is_show_selected=True,
+                          detectwidth=detectwidth, detectpix=detectpix)
 
     def set_button_info(self, bsize=(32, 32)):
         # print 'set_button_info select tool'  Select_32px
 
-        self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'move_vertex_24px.png'), wx.BITMAP_TYPE_PNG)
-        self._bitmap_sel = wx.Bitmap(os.path.join(IMAGEDIR, 'move_vertex_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'move_vertex_24px.png'), wx.BITMAP_TYPE_PNG)
+        self._bitmap_sel = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'move_vertex_24px.png'), wx.BITMAP_TYPE_PNG)
 
         # self._bitmap = wx.Bitmap(os.path.join(IMAGEDIR,'Cursor-Click-icon_24px.png'),wx.BITMAP_TYPE_PNG)
         # self._bitmap_sel=wx.Bitmap(os.path.join(IMAGEDIR,'Cursor-Click-icon_24px.png'),wx.BITMAP_TYPE_PNG)
 
     def set_cursor(self):
         # http://www.wxpython.org/docs/api/wx.Cursor-class.html
-        if self._canvas is not None:
+        if self._canvas != None:
             self._canvas.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
 
     def activate(self, canvas=None):
@@ -1413,9 +1451,10 @@ class StretchTool(HandleTool):
         # print 'animate'
         is_draw = False
         coords = self._canvas.unproject(event.GetPosition())
-        vertex_delta = coords-self.coord_last
+        vertex_delta = coords - self.coord_last
         if np.any(np.abs(vertex_delta) > 0):
-            is_draw = self.drawobj_anim.stretch_animation(coords, vertex_delta, self.ind_vert)
+            is_draw = self.drawobj_anim.stretch_animation(
+                coords, vertex_delta, self.ind_vert)
             if is_draw:
                 self.coord_last = coords
         return is_draw
@@ -1435,6 +1474,7 @@ class StretchTool(HandleTool):
 
 
 class DrawobjMixin(am.ArrayObjman):
+
     def init_common(self, ident, parent=None, name=None,
                     linewidth=1,
                     is_parentobj=False,
@@ -1563,7 +1603,8 @@ class DrawobjMixin(am.ArrayObjman):
                              info='Line width in pixel',
                              ))
 
-        # print 'init_common',self.format_ident(),self._is_fill.value,self._is_outline.value
+        # print
+        # 'init_common',self.format_ident(),self._is_fill.value,self._is_outline.value
 
         self.add(cm.AttrConf('c_highl', c_highl,
                              groupnames=['_private'],
@@ -1594,8 +1635,9 @@ class DrawobjMixin(am.ArrayObjman):
         if is_parentobj:
             self.add_col(am.IdsArrayConf('ids_parent', parent,
                                          is_save=True,
-                                         name=parent.format_ident()+'[ID]',
-                                         info='ID of '+parent.get_name()+' object.',
+                                         name=parent.format_ident() + '[ID]',
+                                         info='ID of ' +
+                                         parent.get_name() + ' object.',
                                          ))
 
     def get_vertices_array(self):
@@ -1619,7 +1661,7 @@ class DrawobjMixin(am.ArrayObjman):
         return True
 
     def is_outline(self):
-        return self._is_outline.get_value()
+        return self.is_outline.get_value()
 
     def is_fill(self):
         return self._is_fill.get_value()
@@ -1642,7 +1684,8 @@ class DrawobjMixin(am.ArrayObjman):
         # print '  self.vertices.value',self.vertices.value
         # print '  ids',self.get_ids()
         self._id_target = id_target
-        self._drawobj_anim = self.parent.get_drawobj_by_ident(self._ident_drawobj_anim)
+        self._drawobj_anim = self.parent.get_drawobj_by_ident(
+            self._ident_drawobj_anim)
         self.id_anim = self._drawobj_anim.add_drawobj(np.array(self.vertices[id_target]),
                                                       self.color_anim.value,
                                                       )
@@ -1652,7 +1695,8 @@ class DrawobjMixin(am.ArrayObjman):
     def end_animation(self, is_del_last_vert=False):
         # print 'end_animation',self.ident,self._id_target
         # print '  verices =',self._drawobj_anim.vertices[self.id_anim]
-        self.set_vertices(self._id_target, self._drawobj_anim.get_vertices(self.id_anim))  # .copy()
+        self.set_vertices(self._id_target, self._drawobj_anim.get_vertices(
+            self.id_anim))  # .copy()
         self.del_animation()
         # self._drawobj_anim.del_drawobj(self.id_anim)
         self._update_vertexvbo()
@@ -1709,7 +1753,8 @@ class DrawobjMixin(am.ArrayObjman):
         # print 'set_anim',self.ident,_id,drawobjelem_anim
         (drawobj_anim, id_anim) = drawobjelem_anim
         # print '    self.vertices[_id]=',self.vertices[_id]
-        # print '    drawobj_anim.vertices[id_anim]=',drawobj_anim.vertices[id_anim]
+        # print '
+        # drawobj_anim.vertices[id_anim]=',drawobj_anim.vertices[id_anim]
         self.vertices[_id] = drawobj_anim.vertices[id_anim]  # .copy()
         drawobj_anim.del_drawobj(id_anim)
         self._update_vertexvbo()
@@ -1747,11 +1792,11 @@ class DrawobjMixin(am.ArrayObjman):
         return self._n_vert
 
     def _get_colors_highl(self, colors):
-        return np.clip(colors+self.c_highl.value*np.ones(colors.shape, dtype=np.float32), 0, 1)-colors
+        return np.clip(colors + self.c_highl.value * np.ones(colors.shape, float), 0, 1) - colors
 
     def set_colors(self, ids, colors, colors_highl=None, is_update=True):
         self.colors[ids] = colors
-        if colors_highl is None:
+        if colors_highl == None:
             self.colors_highl[ids] = self._get_colors_highl(colors)
         else:
             self.colors_highl[ids] = colors_highl
@@ -1767,13 +1812,17 @@ class DrawobjMixin(am.ArrayObjman):
         # print '_update_colorvbo fancyline'
 
         if self._is_outline.value:
-            colors = self.colors.value + self.are_highlighted.value.reshape(n, 1)*self.colors_highl.value
+            colors = self.colors.value + \
+                self.are_highlighted.value.reshape(
+                    n, 1) * self.colors_highl.value
             for _vbo in self.get_vbos():
                 if not _vbo.is_fill():
                     _vbo.update_colors(colors)
 
         if self._is_fill.value:
-            colors = self.colors_fill.value + self.are_highlighted.value.reshape(n, 1)*self.colors_fill_highl.value
+            colors = self.colors_fill.value + \
+                self.are_highlighted.value.reshape(
+                    n, 1) * self.colors_fill_highl.value
             for _vbo in self.get_vbos():
                 if _vbo.is_fill():
                     _vbo.update_colors(colors)
@@ -1791,7 +1840,8 @@ class DrawobjMixin(am.ArrayObjman):
             glEnableClientState(GL_VERTEX_ARRAY)
             glEnableClientState(GL_COLOR_ARRAY)
 
-            # print 'draw',self.format_ident(), self._is_fill.value, self._is_outline.value
+            # print 'draw',self.format_ident(), self._is_fill.value,
+            # self._is_outline.value
 
             for _vbo in self.get_vbos():
                 _vbo.draw(resolution)
@@ -1801,9 +1851,7 @@ class DrawobjMixin(am.ArrayObjman):
             glDisableClientState(GL_COLOR_ARRAY)
 
     def highlight(self, ids, is_update=True):
-        # print 'highlight=',ids
-        # print '  inds',self._inds
-        # print '  inds[ids]=',self._inds[ids]
+        # print 'highlight=',self._inds[ids]
         if len(ids) > 0:
             self.are_highlighted.value[self._inds[ids]] = True
             is_draw = True
@@ -1817,9 +1865,10 @@ class DrawobjMixin(am.ArrayObjman):
 
     def unhighlight(self, ids=None, is_update=True):
 
-        if ids is None:
+        if ids == None:
             if np.any(self.are_highlighted.value):
-                inds_highl = self._inds  # np.flatnonzero(self.are_highlighted.value)
+                # np.flatnonzero(self.are_highlighted.value)
+                inds_highl = self._inds
                 self.are_highlighted.value[:] = False
                 is_draw = True
             else:
@@ -1849,6 +1898,7 @@ class DrawobjMixin(am.ArrayObjman):
 
 
 class Lines(DrawobjMixin):
+
     def __init__(self, ident,  parent, name='Lines',
                  is_parentobj=False,
                  n_vert=2,  # 2 verts for line draw obj
@@ -1868,7 +1918,8 @@ class Lines(DrawobjMixin):
         # must be defined AFTER init_common
         self._ident_drawobj_anim = 'anim_lines'
 
-        self.add_vbo(Vbo('line', GL_LINES, 2, objtype='outline'))  # 2 verts for OGL line element
+        # 2 verts for OGL line element
+        self.add_vbo(Vbo('line', GL_LINES, 2, objtype='outline'))
 
         self.add_col(am.ArrayConf('vertices',  np.zeros((n_vert, 3), dtype=np.float32),
                                   dtype=np.float32,
@@ -1886,11 +1937,12 @@ class Lines(DrawobjMixin):
         vv = self.get_vertices_array()  # self.get_vertices.value
         # TODOD: can be done faster
         return np.array([[np.min(vv[:, :, 0]), np.min(vv[:, :, 1]), np.min(vv[:, :, 2])],
-                         [np.max(vv[:, :, 0]), np.max(vv[:, :, 1]), np.max(vv[:, :, 2])]
+                         [np.max(vv[:, :, 0]), np.max(
+                             vv[:, :, 1]), np.max(vv[:, :, 2])]
                          ], float)
 
     def add_drawobj(self, vertices, color, color_highl=None, is_update=True):
-        if color_highl is None:
+        if color_highl == None:
             colors_highl = self._get_colors_highl(np.array([color]))
 
         _id = self.add_row(vertices=vertices,
@@ -1903,7 +1955,7 @@ class Lines(DrawobjMixin):
         return _id
 
     def add_drawobjs(self, vertices, colors, colors_highl=None, is_update=True):
-        if colors_highl is None:
+        if colors_highl == None:
             colors_highl = self._get_colors_highl(colors)
 
         ids = self.add_rows(len(vertices),
@@ -1917,7 +1969,8 @@ class Lines(DrawobjMixin):
         return ids
 
     def _update_vertexvbo(self):
-        self.get_vbo('line').update_vertices(self.get_vertices_array().reshape((-1, 6)), len(self))
+        self.get_vbo('line').update_vertices(
+            self.get_vertices_array().reshape((-1, 6)), len(self))
 
     def _make_handlevbo(self, x, y, resolution):
         # print '_get_handlevbo'
@@ -1927,20 +1980,24 @@ class Lines(DrawobjMixin):
         dy = resolution * 5.0
         z = np.zeros(x.shape, dtype=np.float32)
         n = len(z)
-        hvertices = np.concatenate((x-dx, y-dy, z, x+dx, y-dy, z, x+dx, y+dy, z, x-dx, y+dy, z, ), 1).reshape(-1, 4, 3)
+        hvertices = np.concatenate((x - dx, y - dy, z, x + dx, y - dy, z,
+                                    x + dx, y + dy, z, x - dx, y + dy, z, ), 1).reshape(-1, 4, 3)
         # print '  hvertices =\n',hvertices
         self._vertexvbo_handles = vbo.VBO(hvertices.reshape((-1, 3)))
-        self._indexvbo_handles = vbo.VBO(np.arange(4*n, dtype=np.int32), target=GL_ELEMENT_ARRAY_BUFFER)
+        self._indexvbo_handles = vbo.VBO(
+            np.arange(4 * n, dtype=np.int32), target=GL_ELEMENT_ARRAY_BUFFER)
 
-        colors = np.repeat(np.array([[0.9, 0.8, 0.7, 0.5]], dtype=np.float32), n, 0)
-        self._colorvbo_handles = vbo.VBO(colors[np.array(np.arange(0, n, 1.0/4), int)])
+        colors = np.repeat(
+            np.array([[0.9, 0.8, 0.7, 0.5]], dtype=np.float32), n, 0)
+        self._colorvbo_handles = vbo.VBO(
+            colors[np.array(np.arange(0, n, 1.0 / 4), int)])
 
     def pick(self, p, detectwidth=0.1):
         """
-        Returns a binary vector which is True values for lines that have been selected
+        Returns a binary vector which is True values for lines that have been selected 
         by point p.
 
-        In particular, an element of this vector is True if the minimum distance
+        In particular, an element of this vector is True if the minimum distance 
         between the respective line to point p is less than detectwidth
         """
         # print 'pick',self.get_ident(),len(self)
@@ -1976,18 +2033,18 @@ class Lines(DrawobjMixin):
         handles = []
         # print '  vertices',vertices
         # print '  vertices.shape',vertices.shape
-        dx = vertices[:, 0, 0]-coord[0]
-        dy = vertices[:, 0, 1]-coord[1]
+        dx = vertices[:, 0, 0] - coord[0]
+        dy = vertices[:, 0, 1] - coord[1]
 
-        ids = self._ids[dx*dx+dy*dy < dw]
+        ids = self._ids[dx * dx + dy * dy < dw]
         handle1 = np.ones((len(ids), 2), np.int)
         handle1[:, 0] = ids
         handle1[:, 1] = 0
         # print '  ',d,handle1
 
-        dx = vertices[:, 1, 0]-coord[0]
-        dy = vertices[:, 1, 1]-coord[1]
-        ids = self._ids[dx*dx+dy*dy < dw]
+        dx = vertices[:, 1, 0] - coord[0]
+        dy = vertices[:, 1, 1] - coord[1]
+        ids = self._ids[dx * dx + dy * dy < dw]
         handle2 = np.ones((len(ids), 2), np.int)
         handle2[:, 0] = ids
         handle2[:, 1] = 1
@@ -2014,7 +2071,8 @@ class Lines(DrawobjMixin):
         self._indexvbo.bind()
         glVertexPointer(3, GL_FLOAT, 0, None)
 
-        glDrawElements(GL_LINES, self._n_vert*len(self), GL_UNSIGNED_INT, None)
+        glDrawElements(GL_LINES, self._n_vert *
+                       len(self), GL_UNSIGNED_INT, None)
 
         glDisableClientState(GL_VERTEX_ARRAY)
         glDisableClientState(GL_COLOR_ARRAY)
@@ -2030,7 +2088,8 @@ class Lines(DrawobjMixin):
 
             x2 = vertices[:, 1, 0]
             y2 = vertices[:, 1, 1]
-            self._make_handlevbo(x2.reshape(-1, 1), y2.reshape(-1, 1), resolution)
+            self._make_handlevbo(
+                x2.reshape(-1, 1), y2.reshape(-1, 1), resolution)
 
             glLineWidth(2)
             glEnableClientState(GL_VERTEX_ARRAY)
@@ -2044,7 +2103,7 @@ class Lines(DrawobjMixin):
             glVertexPointer(3, GL_FLOAT, 0, None)
 
             # GL_LINE_STRIP, GL_QUADS,  GL_LINES,  GL_LINE_LOOP,  GL_POINTS
-            glDrawElements(GL_QUADS, 4*len(self), GL_UNSIGNED_INT, None)
+            glDrawElements(GL_QUADS, 4 * len(self), GL_UNSIGNED_INT, None)
 
             glDisableClientState(GL_VERTEX_ARRAY)
             glDisableClientState(GL_COLOR_ARRAY)
@@ -2053,327 +2112,8 @@ class Lines(DrawobjMixin):
             self._colorvbo_handles.unbind()
 
 
-class Rectangles(Lines):
-    def __init__(self, ident,  parent, name='Rectangles',
-                 is_parentobj=False,
-                 is_fill=True,
-                 is_outline=True,  # currently only fill implemented
-                 c_highl=0.3,
-                 linewidth=3,
-                 **kwargs):
-
-        self.init_common(ident, parent=parent, name=name,
-                         linewidth=linewidth,  # for outline only
-                         is_parentobj=is_parentobj,
-                         is_fill=is_fill,
-                         is_outline=is_outline,
-                         n_vert=1,  # vertex points for ending
-                         c_highl=c_highl,
-                         **kwargs)
-
-        # ident of drawobject used for animations
-        # must be defined AFTER init_common
-        self._ident_drawobj_anim = 'anim_rectangles'
-
-        # if is_outline:
-        #    self.add_vbo(Vbo('outline',GL_LINES,2, noncyclic = 0))
-
-        if is_fill:
-            self.add_vbo(Vbo('rectangle_filled', GL_QUADS, 4, objtype='fill'))
-        if is_outline:
-            self.add_vbo(Vbo('rectangle_outline', GL_LINES, 2, objtype='outline'))
-
-        self.add_col(am.ArrayConf('offsets',  np.zeros(3, dtype=np.float32),
-                                  dtype=np.float32,
-                                  groupnames=['_private'],
-                                  perm='rw',
-                                  name='Offset',
-                                  unit='m',
-                                  is_save=True,
-                                  info='Offset of lower left corner',
-                                  ))
-
-        self.add_col(am.ArrayConf('widths',  0.5,
-                                  dtype=np.float32,
-                                  groupnames=['option'],
-                                  perm='rw',
-                                  name='Width',
-                                  unit='m',
-                                  is_save=True,
-                                  info='Rectangle width',
-                                  ))
-
-        self.add_col(am.ArrayConf('lengths',  0.5,
-                                  dtype=np.float32,
-                                  groupnames=['option'],
-                                  perm='rw',
-                                  name='length',
-                                  unit='m',
-                                  is_save=True,
-                                  info='Rectangle length',
-                                  ))
-
-        self.add_col(am.ArrayConf('rotangles_xy',  0.0,
-                                  dtype=np.float32,
-                                  groupnames=['option'],
-                                  perm='rw',
-                                  name='xy rot. angle',
-                                  is_save=True,
-                                  info='Counter clockwise rotation angle in xy plane',
-                                  ))
-
-    def add_drawobj(self, offset, width, length, rotangle_xy,
-                    color, color_fill=None,
-                    color_highl=None, color_fill_highl=None,
-                    is_update=True):
-        # print 'Fancylines.add_drawobj'
-        if color_highl is None:
-            color_highl = self._get_colors_highl(np.array([color]))[0]
-
-        if color_fill is None:
-            color_fill = color
-
-        if color_fill_highl is None:
-            color_fill_highl = self._get_colors_highl(np.array([color_fill]))[0]
-
-        # print '  ids',self.get_ids()
-        _id = self.add_row(offsets=offset,
-                           widths=width,
-                           lengths=length,
-                           rotangles_xy=rotangle_xy,
-                           colors=color,
-                           colors_highl=color_highl,
-                           colors_fill=color_fill,
-                           colors_fill_highl=color_fill_highl,
-                           )
-        if is_update:
-            self._update_vertexvbo()
-            self._update_colorvbo()
-        return _id
-
-    def add_drawobjs(self, offsets, widths, lengths, rotangles_xy,
-                     colors, colors_fill=None,
-                     colors_highl=None, colors_fill_highl=None,
-                     is_update=True):
-        # print 'add_drawobjs'
-        if colors_highl is None:
-            colors_highl = self._get_colors_highl(colors)
-
-        n = len(offsets)
-        if colors_fill_highl is None:
-            colors_fill_highl = self._get_colors_highl(colors_fill)
-        ids = self.add_rows(n,
-                            offsets=offsets,
-                            widths=widths,
-                            lengths=lengths,
-                            rotangles_xy=rotangles_xy,
-                            colors=colors,
-                            colors_highl=colors_highl,
-                            colors_fill=colors_fill,
-                            colors_fill_highl=colors_fill_highl,
-                            )
-        # self.print_attrs()
-        if is_update:
-            self._update_vertexvbo()
-            self._update_colorvbo()
-        return ids
-
-    def begin_animation(self, id_target):
-
-        self._id_target = id_target
-        self._drawobj_anim = self.parent.get_drawobj_by_ident(self._ident_drawobj_anim)
-        self.id_anim = self._drawobj_anim.add_drawobj(1.0*self.offsets[id_target],
-                                                      1.0*self.widths[id_target],
-                                                      1.0*self.lengths[id_target],
-                                                      1.0*self.rotangles_xy[id_target],
-                                                      color=self.color_anim.value,
-                                                      )
-        # print 'begin_animation',self.ident,_id,self._drawobj_anim
-        return True
-
-    def end_animation(self, is_del_last_vert=False):
-        # print 'end_animation',self.ident,self._id_target
-        # print '  verices =',self._drawobj_anim.vertices[self.id_anim]
-        self.set_offsets(self._id_target, self._drawobj_anim.get_offsets(self.id_anim))  # .copy()
-        self.del_animation()
-        # self._drawobj_anim.del_drawobj(self.id_anim)
-        self._update_vertexvbo()
-        self._update_colorvbo()
-        return True
-
-    def set_anim(self, _id, drawobjelem_anim):
-        # print 'set_anim',self.ident,_id,drawobjelem_anim
-        (drawobj_anim, id_anim) = drawobjelem_anim
-        # print '    self.vertices[_id]=',self.vertices[_id]
-        # print '    drawobj_anim.vertices[id_anim]=',drawobj_anim.vertices[id_anim]
-        self.vertices[_id] = drawobj_anim.vertices[id_anim]  # .copy()
-        drawobj_anim.del_drawobj(id_anim)
-        self._update_vertexvbo()
-        return True
-
-    def move(self, _id, vertex, vertex_delta):
-        # print 'move',self.ident,_id, vertex_delta
-        self.offsets[_id] += vertex_delta
-        # print '    vertices[id_anim]=',self.vertices[_id]
-        self._update_vertexvbo()
-        return True
-
-    def stretch(self, _id, vertex, vertex_delta, ind_vertex):
-        # print 'stretch',self.ident,_id,ind_vertex
-        # print '    vertex_delta',vertex_delta
-        # print '    before vertices[_id]=',self.vertices[_id]
-        #self.vertices[_id][ind_vertex] += vertex_delta
-        # print '    after vertices[_id]=',self.vertices[_id]
-        self._update_vertexvbo()
-        return True
-
-    def get_offsets_array(self):
-        return self.offsets.value
-
-    def get_offsets(self, ids):
-        return self.offsets[ids]
-
-    def set_offsets(self, ids, values):
-        self.offsets[ids] = values
-
-    def get_widths_array(self):
-        return self.widths.value
-
-    def get_widths(self, ids):
-        return self.widths[ids]
-
-    def set_widths(self, ids, values):
-        self.widths[ids] = values
-
-    def get_lengths_array(self):
-        return self.lengths.value
-
-    def get_lengths(self, ids):
-        return self.lengths[ids]
-
-    def set_lengths(self, ids, values):
-        self.lengths[ids] = values
-
-    def get_rotangles_xy_array(self):
-        return self.rotangles_xy.value
-
-    def get_rotangles_xy(self, ids):
-        return self.rotangles_xy[ids]
-
-    def set_rotangles_xy(self, ids, values):
-        self.rotangles_xy[ids] = values
-
-    def _update_vertexvbo(self):
-        # print '_update_vertexvbo',self.format_ident()
-        self._make_lines()
-        n = len(self)
-        if self.is_fill():
-            self.get_vbo('rectangle_filled').update_vertices(self._vertices, n)
-        if self.is_outline():
-            self.get_vbo('rectangle_outline').update_vertices(self._linevertices, n)
-
-    def _make_lines(self):
-        # print '_make_lines'
-
-        vertices = self.get_vertices_array()
-
-        n = len(self)
-        n_lpe = 4  # lines per element (here 4 lines for a rectangle)
-        n_lines_tot = n*n_lpe
-
-        linevertices = np.zeros((n, 2*n_lpe, 3), np.float32)
-
-        # fix first and last point of each rectangle
-        linevertices[:, 0, :] = vertices[:, 0, :]
-        linevertices[:, -1, :] = vertices[:, 0, :]
-        # do rest of the vertices by doubling orginal
-        linevertices[:, 1:-1, :] = np.repeat(vertices[:, 1:, :], 2, 1)
-        # print '  linevertices\n',linevertices
-
-        #vertexinds = np.zeros((n_lines_tot,2),np.int32)
-        inds = self.get_inds()
-        vertexinds = np.repeat(inds, 2*n_lpe).reshape((n_lines_tot, 2))
-        # print '  vertexinds\n',vertexinds
-        #rectinds = np.zeros(n_lines_tot,np.int32)
-        rectinds = np.repeat(inds, n_lpe)
-
-        self._vertices = vertices
-        self._linevertices = linevertices.reshape((2*n_lines_tot, 3))
-        # print '  self._linevertices',self._linevertices
-        self._rectinds = rectinds
-        self._vertexinds = vertexinds
-
-    def get_vertices_array(self):
-        # print 'Rectangles.get_vertices_array'
-        n = len(self)
-        offsets = self.get_offsets_array()
-        widths = self.get_widths_array()
-        lengths = self.get_lengths_array()
-        alphas = self.get_rotangles_xy_array()
-        # print 'widths',widths
-        # print 'lengths',lengths
-        # print '  alphas',alphas
-        sin_alphas = np.sin(alphas)
-        cos_alphas = np.cos(alphas)
-
-        zeros = np.zeros(n, np.float32)
-        vertices = np.zeros((n, 4, 3), np.float32)
-
-        vertices[:, 0, :] = offsets
-        vertices[:, 1, :] = offsets
-        vertices_rot = rotate_vertices(widths, zeros,
-                                       sin_alphas=sin_alphas,
-                                       cos_alphas=cos_alphas,
-                                       is_array=True,
-                                       )
-
-        # print ' vertices_rot = ',vertices_rot.shape,vertices_rot,
-        vertices[:, 1, :2] += rotate_vertices(widths, zeros,
-                                              sin_alphas=sin_alphas,
-                                              cos_alphas=cos_alphas,
-                                              is_array=True,
-                                              )
-
-        vertices[:, 2, :] = offsets
-        vertices[:, 2, :2] += rotate_vertices(widths, lengths,
-                                              sin_alphas=sin_alphas,
-                                              cos_alphas=cos_alphas,
-                                              is_array=True,
-                                              )
-
-        vertices[:, 3, :] = offsets
-        vertices[:, 3, :2] += rotate_vertices(zeros, lengths,
-                                              sin_alphas=sin_alphas,
-                                              cos_alphas=cos_alphas,
-                                              is_array=True,
-                                              )
-
-        return vertices
-
-    def pick(self, p, detectwidth=0.1):
-        """
-        Returns a binary vector which is True values for lines that have been selected
-        by point p.
-
-        """
-        # print 'pick'
-        if len(self) == 0:
-            return np.array([], np.int)
-
-        vertices = self.get_vertices_array()
-        # print '  vertices.shape',vertices.shape,'\n',vertices
-        inds1 = is_inside_triangles(p,  vertices[:, 0, 0], vertices[:, 0, 1],
-                                    vertices[:, 1, 0], vertices[:, 1, 1],
-                                    vertices[:, 2, 0], vertices[:, 2, 1])
-
-        inds2 = is_inside_triangles(p,  vertices[:, 0, 0], vertices[:, 0, 1],
-                                    vertices[:, 2, 0], vertices[:, 2, 1],
-                                    vertices[:, 3, 0], vertices[:, 3, 1])
-
-        return self._ids[np.flatnonzero(inds1 | inds2)]
-
-
 class Fancylines(Lines):
+
     def __init__(self, ident,  parent, name='Fancy lines',
                  is_parentobj=False,
                  is_fill=True,
@@ -2405,8 +2145,10 @@ class Fancylines(Lines):
         if is_fill:
             self.add_vbo(Vbo('line_fill', GL_QUADS, 4, objtype='fill'))
             for style in LINEHEADS.keys():
-                self.add_vbo(Vbo(('begin', 'fill', style), GL_TRIANGLES, 3, objtype='fill'))
-                self.add_vbo(Vbo(('end', 'fill', style), GL_TRIANGLES, 3, objtype='fill'))
+                self.add_vbo(Vbo(('begin', 'fill', style),
+                                 GL_TRIANGLES, 3, objtype='fill'))
+                self.add_vbo(Vbo(('end', 'fill', style),
+                                 GL_TRIANGLES, 3, objtype='fill'))
 
         self.add(cm.AttrConf('arrowstretch', arrowstretch,
                              groupnames=['options'],
@@ -2489,7 +2231,7 @@ class Fancylines(Lines):
                     endstyle=None,
                     is_update=True):
         # print 'Fancylines.add_drawobj'
-        if color_highl is None:
+        if color_highl == None:
             color_highl = self._get_colors_highl(np.array([color]))[0]
 
         # print '  ids',self.get_ids()
@@ -2512,13 +2254,13 @@ class Fancylines(Lines):
                      beginstyles=None, endstyles=None,
                      is_update=True):
 
-        if colors_highl is None:
+        if colors_highl == None:
             colors_highl = self._get_colors_highl(colors)
 
         n = len(vertices)
-        if beginstyles is None:
+        if beginstyles == None:
             beginstyles = np.zeros(n)
-        if endstyles is None:
+        if endstyles == None:
             endstyles = np.zeros(n)
         ids = self.add_rows(len(vertices),
                             vertices=vertices,
@@ -2538,12 +2280,17 @@ class Fancylines(Lines):
     def begin_animation(self, id_target):
 
         self._id_target = id_target
-        self._drawobj_anim = self.parent.get_drawobj_by_ident(self._ident_drawobj_anim)
+        self._drawobj_anim = self.parent.get_drawobj_by_ident(
+            self._ident_drawobj_anim)
         self.id_anim = self._drawobj_anim.add_drawobj(np.array(self.get_vertices(id_target)),
-                                                      1.0*self.get_widths(id_target),
+                                                      1.0 *
+                                                      self.get_widths(
+                                                          id_target),
                                                       self.color_anim.value,
-                                                      beginstyle=self.beginstyles[id_target],
-                                                      endstyle=self.endstyles[id_target],
+                                                      beginstyle=self.beginstyles[
+                                                          id_target],
+                                                      endstyle=self.endstyles[
+                                                          id_target],
                                                       )
         # print 'begin_animation',self.ident,_id,self._drawobj_anim
         return True
@@ -2568,11 +2315,11 @@ class Fancylines(Lines):
         x2 = vertices[:, 1, 0]
         y2 = vertices[:, 1, 1]
         z2 = vertices[:, 1, 2]
-        dx = x2-x1
-        dy = y2-y1
+        dx = x2 - x1
+        dy = y2 - y1
         alpha_xy = np.arctan2(dy, dx)
-        length_xy = np.sqrt(dx*dx + dy*dy)
-        halfwidth = 0.5*self.get_widths_array()
+        length_xy = np.sqrt(dx * dx + dy * dy)
+        halfwidth = 0.5 * self.get_widths_array()
         x1_new = x1.copy()
         y1_new = y1.copy()
         x2_new = x2.copy()
@@ -2591,23 +2338,23 @@ class Fancylines(Lines):
                     # print '     style',style,len(inds_style)
                     # print '         x1_new=',x1_new,x1_new.dtype
                     # print '         x2_new=',x2_new,x2_new.dtype
-                    self._update_vertexvbo_begin_fill(style, inds_style, x1_new, y1_new,
-                                                      z1, x2, y2, z2, length_xy, alpha_xy, halfwidth)
+                    self._update_vertexvbo_begin_fill(
+                        style, inds_style, x1_new, y1_new, z1, x2, y2, z2, length_xy, alpha_xy, halfwidth)
 
                 # end
                 inds_style = np.flatnonzero(self.endstyles.value == id_style)
                 if len(inds_style) > 0:
-                    self._update_vertexvbo_end_fill(style, inds_style, x1, y1, z1, x2_new,
-                                                    y2_new, z2, length_xy, alpha_xy, halfwidth)
+                    self._update_vertexvbo_end_fill(
+                        style, inds_style, x1, y1, z1, x2_new, y2_new, z2, length_xy, alpha_xy, halfwidth)
 
-            self._update_vertexvbo_line_fill(x1_new, y1_new, z1, x2_new, y2_new, z2,
-                                             length_xy, alpha_xy, halfwidth, len(self))
+            self._update_vertexvbo_line_fill(
+                x1_new, y1_new, z1, x2_new, y2_new, z2, length_xy, alpha_xy, halfwidth, len(self))
 
     def _update_vertexvbo_line_fill(self, x1, y1, z1, x2, y2, z2, length_xy, alpha_xy, halfwidth, n):
         # print '_update_vertexvbo_line_fill'
         # this allows different color indexing for polyline
         # TODO n
-        # if inds_colors is None:
+        # if inds_colors == None:
         #n = len(self)
         # else:
         #    n = None
@@ -2623,17 +2370,25 @@ class Fancylines(Lines):
         # print '  length_xy-self.widths.value=',(length_xy-self.widths.value)
 
         # self.is_righthalf.value
-        xr1 = x1 + self.is_lefthalf.value * halfwidth * np.cos(alpha_xy+np.pi/2)
-        yr1 = y1 + self.is_lefthalf.value * halfwidth * np.sin(alpha_xy+np.pi/2)
+        xr1 = x1 + self.is_lefthalf.value * \
+            halfwidth * np.cos(alpha_xy + np.pi / 2)
+        yr1 = y1 + self.is_lefthalf.value * \
+            halfwidth * np.sin(alpha_xy + np.pi / 2)
 
-        xr2 = x2 + self.is_lefthalf.value * halfwidth * np.cos(alpha_xy+np.pi/2)
-        yr2 = y2 + self.is_lefthalf.value * halfwidth * np.sin(alpha_xy+np.pi/2)
+        xr2 = x2 + self.is_lefthalf.value * \
+            halfwidth * np.cos(alpha_xy + np.pi / 2)
+        yr2 = y2 + self.is_lefthalf.value * \
+            halfwidth * np.sin(alpha_xy + np.pi / 2)
 
-        xr3 = x2 + self.is_righthalf.value * halfwidth * np.cos(alpha_xy-np.pi/2)
-        yr3 = y2 + self.is_righthalf.value * halfwidth * np.sin(alpha_xy-np.pi/2)
+        xr3 = x2 + self.is_righthalf.value * \
+            halfwidth * np.cos(alpha_xy - np.pi / 2)
+        yr3 = y2 + self.is_righthalf.value * \
+            halfwidth * np.sin(alpha_xy - np.pi / 2)
 
-        xr4 = x1 + self.is_righthalf.value * halfwidth * np.cos(alpha_xy-np.pi/2)
-        yr4 = y1 + self.is_righthalf.value * halfwidth * np.sin(alpha_xy-np.pi/2)
+        xr4 = x1 + self.is_righthalf.value * \
+            halfwidth * np.cos(alpha_xy - np.pi / 2)
+        yr4 = y1 + self.is_righthalf.value * \
+            halfwidth * np.sin(alpha_xy - np.pi / 2)
 
         # print '_update_vertexvbo ',n,n_vert,self._is_fill.value
         # print '  x\n',x
@@ -2684,28 +2439,31 @@ class Fancylines(Lines):
             n_vert = 3
             alphastretch = 1.2
             arrowstretch = self.arrowstretch.value
-        radius = arrowstretch*halfwidth[inds_style]
+        radius = arrowstretch * halfwidth[inds_style]
         if style != 'bevel':
-            x1_new[inds_style] = x2[inds_style] - (length_xy[inds_style]-radius)*np.cos(alpha_xy[inds_style])
-            y1_new[inds_style] = y2[inds_style] - (length_xy[inds_style]-radius)*np.sin(alpha_xy[inds_style])
+            x1_new[inds_style] = x2[inds_style] - \
+                (length_xy[inds_style] - radius) * np.cos(alpha_xy[inds_style])
+            y1_new[inds_style] = y2[inds_style] - \
+                (length_xy[inds_style] - radius) * np.sin(alpha_xy[inds_style])
 
         # print '         x1_new=',x1_new,x1_new.dtype,halfwidth[inds_style]
         # print '         y1_new=',y1_new,y1_new.dtype
 
         if self.is_righthalf.value:
-            alpha_end = np.pi/2
+            alpha_end = np.pi / 2
         else:
-            n_vert = int(0.5*n_vert+0.5)
+            n_vert = int(0.5 * n_vert + 0.5)
             alpha_end = 0.0
 
         if self.is_lefthalf.value:
-            alpha_start = -np.pi/2
+            alpha_start = -np.pi / 2
         else:
-            n_vert = int(0.5*n_vert+0.5)
+            n_vert = int(0.5 * n_vert + 0.5)
             alpha_start = 0.0
 
-        dphi = (alpha_end-alpha_start)/(n_vert-1)
-        alphas = alpha_xy[inds_style]+(alphastretch*np.arange(alpha_start, alpha_end+dphi, dphi)+np.pi).reshape(-1, 1)
+        dphi = (alpha_end - alpha_start) / (n_vert - 1)
+        alphas = alpha_xy[inds_style] + (alphastretch * np.arange(
+            alpha_start, alpha_end + dphi, dphi) + np.pi).reshape(-1, 1)
 
         # print '  alpha_xy\n',alpha_xy/np.pi*180
         # print '  alphas=alpha0+phi\n',alphas/np.pi*180
@@ -2730,7 +2488,7 @@ class Fancylines(Lines):
         # print '  ycf\n',ycf
 
         # create and compose main vertices array
-        n_elem_fill = (n_vert-1)*n
+        n_elem_fill = (n_vert - 1) * n
 
         n_vpe = headvbo.get_vpe()
         # print '  n_elem_fill ',self._n_elem_fill
@@ -2739,7 +2497,7 @@ class Fancylines(Lines):
         # print '  vertices.reshape((-1,3)).shape',vertices.reshape((-1,3)).shape
         #zf = z.transpose().flatten()
 
-        ind = np.arange(0, n*n_vert).reshape(n, n_vert)[:, :-1].flatten()
+        ind = np.arange(0, n * n_vert).reshape(n, n_vert)[:, :-1].flatten()
 
         vertices[:, 0] = xf[ind]
         vertices[:, 1] = yf[ind]
@@ -2749,7 +2507,7 @@ class Fancylines(Lines):
         vertices[:, 4] = ycf[ind]
         vertices[:, 5] = zf[ind]
 
-        ind2 = np.arange(0, n*n_vert).reshape(n, n_vert)[:, 1:].flatten()
+        ind2 = np.arange(0, n * n_vert).reshape(n, n_vert)[:, 1:].flatten()
         vertices[:, 6] = xf[ind2]
         vertices[:, 7] = yf[ind2]
         vertices[:, 8] = zf[ind2]
@@ -2779,28 +2537,31 @@ class Fancylines(Lines):
             n_vert = 3
             alphastretch = 1.2
             arrowstretch = self.arrowstretch.value
-        radius = arrowstretch*halfwidth[inds_style]
+        radius = arrowstretch * halfwidth[inds_style]
 
         if style != 'bevel':
-            x2_new[inds_style] = x1[inds_style] + (length_xy[inds_style]-radius)*np.cos(alpha_xy[inds_style])
-            y2_new[inds_style] = y1[inds_style] + (length_xy[inds_style]-radius)*np.sin(alpha_xy[inds_style])
+            x2_new[inds_style] = x1[inds_style] + \
+                (length_xy[inds_style] - radius) * np.cos(alpha_xy[inds_style])
+            y2_new[inds_style] = y1[inds_style] + \
+                (length_xy[inds_style] - radius) * np.sin(alpha_xy[inds_style])
 
         if self.is_lefthalf.value:
-            alpha_end = np.pi/2
+            alpha_end = np.pi / 2
         else:
-            n_vert = int(0.5*n_vert+0.5)
+            n_vert = int(0.5 * n_vert + 0.5)
             alpha_end = 0.0
 
         if self.is_righthalf.value:
-            alpha_start = -np.pi/2
+            alpha_start = -np.pi / 2
         else:
-            n_vert = int(0.5*n_vert+0.5)
+            n_vert = int(0.5 * n_vert + 0.5)
             alpha_start = 0.0
 
-        dphi = (alpha_end-alpha_start)/(n_vert-1)
-        alphas = alpha_xy[inds_style]+alphastretch*np.arange(alpha_start, alpha_end+dphi, dphi).reshape(-1, 1)
+        dphi = (alpha_end - alpha_start) / (n_vert - 1)
+        alphas = alpha_xy[inds_style] + alphastretch * \
+            np.arange(alpha_start, alpha_end + dphi, dphi).reshape(-1, 1)
 
-        dphi = np.pi/(n_vert-1)
+        dphi = np.pi / (n_vert - 1)
 
         # print '  alpha_xy\n',alpha_xy/np.pi*180
         # print '  alphas=alpha0+phi\n',alphas/np.pi*180
@@ -2831,7 +2592,7 @@ class Fancylines(Lines):
         # print '  ycf\n',ycf
 
         # create and compose main vertices array
-        n_elem_fill = (n_vert-1)*n
+        n_elem_fill = (n_vert - 1) * n
 
         n_vpe = headvbo.get_vpe()
         # print '  n_elem_fill ',self._n_elem_fill
@@ -2840,7 +2601,7 @@ class Fancylines(Lines):
         # print '  vertices.reshape((-1,3)).shape',vertices.reshape((-1,3)).shape
         #zf = z.transpose().flatten()
 
-        ind = np.arange(0, n*n_vert).reshape(n, n_vert)[:, :-1].flatten()
+        ind = np.arange(0, n * n_vert).reshape(n, n_vert)[:, :-1].flatten()
 
         vertices[:, 0] = xf[ind]
         vertices[:, 1] = yf[ind]
@@ -2850,7 +2611,7 @@ class Fancylines(Lines):
         vertices[:, 4] = ycf[ind]
         vertices[:, 5] = zf[ind]
 
-        ind2 = np.arange(0, n*n_vert).reshape(n, n_vert)[:, 1:].flatten()
+        ind2 = np.arange(0, n * n_vert).reshape(n, n_vert)[:, 1:].flatten()
         vertices[:, 6] = xf[ind2]
         vertices[:, 7] = yf[ind2]
         vertices[:, 8] = zf[ind2]
@@ -2862,7 +2623,7 @@ class Fancylines(Lines):
 
     def pick(self, p, detectwidth=0.1):
         """
-        Returns a binary vector which is True values for lines that have been selected
+        Returns a binary vector which is True values for lines that have been selected 
         by point p.
 
         """
@@ -2879,11 +2640,12 @@ class Fancylines(Lines):
 
         # print '  x1', x1
         # print '  x2', x2
-        dw = 0.5*(self.get_widths_array()+detectwidth)
-        return self._ids[get_dist_point_to_segs(p, x1, y1, x2, y2, is_ending=True) < dw*dw]
+        dw = 0.5 * (self.get_widths_array() + detectwidth)
+        return self._ids[get_dist_point_to_segs(p, x1, y1, x2, y2, is_ending=True) < dw * dw]
 
 
 class Polylines(Fancylines):
+
     def __init__(self, ident,  parent, name='Polylines', joinstyle=FLATHEAD, **kwargs):
         Fancylines.__init__(self, ident,  parent, name=name, **kwargs)
 
@@ -2917,15 +2679,19 @@ class Polylines(Fancylines):
     def begin_animation(self, id_target):
 
         self._id_target = id_target
-        self._drawobj_anim = self.parent.get_drawobj_by_ident(self._ident_drawobj_anim)
+        self._drawobj_anim = self.parent.get_drawobj_by_ident(
+            self._ident_drawobj_anim)
 
-        self.id_anim = self._drawobj_anim.add_drawobj(  # make a copy as array, otherwise instance is copied
-                                                        np.array(self.get_vertices(id_target), np.float32).tolist(),
-                                                        np.array(self.get_widths(id_target), np.float32),
-                                                        self.color_anim.get_value(),
-                                                        beginstyle=self.beginstyles[id_target],
-                                                        endstyle=self.endstyles[id_target],
-        )
+        self.id_anim = self._drawobj_anim.add_drawobj(self.get_vertices(id_target),
+                                                      1.0 *
+                                                      self.get_widths(
+                                                          id_target),
+                                                      self.color_anim.value,
+                                                      beginstyle=self.beginstyles[
+                                                          id_target],
+                                                      endstyle=self.endstyles[
+                                                          id_target],
+                                                      )
         # print 'begin_animation',self.ident,id_target,self._drawobj_anim
         # print '  vert=',self.vertices[id_target]
         return True
@@ -2935,29 +2701,34 @@ class Polylines(Fancylines):
         # for _id in self.get_ids():
         #    print '   main.vertices',_id,self.vertices[_id], type(self.vertices[_id])
         # for _id in self._drawobj_anim.get_ids():
-        #    print '   anim.vertices',_id,self._drawobj_anim.vertices[_id], type(self._drawobj_anim.vertices[_id])
+        # print '   anim.vertices',_id,self._drawobj_anim.vertices[_id],
+        # type(self._drawobj_anim.vertices[_id])
+
         self._drawobj_anim.get_vertices(self.id_anim).append(vert)
-        #vertex = self._drawobj_anim.get_vertices(self.id_anim).tolist()
-        # self._drawobj_anim.set_vertices.append(vert.tolist())
         # print '  vertices',self._drawobj_anim.vertices[self.id_anim],type(self._drawobj_anim.vertices[self.id_anim])
         #vertices = self._drawobj_anim.vertices[self.id_anim]
         # vertices.append(vert)
-        # self._drawobj_anim.vertices[self.id_anim]= vertices#list(np.array(vertices,np.float32))
+        # self._drawobj_anim.vertices[self.id_anim]=
+        # vertices#list(np.array(vertices,np.float32))
 
         # print '  vertices',vertices,type(vertices)
-        # print '  self._drawobj_anim.vertices[self.id_anim]',self._drawobj_anim.vertices[self.id_anim],type(self._drawobj_anim.vertices[self.id_anim])
+        # print '
+        # self._drawobj_anim.vertices[self.id_anim]',self._drawobj_anim.vertices[self.id_anim],type(self._drawobj_anim.vertices[self.id_anim])
         self._drawobj_anim._update_vertexvbo()
         self._drawobj_anim._update_colorvbo()
-        return len(self._drawobj_anim.get_vertices(self.id_anim))-1  # vertex ind of next
+        # vertex ind of next
+        return len(self._drawobj_anim.get_vertices(self.id_anim)) - 1
 
     def end_animation(self, is_del_last_vert=False):
         # print 'end_animation',self.ident,self._id_target
         # print '  verices =',self._drawobj_anim.vertices[self.id_anim]
         if is_del_last_vert:
             # cut of last one because duplicated after adding
-            self.set_vertices(self._id_target, self._drawobj_anim.get_vertices(self.id_anim)[:-1])
+            self.set_vertices(
+                self._id_target, self._drawobj_anim.get_vertices(self.id_anim)[:-1])
         else:
-            self.set_vertices(self._id_target, self._drawobj_anim.get_vertices(self.id_anim))
+            self.set_vertices(
+                self._id_target, self._drawobj_anim.get_vertices(self.id_anim))
 
         self.del_animation()
         # self._drawobj_anim.del_drawobj(self.id_anim)
@@ -2968,9 +2739,7 @@ class Polylines(Fancylines):
     def _make_lines(self):
         n_lines_tot = 0
         for polyline in self.get_vertices_array():
-            n_seg = len(polyline)
-            # if n_seg>1:
-            n_lines_tot += n_seg-1
+            n_lines_tot += len(polyline) - 1
 
         linevertices = np.zeros((n_lines_tot, 2, 3), np.float32)
         vertexinds = np.zeros((n_lines_tot, 2), np.int32)
@@ -2992,21 +2761,21 @@ class Polylines(Fancylines):
             if n_seg > 1:
                 polyvinds = range(n_seg)
                 # print '  polyvinds\n',polyvinds
-                vi = np.zeros((2*n_seg-2), np.int32)
+                vi = np.zeros((2 * n_seg - 2), np.int32)
                 vi[0] = polyvinds[0]
                 vi[-1] = polyvinds[-1]
 
                 # Important type conversion!!
-                v = np.zeros((2*n_seg-2, 3), np.float32)
+                v = np.zeros((2 * n_seg - 2, 3), np.float32)
                 v[0] = polyline[0]
                 v[-1] = polyline[-1]
                 if len(v) > 2:
                     v[1:-1] = np.repeat(polyline[1:-1], 2, 0)
                     vi[1:-1] = np.repeat(polyvinds[1:-1], 2)
 
-                n_lines = len(v)/2
+                n_lines = len(v) / 2
                 # print '  v\n',v
-                inds_polyline = range(ind_line, ind_line+n_lines)
+                inds_polyline = range(ind_line, ind_line + n_lines)
 
                 polyinds[inds_polyline] = ind
 
@@ -3020,12 +2789,12 @@ class Polylines(Fancylines):
                 vertexinds[inds_polyline] = vi.reshape((-1, 2))
 
                 ind_line += n_lines
-                ind += 1
             else:
                 # empty polygon treatment
                 pass
 
             # print '  linevertex\n',linevertices
+            ind += 1
 
         self._linevertices = linevertices
         self._polyinds = polyinds
@@ -3044,11 +2813,11 @@ class Polylines(Fancylines):
         x2 = vertices[:, 1, 0]
         y2 = vertices[:, 1, 1]
         z2 = vertices[:, 1, 2]
-        dx = x2-x1
-        dy = y2-y1
+        dx = x2 - x1
+        dy = y2 - y1
         alpha_xy = np.arctan2(dy, dx)
-        length_xy = np.sqrt(dx*dx + dy*dy)
-        halfwidth = 0.5*self.get_widths_array()[self._polyinds]
+        length_xy = np.sqrt(dx * dx + dy * dy)
+        halfwidth = 0.5 * self.get_widths_array()[self._polyinds]
         # if self.ident =='lanedraws':
         #    print '_update_vertexvbo',self.ident
         #    print '  halfwidth',halfwidth
@@ -3073,17 +2842,17 @@ class Polylines(Fancylines):
                     # print '     style',style,len(inds_style)
                     # print '         x1_new=',x1_new,x1_new.dtype
                     # print '         x2_new=',x2_new,x2_new.dtype
-                    self._update_vertexvbo_begin_fill(style, inds_style, x1_new, y1_new,
-                                                      z1, x2, y2, z2, length_xy, alpha_xy, halfwidth)
+                    self._update_vertexvbo_begin_fill(
+                        style, inds_style, x1_new, y1_new, z1, x2, y2, z2, length_xy, alpha_xy, halfwidth)
 
                 # end
                 inds_style = np.flatnonzero(self._lineendstyles == id_style)
                 if len(inds_style) > 0:
-                    self._update_vertexvbo_end_fill(style, inds_style, x1, y1, z1, x2_new,
-                                                    y2_new, z2, length_xy, alpha_xy, halfwidth)
+                    self._update_vertexvbo_end_fill(
+                        style, inds_style, x1, y1, z1, x2_new, y2_new, z2, length_xy, alpha_xy, halfwidth)
 
-            self._update_vertexvbo_line_fill(x1_new, y1_new, z1, x2_new, y2_new, z2,
-                                             length_xy, alpha_xy, halfwidth, len(vertices))
+            self._update_vertexvbo_line_fill(
+                x1_new, y1_new, z1, x2_new, y2_new, z2, length_xy, alpha_xy, halfwidth, len(vertices))
 
     def _update_colorvbo(self):
         n = len(self._polyinds)
@@ -3092,25 +2861,25 @@ class Polylines(Fancylines):
         #self._linecolors = np.array(linecolors, np.float32)
         #self._linecolors_highl = np.array(linecolors_highl, np.float32)
         if self._is_outline.value:
-            colors = self.colors.value[self._polyinds] + \
-                self.are_highlighted.value[self._polyinds].reshape(n, 1)*self.colors_highl.value[self._polyinds]
+            colors = self.colors.value[self._polyinds] + self.are_highlighted.value[
+                self._polyinds].reshape(n, 1) * self.colors_highl.value[self._polyinds]
             for _vbo in self.get_vbos():
                 if not _vbo.is_fill():
                     _vbo.update_colors(colors)
 
         if self._is_fill.value:
-            colors = self.colors_fill.value[self._polyinds] + self.are_highlighted.value[self._polyinds].reshape(
-                n, 1)*self.colors_fill_highl.value[self._polyinds]
+            colors = self.colors_fill.value[self._polyinds] + self.are_highlighted.value[
+                self._polyinds].reshape(n, 1) * self.colors_fill_highl.value[self._polyinds]
             for _vbo in self.get_vbos():
                 if _vbo.is_fill():
                     _vbo.update_colors(colors)
 
     def pick(self, p, detectwidth=0.1):
         """
-        Returns a binary vector which is True values for lines that have been selected
+        Returns a binary vector which is True values for lines that have been selected 
         by point p.
 
-        In particular, an element of this vector is True if the minimum distance
+        In particular, an element of this vector is True if the minimum distance 
         between the respective line to point p is less than detectwidth
         """
         # print 'pick'
@@ -3126,8 +2895,9 @@ class Polylines(Fancylines):
 
         # print '  x1', x1
         # print '  x2', x2
-        halfwidths = 0.5*(self.get_widths_array()[self._polyinds]+detectwidth)
-        return self._ids[self._polyinds[get_dist_point_to_segs(p, x1, y1, x2, y2, is_ending=True) < halfwidths*halfwidths]]
+        halfwidths = 0.5 * (self.get_widths_array()
+                            [self._polyinds] + detectwidth)
+        return self._ids[self._polyinds[get_dist_point_to_segs(p, x1, y1, x2, y2, is_ending=True) < halfwidths * halfwidths]]
 
     def pick_handle(self, coord, detectwidth=0.1):
         """
@@ -3148,9 +2918,9 @@ class Polylines(Fancylines):
         handles = []
         # print '  vertices',vertices
         # print '  vertices.shape',vertices.shape
-        dx = vertices[:, 0, 0]-coord[0]
-        dy = vertices[:, 0, 1]-coord[1]
-        inds = np.flatnonzero(dx*dx+dy*dy < dw)
+        dx = vertices[:, 0, 0] - coord[0]
+        dy = vertices[:, 0, 1] - coord[1]
+        inds = np.flatnonzero(dx * dx + dy * dy < dw)
 
         ids = self._ids[self._polyinds[inds]]
         handle1 = np.ones((len(ids), 2), np.int)
@@ -3158,9 +2928,9 @@ class Polylines(Fancylines):
         handle1[:, 1] = self._vertexinds[inds, 0]
         # print '  ',d,handle1
 
-        dx = vertices[:, 1, 0]-coord[0]
-        dy = vertices[:, 1, 1]-coord[1]
-        inds = np.flatnonzero(dx*dx+dy*dy < dw)
+        dx = vertices[:, 1, 0] - coord[0]
+        dy = vertices[:, 1, 1] - coord[1]
+        inds = np.flatnonzero(dx * dx + dy * dy < dw)
         ids = self._ids[self._polyinds[inds]]
         handle2 = np.ones((len(ids), 2), np.int)
         handle2[:, 0] = ids
@@ -3176,7 +2946,8 @@ class Polylines(Fancylines):
         vv = self._linevertices
         # TODOD: can be done faster
         return np.array([[np.min(vv[:, :, 0]), np.min(vv[:, :, 1]), np.min(vv[:, :, 2])],
-                         [np.max(vv[:, :, 0]), np.max(vv[:, :, 1]), np.max(vv[:, :, 2])]
+                         [np.max(vv[:, :, 0]), np.max(
+                             vv[:, :, 1]), np.max(vv[:, :, 2])]
                          ], float)
 
 
@@ -3233,7 +3004,8 @@ class Circles(DrawobjMixin):
         Optionally a particular drawobj can be specified with id_drawobj.
         """
         # basic tools:
-        # return tool.ident not in   ['configure','select_handles','delete','move','stretch']
+        # return tool.ident not in
+        # ['configure','select_handles','delete','move','stretch']
         return True
 
     def get_centers_array(self):
@@ -3248,8 +3020,9 @@ class Circles(DrawobjMixin):
         vv = self.get_centers_array()
         rad = self.get_radii_array()
         # TODOD: can be done faster
-        return np.array([[np.min(vv[:, 0]-rad), np.min(vv[:, 1]-rad), np.min(vv[:, 2])],
-                         [np.max(vv[:, 0]+rad), np.max(vv[:, 1]+rad), np.max(vv[:, 2])]
+        return np.array([[np.min(vv[:, 0] - rad), np.min(vv[:, 1] - rad), np.min(vv[:, 2])],
+                         [np.max(vv[:, 0] + rad),
+                          np.max(vv[:, 1] + rad), np.max(vv[:, 2])]
                          ], float)
 
     def add_drawobj(self, center, radius,
@@ -3257,14 +3030,15 @@ class Circles(DrawobjMixin):
                     color_highl=None, color_fill_highl=None,
                     is_update=True):
 
-        if color_fill is None:
+        if color_fill == None:
             color_fill = color
 
-        if color_highl is None:
+        if color_highl == None:
             color_highl = self._get_colors_highl(np.array([color]))[0]
 
-        if color_fill_highl is None:
-            color_fill_highl = self._get_colors_highl(np.array([color_fill]))[0]
+        if color_fill_highl == None:
+            color_fill_highl = self._get_colors_highl(
+                np.array([color_fill]))[0]
 
         _id = self.add_row(centers=center,
                            radii=radius,
@@ -3282,14 +3056,15 @@ class Circles(DrawobjMixin):
                      colors, colors_fill=None,
                      colors_highl=None, colors_fill_highl=None,
                      is_update=True):
-        # print 'Circles.add_drawobjs',self._is_fill.value,self._is_outline.value
-        if colors_fill is None:
+        # print
+        # 'Circles.add_drawobjs',self._is_fill.value,self._is_outline.value
+        if colors_fill == None:
             colors_fill = colors
 
-        if colors_highl is None:
+        if colors_highl == None:
             colors_highl = self._get_colors_highl(colors)
 
-        if colors_fill_highl is None:
+        if colors_fill_highl == None:
             colors_fill_highl = self._get_colors_highl(colors_fill)
 
         # print '  colors',colors[:2]
@@ -3311,9 +3086,11 @@ class Circles(DrawobjMixin):
     def begin_animation(self, id_target):
 
         self._id_target = id_target
-        self._drawobj_anim = self.parent.get_drawobj_by_ident(self._ident_drawobj_anim)
+        self._drawobj_anim = self.parent.get_drawobj_by_ident(
+            self._ident_drawobj_anim)
         self.id_anim = self._drawobj_anim.add_drawobj(np.array(self.centers[id_target]),
-                                                      1.0*self.radii[id_target],
+                                                      1.0 *
+                                                      self.radii[id_target],
                                                       self.color_anim.value,
                                                       )
         # print 'begin_animation',self.ident,_id,self._drawobj_anim
@@ -3323,17 +3100,20 @@ class Circles(DrawobjMixin):
         # print 'set_anim',self.ident,_id,drawobj_anim
         (drawobj_anim, id_anim) = drawobjelem_anim
         # print '    self.vertices[_id]=',self.vertices[_id]
-        # print '    drawobjset_anim.vertices[id_anim]=',drawobjset_anim.vertices[id_anim]
+        # print '
+        # drawobjset_anim.vertices[id_anim]=',drawobjset_anim.vertices[id_anim]
         self.centers[_id] = np.array(drawobj_anim.centers[id_anim])
-        self.radii[_id] = 1.0*drawobj_anim.radii[id_anim]
+        self.radii[_id] = 1.0 * drawobj_anim.radii[id_anim]
         drawobj_anim.del_drawobj(id_anim)
         self._update_vertexvbo()
         return True
 
     def end_animation(self, is_del_last_vert=False):
         # print 'end_animation',self.ident,_id,self._drawobj_anim
-        self.centers[self._id_target] = np.array(self._drawobj_anim.centers[self.id_anim])
-        self.radii[self._id_target] = 1.0*self._drawobj_anim.radii[self.id_anim]
+        self.centers[self._id_target] = np.array(
+            self._drawobj_anim.centers[self.id_anim])
+        self.radii[self._id_target] = 1.0 * \
+            self._drawobj_anim.radii[self.id_anim]
 
         self._drawobj_anim.del_drawobj(self.id_anim)
         self._update_vertexvbo()
@@ -3363,14 +3143,14 @@ class Circles(DrawobjMixin):
         # print '_update_vertexvbo ',n,n_vert,self._is_fill.value
 
         # compute x,y,z of vertices of n objects
-        dphi = 2*np.pi/(n_vert-1)
-        phi = np.arange(0, 2*np.pi+dphi, dphi).reshape(-1, 1)
+        dphi = 2 * np.pi / (n_vert - 1)
+        phi = np.arange(0, 2 * np.pi + dphi, dphi).reshape(-1, 1)
 
         centers = self.get_centers_array()
         radii = self.get_radii_array()
-        x = np.cos(phi)*radii+centers[:, 0]
+        x = np.cos(phi) * radii + centers[:, 0]
 
-        y = np.sin(phi)*radii+centers[:, 1]
+        y = np.sin(phi) * radii + centers[:, 1]
 
         z = np.ones((n_vert, 1)) * centers[:, 2]
         # print '  x.shape=', x.shape
@@ -3395,7 +3175,7 @@ class Circles(DrawobjMixin):
         ycf = (np.ones((n_vert, 1)) * centers[:, 1]).transpose().flatten()
 
         # create and compose main vertices array
-        n_elem_fill = (n_vert-1)*n
+        n_elem_fill = (n_vert - 1) * n
 
         #glDrawElements(GL_TRIANGLES, self._n_vert*self._n_elem_fill, GL_UNSIGNED_INT, None)
         #  self._n_vert*self._n_elem_fill = n_vert * (n_vert-1)*n
@@ -3405,10 +3185,11 @@ class Circles(DrawobjMixin):
         n_vpe_fill = self.get_vbo('fill').get_vpe()
         # print '  n_elem_fill',n_elem_fill,n_vpe_fill
         vertices = np.zeros((n_elem_fill, n_vpe_fill * 3), dtype=np.float32)
-        # print '  vertices.reshape((-1,3)).shape',vertices.reshape((-1,3)).shape
+        # print '
+        # vertices.reshape((-1,3)).shape',vertices.reshape((-1,3)).shape
         zf = z.transpose().flatten()
 
-        ind = np.arange(0, n*n_vert).reshape(n, n_vert)[:, :-1].flatten()
+        ind = np.arange(0, n * n_vert).reshape(n, n_vert)[:, :-1].flatten()
 
         vertices[:, 0] = xf[ind]
         vertices[:, 1] = yf[ind]
@@ -3418,7 +3199,7 @@ class Circles(DrawobjMixin):
         vertices[:, 4] = ycf[ind]
         vertices[:, 5] = zf[ind]
 
-        ind2 = np.arange(0, n*n_vert).reshape(n, n_vert)[:, 1:].flatten()
+        ind2 = np.arange(0, n * n_vert).reshape(n, n_vert)[:, 1:].flatten()
         vertices[:, 6] = xf[ind2]
         vertices[:, 7] = yf[ind2]
         vertices[:, 8] = zf[ind2]
@@ -3433,25 +3214,26 @@ class Circles(DrawobjMixin):
         n_vert = self.get_n_vert()
 
         # create and compose main vertices array
-        n_elem = (n_vert-1)*n
+        n_elem = (n_vert - 1) * n
 
         n_vpe = 2  # vertices per OGL element
 
         vertices = np.zeros((n_elem, n_vpe * 3), dtype=np.float32)
 
-        # print '  vertices.reshape((-1,3)).shape',vertices.reshape((-1,3)).shape
+        # print '
+        # vertices.reshape((-1,3)).shape',vertices.reshape((-1,3)).shape
 
         xf = x.transpose().flatten()
         yf = y.transpose().flatten()
         zf = z.transpose().flatten()
 
-        ind = np.arange(0, n*n_vert).reshape(n, n_vert)[:, :-1].flatten()
+        ind = np.arange(0, n * n_vert).reshape(n, n_vert)[:, :-1].flatten()
 
         vertices[:, 0] = xf[ind]
         vertices[:, 1] = yf[ind]
         vertices[:, 2] = zf[ind]
 
-        ind2 = np.arange(0, n*n_vert).reshape(n, n_vert)[:, 1:].flatten()
+        ind2 = np.arange(0, n * n_vert).reshape(n, n_vert)[:, 1:].flatten()
         vertices[:, 3] = xf[ind2]
         vertices[:, 4] = yf[ind2]
         vertices[:, 5] = zf[ind2]
@@ -3460,7 +3242,7 @@ class Circles(DrawobjMixin):
 
     def pick(self, p, detectwidth=0.1):
         """
-        Returns a binary vector which is True values for circles that have been selected
+        Returns a binary vector which is True values for circles that have been selected 
         by point p.
 
         In particular, an element is selected if point p is within the circle
@@ -3470,10 +3252,10 @@ class Circles(DrawobjMixin):
 
         #centers = self.centers.value
         centers = self.get_centers_array()
-        radii = self.get_radii_array()+0.5*detectwidth
-        dx = centers[:, 0]-p[0]
-        dy = centers[:, 1]-p[1]
-        return self._ids[dx*dx+dy*dy < (radii*radii)]
+        radii = self.get_radii_array() + 0.5 * detectwidth
+        dx = centers[:, 0] - p[0]
+        dy = centers[:, 1] - p[1]
+        return self._ids[dx * dx + dy * dy < (radii * radii)]
 
     def pick_handle(self, coord, detectwidth=0.1):
         """
@@ -3488,10 +3270,10 @@ class Circles(DrawobjMixin):
 
         centers = self.get_centers_array()
         radii = self.get_radii_array()
-        dx = centers[:, 0]-coord[0]
-        dy = centers[:, 1]-coord[1]
-        r = dx*dx+dy*dy
-        ids = self._ids[(r > radii*radii-dw) & (r < radii*radii+dw)]
+        dx = centers[:, 0] - coord[0]
+        dy = centers[:, 1] - coord[1]
+        r = dx * dx + dy * dy
+        ids = self._ids[(r > radii * radii - dw) & (r < radii * radii + dw)]
         #handles =  np.concatenate(( ids.reshape((len(ids),1)), np.zeros((len(ids),1),np.int)),1)
 
         # print '  ids',ids
@@ -3500,6 +3282,7 @@ class Circles(DrawobjMixin):
 
 
 class Polygons(DrawobjMixin):
+
     def __init__(self, ident,  parent, name='Polygons', **kwargs):
         self.init_common(ident, parent=parent, name=name,
                          is_fill=False,
@@ -3531,14 +3314,15 @@ class Polygons(DrawobjMixin):
                     color_highl=None, color_fill_highl=None,
                     is_update=True):
 
-        if color_fill is None:
+        if color_fill == None:
             color_fill = color
 
-        if color_highl is None:
+        if color_highl == None:
             color_highl = self._get_colors_highl(np.array([color]))[0]
 
-        if color_fill_highl is None:
-            color_fill_highl = self._get_colors_highl(np.array([color_fill]))[0]
+        if color_fill_highl == None:
+            color_fill_highl = self._get_colors_highl(
+                np.array([color_fill]))[0]
 
         _id = self.add_row(vertices=vertex,
                            colors=color,
@@ -3556,13 +3340,13 @@ class Polygons(DrawobjMixin):
                      colors_highl=None, colors_fill_highl=None,
                      is_update=True):
 
-        if colors_fill is None:
+        if colors_fill == None:
             colors_fill = colors
 
-        if colors_highl is None:
+        if colors_highl == None:
             colors_highl = self._get_colors_highl(colors)
 
-        if colors_fill_highl is None:
+        if colors_fill_highl == None:
             colors_fill_highl = self._get_colors_highl(colors_fill)
 
         ids = self.add_rows(len(vertices),
@@ -3580,11 +3364,11 @@ class Polygons(DrawobjMixin):
     def begin_animation(self, id_target):
 
         self._id_target = id_target
-        self._drawobj_anim = self.parent.get_drawobj_by_ident(self._ident_drawobj_anim)
-        self.id_anim = self._drawobj_anim.add_drawobj(  # make a copy as array, otherwise instance is copied
-                                                        np.array(self.get_vertices(id_target), np.float32).tolist(),
-                                                        self.color_anim.get_value(),
-        )
+        self._drawobj_anim = self.parent.get_drawobj_by_ident(
+            self._ident_drawobj_anim)
+        self.id_anim = self._drawobj_anim.add_drawobj(self.get_vertices(id_target),
+                                                      self.color_anim.value,
+                                                      )
         # print 'begin_animation',self.ident,_id,self._drawobj_anim
         return True
 
@@ -3593,19 +3377,23 @@ class Polygons(DrawobjMixin):
         # for _id in self.get_ids():
         #    print '   main.vertices',_id,self.vertices[_id], type(self.vertices[_id])
         # for _id in self._drawobj_anim.get_ids():
-        #    print '   anim.vertices',_id,self._drawobj_anim.vertices[_id], type(self._drawobj_anim.vertices[_id])
+        # print '   anim.vertices',_id,self._drawobj_anim.vertices[_id],
+        # type(self._drawobj_anim.vertices[_id])
 
         self._drawobj_anim.get_vertices(self.id_anim).append(vert)
         # print '  vertices',self._drawobj_anim.vertices[self.id_anim],type(self._drawobj_anim.vertices[self.id_anim])
         #vertices = self._drawobj_anim.vertices[self.id_anim]
         # vertices.append(vert)
-        # self._drawobj_anim.vertices[self.id_anim]= vertices#list(np.array(vertices,np.float32))
+        # self._drawobj_anim.vertices[self.id_anim]=
+        # vertices#list(np.array(vertices,np.float32))
 
         # print '  vertices',vertices,type(vertices)
-        # print '  self._drawobj_anim.vertices[self.id_anim]',self._drawobj_anim.vertices[self.id_anim],type(self._drawobj_anim.vertices[self.id_anim])
+        # print '
+        # self._drawobj_anim.vertices[self.id_anim]',self._drawobj_anim.vertices[self.id_anim],type(self._drawobj_anim.vertices[self.id_anim])
         self._drawobj_anim._update_vertexvbo()
         self._drawobj_anim._update_colorvbo()
-        return len(self._drawobj_anim.get_vertices(self.id_anim))-1  # vertex ind of next
+        # vertex ind of next
+        return len(self._drawobj_anim.get_vertices(self.id_anim)) - 1
 
     # def get_vertices_array(self):
     #    return self.vertices.value
@@ -3631,14 +3419,14 @@ class Polygons(DrawobjMixin):
             # print '  polyline\n',polyline
             polyvinds = range(len(polyline))
             # print '  polyvinds\n',polyvinds
-            vi = np.zeros((2*len(polyline)), np.int32)
+            vi = np.zeros((2 * len(polyline)), np.int32)
             vi[0] = polyvinds[0]
             vi[-2] = polyvinds[-2]
             vi[-1] = polyvinds[-1]
             # print '  vi\n',vi
 
             # Important type conversion!!
-            v = np.zeros((2*len(polyline), 3), np.float32)
+            v = np.zeros((2 * len(polyline), 3), np.float32)
             v[0] = polyline[0]
             v[-2] = polyline[-1]
             v[-1] = polyline[0]
@@ -3646,9 +3434,9 @@ class Polygons(DrawobjMixin):
             if len(v) > 3:
                 v[1:-1] = np.repeat(polyline[1:], 2, 0)
                 vi[1:-1] = np.repeat(polyvinds[1:], 2)
-            n_lines = len(v)/2
+            n_lines = len(v) / 2
             # print '  v\n',v
-            inds_polyline = range(ind_line, ind_line+n_lines)
+            inds_polyline = range(ind_line, ind_line + n_lines)
 
             polyinds[inds_polyline] = ind
             linevertices[inds_polyline] = v.reshape((-1, 2, 3))
@@ -3665,8 +3453,10 @@ class Polygons(DrawobjMixin):
         self._make_lines()
 
         if self._is_outline.value:
-            # print '  linevertices.reshape((-1,6))',self._linevertices.reshape((-1,6)),len(self._linevertices)
-            self.get_vbo('outline').update_vertices(self._linevertices.reshape((-1, 6)), len(self._linevertices))
+            # print '
+            # linevertices.reshape((-1,6))',self._linevertices.reshape((-1,6)),len(self._linevertices)
+            self.get_vbo('outline').update_vertices(
+                self._linevertices.reshape((-1, 6)), len(self._linevertices))
             #self._update_vertexvbo_line_fill(x1_new,y1_new,z1,x2_new,y2_new,z2,length_xy, alpha_xy,halfwidth,len(vertices))
 
         # if self._is_fill.value:
@@ -3681,8 +3471,8 @@ class Polygons(DrawobjMixin):
         #self._linecolors = np.array(linecolors, np.float32)
         #self._linecolors_highl = np.array(linecolors_highl, np.float32)
         if (self._is_outline.value) & (n > 0):
-            colors = self.colors.value[self._polyinds] + \
-                self.are_highlighted.value[self._polyinds].reshape(n, 1)*self.colors_highl.value[self._polyinds]
+            colors = self.colors.value[self._polyinds] + self.are_highlighted.value[
+                self._polyinds].reshape(n, 1) * self.colors_highl.value[self._polyinds]
             self.get_vbo('outline').update_colors(colors)
 
         # if self._is_fill.value:
@@ -3691,10 +3481,10 @@ class Polygons(DrawobjMixin):
 
     def pick(self, p, detectwidth=0.1):
         """
-        Returns a binary vector which is True values for lines that have been selected
+        Returns a binary vector which is True values for lines that have been selected 
         by point p.
 
-        In particular, an element of this vector is True if the minimum distance
+        In particular, an element of this vector is True if the minimum distance 
         between the respective line to point p is less than detectwidth
         """
         if len(self) == 0:
@@ -3707,7 +3497,7 @@ class Polygons(DrawobjMixin):
         x2 = vertices[:, 1, 0]
         y2 = vertices[:, 1, 1]
 
-        return self._ids[self._polyinds[get_dist_point_to_segs(p, x1, y1, x2, y2, is_ending=True) < detectwidth*detectwidth]]
+        return self._ids[self._polyinds[get_dist_point_to_segs(p, x1, y1, x2, y2, is_ending=True) < detectwidth * detectwidth]]
 
     def pick_handle(self, coord, detectwidth=0.1):
         """
@@ -3728,9 +3518,9 @@ class Polygons(DrawobjMixin):
         handles = []
         # print '  vertices',vertices
         # print '  vertices.shape',vertices.shape
-        dx = vertices[:, 0, 0]-coord[0]
-        dy = vertices[:, 0, 1]-coord[1]
-        inds = np.flatnonzero(dx*dx+dy*dy < dw)
+        dx = vertices[:, 0, 0] - coord[0]
+        dy = vertices[:, 0, 1] - coord[1]
+        inds = np.flatnonzero(dx * dx + dy * dy < dw)
 
         ids = self._ids[self._polyinds[inds]]
         handle1 = np.ones((len(ids), 2), np.int)
@@ -3738,9 +3528,9 @@ class Polygons(DrawobjMixin):
         handle1[:, 1] = self._vertexinds[inds, 0]
         # print '  ',d,handle1
 
-        dx = vertices[:, 1, 0]-coord[0]
-        dy = vertices[:, 1, 1]-coord[1]
-        inds = np.flatnonzero(dx*dx+dy*dy < dw)
+        dx = vertices[:, 1, 0] - coord[0]
+        dy = vertices[:, 1, 1] - coord[1]
+        inds = np.flatnonzero(dx * dx + dy * dy < dw)
         ids = self._ids[self._polyinds[inds]]
         handle2 = np.ones((len(ids), 2), np.int)
         handle2[:, 0] = ids
@@ -3757,14 +3547,16 @@ class Polygons(DrawobjMixin):
         vv = self._linevertices
         # TODOD: can be done faster
         return np.array([[np.min(vv[:, :, 0]), np.min(vv[:, :, 1]), np.min(vv[:, :, 2])],
-                         [np.max(vv[:, :, 0]), np.max(vv[:, :, 1]), np.max(vv[:, :, 2])]
+                         [np.max(vv[:, :, 0]), np.max(
+                             vv[:, :, 1]), np.max(vv[:, :, 2])]
                          ], float)
 
 
 class OGLdrawing(am.ArrayObjman):
+
     """
     Class holding an ordered list of all OGL draw objects.
-    This class manages also the order in which the draw objects are rendered.
+    This class manages also the order in which the draw objects are rendered. 
 
     The basic idea is that an instance of this class can be passed to
     different OGL rendering canvas.
@@ -3781,13 +3573,12 @@ class OGLdrawing(am.ArrayObjman):
                                  info='Object, containing data and rendering methods.',
                                  ))
 
-        self.add_col(am.ArrayConf('idents', '',
-                                  dtype='object',
-                                  perm='r',
-                                  is_index=True,
-                                  name='ID',
-                                  info='Ident string of draw object.',
-                                  ))
+        self.add_col(cm.ColConf('idents', '',
+                                perm='r',
+                                is_index=True,
+                                name='ID',
+                                info='Layer string ID.',
+                                ))
 
         self.add_col(am.ArrayConf('layers', -1.0,
                                   groupnames=['options'],
@@ -3801,7 +3592,6 @@ class OGLdrawing(am.ArrayObjman):
         # print 'get_drawobjs'
         ids = []
         # efficient only if there are few number of different layers
-        # TODO: use the new sort function of indexed cols
         for layer in sorted(set(self.layers.value)):
             inds = np.flatnonzero(self.layers.value == layer)
             ids += list(self.get_ids(inds))
@@ -3810,7 +3600,8 @@ class OGLdrawing(am.ArrayObjman):
         if not is_anim:
             ids_noanim = []
             for _id in ids:
-                # print '  check',_id,self.drawobjects[_id].get_ident(),self.drawobjects[_id].get_name(),self.drawobjects[_id].get_ident().count('anim')
+                # print '
+                # check',_id,self.drawobjects[_id].get_ident(),self.drawobjects[_id].get_name(),self.drawobjects[_id].get_ident().count('anim')
                 if self.drawobjects[_id].get_ident().count('anim') == 0:
                     ids_noanim.append(_id)
             # print '  ids_noanim',ids_noanim
@@ -3830,10 +3621,10 @@ class OGLdrawing(am.ArrayObjman):
             None
 
     def add_drawobj(self, drawobj, layer=0):
-        id_drawobj = self.add_row(drawobjects=drawobj,
-                                  idents=drawobj.get_ident(),
-                                  layers=layer,
-                                  )
+        id_drawobj = self.add_rows(1, drawobjects=[drawobj],
+                                   idents=[drawobj.get_ident()],
+                                   layers=[layer],
+                                   )
         return id_drawobj
 
     def del_drawobj_by_ident(self, ident):
@@ -3846,6 +3637,7 @@ class OGLdrawing(am.ArrayObjman):
 
 
 class OGLnavcanvas(wx.Panel):
+
     """
     Canvas with some navigation tools.
     """
@@ -3866,7 +3658,8 @@ class OGLnavcanvas(wx.Panel):
 
         # compose navcanvas  window
         sizer.Add(self._canvas, 1, wx.GROW)
-        sizer.Add(self._navbar, 0, wx.ALL | wx.ALIGN_LEFT | wx.GROW, 4)  # from NaviPanelTest
+        sizer.Add(self._navbar, 0, wx.ALL | wx.ALIGN_LEFT |
+                  wx.GROW, 4)  # from NaviPanelTest
         # finish panel setup
         self.SetSizer(sizer)
         sizer.Fit(self)
@@ -3887,29 +3680,34 @@ class OGLnavcanvas(wx.Panel):
         ##
         navbar = wx.BoxSizer(wx.HORIZONTAL)
 
-        bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'gtk_fit_zoom_24px.png'), wx.BITMAP_TYPE_PNG)
+        bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'gtk_fit_zoom_24px.png'), wx.BITMAP_TYPE_PNG)
         b = wx.BitmapButton(self, -1, bitmap, bottonsize)
         b.SetToolTipString("Zoom to fit")
         self.Bind(wx.EVT_BUTTON, self.on_zoom_tofit, b)
-        navbar.Add(b, flag=wx.ALL, border=toolbarborder)  # ,border=toolbarborder ,flag=wx.ALL, # 0, wx.ALL, 5
+        # ,border=toolbarborder ,flag=wx.ALL, # 0, wx.ALL, 5
+        navbar.Add(b, flag=wx.ALL, border=toolbarborder)
 
-        bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'gtk_in_zoom_24px.png'), wx.BITMAP_TYPE_PNG)
+        bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'gtk_in_zoom_24px.png'), wx.BITMAP_TYPE_PNG)
         b = wx.BitmapButton(self, -1, bitmap, bottonsize,
-                            (bitmap.GetWidth()+bottonborder, bitmap.GetHeight()+bottonborder))
+                            (bitmap.GetWidth() + bottonborder, bitmap.GetHeight() + bottonborder))
         b.SetToolTipString("Zoom in")
         self.Bind(wx.EVT_BUTTON, self.on_zoom_in, b)
         navbar.Add(b, flag=wx.ALL, border=toolbarborder)
 
-        bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'gtk_out_zoom_24px.png'), wx.BITMAP_TYPE_PNG)
+        bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'gtk_out_zoom_24px.png'), wx.BITMAP_TYPE_PNG)
         b = wx.BitmapButton(self, -1, bitmap, bottonsize,
-                            (bitmap.GetWidth()+bottonborder, bitmap.GetHeight()+bottonborder))
+                            (bitmap.GetWidth() + bottonborder, bitmap.GetHeight() + bottonborder))
         b.SetToolTipString("Zoom out")
         self.Bind(wx.EVT_BUTTON, self.on_zoom_out, b)
         navbar.Add(b, flag=wx.ALL, border=toolbarborder)
 
-        bitmap = wx.Bitmap(os.path.join(IMAGEDIR, 'icon_select_components.png'), wx.BITMAP_TYPE_PNG)
+        bitmap = wx.Bitmap(os.path.join(
+            IMAGEDIR, 'icon_select_components.png'), wx.BITMAP_TYPE_PNG)
         b = wx.BitmapButton(self, -1, bitmap, bottonsize,
-                            (bitmap.GetWidth()+bottonborder, bitmap.GetHeight()+bottonborder))
+                            (bitmap.GetWidth() + bottonborder, bitmap.GetHeight() + bottonborder))
         b.SetToolTipString("Select drawing components")
         #b = wx.Button(self, label="Show/Hide")
         self.Bind(wx.EVT_BUTTON,  self.popup_showhide, b)
@@ -3918,7 +3716,8 @@ class OGLnavcanvas(wx.Panel):
         # navbar.AddSpacer(3)
 
         self.coordsdisplay = wx.StaticText(self, -1, 'x,y',  style=wx.TE_RIGHT)
-        navbar.Add(self.coordsdisplay, wx.ALL | wx.EXPAND, 5, border=toolbarborder)  # ,flag=wx.RIGHT no effect??
+        navbar.Add(self.coordsdisplay, wx.ALL | wx.EXPAND, 5,
+                   border=toolbarborder)  # ,flag=wx.RIGHT no effect??
         # self.path = wx.TextCtrl(self, -1,'Try me', style=wx.TE_RIGHT)#size=(-1, -1))#,size=(300, -1))
         #self.path.Bind(wx.EVT_CHAR, self.on_test)
         #navbar.Add(self.path,1, wx.EXPAND, border=toolbarborder)
@@ -3985,7 +3784,7 @@ class OGLnavcanvas(wx.Panel):
                 self._menu_showhide.append_item(
                     drawobj.get_name(),
                     self.showhide_drawobjs,
-                    info='Show/hide '+drawobj.get_name(),
+                    info='Show/hide ' + drawobj.get_name(),
                     check=drawobj.is_visible(),
                 )
 
@@ -3999,7 +3798,8 @@ class OGLnavcanvas(wx.Panel):
         if drawing:
             for drawobj in drawing.get_drawobjs():
                 menuitem = self._menu_showhide.get_menuitem(drawobj.get_name())
-                # print '  set_visible=',drawobj.get_name(),menuitem.IsChecked()
+                # print '
+                # set_visible=',drawobj.get_name(),menuitem.IsChecked()
                 drawobj.set_visible(menuitem.IsChecked())
 
             self._canvas.draw()
@@ -4010,8 +3810,9 @@ class OGLnavcanvas(wx.Panel):
 
 
 class OGLcanvas(glcanvas.GLCanvas):
+
     def __init__(self, parent,  mainframe=None):
-        if mainframe is None:
+        if mainframe == None:
             self._mainframe = parent
         else:
             self._mainframe = mainframe
@@ -4052,12 +3853,7 @@ class OGLcanvas(glcanvas.GLCanvas):
 
         glcanvas.GLCanvas.__init__(self, parent, -1, attribList=attribList)
 
-        self._wxversion = wx.__version__[:3]
-        if self._wxversion == '2.8':
-            self.GLinitialized = False
-        else:
-            self.init = False  # 3.0
-            self.context = glcanvas.GLContext(self)
+        self.GLinitialized = False
 
         # Set the event handlers.
         self.Bind(wx.EVT_ERASE_BACKGROUND, self.processEraseBackgroundEvent)
@@ -4084,7 +3880,7 @@ class OGLcanvas(glcanvas.GLCanvas):
         # self.SetFocus()
 
         self._drawing = None
-        # if drawing is not None:
+        # if drawing!= None:
         #    self.set_drawing(drawing)
 
         # this is needed to initialize GL projections for unproject
@@ -4093,7 +3889,7 @@ class OGLcanvas(glcanvas.GLCanvas):
     def set_drawing(self, drawing):
         if self._drawing != drawing:
 
-            # if self._tool  is not None:
+            # if self._tool != None:
             #    self._tool.force_deactivation()
 
             del self._drawing
@@ -4148,21 +3944,23 @@ class OGLcanvas(glcanvas.GLCanvas):
         #
         Rot = event.GetWheelRotation()
         # print 'OnWheel!!',Rot,event.ControlDown(),event.ShiftDown()
-        if (not event.ShiftDown()) & event.ControlDown():  # event.ControlDown(): # zoom
+        # event.ControlDown(): # zoom
+        if (not event.ShiftDown()) & event.ControlDown():
             if Rot < 0:
                 self.zoom_in(is_draw=False)
             else:
                 self.zoom_out(is_draw=False)
             is_draw |= True
 
-        if (event.ShiftDown()) & event.ControlDown():  # event.ControlDown(): # zoom
+        # event.ControlDown(): # zoom
+        if (event.ShiftDown()) & event.ControlDown():
             if Rot < 0:
                 self.xRotate -= 5.0
             else:
                 self.xRotate += 5.0
             is_draw |= True
 
-        elif self._tool is not None:
+        elif self._tool != None:
             is_draw |= self._tool.on_wheel(event)
             self.draw()
             event.Skip()
@@ -4179,19 +3977,19 @@ class OGLcanvas(glcanvas.GLCanvas):
             # there is no window space
             return 1.0
 
-        v_top = self.unproject((0.5*self.g_Width, 0))
-        v_bot = self.unproject((0.5*self.g_Width, self.g_Height))
+        v_top = self.unproject((0.5 * self.g_Width, 0))
+        v_bot = self.unproject((0.5 * self.g_Width, self.g_Height))
 
         v_left = self.unproject((0, 0.5 * self.g_Height))
-        v_right = self.unproject((self.g_Width,  0.5*self.g_Height))
+        v_right = self.unproject((self.g_Width,  0.5 * self.g_Height))
 
-        dy = np.abs(v_bot[1]-v_top[1])
-        dx = np.abs(v_right[1]-v_left[1])
+        dy = np.abs(v_bot[1] - v_top[1])
+        dx = np.abs(v_right[1] - v_left[1])
 
         if dx > dy:
-            return dx/self.g_Width
+            return dx / self.g_Width
         else:
-            return dy/self.g_Height
+            return dy / self.g_Height
 
     def zoom_tofit(self, event=None, is_draw=True):
         # print 'zoom_tofit',is_draw
@@ -4214,14 +4012,14 @@ class OGLcanvas(glcanvas.GLCanvas):
         # print 'p_min',p_min
         # print 'p_max',p_max
 
-        dp = np.abs(np.array(p_max-p_min, float))
+        dp = np.abs(np.array(p_max - p_min, float))
 
         # print '  dp',dp,dp==np.nan,np.nan
         if np.isnan(np.sum(dp)):
             return
 
         window = np.array([self.g_Width, self.g_Height], float)
-        zoomfactor = 0.8*np.min(window/dp[:2])
+        zoomfactor = 0.8 * np.min(window / dp[:2])
 
         # print '  zoomfactor,zoom',zoomfactor,self.zoom
 
@@ -4237,7 +4035,7 @@ class OGLcanvas(glcanvas.GLCanvas):
         # print '  vv_min',vv_min
         # print '  vv_target',vv_target
         # print '  trans',self.trans
-        dv = 0.9*vv_target-vv_min
+        dv = 0.9 * vv_target - vv_min
 
         # print '  dv',dv
         newtrans = np.array(self.trans) + dv[:2]
@@ -4252,7 +4050,7 @@ class OGLcanvas(glcanvas.GLCanvas):
         if drawing:
             for drawobj in drawing.get_drawobjs():
                 bb = drawobj.get_boundingbox()
-                if bb is not None:
+                if bb != None:
                     v_min, v_max = bb
                     # print '    v_min',v_min
                     # print '    v_max',v_max
@@ -4280,7 +4078,7 @@ class OGLcanvas(glcanvas.GLCanvas):
             self.BeginGrap(event)
             event.Skip()
 
-        elif self._tool is not None:
+        elif self._tool != None:
             is_draw = self._tool.on_left_down(event)
 
         if is_draw:
@@ -4288,7 +4086,7 @@ class OGLcanvas(glcanvas.GLCanvas):
             event.Skip()
 
     def OnLeftDclick(self, event, is_draw=False):
-        if self._tool is not None:
+        if self._tool != None:
             is_draw = self._tool.on_left_dclick(event)
 
         if is_draw:
@@ -4302,7 +4100,7 @@ class OGLcanvas(glcanvas.GLCanvas):
             self.action == ''
             event.Skip()
 
-        elif self._tool is not None:
+        elif self._tool != None:
             is_draw = self._tool.on_left_up(event)
 
         if is_draw:
@@ -4310,7 +4108,7 @@ class OGLcanvas(glcanvas.GLCanvas):
             event.Skip()
 
     def OnRightDown(self, event, is_draw=False):
-        if self._tool is not None:
+        if self._tool != None:
             is_draw = self._tool.on_right_down(event)
 
         if is_draw:
@@ -4319,7 +4117,7 @@ class OGLcanvas(glcanvas.GLCanvas):
 
     def OnRightUp(self, event, is_draw=False):
 
-        if self._tool is not None:
+        if self._tool != None:
             is_draw = self._tool.on_right_up(event)
 
         if is_draw:
@@ -4341,7 +4139,7 @@ class OGLcanvas(glcanvas.GLCanvas):
             self.action == ''
             event.Skip()
 
-        elif self._tool is not None:
+        elif self._tool != None:
             is_draw |= self._tool.on_motion(event)
 
         if is_draw:
@@ -4360,7 +4158,8 @@ class OGLcanvas(glcanvas.GLCanvas):
         x, y = self.unproject(event.GetPosition())[0:2]
         x0, y0 = self.unproject(self.pos_start)[0:2]
 
-        self.trans = (self.trans_start[0] + (x-x0), self.trans_start[1] + (y-y0))
+        self.trans = (self.trans_start[0] + (x - x0),
+                      self.trans_start[1] + (y - y0))
         # print 'MoveGrap',self.trans, x,y
 
     def EndGrap(self, event):
@@ -4377,14 +4176,10 @@ class OGLcanvas(glcanvas.GLCanvas):
 
     def OnSize(self, event=None, win=None):
         """Process the resize event."""
-
         if self.GetContext():
             # Make sure the frame is shown before calling SetCurrent.
             self.Show()
-            if self._wxversion != '2.8':
-                self.SetCurrent(self.context)
-            else:
-                self.SetCurrent()
+            self.SetCurrent()
 
             size = self.GetClientSize()
             self.OnReshape(size.width, size.height)
@@ -4394,17 +4189,12 @@ class OGLcanvas(glcanvas.GLCanvas):
 
     def processPaintEvent(self, event):
         """Process the drawing event."""
+        self.SetCurrent()
 
         # This is a 'perfect' time to initialize OpenGL ... only if we need to
-
-        if self._wxversion != '2.8':
-            self.SetCurrent(self.context)
-            if not self.init:
-                self.OnInitGL()
-        else:
-            self.SetCurrent()
-            if not self.GLinitialized:
-                self.OnInitGL()
+        if not self.GLinitialized:
+            self.OnInitGL()
+            self.GLinitialized = True
 
         self.draw()
         event.Skip()
@@ -4414,35 +4204,7 @@ class OGLcanvas(glcanvas.GLCanvas):
 
     def OnInitGL(self):
         """Initialize OpenGL for use in the window."""
-
-        if self._wxversion == '2.8':
-            self.GLinitialized = True
-        else:
-            self.InitGL()
-            self.init = True
-
         glClearColor(0, 0, 0, 1)
-
-    def InitGL(self):
-        '''
-        From 3.0 Demo
-        Initialize GL
-        '''
-        pass
-
-#        # set viewing projection
-#        glClearColor(0.0, 0.0, 0.0, 1.0)
-#        glClearDepth(1.0)
-#
-#        glMatrixMode(GL_PROJECTION)
-#        glLoadIdentity()
-#        gluPerspective(40.0, 1.0, 1.0, 30.0)
-#
-#        glMatrixMode(GL_MODELVIEW)
-#        glLoadIdentity()
-#        gluLookAt(0.0, 0.0, 10.0,
-#                  0.0, 0.0, 0.0,
-#                  0.0, 1.0, 0.0)
 
     def set_color_background(self, color):
         glClearColor(color[0], color[1], color[2], color[3])
@@ -4453,52 +4215,47 @@ class OGLcanvas(glcanvas.GLCanvas):
         #global g_Width, g_Height
         self.g_Width = width
         self.g_Height = height
-        if self._wxversion != '2.8':
-            self.SetCurrent(self.context)
         glViewport(0, 0, self.g_Width, self.g_Height)
 
     def draw(self, *args, **kwargs):
         """Draw the window."""
         # print 'OGLCanvas.draw id(self._drawing)',id(self._drawing)
-        if self.GetContext():
-            if self._wxversion != '2.8':
-                self.SetCurrent(self.context)
+        # Clear frame buffer and depth buffer
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        # Set up viewing transformation, looking down -Z axis
+        glLoadIdentity()
+        gluLookAt(self.eyex, self.eyey, self.eyez, self.centerx, self.centery,
+                  self.centerz, self.upx, self.upy, self.upz)  # -.1,0,0
 
-            # Clear frame buffer and depth buffer
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            # Set up viewing transformation, looking down -Z axis
-            glLoadIdentity()
-            gluLookAt(self.eyex, self.eyey, self.eyez, self.centerx, self.centery,
-                      self.centerz, self.upx, self.upy, self.upz)  # -.1,0,0
+        # Set perspective (also zoom)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        # the window corner OpenGL coordinates are (-+1, -+1)
+        glOrtho(-1, 1, 1, -1, -1, 1)
 
-            # Set perspective (also zoom)
-            glMatrixMode(GL_PROJECTION)
-            glLoadIdentity()
-            # the window corner OpenGL coordinates are (-+1, -+1)
-            glOrtho(-1, 1, 1, -1, -1, 1)
+        aspect = float(self.g_Width) / float(self.g_Height)
 
-            aspect = float(self.g_Width)/float(self.g_Height)
+        gluPerspective(self.zoom, aspect, self.g_nearPlane, self.g_farPlane)
+        glMatrixMode(GL_MODELVIEW)
+        self.polarView()
 
-            gluPerspective(self.zoom, aspect, self.g_nearPlane, self.g_farPlane)
-            glMatrixMode(GL_MODELVIEW)
-            self.polarView()
+        # resolution in GL unit per scren pixel
+        resolution = self.get_resolution()
+        # print '  get_resolution',resolution
 
-            # resolution in GL unit per scren pixel
-            resolution = self.get_resolution()
-            # print '  get_resolution',resolution
+        # draw actual scene
+        if self._drawing:
+            # self._drawing.print_attrs()
+            for drawobj in self._drawing.get_drawobjs(is_anim=True):
+                #checkobj = self._drawing.get_drawobj_by_ident(drawobj.ident)
+                # if checkobj!= None:
+                #    print '\n  draw.drawobj',drawobj.ident, checkobj.ident
+                # else:
+                # print '\n  draw.drawobj',drawobj.ident,
+                # checkobj,self._drawing.has_drawobj_with_ident(drawobj.ident)
+                drawobj.draw(resolution)
 
-            # draw actual scene
-            if self._drawing:
-                # self._drawing.print_attrs()
-                for drawobj in self._drawing.get_drawobjs(is_anim=True):
-                    #checkobj = self._drawing.get_drawobj_by_ident(drawobj.ident)
-                    # if checkobj is not None:
-                    #    print '\n  draw.drawobj',drawobj.ident, checkobj.ident
-                    # else:
-                    #    print '\n  draw.drawobj',drawobj.ident, checkobj,self._drawing.has_drawobj_with_ident(drawobj.ident)
-                    drawobj.draw(resolution)
-
-            self.SwapBuffers()
+        self.SwapBuffers()
 
     def polarView(self):
         glTranslatef(self.trans[1], 0.0, 0.0)
@@ -4514,116 +4271,31 @@ class OGLcanvas(glcanvas.GLCanvas):
         # https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
         d = -v_near + v_far
 
-        t = -v_near[2]/d[2]
-        v_inter = v_near+t*d
+        t = -v_near[2] / d[2]
+        v_inter = v_near + t * d
 
         return v_inter
 
     def unproject_event(self, event):
         return self.unproject(event.GetPosition())[0:2]
 
-    def unproject_noglu(self, pos_display):
-        """
-        Unproject without GLU function gluUnProject
-        (does not work properly)
-        """
-        print 'unproject'
-        mousex, mousey = pos_display
-        # http://antongerdelan.net/opengl/raycasting.html
-        # http://www1.cs.columbia.edu/~cs4160/html04f/slides/transformations.pdf
-
-        # The next step is to transform it into 3d normalised device coordinates.
-        x = (2.0 * mousex) / self.g_Width - 1.0
-        y = 1.0 - (2.0 * mousey) / self.g_Height
-        z = 1.0
-        ray_nds = np.array([x, y, z], dtype=np.float32)
-
-        ray_clip = np.array([[ray_nds[0], ray_nds[1], -1.0, 1.0]], dtype=np.float32).transpose()
-        print 'ray_clip=\n', ray_clip
-
-        # projection matrix
-        aspect = float(self.g_Width)/float(self.g_Height)
-        f = 1.0/np.tan(self.zoom/2.0)
-        z_near = self.g_nearPlane
-        z_far = self.g_farPlane
-        a = (z_far+z_near)/(z_near-z_far)
-        b = (2*z_far*z_near)/(z_near-z_far)
-
-        projection_matrix = np.array([
-            [f/aspect,  0.,     0.,     0.],
-            [0.,        f,      0.,     0.],
-            [0.,        0.,     a,     b],
-            [0.,        0.,     -1.,    0.],
-        ], dtype=np.float32)
-
-        # 4d Eye (Camera) Coordinates
-        ray_eye = np.dot(np.linalg.inv(projection_matrix), ray_clip)
-        ray_eye = np.array([[ray_eye[0], ray_eye[1], -1.0, 0.0]], float).transpose()
-        print '  ray_eye=\n', ray_eye
-
-        #  4d World Coordinates
-        #gluLookAt(self.eyex, self.eyey, self.eyez, self.centerx,self.centery, self.centerz, self.upx, self.upy, self.upz)
-        # print self.centerx,self.centery, self.centerz
-        # print self.eyex, self.eyey, self.eyez
-
-        f_vec = np.array([
-            [self.centerx - self.eyex],
-            [self.centery - self.eyey],
-            [self.centerz - self.eyez],
-        ], dtype=np.float32).flatten()
-        f_norm = normalize(f_vec)
-        # print 'f_vec=\n',f_vec
-        # print 'f_norm=\n',f_norm,np.linalg.norm(f_norm)
-        up_vec = np.array([
-            [self.upx],
-            [self.upy],
-            [self.upz],
-        ], dtype=np.float32).flatten()
-        up_norm = normalize(up_vec)
-
-        fxup = np.cross(f_norm, up_norm)
-        s = normalize(fxup)
-        sxf = np.cross(s, f_norm)
-        u = normalize(sxf)
-
-        view_matrix = np.array([
-            [s[0],              s[1],           s[2],     0.],
-            [u[0],              u[1],           u[2],     0.],
-            [-f_norm[0],        -f_norm[1],     -f_norm[2],     0.],
-            [0.,                0.,             0.,             1.],
-        ], dtype=np.float32)
-
-        ray_wor = np.dot(np.linalg.inv(view_matrix), ray_eye)
-        # print 'ray_wor=\n',ray_wor,ray_wor[0:3,0]
-        ray_wor = normalize(ray_wor[0:3, 0])
-        print '  ray_wor=\n', ray_wor
-        i0 = 8*3
-
-        eye_vec = np.array([self.eyex, self.eyey, self.eyez], dtype=np.float32)
-        t = 1.0
-        # vertexvbo[i0:i0+3]=eye_vec+ray_wor*t
-
-        # self.vertexarray[8]=eye_vec+ray_wor*t
-        # self.vertexvbo.set_array(self.vertexarray)
-        v_inter = eye_vec+ray_wor*t
-        print '  ray pointer=', v_inter
-
-        return v_inter[0:2]
-
     def unproject(self, pos_display):
         """Get the world coordinates for viewCoordinate for the event
         """
 
         x = pos_display[0]
-        y = self.g_Height-pos_display[1]
+        y = self.g_Height - pos_display[1]
 
         modelviewmatrix = glGetDoublev(GL_MODELVIEW_MATRIX)
         projectionmatrix = glGetDoublev(GL_PROJECTION_MATRIX)
         viewport = glGetInteger(GL_VIEWPORT)
 
         z = 0.0
-        worldCoordinate_near = np.array(gluUnProject(x, y, z),
-                                        dtype=np.float32)
+        worldCoordinate_near = np.array(gluUnProject(
+            x, y, z,
+            modelviewmatrix,
+            projectionmatrix,
+            viewport,), dtype=np.float32)
 
         z = 1.0
         worldCoordinate_far = np.array(gluUnProject(
@@ -4632,7 +4304,8 @@ class OGLcanvas(glcanvas.GLCanvas):
             projectionmatrix,
             viewport,), dtype=np.float32)
 
-        v_inter = self.get_intersection(worldCoordinate_near, worldCoordinate_far)
+        v_inter = self.get_intersection(
+            worldCoordinate_near, worldCoordinate_far)
         return v_inter
 
     def project(self, vertex):
@@ -4654,13 +4327,15 @@ class OGLcanvas(glcanvas.GLCanvas):
 
 
 class OGLcanvasTools(ToolsPanel):
+
     """
     Shows a toolpallet with different tools and an options panel.
-    Here tools are added which
+    Here tools are added which 
     """
 
     def __init__(self, parent):
-        ToolsPanel.__init__(self, parent, n_buttoncolumns=3, size=wx.DefaultSize)
+        ToolsPanel.__init__(self, parent, n_buttoncolumns=3,
+                            size=wx.DefaultSize)
 
         # add ainitial tool
         self.add_initial_tool(SelectTool(self))
@@ -4691,7 +4366,7 @@ class OGleditor(wx.Panel):
 
         self._drawing = None
 
-        # if drawing is not None:....
+        # if drawing!= None:....
         self.prefix_anim = 'anim_'
         self.layer_anim = 1000.0
 
@@ -4719,7 +4394,8 @@ class OGleditor(wx.Panel):
 
         # navbar
         #sizer.Add(self._canvas,1,wx.GROW)#
-        # sizer.Add(self._navbar,0, wx.ALL | wx.ALIGN_LEFT | wx.GROW, 4)# from NaviPanelTest
+        # sizer.Add(self._navbar,0, wx.ALL | wx.ALIGN_LEFT | wx.GROW, 4)# from
+        # NaviPanelTest
 
         # finish panel setup
         self.SetSizer(sizer)
@@ -4743,12 +4419,6 @@ class OGleditor(wx.Panel):
     def get_toolbox(self):
         return self._toolspanel
 
-    def add_toolclass(self, Toolclass, **kwargs):
-        """
-        Add a new Toolclas to the tool-panel on the right side of the editor
-        """
-        self.get_toolbox().add_toolclass(Toolclass, **kwargs)
-
     def set_drawing(self, drawing):
         # self._toolspanel.reset_initial_tool()
         # here ad some additional drawing objects for animation
@@ -4764,35 +4434,31 @@ class OGleditor(wx.Panel):
 
     def add_drawobjs_anim(self, drawing=None):
 
-        if drawing is None:
+        if drawing == None:
             drawing = self._drawing
-        drawobjs_anim = [Lines(self.prefix_anim+'lines', drawing,
+        drawobjs_anim = [Lines(self.prefix_anim + 'lines', drawing,
                                linewidth=1),
 
-                         Rectangles(self.prefix_anim+'rectangles', drawing,
-                                    linewidth=1,
-                                    ),
-
-                         Fancylines(self.prefix_anim+'fancylines', drawing,
+                         Fancylines(self.prefix_anim + 'fancylines', drawing,
                                     is_lefthalf=True,
                                     is_righthalf=True,
                                     linewidth=1,
                                     ),
 
-                         Lines(self.prefix_anim+'lines', drawing,
+                         Lines(self.prefix_anim + 'lines', drawing,
                                linewidth=1),
 
-                         Polylines(self.prefix_anim+'polylines', drawing,
+                         Polylines(self.prefix_anim + 'polylines', drawing,
                                    joinstyle=FLATHEAD,
                                    is_lefthalf=True,
                                    is_righthalf=True,
                                    linewidth=1,
                                    ),
 
-                         Polygons(self.prefix_anim+'polygons', drawing,
+                         Polygons(self.prefix_anim + 'polygons', drawing,
                                   linewidth=1),
 
-                         Circles(self.prefix_anim+'circles', drawing,
+                         Circles(self.prefix_anim + 'circles', drawing,
                                  is_fill=False,  # Fill objects,
                                  is_outline=True,  # show outlines
                                  linewidth=1,
@@ -4803,7 +4469,8 @@ class OGleditor(wx.Panel):
             drawing.add_drawobj(drawobj, layer=self.layer_anim)
 
     def get_mainframe(self):
-        # this is used mainly by the tools to know on which mainframe to operate on
+        # this is used mainly by the tools to know on which mainframe to
+        # operate on
         return self._mainframe
 
     def on_size(self, event=None):
@@ -4822,14 +4489,14 @@ class OGleditor(wx.Panel):
         if event:
             event.Skip()
 
-
 if __name__ == '__main__':
-    ###############################################################################
+    ##########################################################################
     # MAIN FRAME
 
     from mainframe import AgileToolbarFrameMixin
 
     class OGLeditorMainframe(AgileToolbarFrameMixin, wx.Frame):
+
         """
         Simple wx frame with some special features.
         """
@@ -4841,7 +4508,8 @@ if __name__ == '__main__':
             # Forcing a specific style on the window.
             #   Should this include styles passed?
             style = wx.DEFAULT_FRAME_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE
-            wx.Frame.__init__(self, None, wx.NewId(), title, pos, size=size, style=style, name=name)
+            wx.Frame.__init__(self, None, wx.NewId(), title,
+                              pos, size=size, style=style, name=name)
             self.gleditor = OGleditor(self)
 
             self.Show()  # must be here , before putting stuff on canvas
@@ -4882,40 +4550,13 @@ if __name__ == '__main__':
             ])
 
             drawing = OGLdrawing()
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
 
             if 1:
                 lines = Lines('lines', drawing)
                 lines.add_drawobjs(vertices, colors)
                 drawing.add_drawobj(lines)
-
- # -------------------------------------------------------------------------------
-
-            if 1:
-                rectangles = Rectangles('rectangles', drawing,
-                                        is_fill=True,
-                                        is_outline=True)
-
-                colors = np.array([
-                    [0.2, 0.9, 0.0, 0.9],    # 0
-                    [0.9, 0.2, 0.0, 0.9],    # 1
-                ])
-
-                colors2 = np.array([
-                    [0.9, 0.9, 0.5, 0.3],    # 0
-                    [0.9, 0.9, 0.5, 0.3],    # 1
-                ])
-
-                rectangles.add_drawobjs([[3.0, 0.0, 0.0], [0.0, 3.0, 0.0]],  # offsets
-                                        widths=[1.0, 1.6],
-                                        lengths=[2.0, 0.4],
-                                        rotangles_xy=[0, 0.5],
-                                        colors=colors,
-                                        colors_fill=colors2)
-                drawing.add_drawobj(rectangles)
-
-
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
             if 1:
                 fancylines = Fancylines('fancylines', drawing,
                                         arrowstretch=1.0,
@@ -4925,11 +4566,11 @@ if __name__ == '__main__':
 
                 colors_fancy = np.array([
                     [0.0, 0.9, 0.0, 0.9],    # 0
-                    # [0.9,0.0,0.0,0.9],    # 1
+                    #[0.9,0.0,0.0,0.9],    # 1
                 ])
                 vertices_fancy = np.array([
                     [[0.0, -1.0, 0.0], [2, -1.0, 0.0]],  # 0 green
-                    # [[0.0,-1.0,0.0],[0.0,-5.0,0.0]],# 1 red
+                    #[[0.0,-1.0,0.0],[0.0,-5.0,0.0]],# 1 red
                 ])
 
                 widths = [0.5,
@@ -4947,7 +4588,7 @@ if __name__ == '__main__':
                                         endstyles=[TRIANGLEHEAD, ],
                                         )
                 drawing.add_drawobj(fancylines, layer=10)
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
             if 1:
                 polylines = Polylines('polylines', drawing,
                                       joinstyle=FLATHEAD,
@@ -4961,7 +4602,8 @@ if __name__ == '__main__':
                 ])
 
                 vertices_poly = np.array([
-                    [[0.0, 2.0, 0.0], [5.0, 2.0, 0.0], [5.0, 7.0, 0.0], [10.0, 7.0, 0.0]],  # 0 green
+                    [[0.0, 2.0, 0.0], [5.0, 2.0, 0.0], [
+                        5.0, 7.0, 0.0], [10.0, 7.0, 0.0]],  # 0 green
                     [[0.0, -2.0, 0.0], [-2.0, -2.0, 0.0]],  # 1 red
                 ], np.object)
 
@@ -4972,11 +4614,12 @@ if __name__ == '__main__':
                 polylines.add_drawobjs(vertices_poly,
                                        widths,  # width
                                        colors_poly,
-                                       beginstyles=[TRIANGLEHEAD, TRIANGLEHEAD],
+                                       beginstyles=[
+                                           TRIANGLEHEAD, TRIANGLEHEAD],
                                        endstyles=[TRIANGLEHEAD, TRIANGLEHEAD])
                 drawing.add_drawobj(polylines, layer=-2)
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
             if 1:
                 polygons = Polygons('polygons', drawing, linewidth=5)
                 colors_poly = np.array([
@@ -4985,8 +4628,10 @@ if __name__ == '__main__':
                 ])
 
                 vertices_poly = [
-                    [[0.0, 2.0, 0.0], [5.0, 2.0, 0.0], [5.0, 7.0, 0.0], ],  # 0 green
-                    [[0.0, -2.0, 0.0], [-2.0, -2.0, 0.0], [-2.0, 0.0, 0.0]],  # 1 red
+                    [[0.0, 2.0, 0.0], [5.0, 2.0, 0.0],
+                        [5.0, 7.0, 0.0], ],  # 0 green
+                    [[0.0, -2.0, 0.0], [-2.0, -2.0, 0.0],
+                     [-2.0, 0.0, 0.0]],  # 1 red
                 ]
 
                 print '  vertices_polygon\n', vertices_poly
@@ -4997,19 +4642,20 @@ if __name__ == '__main__':
                 drawing.add_drawobj(polygons)
 
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
 
             if 1:
                 circles = Circles('circles', drawing,
                                   is_fill=False,  # Fill objects,
                                   is_outline=True,  # show outlines
                                   )
-                circles.add_drawobjs([[0.0, 0.0, 0.0], [1.0, 0.5, 0.0]], [0.5, 0.25], colors2o, colors2)
+                circles.add_drawobjs([[0.0, 0.0, 0.0], [1.0, 0.5, 0.0]], [
+                                     0.5, 0.25], colors2o, colors2)
                 drawing.add_drawobj(circles)
 
                 # drawing.add_drawobj(testogl.triangles)
                 # drawing.add_drawobj(testogl.rectangles)
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
 
             #canvas = self.gleditor.get_canvas()
             # canvas.set_drawing(drawing)
@@ -5028,6 +4674,7 @@ if __name__ == '__main__':
             return self._objbrowser
 
     class OGLeditorApp(wx.App):
+
         def OnInit(self):
             # wx.InitAllImageHandlers()
             self.mainframe = OGLeditorMainframe("OGLeditor")
@@ -5060,7 +4707,8 @@ if __name__ == '__main__':
         _msg = """The following plugins could not be plugged in:\n\n  """ + noplugins[:-2] +\
             """\n\nIf you like to use these plugins, please check messages on console for Import errors and install the required packages.
         """
-        dlg = wx.MessageDialog(None, _msg, "Warning from Plugins", wx.OK | wx.ICON_WARNING)
+        dlg = wx.MessageDialog(
+            None, _msg, "Warning from Plugins", wx.OK | wx.ICON_WARNING)
         dlg.ShowModal()
         dlg.Destroy()
 

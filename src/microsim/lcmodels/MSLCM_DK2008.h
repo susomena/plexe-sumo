@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSLCM_DK2008.h
 /// @author  Daniel Krajzewicz
 /// @author  Friedemann Wesner
@@ -18,6 +10,17 @@
 ///
 // A lane change model developed by D. Krajzewicz between 2004 and 2010
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2005-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSLCM_DK2008_h
 #define MSLCM_DK2008_h
 
@@ -25,7 +28,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSAbstractLaneChangeModel.h"
 #include <vector>
@@ -40,14 +47,24 @@
 class MSLCM_DK2008 : public MSAbstractLaneChangeModel {
 public:
 
+    enum MyLCAEnum {
+        LCA_AMBLOCKINGLEADER = 1 << 16,
+        LCA_AMBLOCKINGFOLLOWER = 1 << 17,
+        LCA_MRIGHT = 1 << 18,
+        LCA_MLEFT = 1 << 19,
+        // !!! never set LCA_UNBLOCK = 1 << 20,
+        LCA_AMBLOCKINGFOLLOWER_DONTBRAKE = 1 << 21,
+        // !!! never used LCA_AMBLOCKINGSECONDFOLLOWER = 1 << 22,
+
+        // !!! never read LCA_KEEP1 = 1 << 24,
+        // !!! never used LCA_KEEP2 = 1 << 25,
+        LCA_AMBACKBLOCKER = 1 << 26,
+        LCA_AMBACKBLOCKER_STANDING = 1 << 27
+    };
+
     MSLCM_DK2008(MSVehicle& v);
 
     virtual ~MSLCM_DK2008();
-
-    /// @brief Returns the model's id
-    LaneChangeModel getModelID() const {
-        return LCM_DK2008;
-    }
 
     /** @brief Called to examine whether the vehicle wants to change
      * using the given laneOffset.

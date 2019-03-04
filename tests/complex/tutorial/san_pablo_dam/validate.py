@@ -1,16 +1,19 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    validate.py
+@author  Michael Behrisch
+@date    2012-01-21
+@version $Id$
 
-# @file    validate.py
-# @author  Michael Behrisch
-# @date    2012-01-21
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -52,7 +55,7 @@ def parseObsTimes():
 
 
 def validate(sumoBinary):
-    subprocess.call(
+    retcode = subprocess.call(
         [sumoBinary, "-c", "data/spd-road.sumocfg"], stdout=sys.stdout, stderr=sys.stderr)
     sys.stdout.flush()
     sys.stderr.flush()
@@ -83,6 +86,7 @@ def validate(sumoBinary):
 
     # compute final statistics
     err = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    averTT = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     errAll = 0.0
     cntAll = 0
     if verbose:

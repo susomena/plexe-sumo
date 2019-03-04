@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDevice_Example.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,13 +8,28 @@
 ///
 // A device which stands as an implementation example and which outputs movereminder calls
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/iodevices/OutputDevice.h>
 #include <utils/vehicle/SUMOVehicle.h>
@@ -51,15 +58,15 @@ MSDevice_Example::insertOptions(OptionsCont& oc) {
 
 
 void
-MSDevice_Example::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into) {
+MSDevice_Example::buildVehicleDevices(SUMOVehicle& v, std::vector<MSDevice*>& into) {
     OptionsCont& oc = OptionsCont::getOptions();
-    if (equippedByDefaultAssignmentOptions(oc, "example", v, false)) {
+    if (equippedByDefaultAssignmentOptions(oc, "example", v)) {
         // build the device
         // get custom vehicle parameter
         double customParameter2 = -1;
         if (v.getParameter().knowsParameter("example")) {
             try {
-                customParameter2 = StringUtils::toDouble(v.getParameter().getParameter("example", "-1"));
+                customParameter2 = TplConvert::_2double(v.getParameter().getParameter("example", "-1").c_str());
             } catch (...) {
                 WRITE_WARNING("Invalid value '" + v.getParameter().getParameter("example", "-1") + "'for vehicle parameter 'example'");
             }
@@ -71,7 +78,7 @@ MSDevice_Example::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevic
         double customParameter3 = -1;
         if (v.getVehicleType().getParameter().knowsParameter("example")) {
             try {
-                customParameter3 = StringUtils::toDouble(v.getVehicleType().getParameter().getParameter("example", "-1"));
+                customParameter3 = TplConvert::_2double(v.getVehicleType().getParameter().getParameter("example", "-1").c_str());
             } catch (...) {
                 WRITE_WARNING("Invalid value '" + v.getVehicleType().getParameter().getParameter("example", "-1") + "'for vType parameter 'example'");
             }
@@ -93,7 +100,7 @@ MSDevice_Example::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevic
 // ---------------------------------------------------------------------------
 MSDevice_Example::MSDevice_Example(SUMOVehicle& holder, const std::string& id,
                                    double customValue1, double customValue2, double customValue3) :
-    MSVehicleDevice(holder, id),
+    MSDevice(holder, id),
     myCustomValue1(customValue1),
     myCustomValue2(customValue2),
     myCustomValue3(customValue3) {
@@ -111,7 +118,7 @@ MSDevice_Example::notifyMove(SUMOVehicle& veh, double /* oldPos */,
     std::cout << "device '" << getID() << "' notifyMove: newSpeed=" << newSpeed << "\n";
     // check whether another device is present on the vehicle:
     MSDevice_Tripinfo* otherDevice = static_cast<MSDevice_Tripinfo*>(veh.getDevice(typeid(MSDevice_Tripinfo)));
-    if (otherDevice != nullptr) {
+    if (otherDevice != 0) {
         std::cout << "  veh '" << veh.getID() << " has device '" << otherDevice->getID() << "'\n";
     }
     return true; // keep the device
@@ -160,8 +167,8 @@ void
 MSDevice_Example::setParameter(const std::string& key, const std::string& value) {
     double doubleValue;
     try {
-        doubleValue = StringUtils::toDouble(value);
-    } catch (NumberFormatException&) {
+        doubleValue = TplConvert::_2double(value.c_str());
+    } catch (NumberFormatException) {
         throw InvalidArgument("Setting parameter '" + key + "' requires a number for device of type '" + deviceName() + "'");
     }
     if (key == "customValue1") {

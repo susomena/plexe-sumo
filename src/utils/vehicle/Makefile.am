@@ -1,10 +1,13 @@
 noinst_LIBRARIES = libvehicle.a
 
-libvehicle_a_SOURCES = SUMOVehicle.h \
-SUMORouteHandler.cpp SUMORouteHandler.h \
-SUMORouteLoader.cpp SUMORouteLoader.h \
-SUMORouteLoaderControl.cpp SUMORouteLoaderControl.h \
+libvehicle_a_SOURCES = AStarRouter.h \
+AStarLookupTable.h \
+CarEdge.h \
+CHBuilder.h CHRouter.h CHRouterWrapper.h \
+DijkstraRouterTT.h DijkstraRouterEffort.h \
+IntermodalEdge.h IntermodalNetwork.h IntermodalRouter.h \
+GawronCalculator.h LogitCalculator.h RouteCostCalculator.h \
+PedestrianRouter.h SUMOAbstractRouter.h \
+SPTree.h SUMOVehicle.h \
 SUMOVehicleParameter.cpp SUMOVehicleParameter.h \
-SUMOVehicleParameter.cpp SUMOVehicleParameter.h \
-SUMOVehicleParserHelper.cpp SUMOVehicleParserHelper.h \
 SUMOVTypeParameter.cpp SUMOVTypeParameter.h

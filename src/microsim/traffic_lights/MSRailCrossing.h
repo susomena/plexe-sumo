@@ -1,18 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSRailCrossing.h
 /// @author  Jakob Erdmann
 /// @date    Dez 2015
 /// @version $Id$
 ///
 // A rail signal logic
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef MSRailCrossing_h
 #define MSRailCrossing_h
@@ -21,7 +24,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSSimpleTrafficLightLogic.h"
 #include "MSPhaseDefinition.h"
@@ -41,11 +48,11 @@ public:
     /** @brief Constructor
      * @param[in] tlcontrol The tls control responsible for this tls
      * @param[in] id This tls' id
-     * @param[in] programID This tls' sub-id (program id)
+     * @param[in] subid This tls' sub-id (program id)
      * @param[in] parameters This tls' parameters
      */
     MSRailCrossing(MSTLLogicControl& tlcontrol,
-                   const std::string& id, const std::string& programID,
+                   const std::string& id, const std::string& subid,
                    const std::map<std::string, std::string>& parameters);
 
 
@@ -90,6 +97,17 @@ public:
     */
     SUMOTime trySwitch();
 
+    /// @}
+
+
+    /// @name Static Information Retrieval
+    /// @{
+    /** @brief Returns the type of the logic as a string
+     * @return The type of the logic
+     */
+    const std::string getLogicType() const {
+        return "railCrossing";
+    }
     /// @}
 
 

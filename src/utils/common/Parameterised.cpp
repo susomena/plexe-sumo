@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    Parameterised.cpp
 /// @author  Daniel Krajzewicz
 /// @date    Sept 2002
@@ -14,16 +6,30 @@
 ///
 // A super class for objects with additional parameters
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
-#include <utils/common/MsgHandler.h>
-#include <utils/common/StringUtils.h>
-#include <utils/iodevices/OutputDevice.h>
+#endif
 
+#include "utils/iodevices/OutputDevice.h"
+#include "TplConvert.h"
 #include "Parameterised.h"
 
 
@@ -42,21 +48,23 @@ Parameterised::Parameterised(const std::map<std::string, std::string>& mapArg)
 
 
 void
-Parameterised::setParameter(const std::string& key, const std::string& value) {
+Parameterised::addParameter(const std::string& key, const std::string& value) {
     myMap[key] = value;
 }
 
 
 void
-Parameterised::unsetParameter(const std::string& key) {
-    myMap.erase(key);
+Parameterised::addParameter(const std::map<std::string, std::string>& mapArg) {
+    for (std::map<std::string, std::string>::const_iterator i = mapArg.begin(); i != mapArg.end(); ++i) {
+        myMap[(*i).first] = (*i).second;
+    }
 }
 
 
 void
-Parameterised::updateParameter(const std::map<std::string, std::string>& mapArg) {
-    for (auto i : mapArg) {
-        myMap[i.first] = i.second;
+Parameterised::addParameter(const Parameterised& p) {
+    for (std::map<std::string, std::string>::const_iterator i = p.myMap.begin(); i != p.myMap.end(); ++i) {
+        myMap[(*i).first] = (*i).second;
     }
 }
 
@@ -67,11 +75,11 @@ Parameterised::knowsParameter(const std::string& key) const {
 }
 
 
-const std::string
+const std::string&
 Parameterised::getParameter(const std::string& key, const std::string& defaultValue) const {
     std::map<std::string, std::string>::const_iterator i = myMap.find(key);
     if (i != myMap.end()) {
-        return i->second;
+        return (*i).second;
     }
     return defaultValue;
 }
@@ -81,15 +89,7 @@ double
 Parameterised::getDouble(const std::string& key, const double defaultValue) const {
     std::map<std::string, std::string>::const_iterator i = myMap.find(key);
     if (i != myMap.end()) {
-        try {
-            return StringUtils::toDouble(i->second);
-        } catch (NumberFormatException&) {
-            WRITE_WARNING("Invalid conversion from string to double (" + i->second + ")");
-            return defaultValue;
-        } catch (EmptyData&) {
-            WRITE_WARNING("Invalid conversion from string to double (empty value)");
-            return defaultValue;
-        }
+        return TplConvert::_2double(i->second.c_str());
     }
     return defaultValue;
 }
@@ -100,21 +100,13 @@ Parameterised::clearParameter() {
     myMap.clear();
 }
 
-
-const std::map<std::string, std::string>&
-Parameterised::getParametersMap() const {
-    return myMap;
-}
-
-
 void
-Parameterised::writeParams(OutputDevice& device) const {
-    // iterate over all parameters and write it
-    for (auto i : myMap) {
-        device.openTag(SUMO_TAG_PARAM);
-        device.writeAttr(SUMO_ATTR_KEY, StringUtils::escapeXML(i.first));
-        device.writeAttr(SUMO_ATTR_VALUE, StringUtils::escapeXML(i.second));
-        device.closeTag();
+Parameterised::writeParams(OutputDevice& out) const {
+    for (std::map<std::string, std::string>::const_iterator j = myMap.begin(); j != myMap.end(); ++j) {
+        out.openTag(SUMO_TAG_PARAM);
+        out.writeAttr(SUMO_ATTR_KEY, (*j).first);
+        out.writeAttr(SUMO_ATTR_VALUE, (*j).second);
+        out.closeTag();
     }
 }
 

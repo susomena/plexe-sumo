@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBHeightMapper.h
 /// @author  Jakob Erdmann
 /// @author  Laura Bieker
@@ -16,6 +8,17 @@
 ///
 // Set z-values for all network positions based on data from a height map
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBHeightMapper_h
 #define NBHeightMapper_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef _MSC_VER
 typedef __int16 int16_t;
@@ -133,8 +140,8 @@ private:
     /// @brief The RTree for spatial queries
     TRIANGLE_RTREE_QUAL myRTree;
 
-    /// @brief raster height information in m for all loaded files
-    std::vector<std::pair<Boundary, int16_t*> > myRasters;
+    /// @brief raster height information in m
+    int16_t* myRaster;
 
     /// @brief dimensions of one pixel in raster data
     Position mySizeOfPixel;

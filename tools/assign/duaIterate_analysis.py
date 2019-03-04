@@ -1,19 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    duaIterate_analysis.py
+@author  Jakob Erdmann
+@author  Michael Behrisch
+@date    2012-09-06
+@version $Id$
 
-# @file    duaIterate_analysis.py
-# @author  Jakob Erdmann
-# @author  Michael Behrisch
-# @date    2012-09-06
-# @version $Id$
+Extract statistics from the outputs of a duaIterate run for plotting.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import os
@@ -23,8 +27,8 @@ import glob
 from optparse import OptionParser
 from collections import defaultdict
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sumolib.miscutils import Statistics, uMax  # noqa
-from sumolib.output import parse_fast  # noqa
+from sumolib.miscutils import Statistics, uMax
+from sumolib.output import parse_fast
 
 
 def parse_args():
@@ -100,7 +104,7 @@ def parse_dualog(dualog, limit):
                 teleports = 0
                 step_counts.append(counts)
                 counts = defaultdict(lambda: 0)
-        except Exception:
+        except:
             sys.exit("error when parsing line '%s'" % line)
 
     print("  parsed %s steps" % len(step_values))
@@ -141,6 +145,7 @@ def gnuplot_teleport_edges(plotfile, step_counts, xlabel):
     datafile = plotfile + '.data'
     # an edge is interesting if a large proportion of teleports happen on it
     interestingness = defaultdict(lambda: 0)
+    all_edges = set()
     for counts in step_counts:
         teleports = float(sum(counts.itervalues()))
         if teleports == 0:
@@ -200,7 +205,7 @@ plot \\
 '%s' using 0:4 title 'teleports' with lines, \\
 '%s' using 0:3 title 'waiting' with lines, \\
 '%s' using 0:5 title 'loaded' with lines, \\
-'%s' using 0:2 title 'running' with lines
+'%s' using 0:2 title 'running' with lines 
 """ % ((xlabel,) + (datafile,) * 5))
 
 

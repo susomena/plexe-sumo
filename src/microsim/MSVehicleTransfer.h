@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2003-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSVehicleTransfer.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -17,6 +9,17 @@
 // A mover of vehicles that got stucked due to grid locks
 // This class also serves as container for parking vehicles
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2003-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSVehicleTransfer_h
 #define MSVehicleTransfer_h
 
@@ -24,13 +27,16 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
 #include <map>
 #include <set>
-#include <utils/foxtools/FXSynchQue.h>
 
 
 // ===========================================================================
@@ -99,8 +105,14 @@ public:
     void checkInsertions(SUMOTime time);
 
 
+    /** @brief Checks whether stored vehicles are present
+     *
+     * @return whether any vehicles wait for transfer
+     */
+    bool hasPending() const;
+
     /** @brief Saves the current state into the given stream */
-    void saveState(OutputDevice& out);
+    void saveState(OutputDevice& out) const;
 
     /** @brief Loads one transfer vehicle state from the given descriptionn */
     void loadState(const SUMOSAXAttributes& attrs, const SUMOTime offset, MSVehicleControl& vc);
@@ -141,16 +153,20 @@ protected:
         VehicleInformation(SUMOTime t, MSVehicle* veh, SUMOTime proceedTime, bool parking)
             : myTransferTime(t), myVeh(veh), myProceedTime(proceedTime), myParking(parking) { }
 
-        /// @brief sort by vehicle ID for repeatable parallel simulation
-        bool operator<(const VehicleInformation& v2) const;
     };
 
 
+    /// @brief Definition of a container for vehicle information
+    typedef std::vector<VehicleInformation> VehicleInfVector;
+
     /// @brief The information about stored vehicles to move virtually
-    FXSynchQue<VehicleInformation, std::vector<VehicleInformation> > myVehicles;
+    VehicleInfVector myVehicles;
 
     /// @brief The static singleton-instance
     static MSVehicleTransfer* myInstance;
+
+    /// @brief an empty set for convenience
+    static const std::set<const MSVehicle*> myEmptyVehicleSet;
 
 };
 

@@ -1,22 +1,6 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2016-2019 German Aerospace Center (DLR) and others.
-# SUMOPy module
-# Copyright (C) 2012-2017 University of Bologna - DICAM
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    xmlman.py
-# @author  Joerg Schweizer
-# @date
-# @version $Id$
-
 #import classman as cm
 #XMLTAG = 'xmltag'
 import numpy as np
-np.set_printoptions(suppress=True, precision=4)
 
 
 def write_obj_to_xml(obj, filepath, attrname_id=None,
@@ -37,15 +21,15 @@ def write_obj_to_xml(obj, filepath, attrname_id=None,
 
 
 def begin(attr, indent=0):
-    return indent*' '+'<%s>\n' % attr
+    return indent * ' ' + '<%s>\n' % attr
 
 
 def end(attr, indent=0):
-    return indent*' '+'</%s>\n' % attr
+    return indent * ' ' + '</%s>\n' % attr
 
 
 def start(attr, indent=0):
-    return indent*' '+'<%s ' % attr
+    return indent * ' ' + '<%s ' % attr
 
 
 def stop():
@@ -60,70 +44,40 @@ def num(attr, x):
     return ' %s="%s"' % (attr, x)
 
 
-INTTYPES = (np.int32, np.int32)
-FLOATTYPES = (np.int32, np.int32)
-
-
 def arr(attr, a, sep=' '):
-    # TODO: use https://www.decalage.info/en/python/print_list
     s = ' '
-    # print 'arr',attr,a
-    # if type(a)==np.ndarray:
-    #    dt = a.dtype
-    #    if dt in
-    #    format = '%.3f'
-    # else:
-    #
 
     if len(a) > 0:
-        format = '%s'
         s += '%s="' % attr
         for i in xrange(len(a)):
-            # print '  a[i]',a[i],type(a[i]),str(a[i]),type(str(a[i]))
-            #ss = str(a[i])
-            # print '  ',type(s),type(ss),type(sep)
-            s += format % a[i]+sep
-        return s[:-1]+'"'
+            s += '%s' % a[i] + sep
+        return s[:-1] + '"'
     else:
         # return s+'%s="<>"'%attr # NO!!
-        return s+'%s=""' % attr
+        return s + '%s=""' % attr
 
 
 def color(attr, val, sep=','):
-    return arr(attr, np.array(val[0:3]*255+0.5, np.int32), sep)
+    return arr(attr, np.array(val[0:3] * 255 + 0.5, np.int32), sep)
 
 
 def mat(attr, m):
-    # TODO: use https://www.decalage.info/en/python/print_list
     s = ' '
     if len(m) > 0:
         s += '%s="' % attr
         for i in xrange(len(m)):
             r = m[i]
-            for j in xrange(len(r)-1):
+            for j in xrange(len(r) - 1):
                 s += '%s,' % r[j]
             s += '%s ' % r[-1]
-        return s[:-1]+'"'
+        return s[:-1] + '"'
     else:
         # return s+'%s="<>"'%attr# NO!!
-        return s+'%s=""' % attr
+        return s + '%s=""' % attr
 
 
-def parse_color(s, sep=','):
+def parse_color(s):
         # print 'parseColor',s
-    arr = s.split(sep)
-    color = [1.0, 1.0, 1.0, 1.0]
-    #np.ones(4,dtype = np.float32)
-    i = 0
-    for a in arr:
-        color[i] = float(a)
-        i += 1
-
-    return color
-
-
-def parse_color_old(s):
-    # print 'parseColor',s
     arr = s.split(',')
     ret = []
     for a in arr:
@@ -152,10 +106,12 @@ def process_shape(shapeString, offset=[0.0, 0.0]):
         p = e.split(",")
         if len(p) == 2:
                 # 2D coordinates with elevetion = 0
-            cshape.append(np.array([float(p[0])-offset[0], float(p[1]) - offset[1], 0.0], np.float32))
+            cshape.append(
+                np.array([float(p[0]) - offset[0], float(p[1]) - offset[1], 0.0], np.float32))
         elif len(p) == 3:
             # 3D coordinates
-            cshape.append(np.array([float(p[0])-offset[0], float(p[1]) - offset[1], float(p[2])], np.float32))
+            cshape.append(np.array(
+                [float(p[0]) - offset[0], float(p[1]) - offset[1], float(p[2])], np.float32))
         else:
             # print 'WARNING: illshaped shape',e
             # cshape.append(np.array([0,0,0],np.float))
@@ -179,7 +135,8 @@ def read_keyvalue(line, key):
     for element in data:
         if (element.find(key) >= 0):
             k, v = element.split('=')
-            value = v.replace('"', '').replace('<', '').replace('/>', '').strip()
+            value = v.replace('"', '').replace(
+                '<', '').replace('/>', '').strip()
             break
     return value
 

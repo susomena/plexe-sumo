@@ -1,32 +1,33 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    mpl_dump_onNet.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2007-10-25
-# @version $Id$
-
 """
+@file    mpl_dump_onNet.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2007-10-25
+@version $Id$
+
 
 This script reads a network and a dump file and
  draws the network, coloring it by the values
  found within the dump-file.
 
 matplotlib has to be installed for this purpose
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2007-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
 
 from matplotlib import rcParams
-from pylab import arange, figure, plot, savefig, show, xlim, xticks, ylim, yticks
+from pylab import *
 import math
 from optparse import OptionParser
 from xml.sax import make_parser, handler
@@ -170,6 +171,7 @@ class NetReader(handler.ContentHandler):
                 ys.append(float(self._node2y[self._edge2to[edge]]))
             else:
                 shape = self._edge2shape[edge].split(" ")
+                l = []
                 for s in shape:
                     p = s.split(",")
                     xs.append(float(p[0]))
@@ -213,9 +215,9 @@ class NetReader(handler.ContentHandler):
             rcParams['backend'] = 'Agg'
         # set figure size
         if options.size and not options.show:
-            figure(figsize=(options.size.split(",")))
+            f = figure(figsize=(options.size.split(",")))
         else:
-            figure()
+            f = figure()
         for edge in edge2plotLines:
             plot(edge2plotLines[edge][0], edge2plotLines[edge][
                  1], color=edge2plotColors[edge], linewidth=edge2plotWidth[edge])
@@ -381,11 +383,9 @@ class WeightsReader(handler.ContentHandler):
         else:
             for i in weights._intervalBegins:
                 self.valueDependantNorm(self._unaggEdge2value1[
-                                        i], self._minValue1, self._maxValue1, False, percSpeed and
-                                        self._value1 == "speed")
+                                        i], self._minValue1, self._maxValue1, False, percSpeed and self._value1 == "speed")
                 self.valueDependantNorm(self._unaggEdge2value2[
-                                        i], self._minValue2, self._maxValue2, tendency, percSpeed and
-                                        self._value2 == "speed")
+                                        i], self._minValue2, self._maxValue2, tendency, percSpeed and self._value2 == "speed")
 
 
 # initialise

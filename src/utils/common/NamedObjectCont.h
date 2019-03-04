@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NamedObjectCont.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,6 +8,17 @@
 ///
 // A map of named object pointers
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NamedObjectCont_h
 #define NamedObjectCont_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include <string>
@@ -39,7 +46,9 @@
  * @brief A map of named object pointers
  *
  * An associative storage (map) for objects (pointers to them to be exact),
- *  which do have a name.
+ *  which do have a name. In order to get the stored objects as a list,
+ *  each insertion/deletion sets the internal state value "myHaveChanged"
+ *  to true, indicating the list must be rebuild.
  */
 template<class T>
 class NamedObjectCont {
@@ -47,11 +56,14 @@ public:
     /// @brief Definition of the key to pointer map type
     typedef std::map< std::string, T > IDMap;
 
+    /// @brief Constructor
+    NamedObjectCont() : myHaveChanged(false) { }
+
     ///@brief Destructor
     virtual ~NamedObjectCont() {
         // iterate over all elements to delete it
-        for (auto i : myMap) {
-            delete i.second;
+        for (typename IDMap::iterator i = myMap.begin(); i != myMap.end(); i++) {
+            delete(*i).second;
         }
     }
 
@@ -64,11 +76,12 @@ public:
      * @param[in] item The item to add
      * @return If the item could been added (no item with the same id was within the container before)
      */
-    bool add(const std::string& id, T item) {
+    virtual bool add(const std::string& id, T item) {
         if (myMap.find(id) != myMap.end()) {
             return false;
         }
         myMap.insert(std::make_pair(id, item));
+        myHaveChanged = true;
         return true;
     }
 
@@ -77,15 +90,14 @@ public:
      * @param[in] del delete item after removing of container
      * @return If the item could been removed (an item with the id was within the container before)
      */
-    bool remove(const std::string& id, const bool del = true) {
-        auto it = myMap.find(id);
+    virtual bool remove(const std::string& id) {
+        typename std::map<std::string, T>::iterator it = myMap.find(id);
         if (it == myMap.end()) {
             return false;
         } else {
-            if (del) {
-                delete it->second;
-            }
+            delete it->second;
             myMap.erase(it);
+            myHaveChanged = true;
             return true;
         }
     }
@@ -98,7 +110,7 @@ public:
      * @return The item stored under the given id, or 0 if no such item exists
      */
     T get(const std::string& id) const {
-        auto it = myMap.find(id);
+        typename std::map<std::string, T>::const_iterator it = myMap.find(id);
         if (it == myMap.end()) {
             return 0;
         } else {
@@ -108,10 +120,12 @@ public:
 
     /// @brief Removes all items from the container (deletes them, too)
     void clear() {
-        for (auto i : myMap) {
-            delete i.second;
+        for (typename IDMap::iterator i = myMap.begin(); i != myMap.end(); i++) {
+            delete(*i).second;
         }
         myMap.clear();
+        myVector.clear();
+        myHaveChanged = true;
     }
 
     /// @brief Returns the number of stored items within the container
@@ -119,43 +133,79 @@ public:
         return (int) myMap.size();
     }
 
+    /** @brief Removes the named item from the container
+     *
+     * If the named object exists, it is deleted, the key is
+     *  removed from the map, and true is returned. If the id was not
+     *  known, false is returned.
+     *
+     * @param[in] id The id of the item to delete
+     * @return Whether the object could be deleted (was within the map)
+     */
+    bool erase(const std::string& id) {
+        typename IDMap::iterator i = myMap.find(id);
+        if (i == myMap.end()) {
+            return false;
+        } else {
+            T o = (*i).second;
+            myMap.erase(i);
+            // and from the vector
+            typename ObjectVector::iterator i2 =
+                find(myVector.begin(), myVector.end(), o);
+            myHaveChanged = true;
+            if (i2 != myVector.end()) {
+                myVector.erase(i2);
+            }
+            delete o;
+            return true;
+        }
+    }
+
     /* @brief Fills the given vector with the stored objects' ids
      * @param[in] into The container to fill
      */
     void insertIDs(std::vector<std::string>& into) const {
-        for (auto i : myMap) {
-            into.push_back(i.first);
+        typename IDMap::const_iterator i;
+        for (i = myMap.begin(); i != myMap.end(); ++i) {
+            into.push_back((*i).first);
         }
     }
 
     /// @brief change ID of a stored object
     bool changeID(const std::string& oldId, const std::string& newId) {
-        auto i = myMap.find(oldId);
+        typename IDMap::iterator i = myMap.find(oldId);
         if (i == myMap.end()) {
             return false;
         } else {
             // save Item, remove it from Map, and insert it again with the new ID
-            T item = i->second;
+            T item = (*i).second;
             myMap.erase(i);
             myMap.insert(std::make_pair(newId, item));
             return true;
         }
     }
 
-    /// @brief Returns a reference to the begin iterator for the internal map
-    typename IDMap::const_iterator begin() const {
-        return myMap.begin();
-    }
-
-    /// @brief Returns a reference to the end iterator for the internal map
-    typename IDMap::const_iterator end() const {
-        return myMap.end();
+    /// @brief Returns a reference to the internal map
+    const IDMap& getMyMap() const {
+        return myMap;
     }
 
 
 private:
+    /// @brief Definition of the container type iterator
+    typedef typename IDMap::iterator myContIt;
+
     /// @brief The map from key to object
     IDMap myMap;
+
+    /// @brief Definition objects vector
+    typedef std::vector<T> ObjectVector;
+
+    /// @brief The stored vector of all known items
+    mutable ObjectVector myVector;
+
+    /// @brief Information whether the vector is out of sync with the map
+    mutable bool myHaveChanged;
 };
 
 

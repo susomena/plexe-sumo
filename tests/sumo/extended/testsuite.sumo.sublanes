@@ -50,7 +50,7 @@ device_bt
 # tests for battery device and charging station
 electric
 
-# check options for collision handling (emergencyDecel is disabled here to keep the legacy behavior)
+# check options for collision handling
 collisions
 
 # test for using option --max-num-vehicles

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ROEdge.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -19,6 +11,17 @@
 ///
 // A basic edge for routing applications
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef ROEdge_h
 #define ROEdge_h
 
@@ -26,7 +29,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -54,7 +61,6 @@ class ROEdge;
 
 typedef std::vector<ROEdge*> ROEdgeVector;
 typedef std::vector<const ROEdge*> ConstROEdgeVector;
-typedef std::vector<std::pair<const ROEdge*, const ROEdge*> > ROConstEdgePairVector;
 
 
 // ===========================================================================
@@ -105,7 +111,7 @@ public:
      * @param[in] s The edge to add
      * @todo What about vehicle-type aware connections?
      */
-    virtual void addSuccessor(ROEdge* s, ROEdge* via = nullptr, std::string dir = "");
+    virtual void addSuccessor(ROEdge* s, std::string dir = "");
 
 
     /** @brief Sets the function of the edge
@@ -139,9 +145,6 @@ public:
         myRestrictions = restrictions;
     }
 
-    inline void setTimePenalty(double value) {
-        myTimePenalty = value;
-    }
 
     /// @brief return whether this edge is an internal edge
     inline bool isInternal() const {
@@ -314,17 +317,18 @@ public:
     int getNumSuccessors() const;
 
 
-    /** @brief Returns the following edges, restricted by vClass
-    * @param[in] vClass The vClass for which to restrict the successors
-    * @return The eligible following edges
-    */
-    const ROEdgeVector& getSuccessors(SUMOVehicleClass vClass = SVC_IGNORING) const;
+    /** @brief Returns the following edges
+     */
+    const ROEdgeVector& getSuccessors() const {
+        return myFollowingEdges;
+    }
 
-    /** @brief Returns the following edges including vias, restricted by vClass
-    * @param[in] vClass The vClass for which to restrict the successors
-    * @return The eligible following edges
-    */
-    const ROConstEdgePairVector& getViaSuccessors(SUMOVehicleClass vClass = SVC_IGNORING) const;
+
+    /** @brief Returns the following edges, restricted by vClass
+     * @param[in] vClass The vClass for which to restrict the successors
+     * @return The eligible following edges
+     */
+    const ROEdgeVector& getSuccessors(SUMOVehicleClass vClass) const;
 
 
     /** @brief Returns the number of edges connected to this edge
@@ -437,7 +441,7 @@ public:
 
 
     /// @brief optimistic distance heuristic for use in routing
-    double getDistanceTo(const ROEdge* other, const bool doBoundaryEstimate = false) const;
+    double getDistanceTo(const ROEdge* other) const;
 
 
     /** @brief Returns all ROEdges */
@@ -451,9 +455,6 @@ public:
     static void setGlobalOptions(const bool interpolate) {
         myInterpolate = interpolate;
     }
-
-    /// @brief return the coordinates of the center of the given stop
-    static const Position getStopPosition(const SUMOVehicleParameter::Stop& stop);
 
     /// @brief get edge priority (road class)
     int getPriority() const {
@@ -527,8 +528,6 @@ protected:
     /// @brief List of edges that may be approached from this edge
     ROEdgeVector myFollowingEdges;
 
-    ROConstEdgePairVector myFollowingViaEdges;
-
     /// @brief List of edges that approached this edge
     ROEdgeVector myApproachingEdges;
 
@@ -544,20 +543,14 @@ protected:
     /// @brief The list of allowed vehicle classes combined across lanes
     SVCPermissions myCombinedPermissions;
 
-    /// @brief The bounding rectangle of end nodes incoming or outgoing edges for taz connectors or of my own start and end node for normal edges
-    Boundary myBoundary;
-
-    /// @brief flat penalty when computing traveltime
-    double myTimePenalty;
+    /// @brief The bounding rectangle of incoming or outgoing edges for taz connectors
+    Boundary myTazBoundary;
 
     static ROEdgeVector myEdges;
 
 
     /// @brief The successors available for a given vClass
     mutable std::map<SUMOVehicleClass, ROEdgeVector> myClassesSuccessorMap;
-
-    /// @brief The successors with vias available for a given vClass
-    mutable std::map<SUMOVehicleClass, ROConstEdgePairVector> myClassesViaSuccessorMap;
 
 #ifdef HAVE_FOX
     /// The mutex used to avoid concurrent updates of myClassesSuccessorMap

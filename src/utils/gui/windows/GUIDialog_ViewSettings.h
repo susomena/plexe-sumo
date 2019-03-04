@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIDialog_ViewSettings.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // The dialog to change the view (gui) settings.
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIDialog_ViewSettings_h
 #define GUIDialog_ViewSettings_h
 
@@ -23,17 +26,22 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <fx.h>
 #include <utils/gui/windows/GUISUMOAbstractView.h>
+#include <utils/foxtools/FXRealSpinDial.h>
 #include <utils/foxtools/MFXAddEditTypedTable.h>
 
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
-class MFXIconComboBox;
+class MFXMutex;
 
 
 // ===========================================================================
@@ -60,10 +68,8 @@ public:
         void update(const GUIVisualizationTextSettings& settings);
 
         FXCheckButton* myCheck;
-        FXRealSpinner* mySizeDial;
+        FXRealSpinDial* mySizeDial;
         FXColorWell* myColorWell;
-        FXColorWell* myBGColorWell;
-        FXCheckButton* myConstSizeCheck;
     };
 
     class SizePanel {
@@ -74,10 +80,9 @@ public:
         GUIVisualizationSizeSettings getSettings();
         void update(const GUIVisualizationSizeSettings& settings);
 
-        FXRealSpinner* myMinSizeDial;
-        FXRealSpinner* myExaggerateDial;
+        FXRealSpinDial* myMinSizeDial;
+        FXRealSpinDial* myExaggerateDial;
         FXCheckButton* myCheck;
-        FXCheckButton* myCheckSelected;
     };
 
     /** @brief Constructor
@@ -91,7 +96,7 @@ public:
     GUIDialog_ViewSettings(GUISUMOAbstractView* parent,
                            GUIVisualizationSettings* settings,
                            std::vector<GUISUMOAbstractView::Decal>* decals,
-                           FXMutex* decalsLock);
+                           MFXMutex* decalsLock);
 
 
     /// @brief Destructor
@@ -168,15 +173,15 @@ public:
 private:
     bool updateColorRanges(FXObject* sender, std::vector<FXColorWell*>::const_iterator colIt,
                            std::vector<FXColorWell*>::const_iterator colEnd,
-                           std::vector<FXRealSpinner*>::const_iterator threshIt,
-                           std::vector<FXRealSpinner*>::const_iterator threshEnd,
+                           std::vector<FXRealSpinDial*>::const_iterator threshIt,
+                           std::vector<FXRealSpinDial*>::const_iterator threshEnd,
                            std::vector<FXButton*>::const_iterator buttonIt,
                            GUIColorScheme& scheme);
 
-    bool updateScaleRanges(FXObject* sender, std::vector<FXRealSpinner*>::const_iterator colIt,
-                           std::vector<FXRealSpinner*>::const_iterator colEnd,
-                           std::vector<FXRealSpinner*>::const_iterator threshIt,
-                           std::vector<FXRealSpinner*>::const_iterator threshEnd,
+    bool updateScaleRanges(FXObject* sender, std::vector<FXRealSpinDial*>::const_iterator colIt,
+                           std::vector<FXRealSpinDial*>::const_iterator colEnd,
+                           std::vector<FXRealSpinDial*>::const_iterator threshIt,
+                           std::vector<FXRealSpinDial*>::const_iterator threshEnd,
                            std::vector<FXButton*>::const_iterator buttonIt,
                            GUIScaleScheme& scheme);
 
@@ -184,7 +189,7 @@ private:
      */
     FXMatrix* rebuildColorMatrix(FXVerticalFrame* frame,
                                  std::vector<FXColorWell*>& colors,
-                                 std::vector<FXRealSpinner*>& thresholds,
+                                 std::vector<FXRealSpinDial*>& thresholds,
                                  std::vector<FXButton*>& buttons,
                                  FXCheckButton* interpolation,
                                  GUIColorScheme& scheme);
@@ -192,8 +197,8 @@ private:
     /** @brief Rebuilds manipulators for the current scaling scheme
      */
     FXMatrix* rebuildScaleMatrix(FXVerticalFrame* frame,
-                                 std::vector<FXRealSpinner*>& scales,
-                                 std::vector<FXRealSpinner*>& thresholds,
+                                 std::vector<FXRealSpinDial*>& scales,
+                                 std::vector<FXRealSpinDial*>& thresholds,
                                  std::vector<FXButton*>& buttons,
                                  FXCheckButton* interpolation,
                                  GUIScaleScheme& scheme);
@@ -229,9 +234,6 @@ private:
     /// @brief save window position and size to the registry
     void saveWindowSize();
 
-    /// @brief load window position and size from the registry
-    void loadWindowSize();
-
 private:
     /// @brief The parent view (which settings are changed)
     GUISUMOAbstractView* myParent;
@@ -246,113 +248,88 @@ private:
     std::vector<GUISUMOAbstractView::Decal>* myDecals;
 
     /// @brief Lock used when changing the decals
-    FXMutex* myDecalsLock;
+    MFXMutex* myDecalsLock;
 
     /// @name Dialog elements
     /// @{
     FXComboBox* mySchemeName;
     FXCheckButton* myShowGrid;
-    FXRealSpinner* myGridXSizeDialer, *myGridYSizeDialer;
+    FXRealSpinDial* myGridXSizeDialer, *myGridYSizeDialer;
 
     FXColorWell* myBackgroundColor;
     FXVerticalFrame* myDecalsFrame;
     MFXAddEditTypedTable* myDecalsTable;
 
-    /// selection colors
-    FXColorWell* mySelectionColor;
-    FXColorWell* mySelectedEdgeColor;
-    FXColorWell* mySelectedLaneColor;
-    FXColorWell* mySelectedConnectionColor;
-    FXColorWell* mySelectedAdditionalColor;
-
     /// ... lane colorer
-    MFXIconComboBox* myLaneEdgeColorMode;
+    FXComboBox* myLaneEdgeColorMode;
     FXVerticalFrame* myLaneColorSettingFrame;
     std::vector<FXColorWell*> myLaneColors;
-    std::vector<FXRealSpinner*> myLaneThresholds;
+    std::vector<FXRealSpinDial*> myLaneThresholds;
     std::vector<FXButton*> myLaneButtons;
     FXCheckButton* myLaneColorInterpolation;
     FXButton* myLaneColorRainbow;
-    FXButton* myJunctionColorRainbow;
-    FXComboBox* myParamKey;
 
     /// ... lane scaler
-    MFXIconComboBox* myLaneEdgeScaleMode;
+    FXComboBox* myLaneEdgeScaleMode;
     FXVerticalFrame* myLaneScaleSettingFrame;
-    std::vector<FXRealSpinner*> myLaneScales;
-    std::vector<FXRealSpinner*> myLaneScaleThresholds;
+    std::vector<FXRealSpinDial*> myLaneScales;
+    std::vector<FXRealSpinDial*> myLaneScaleThresholds;
     std::vector<FXButton*> myLaneScaleButtons;
     FXCheckButton* myLaneScaleInterpolation;
 
-    FXCheckButton* myShowLaneBorders, *myShowBikeMarkings, *myShowLaneDecals, *myShowLinkRules, *myShowRails,
-                   *myHideMacroConnectors, *myShowLaneDirection, *myShowSublanes, *mySpreadSuperposed;
-    FXRealSpinner* myLaneWidthUpscaleDialer;
-    FXRealSpinner* myLaneMinWidthDialer;
+    FXCheckButton* myShowLaneBorders, *myShowLaneDecals, *myShowLinkRules, *myShowRails,
+                   *myHideMacroConnectors, *myShowLaneDirection, *myShowSublanes;
+    FXRealSpinDial* myLaneWidthUpscaleDialer;
+    FXRealSpinDial* myLaneMinWidthDialer;
 
-    MFXIconComboBox* myVehicleColorMode, *myVehicleShapeDetail;
+    FXComboBox* myVehicleColorMode, *myVehicleShapeDetail;
     FXVerticalFrame* myVehicleColorSettingFrame;
     std::vector<FXColorWell*> myVehicleColors;
-    std::vector<FXRealSpinner*> myVehicleThresholds;
+    std::vector<FXRealSpinDial*> myVehicleThresholds;
     std::vector<FXButton*> myVehicleButtons;
     FXCheckButton* myVehicleColorInterpolation;
     FXCheckButton* myShowBlinker, *myShowMinGap, *myShowBTRange; /* *myShowLaneChangePreference,*/
 
-    MFXIconComboBox* myPersonColorMode, *myPersonShapeDetail;
+    FXComboBox* myPersonColorMode, *myPersonShapeDetail;
     FXVerticalFrame* myPersonColorSettingFrame;
     std::vector<FXColorWell*> myPersonColors;
-    std::vector<FXRealSpinner*> myPersonThresholds;
+    std::vector<FXRealSpinDial*> myPersonThresholds;
     std::vector<FXButton*> myPersonButtons;
     FXCheckButton* myPersonColorInterpolation;
 
-    MFXIconComboBox* myContainerColorMode, *myContainerShapeDetail;
+    FXComboBox* myContainerColorMode, *myContainerShapeDetail;
     FXVerticalFrame* myContainerColorSettingFrame;
     std::vector<FXColorWell*> myContainerColors;
-    std::vector<FXRealSpinner*> myContainerThresholds;
+    std::vector<FXRealSpinDial*> myContainerThresholds;
     std::vector<FXButton*> myContainerButtons;
     FXCheckButton* myContainerColorInterpolation;
-    FXRealSpinner* myContainerMinSizeDialer, *myContainerUpscaleDialer;
+    FXRealSpinDial* myContainerMinSizeDialer, *myContainerUpscaleDialer;
 
-    MFXIconComboBox* myJunctionColorMode;
+    FXComboBox* myJunctionColorMode;
     FXVerticalFrame* myJunctionColorSettingFrame;
     std::vector<FXColorWell*> myJunctionColors;
-    std::vector<FXRealSpinner*> myJunctionThresholds;
+    std::vector<FXRealSpinDial*> myJunctionThresholds;
     std::vector<FXButton*> myJunctionButtons;
     FXCheckButton* myJunctionColorInterpolation;
-
-    MFXIconComboBox* myPOIColorMode, *myPOIShapeDetail;
-    FXVerticalFrame* myPOIColorSettingFrame;
-    std::vector<FXColorWell*> myPOIColors;
-    std::vector<FXRealSpinner*> myPOIThresholds;
-    std::vector<FXButton*> myPOIButtons;
-    FXCheckButton* myPOIColorInterpolation;
-
-    MFXIconComboBox* myPolyColorMode, *myPolyShapeDetail;
-    FXVerticalFrame* myPolyColorSettingFrame;
-    std::vector<FXColorWell*> myPolyColors;
-    std::vector<FXRealSpinner*> myPolyThresholds;
-    std::vector<FXButton*> myPolyButtons;
-    FXCheckButton* myPolyColorInterpolation;
 
     FXCheckButton* myShowLane2Lane;
     FXCheckButton* myDrawJunctionShape;
     FXCheckButton* myDrawCrossingsAndWalkingAreas;
+    FXCheckButton* myAntialiase;
     FXCheckButton* myDither;
     FXCheckButton* myShowSizeLegend;
 
-    NamePanel* myEdgeNamePanel, *myInternalEdgeNamePanel, *myCwaEdgeNamePanel, *myStreetNamePanel, *myEdgeValuePanel,
+    NamePanel* myEdgeNamePanel, *myInternalEdgeNamePanel, *myCwaEdgeNamePanel, *myStreetNamePanel,
                *myJunctionIndexPanel, *myTLIndexPanel,
                *myJunctionNamePanel, *myInternalJunctionNamePanel,
-               *myTLSPhaseIndexPanel,
-               *myVehicleNamePanel, *myVehicleValuePanel,
-               *myPersonNamePanel, *myPersonValuePanel,
-               *myContainerNamePanel,
-               *myAddNamePanel, *myAddFullNamePanel, *myPOINamePanel, *myPolyNamePanel, *myPOITypePanel, *myPolyTypePanel;
+               *myVehicleNamePanel, *myPersonNamePanel, *myContainerNamePanel,
+               *myAddNamePanel, *myPOINamePanel, *myPolyNamePanel, *myPOITypePanel, *myPolyTypePanel;
 
     SizePanel* myVehicleSizePanel, *myPersonSizePanel, *myContainerSizePanel, *myPOISizePanel, *myPolySizePanel, *myAddSizePanel, *myJunctionSizePanel;
 
 
     // load/save-menu
-    FXCheckButton* mySaveViewPort, *mySaveDelay, *mySaveDecals, *mySaveBreakpoints;
+    FXCheckButton* mySaveViewPort, *mySaveDelay, *mySaveDecals;
     /// @}
 
 

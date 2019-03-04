@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIContainerStop.cpp
 /// @author  Melanie Weber
 /// @author  Andreas Kendziorra
@@ -15,12 +7,27 @@
 ///
 // A lane area vehicles can halt at (gui-version)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/MsgHandler.h>
@@ -42,10 +49,10 @@
 #include <gui/GUIApplicationWindow.h>
 #include <microsim/logging/FunctionBinding.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/geom/GeomHelper.h>
 #include <guisim/GUIContainerStop.h>
 #include <utils/gui/globjects/GLIncludes.h>
-#include <foreign/fontstash/fontstash.h>
 
 
 // ===========================================================================
@@ -54,7 +61,7 @@
 GUIContainerStop::GUIContainerStop(const std::string& id, const std::vector<std::string>& lines, MSLane& lane,
                                    double frompos, double topos)
     : MSStoppingPlace(id, lines, lane, frompos, topos),
-      GUIGlObject_AbstractAdd(GLO_CONTAINER_STOP, id) {
+      GUIGlObject_AbstractAdd("containerStop", GLO_TRIGGER, id) {
     const double offsetSign = MSNet::getInstance()->lefthand() ? -1 : 1;
     myFGShape = lane.getShape();
     myFGShape.move2side(1.65 * offsetSign);
@@ -102,14 +109,11 @@ GUIParameterTableWindow*
 GUIContainerStop::getParameterWindow(GUIMainWindow& app,
                                      GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 7);
+        new GUIParameterTableWindow(app, *this, 4);
     // add items
-    ret->mkItem("name", false, getMyName());
     ret->mkItem("begin position [m]", false, myBegPos);
     ret->mkItem("end position [m]", false, myEndPos);
     ret->mkItem("container number [#]", true, new FunctionBinding<GUIContainerStop, int>(this, &MSStoppingPlace::getTransportableNumber));
-    ret->mkItem("stopped vehicles[#]", true, new FunctionBinding<GUIContainerStop, int>(this, &MSStoppingPlace::getStoppedVehicleNumber));
-    ret->mkItem("last free pos[m]", true, new FunctionBinding<GUIContainerStop, double>(this, &MSStoppingPlace::getLastFreePos));
     // close building
     ret->closeBuilding();
     return ret;
@@ -120,28 +124,33 @@ void
 GUIContainerStop::drawGL(const GUIVisualizationSettings& s) const {
     glPushName(getGlID());
     glPushMatrix();
+    RGBColor grey(177, 184, 186, 171);
+    RGBColor blue(83, 89, 172, 255);
     // draw the area
     glTranslated(0, 0, getType());
-    GLHelper::setColor(s.SUMO_color_containerStop);
-    const double exaggeration = s.addSize.getExaggeration(s, this);
+    GLHelper::setColor(blue);
+    const double exaggeration = s.addSize.getExaggeration(s);
     GLHelper::drawBoxLines(myFGShape, myFGShapeRotations, myFGShapeLengths, 1.0);
     // draw details unless zoomed out to far
     if (s.scale * exaggeration >= 10) {
         glPushMatrix();
         // draw the lines
         const double rotSign = MSNet::getInstance()->lefthand() ? -1 : 1;
-        // Iterate over every line
-        for (int i = 0; i < (int)myLines.size(); ++i) {
-            // push a new matrix for every line
+        for (int i = 0; i != (int)myLines.size(); ++i) {
             glPushMatrix();
-            // traslate and rotate
             glTranslated(myFGSignPos.x(), myFGSignPos.y(), 0);
+            glRotated(180, 1, 0, 0);
             glRotated(rotSign * myFGSignRot, 0, 0, 1);
-            // draw line
-            GLHelper::drawText(myLines[i].c_str(), Position(1.2, (double)i), .1, 1.f, s.SUMO_color_containerStop, 0, FONS_ALIGN_LEFT);
-            // pop matrix for every line
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            pfSetPosition(0, 0);
+            pfSetScale(1.f);
+            glTranslated(1.2, -(double)i, 0);
+            pfDrawString(myLines[i].c_str());
             glPopMatrix();
         }
+
+
+
         // draw the sign
         glTranslated(myFGSignPos.x(), myFGSignPos.y(), 0);
         int noPoints = 9;
@@ -151,10 +160,10 @@ GUIContainerStop::drawGL(const GUIVisualizationSettings& s) const {
         glScaled(exaggeration, exaggeration, 1);
         GLHelper::drawFilledCircle((double) 1.1, noPoints);
         glTranslated(0, 0, .1);
-        GLHelper::setColor(s.SUMO_color_containerStop_sign);
+        GLHelper::setColor(grey);
         GLHelper::drawFilledCircle((double) 0.9, noPoints);
         if (s.scale * exaggeration >= 4.5) {
-            GLHelper::drawText("C", Position(), .1, 1.6, s.SUMO_color_containerStop, myFGSignRot);
+            GLHelper::drawText("C", Position(), .1, 1.6, blue, myFGSignRot);
         }
         glPopMatrix();
     }

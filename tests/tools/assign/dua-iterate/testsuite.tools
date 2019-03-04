@@ -1,9 +1,6 @@
 # straight call of the script
 simple
 
-# vtypes from an additional file
-vtypes_add
-
 # call with unordered trips
 unordered_input
 
@@ -24,6 +21,3 @@ binary
 
 # testing convergence of travel times
 convergence
-
-# testing external gawron calculation
-external_gawron

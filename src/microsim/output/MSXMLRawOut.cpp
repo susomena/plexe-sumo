@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSXMLRawOut.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // Realises dumping the complete network state
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/geom/GeomHelper.h>
 #include <microsim/MSEdgeControl.h>
@@ -32,7 +39,6 @@
 #include <microsim/MSNet.h>
 #include <microsim/MSVehicle.h>
 #include <microsim/pedestrians/MSPModel.h>
-#include <microsim/lcmodels/MSAbstractLaneChangeModel.h>
 #include <microsim/MSGlobals.h>
 #include <microsim/MSContainer.h>
 #include <utils/iodevices/OutputDevice.h>
@@ -66,7 +72,7 @@ MSXMLRawOut::writeEdge(OutputDevice& of, const MSEdge& edge, SUMOTime timestep) 
     if (!dump) {
         if (MSGlobals::gUseMesoSim) {
             MESegment* seg = MSGlobals::gMesoNet->getSegmentForEdge(edge);
-            while (seg != nullptr) {
+            while (seg != 0) {
                 if (seg->getCarNumber() != 0) {
                     dump = true;
                     break;
@@ -91,7 +97,7 @@ MSXMLRawOut::writeEdge(OutputDevice& of, const MSEdge& edge, SUMOTime timestep) 
         if (dump) {
             if (MSGlobals::gUseMesoSim) {
                 MESegment* seg = MSGlobals::gMesoNet->getSegmentForEdge(edge);
-                while (seg != nullptr) {
+                while (seg != 0) {
                     seg->writeVehicles(of);
                     seg = seg->getNextSegment();
                 }
@@ -117,11 +123,17 @@ MSXMLRawOut::writeEdge(OutputDevice& of, const MSEdge& edge, SUMOTime timestep) 
 
 void
 MSXMLRawOut::writeLane(OutputDevice& of, const MSLane& lane) {
-    of.openTag("lane").writeAttr(SUMO_ATTR_ID, lane.getID());
-    for (const MSBaseVehicle* const veh : lane.getVehiclesSecure()) {
-        writeVehicle(of, *veh);
+    of.openTag("lane") << " id=\"" << lane.myID << "\"";
+    if (lane.getVehicleNumber() != 0) {
+        for (std::vector<MSVehicle*>::const_iterator veh = lane.myVehBuffer.begin();
+                veh != lane.myVehBuffer.end(); ++veh) {
+            writeVehicle(of, **veh);
+        }
+        for (MSLane::VehCont::const_iterator veh = lane.myVehicles.begin();
+                veh != lane.myVehicles.end(); ++veh) {
+            writeVehicle(of, **veh);
+        }
     }
-    lane.releaseVehicles();
     of.closeTag();
 }
 
@@ -133,12 +145,10 @@ MSXMLRawOut::writeVehicle(OutputDevice& of, const MSBaseVehicle& veh) {
         of.writeAttr(SUMO_ATTR_ID, veh.getID());
         of.writeAttr(SUMO_ATTR_POSITION, veh.getPositionOnLane());
         of.writeAttr(SUMO_ATTR_SPEED, veh.getSpeed());
-        // TODO: activate action step length output, if required
-        //of.writeAttr(SUMO_ATTR_ACTIONSTEPLENGTH, veh.getActionStepLength());
         if (!MSGlobals::gUseMesoSim) {
             const MSVehicle& microVeh = static_cast<const MSVehicle&>(veh);
             // microsim-specific stuff
-            if (MSAbstractLaneChangeModel::haveLateralDynamics()) {
+            if (MSGlobals::gLateralResolution > 0) {
                 const double posLat = microVeh.getLateralPositionOnLane();
                 of.writeAttr(SUMO_ATTR_POSITION_LAT, posLat);
             }

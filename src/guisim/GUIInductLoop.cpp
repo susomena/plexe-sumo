@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIInductLoop.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // The gui-version of the MSInductLoop, together with the according
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/geom/PositionVector.h>
@@ -42,10 +49,8 @@
  * GUIInductLoop-methods
  * ----------------------------------------------------------------------- */
 GUIInductLoop::GUIInductLoop(const std::string& id, MSLane* const lane,
-                             double position, const std::string& vTypes) : 
-    MSInductLoop(id, lane, position, vTypes),
-    myWrapper(nullptr)
-{}
+                             double position, const std::string& vTypes)
+    : MSInductLoop(id, lane, position, vTypes) {}
 
 
 GUIInductLoop::~GUIInductLoop() {}
@@ -53,62 +58,49 @@ GUIInductLoop::~GUIInductLoop() {}
 
 GUIDetectorWrapper*
 GUIInductLoop::buildDetectorGUIRepresentation() {
-    // caller (GUINet) takes responsibility for pointer
-    myWrapper = new MyWrapper(*this, myPosition);
-    return myWrapper;
+    return new MyWrapper(*this, myPosition);
 }
 
 
 void
 GUIInductLoop::reset() {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     MSInductLoop::reset();
 }
 
 
 void
 GUIInductLoop::enterDetectorByMove(SUMOVehicle& veh, double entryTimestep) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     MSInductLoop::enterDetectorByMove(veh, entryTimestep);
 }
 
 void
 GUIInductLoop::leaveDetectorByMove(SUMOVehicle& veh, double leaveTimestep) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     MSInductLoop::leaveDetectorByMove(veh, leaveTimestep);
 }
 
 void
 GUIInductLoop::leaveDetectorByLaneChange(SUMOVehicle& veh, double lastPos) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     MSInductLoop::leaveDetectorByLaneChange(veh, lastPos);
 }
 
 
 std::vector<MSInductLoop::VehicleData>
 GUIInductLoop::collectVehiclesOnDet(SUMOTime t, bool leaveTime) const {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     return MSInductLoop::collectVehiclesOnDet(t, leaveTime);
 }
 
 
-void 
-GUIInductLoop::setSpecialColor(const RGBColor* color) {
-    if (myWrapper != nullptr) {
-        myWrapper->setSpecialColor(color);
-    }
-}
-
-
-// -------------------------------------------------------------------------
-// GUIInductLoop::MyWrapper-methods
-// -------------------------------------------------------------------------
-
-GUIInductLoop::MyWrapper::MyWrapper(GUIInductLoop& detector, double pos) :
-    GUIDetectorWrapper(GLO_E1DETECTOR, detector.getID()),
-    myDetector(detector), myPosition(pos),
-    mySpecialColor(nullptr)
-{
+/* -------------------------------------------------------------------------
+ * GUIInductLoop::MyWrapper-methods
+ * ----------------------------------------------------------------------- */
+GUIInductLoop::MyWrapper::MyWrapper(GUIInductLoop& detector, double pos)
+    : GUIDetectorWrapper("induct loop", detector.getID()),
+      myDetector(detector), myPosition(pos) {
     myFGPosition = detector.getLane()->geometryPositionAtOffset(pos);
     myBoundary.add(myFGPosition.x() + (double) 5.5, myFGPosition.y() + (double) 5.5);
     myBoundary.add(myFGPosition.x() - (double) 5.5, myFGPosition.y() - (double) 5.5);
@@ -158,7 +150,7 @@ GUIInductLoop::MyWrapper::drawGL(const GUIVisualizationSettings& s) const {
     glPushName(getGlID());
     double width = (double) 2.0 * s.scale;
     glLineWidth(1.0);
-    const double exaggeration = s.addSize.getExaggeration(s, this);
+    const double exaggeration = s.addSize.getExaggeration(s);
     // shape
     glColor3d(1, 1, 0);
     glPushMatrix();
@@ -178,14 +170,9 @@ GUIInductLoop::MyWrapper::drawGL(const GUIVisualizationSettings& s) const {
     glVertex2d(0, -2 + .1);
     glEnd();
 
-    if (mySpecialColor == nullptr) {
-        glColor3d(1, 1, 1);
-    } else {
-        GLHelper::setColor(*mySpecialColor);
-    }
-
     // outline
     if (width * exaggeration > 1) {
+        glColor3d(1, 1, 1);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glBegin(GL_QUADS);
         glVertex2f(0 - 1.0, 2);
@@ -199,6 +186,7 @@ GUIInductLoop::MyWrapper::drawGL(const GUIVisualizationSettings& s) const {
     // position indicator
     if (width * exaggeration > 1) {
         glRotated(90, 0, 0, -1);
+        glColor3d(1, 1, 1);
         glBegin(GL_LINES);
         glVertex2d(0, 1.7);
         glVertex2d(0, -1.7);

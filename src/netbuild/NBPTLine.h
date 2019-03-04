@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBPTLine.h
 /// @author  Gregor Laemmel
 /// @author  Nikita Cherednychek
@@ -14,6 +6,17 @@
 /// @version $Id$
 ///
 // The representation of one direction of a single pt line
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef SUMO_NBPTLINE_H
 #define SUMO_NBPTLINE_H
@@ -29,40 +32,23 @@
 // ===========================================================================
 class OutputDevice;
 class NBPTStop;
-class NBEdgeCont;
 
 class NBPTLine {
 
 public:
-    explicit NBPTLine(const std::string& name, const std::string& type, const std::string& ref, int interval, const std::string& nightService);
+    explicit NBPTLine(std::string name);
 
     void addPTStop(NBPTStop* pStop);
-    long long int getLineID() const;
-    const std::string& getName() const ;
-
-    const std::string& getType() const {
-        return myType;
-    }
-
+    std::string getName();
     std::vector<NBPTStop*> getStops();
-    void write(OutputDevice& device, NBEdgeCont& ec);
+    void write(OutputDevice& device);
     void setId(long long int id);
     void addWayNode(long long int way, long long int node);
+    void setRef(std::string basic_string);
 
-    void setMyNumOfStops(int numStops);
-
-    /// @brief get line reference (not unique)
-    const std::string& getRef() const {
-        return myRef;
-    }
-
-    void replaceStops(std::vector<NBPTStop*> stops) {
-        myPTStops = stops;
-    }
-
+    void setMyNumOfStops(unsigned long numStops);
 private:
     std::string myName;
-    std::string myType;
     std::vector<NBPTStop*> myPTStops;
 
 private:
@@ -76,19 +62,15 @@ private:
     std::string myCurrentWay;
     long long int myPTLineId;
     std::string myRef;
-    int myInterval;
-    std::string myNightService;
 
 public:
     void addEdgeVector(std::vector<NBEdge*>::iterator fr, std::vector<NBEdge*>::iterator to);
+    std::string getRoute();
 private:
     // route of ptline
     std::vector<NBEdge*> myRoute;
-public:
-    const std::vector<NBEdge*>& getRoute() const;
-private:
 
-    int myNumOfStops;
+    unsigned long myNumOfStops;
 };
 
 

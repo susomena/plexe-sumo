@@ -64,10 +64,7 @@ copy_test_path:weights.src.xml
 copy_test_path:weights.dst.xml
 copy_test_path:weights.via.xml
 copy_test_path:ptlines.xml
-copy_test_path:input_edgedata.xml
-copy_test_path:summary.xml
 copy_test_path:config.txt
-copy_test_path:input_sel.txt
 
 [collate_file]
 detectors:e1.add.xml
@@ -110,9 +107,7 @@ gpx:output.gpx
 match:match.txt
 image:image.svg
 csv:out*.csv
-csv:1.csv
 xml:out.xml
-xml2:out2.xml
 net:net.net.xml
 source_weights:weights.src.xml
 dest_weights:weights.dst.xml
@@ -125,14 +120,9 @@ histogram:histogram.dat
 fullstats:fullstats.dat
 osmimport:*/osm.net.xml
 osmstops:*/osm_stops.add.xml
-osmlines:*/osm_ptlines.xml
-ptroutes:*/osm_pt.rou.xml
 osmbatch:*/build.bat
 osmtrips:*/osm.pedestrian.trips.xml
 districts:districts.xml
-restrictions:restrictions.txt
-parking:input_routes.rou.parking.xml
-parking:parking_parkingLot.add.xml
 
 [run_dependent_text]
 output:Begin time
@@ -145,20 +135,16 @@ output:.* files checked{REPLACE <number> files checked}
 output:^calling.*duarouter
 output:Parsing network projection
 output:Parsing types from '.*[\\/]data[\\/]typemap[\\/]{REPLACE Parsing types from 'sumo/data/typemap/}
-output:from osm-file .*[\\/](.*)osm.xml{REPLACE from osm-file '\1osm.xml}
-output:from .*[\\/](.*).xml{REPLACE from <DIR>/\1.xml}
 output:Building scenario in.*{REPLACE Building scenario in <DIR>}
 output:^Performance:{->}^Vehicles:
 output:instance at 0x[0-9A-Fa-f]+{REPLACE instance at <ADDRESS>}
 output:Written configuration to .*{REPLACE Written configuration to <PATH>}
 output:Warning: Module 'rtree' not available. Using brute-force fallback
-output:2147483647{REPLACE 9223372036854775807}
-output:Simulation.*started with{REPLACE Simulation started with}
-trips:<!-- generated on{[->]}-->
-osmtrips:<!-- generated on{[->]}-->
-districts:<!-- generated on{[->]}-->
+trips:<!-- generated on
+osmtrips:<!-- generated on
+districts:<!-- generated on
 pois:<!--
-routes:<!-- generated on{[->]}-->
+routes:<!-- generated on
 errors:Execution of .*duarouter.*'{REPLACE Execution of <path-to>duarouter'}
 errors:Leaked object at 
 errors:*** 9 leaks found
@@ -172,35 +158,24 @@ errors:.*RuntimeWarning: divide{REPLACE RuntimeWarning: divide}
 errors:Ran [0-9]+ tests in [0-9]+\.[0-9]+s{REPLACE Ran <COUNT> tests in <TIME>}
 errors:No imaging
 errors:Bytes: 0xF6 0x74 0x2E 0x6E, line 3, column 27{REPLACE Bytes: 0xF6 0x74 0x2E 0x6E, line 3, column 26}
-errors:column ([0-9]*) \(line [0-9]*\){REPLACE column \1}
 omnet:<!-- generated on
 shawn:<!-- generated on
-flows:<!-- generated on{[->]}-->
+flows:<!-- generated on
 net:<!--{[->]}-->
-additional:<!--{[->]}-->
 osmimport:<!--{[->]}-->
 osmstops:<!--{[->]}-->
-osmlines:<!--{[->]}-->
-ptroutes:<!--{[->]}-->
 osmbatch:python.*randomTrips\.py"{REPLACE python /path/to/randomTrips.py}
 osmbatch:python.*route2trips\.py{REPLACE python /path/to/route2trips.py}
-osmbatch:python.*ptlines2flows\.py{REPLACE python /path/to/ptlines2flows.py}
 osmbatch:--trip-attributes.*--{REPLACE --trip-attributes <attrs-with-os-dependent-quoting> --}
-osmbatch:#!/bin/bash
 image:id="[^"]*"{REPLACE id="ReplacedTransientID"}
 image:url\(.*\){REPLACE url(ReplacedTransientURL)}
 image:href="[^"]*"{REPLACE href="ReplacedTransientHREF"}
-csv:\r$
 
 [floating_point_tolerance]
 net:0.0101
 image:0.001
 osmbatch:0.001
-osmlines:0.0101
-osmstops:0.0101
 osmtrips:0.0101
-ptroutes:0.0101
-summary:0.0001
 
 [unordered_text]
 errors:ERROR:SCHEMA

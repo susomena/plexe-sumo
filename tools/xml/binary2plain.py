@@ -1,17 +1,21 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    binary2plain.py
+@author  Michael Behrisch
+@date    2012-03-11
+@version $Id$
 
-# @file    binary2plain.py
-# @author  Michael Behrisch
-# @date    2012-03-11
-# @version $Id$
+Converter between SUMO's binary XML and plain XML
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
@@ -47,10 +51,7 @@ def readByte(content):
     return read(content, "B")[0]
 
 
-def readInt(content, withType=False):
-    if withType:
-        valType = readByte(content)
-        assert(valType == INTEGER)
+def readInt(content):
     return read(content, "i")[0]
 
 
@@ -66,7 +67,7 @@ def readString(content):
 def readStringList(content):
     n = readInt(content)
     list = []
-    for _ in range(n):
+    for i in range(n):
         read(content, "B")  # type
         list.append(readString(content))
     return list
@@ -75,10 +76,13 @@ def readStringList(content):
 def readIntListList(content):
     n = readInt(content)
     list = []
-    for _ in range(n):
+    for i in range(n):
         read(content, "B")  # type
         n1 = readInt(content)
-        list.append([readInt(content, True) for __ in range(n1)])
+        list.append([])
+        for j in range(n1):
+            read(content, "B")  # type
+            list[-1].append(readInt(content))
     return list
 
 
@@ -123,7 +127,10 @@ def typedValueStr(content):
     elif valType == STRING:
         return readString(content)
     elif valType == LIST:
-        return " ".join([typedValueStr(content) for _ in range(readInt(content))])
+        l = []
+        for i in range(readInt(content)):
+            l.append(typedValueStr(content))
+        return " ".join(l)
     elif valType == EDGE:
         return edges[readInt(content)]
     elif valType == LANE:
@@ -150,7 +157,6 @@ def typedValueStr(content):
         return '%.2f,%.2f' % (readInt(content) / 100., readInt(content) / 100.)
     elif valType == SCALED2INT_POSITION_3D:
         return '%.2f,%.2f,%.2f' % (readInt(content) / 100., readInt(content) / 100., readInt(content) / 100.)
-
 
 out = sys.stdout
 content = open(sys.argv[1], 'rb')

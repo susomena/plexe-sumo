@@ -1,25 +1,27 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    costMemory.py
+@author  Daniel Krajzewicz
+@date    2014-09-01
+@version $Id$
 
-# @file    rilsa1.py
-# @author  Daniel Krajzewicz
-# @date    2014-09-01
-# @version $Id$
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 
 from __future__ import absolute_import
 
 
-from . import fileNeedsRebuild, Scenario
+from . import *
 import os
-import subprocess
 import sumolib.net.generator.demand as demandGenerator
-import sumolib
+from sumolib.net.generator.network import *
 
 
 flowsRiLSA1 = [
@@ -63,7 +65,8 @@ class Scenario_RiLSA1(Scenario):
         # network
         if fileNeedsRebuild(self.netName, "netconvert"):
             netconvert = sumolib.checkBinary("netconvert")
-            subprocess.call([netconvert, "-c", os.path.join(self.THIS_DIR, "build.netc.cfg")])
+            retCode = subprocess.call(
+                [netconvert, "-c", os.path.join(self.THIS_DIR, "build.netc.cfg")])
         # build the demand model (streams)
         if withDefaultDemand:
             self.demand = demandGenerator.Demand()

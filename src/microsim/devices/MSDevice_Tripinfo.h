@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDevice_Tripinfo.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,6 +8,17 @@
 ///
 // A device which collects info on the vehicle trip
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSDevice_Tripinfo_h
 #define MSDevice_Tripinfo_h
 
@@ -23,9 +26,13 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include "MSVehicleDevice.h"
+#include "MSDevice.h"
 #include <utils/common/SUMOTime.h>
 
 // ===========================================================================
@@ -44,7 +51,7 @@ class SUMOVehicle;
  *
  * @see MSDevice
  */
-class MSDevice_Tripinfo : public MSVehicleDevice {
+class MSDevice_Tripinfo : public MSDevice {
 public:
     /** @brief Build devices for the given vehicle, if needed
      *
@@ -56,7 +63,7 @@ public:
      * @param[in] v The vehicle for which a device may be built
      * @param[filled] into The vector to store the built device in
      */
-    static void buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into);
+    static void buildVehicleDevices(SUMOVehicle& v, std::vector<MSDevice*>& into);
 
     /// @brief update tripinfo statistics
     void updateStatistics(SUMOTime timeLoss) const;
@@ -65,10 +72,7 @@ public:
     static void generateOutputForUnfinished();
 
     /// @brief record tripinfo data for pedestrians
-    static void addPedestrianData(double walkLength, SUMOTime walkDuration, SUMOTime walkTimeLoss);
-
-    /// @brief record tripinfo data for rides
-    static void addRideData(double rideLength, SUMOTime rideDuration, SUMOVehicleClass vClass, const std::string& line, SUMOTime waitingTime);
+    static void addPedestrianData(double walkLength, SUMOTime walkDuration);
 
     /// @brief get statistics for printing to stdout
     static std::string printStatistics();
@@ -82,19 +86,11 @@ public:
 
     static double getAvgWalkRouteLength();
     static double getAvgWalkDuration();
-    static double getAvgWalkTimeLoss();
-
-    static double getAvgRideRouteLength();
-    static double getAvgRideWaitingTime();
-    static double getAvgRideDuration();
 
 public:
     /// @brief Destructor.
     ~MSDevice_Tripinfo();
 
-
-    /// @brief resets counters
-    static void cleanup();
 
 
     /// @name Methods called on vehicle movement / state change, overwriting MSDevice
@@ -203,18 +199,6 @@ private:
     /// @brief The overall waiting time
     SUMOTime myWaitingTime;
 
-    /// @brief Whether the vehicle is currently waiting
-    bool myAmWaiting;
-
-    /// @brief The overall number of unintended stops
-    int myWaitingCount;
-
-    /// @brief The overall intentional stopping time
-    SUMOTime myStoppingTime;
-
-    /// @brief The time when parking started
-    SUMOTime myParkingStarted;
-
     /// @brief The vehicle's arrival time
     SUMOTime myArrivalTime;
 
@@ -234,7 +218,9 @@ private:
     SUMOTime myMesoTimeLoss;
 
     /// @brief devices which may still need to produce output
-    static std::set<const MSDevice_Tripinfo*, ComparatorNumericalIdLess> myPendingOutput;
+    typedef std::set<const MSDevice_Tripinfo*, Named::NamedLikeComparatorIdLess<MSDevice_Tripinfo> > DeviceSet;
+
+    static DeviceSet myPendingOutput;
 
     /// @brief global tripinfo statistics
     static double myVehicleCount;
@@ -243,21 +229,10 @@ private:
     static SUMOTime myTotalWaitingTime;
     static SUMOTime myTotalTimeLoss;
     static SUMOTime myTotalDepartDelay;
-    static SUMOTime myWaitingDepartDelay;
 
     static int myWalkCount;
     static double myTotalWalkRouteLength;
     static SUMOTime myTotalWalkDuration;
-    static SUMOTime myTotalWalkTimeLoss;
-
-    static int myRideCount;
-    static int myRideBusCount;
-    static int myRideRailCount;
-    static int myRideBikeCount;
-    static int myRideAbortCount;
-    static double myTotalRideWaitingTime;
-    static double myTotalRideRouteLength;
-    static SUMOTime myTotalRideDuration;
 
 private:
     /// @brief Invalidated copy constructor.

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIParameterTableWindow.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,6 +8,17 @@
 ///
 // The window that holds the table of an object's parameter
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIParameterTableWindow_h
 #define GUIParameterTableWindow_h
 
@@ -23,16 +26,20 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <string>
 #include <algorithm>
 #include <functional>
 #include <fx.h>
+#include <utils/foxtools/MFXMutex.h>
 #include <utils/common/ValueSource.h>
 #include <utils/common/SUMOTime.h>
-#include "GUIParameterTableItem.h"
 
 
 // ===========================================================================
@@ -99,17 +106,31 @@ public:
     /// @name Row adding functions
     /// @{
 
-    /** @brief Adds a row which obtains its value from a ValueSource
+    /** @brief Adds a row which obtains its value from an unsigned-ValueSource
      *
      * @param[in] name The name of the row entry
      * @param[in] dynamic Information whether the entry is dynamic
      * @param[in] src The value source to use
      */
-    template<class T>
-    void mkItem(const char* name, bool dynamic, ValueSource<T>* src) {
-        GUIParameterTableItemInterface* i = new GUIParameterTableItem<T>(myTable, myCurrentPos++, name, dynamic, src);
-        myItems.push_back(i);
-    }
+    void mkItem(const char* name, bool dynamic, ValueSource<unsigned>* src);
+
+    /** @brief Adds a row which obtains its value from an integer-ValueSource
+     *
+     * @param[in] name The name of the row entry
+     * @param[in] dynamic Information whether the entry is dynamic
+     * @param[in] src The value source to use
+     */
+    void mkItem(const char* name, bool dynamic, ValueSource<int>* src);
+
+
+    /** @brief Adds a row which obtains its value from an double-ValueSource
+     *
+     * @param[in] name The name of the row entry
+     * @param[in] dynamic Information whether the entry is dynamic
+     * @param[in] src The value source to use
+     */
+    void mkItem(const char* name, bool dynamic, ValueSource<double>* src);
+
 
     /** @brief Adds a row which shows a string-value
      *
@@ -196,7 +217,7 @@ public:
     /** @brief Updates all instances
      */
     static void updateAll() {
-        FXMutexLock locker(myGlobalContainerLock);
+        AbstractMutex::ScopedLocker locker(myGlobalContainerLock);
         std::for_each(myContainer.begin(), myContainer.end(), std::mem_fun(&GUIParameterTableWindow::updateTable));
     }
 
@@ -210,7 +231,7 @@ protected:
     void updateTable();
 
     /// @brief The mutex used to avoid concurrent updates of the instance container
-    static FXMutex myGlobalContainerLock;
+    static MFXMutex myGlobalContainerLock;
 
     /// @brief The container of items that shall be updated
     static std::vector<GUIParameterTableWindow*> myContainer;
@@ -232,7 +253,7 @@ private:
     unsigned myCurrentPos;
 
     /// @brief A lock assuring save updates in case of object deletion
-    mutable FXMutex myLock;
+    mutable MFXMutex myLock;
 
     /// @brief returns the number of parameters if obj is Parameterised and 0 otherwise
     static int numParams(const GUIGlObject* obj);

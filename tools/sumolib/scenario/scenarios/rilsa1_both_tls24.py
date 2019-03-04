@@ -1,25 +1,27 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    rilsa1_both_tls24.py
+@author  Daniel Krajzewicz
+@date    2014-09-01
+@version $Id$
 
-# @file    rilsa1_both_tls24.py
-# @author  Daniel Krajzewicz
-# @date    2014-09-01
-# @version $Id$
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
 
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 
 
-from . import fileNeedsRebuild, Scenario
+from . import *
 import os
-import subprocess
 import shutil
 import sumolib.net.generator.demand as demandGenerator
-import sumolib
+from sumolib.net.generator.network import *
+
 
 flowsRiLSA1 = [
     ["nmp1", [
@@ -63,7 +65,8 @@ class Scenario_RiLSA1BothTLS24(Scenario):
         # network
         if fileNeedsRebuild(os.path.join(self.THIS_DIR, self.NET_FILE), "netconvert"):
             netconvert = sumolib.checkBinary("netconvert")
-            subprocess.call([netconvert, "-c", os.path.join(self.THIS_DIR, "build.netc.cfg")])
+            retCode = subprocess.call(
+                [netconvert, "-c", os.path.join(self.THIS_DIR, "build.netc.cfg")])
         # build the demand model (streams)
         if withDefaultDemand:
             self.demand = demandGenerator.Demand()
@@ -78,10 +81,7 @@ class Scenario_RiLSA1BothTLS24(Scenario):
                     lkwNprob = prob - lkwEprob
 
                     self.demand.addStream(demandGenerator.Stream(f[0] + "__" + rel[0], 0, 3600, rel[1], f[0], rel[0],
-                                                                 {"passenger": pkwEprob,
-                                                                  "COLOMBO_undetectable_passenger": pkwNprob,
-                                                                  "hdv": lkwEprob,
-                                                                  "COLOMBO_undetectable_hdv": lkwNprob}))
+                                                                 {"passenger": pkwEprob, "COLOMBO_undetectable_passenger": pkwNprob, "hdv": lkwEprob, "COLOMBO_undetectable_hdv": lkwNprob}))
             if fileNeedsRebuild(self.fullPath("routes.rou.xml"), "duarouter"):
                 self.demand.build(
                     0, 3600, self.fullPath(self.NET_FILE), self.fullPath("routes.rou.xml"))

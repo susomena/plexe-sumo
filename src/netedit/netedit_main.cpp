@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    netedit_main.cpp
 /// @author  Jakob Erdmann
 /// @date    Feb 2011
@@ -14,25 +6,51 @@
 ///
 // Main for NETEDIT (adapted from guisim_main)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
 #endif
 
+#include <ctime>
 #include <signal.h>
-#include <utils/common/SystemFrame.h>
-#include <utils/foxtools/MsgHandlerSynchronized.h>
-#include <utils/gui/settings/GUICompleteSchemeStorage.h>
-#include <utils/gui/windows/GUIAppEnum.h>
+#include <iostream>
+#include <utils/options/Option.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/options/OptionsIO.h>
+#include <utils/common/UtilExceptions.h>
+#include <utils/common/FileHelpers.h>
+#include <utils/common/MsgHandler.h>
+#include <utils/common/SystemFrame.h>
+#include <utils/common/RandHelper.h>
 #include <utils/xml/XMLSubSys.h>
+#include <utils/gui/windows/GUIAppEnum.h>
+#include <utils/gui/images/GUITexturesHelper.h>
+#include <utils/gui/settings/GUICompleteSchemeStorage.h>
+#include <utils/geom/GeoConvHelper.h>
+#include <netimport/NIFrame.h>
+#include <netbuild/NBFrame.h>
+#include <netwrite/NWFrame.h>
 
 #include "GNEApplicationWindow.h"
 #include "GNELoadThread.h"
@@ -44,12 +62,13 @@
 int
 main(int argc, char** argv) {
     // make the output aware of threading
-    MsgHandler::setFactory(&MsgHandlerSynchronized::create);
+    MFXMutex lock;
+    MsgHandler::assignLock(&lock);
     // get the options
     OptionsCont& oc = OptionsCont::getOptions();
     // give some application descriptions
     oc.setApplicationDescription("Graphical editor for SUMO networks.");
-    oc.setApplicationName("netedit", "Eclipse SUMO netedit Version " VERSION_STRING);
+    oc.setApplicationName("netedit", "Netedit Version " VERSION_STRING);
     int ret = 0;
 #ifndef _DEBUG
     try {
@@ -66,7 +85,7 @@ main(int argc, char** argv) {
             return 0;
         }
         // Make application
-        FXApp application("SUMO netedit", "Eclipse");
+        FXApp application("Netedit", "DLR");
         // Open display
         application.init(argc, argv);
         int minor, major;
@@ -79,7 +98,7 @@ main(int argc, char** argv) {
         gSchemeStorage.init(&application, true);
         window->dependentBuild();
         // Create app
-        application.addSignal(SIGINT, window, MID_HOTKEY_CTRL_Q_CLOSE);
+        application.addSignal(SIGINT, window, MID_QUIT);
         application.create();
         // Load configuration given on command line
         if (argc > 1) {

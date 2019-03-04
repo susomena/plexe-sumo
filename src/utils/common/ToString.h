@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ToString.h
 /// @author  Christian Roessel
 /// @author  Daniel Krajzewicz
@@ -17,6 +9,17 @@
 ///
 // -------------------
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef ToString_h
 #define ToString_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <sstream>
 #include <string>
@@ -48,7 +55,7 @@
 template <class T>
 inline std::string toString(const T& t, std::streamsize accuracy = gPrecision) {
     std::ostringstream oss;
-    oss.setf(std::ios::fixed, std::ios::floatfield);
+    oss.setf(std::ios::fixed , std::ios::floatfield);
     oss << std::setprecision(accuracy);
     oss << t;
     return oss.str();
@@ -68,7 +75,6 @@ inline std::string toString(const Named* obj, std::streamsize accuracy) {
     UNUSED_PARAMETER(accuracy);
     return Named::getIDSecure(obj);
 }
-
 
 template <>
 inline std::string toString<SumoXMLTag>(const SumoXMLTag& tag, std::streamsize accuracy) {
@@ -109,12 +115,6 @@ template <>
 inline std::string toString<LaneSpreadFunction>(const LaneSpreadFunction& lsf, std::streamsize accuracy) {
     UNUSED_PARAMETER(accuracy);
     return SUMOXMLDefinitions::LaneSpreadFunctions.getString(lsf);
-}
-
-template <>
-inline std::string toString<RightOfWay>(const RightOfWay& row, std::streamsize accuracy) {
-    UNUSED_PARAMETER(accuracy);
-    return SUMOXMLDefinitions::RightOfWayValues.getString(row);
 }
 
 
@@ -254,26 +254,6 @@ inline std::string joinToStringSorting(const std::vector<T>& v, const T_BETWEEN&
     std::vector<T> sorted(v);
     std::sort(sorted.begin(), sorted.end());
     return joinToString(sorted, between, accuracy);
-}
-
-
-template <typename T, typename T_BETWEEN>
-inline std::string joinNamedToStringSorting(const std::set<T*>& ns, const T_BETWEEN& between) {
-    std::vector<std::string> ids;
-    for (T* n : ns) {
-        ids.push_back(Named::getIDSecure(n));
-    }
-    return joinToStringSorting(ids, between);
-}
-
-
-template <typename T, typename C, typename T_BETWEEN>
-inline std::string joinNamedToString(const std::set<T*, C>& ns, const T_BETWEEN& between) {
-    std::vector<std::string> ids;
-    for (T* n : ns) {
-        ids.push_back(Named::getIDSecure(n));
-    }
-    return joinToString(ids, between);
 }
 
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIVissimSingleTypeParser_Signalgruppendefinition.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,16 +8,31 @@
 ///
 //
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <iostream>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/ToString.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/VectorHelper.h>
@@ -61,8 +68,8 @@ NIVissimSingleTypeParser_Signalgruppendefinition::parse(std::istream& from) {
     int lsaid;
     from >> lsaid;
     NIVissimTL* tl = NIVissimTL::dictionary(lsaid);
-    if (tl == nullptr) {
-        WRITE_ERROR("A traffic light group with an unknown traffic light occurred.\n  Group-ID: " + toString<int>(id)
+    if (tl == 0) {
+        WRITE_ERROR("A traffic light group with an unknown traffic light occured.\n  Group-ID: " + toString<int>(id)
                     + "\n  TrafficLight-ID: " + toString<int>(lsaid));
         return false;
     }
@@ -92,7 +99,7 @@ NIVissimSingleTypeParser_Signalgruppendefinition::parse(std::istream& from) {
     if (type == "pos") {
         return parsePOS(id, name, lsaid, from);
     }
-    WRITE_WARNING("Unsupported LSA-Type '" + type + "' occurred.");
+    WRITE_WARNING("Unsupported LSA-Type '" + type + "' occured.");
     return true;
 }
 

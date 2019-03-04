@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIDialog_Breakpoints.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -15,6 +7,17 @@
 ///
 // Editor for simulation breakpoints
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIDialog_Breakpoints_h
 #define GUIDialog_Breakpoints_h
 
@@ -22,7 +25,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -50,11 +57,14 @@ public:
      */
     GUIDialog_Breakpoints(GUIMainWindow* parent, std::vector<SUMOTime>& breakpoints, FXMutex& breakpointLock);
 
+
     /// @brief Destructor
     ~GUIDialog_Breakpoints();
 
     /// @brief sets the focus after the window is created
     void show();
+
+
 
     /// @name FOX-callbacks
     /// @{
@@ -75,11 +85,6 @@ public:
     long onCmdEditTable(FXObject*, FXSelector, void*);
     /// @}
 
-    virtual void layout();
-
-protected:
-    /// FOX needs this
-    GUIDialog_Breakpoints() {}
 
 private:
     /// @brief Rebuilds the entire list
@@ -90,6 +95,8 @@ private:
      */
     std::string encode2TXT();
 
+
+private:
     /// @brief The list that holds the ids
     FXTable* myTable;
 
@@ -101,6 +108,12 @@ private:
 
     /// @brief Lock for modifying the list of breakpoints
     FXMutex* myBreakpointLock;
+
+
+protected:
+    /// FOX needs this
+    GUIDialog_Breakpoints() { }
+
 };
 
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIMainWindow.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 //
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIMainWindow_h
 #define GUIMainWindow_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <fx.h>
 #include <vector>
@@ -31,13 +38,13 @@
 #include <map>
 #include <utils/common/StdDefs.h>
 #include <utils/common/SUMOTime.h>
+#include <utils/foxtools/MFXMutex.h>
 
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
 class GUIEvent;
-class GUIGlChildWindow;
 class GUISUMOAbstractView;
 
 
@@ -49,18 +56,15 @@ public:
     GUIMainWindow(FXApp* a);
     virtual ~GUIMainWindow();
     /// Adds a further child window to the list
-    void addGLChild(GUIGlChildWindow* child);
-    void addChild(FXMainWindow* child);
+    void addChild(FXMDIChild* child, bool updateOnSimStep = true);
+    void addChild(FXMainWindow* child, bool updateOnSimStep = true);
 
     /// removes the given child window from the list
-    void removeGLChild(GUIGlChildWindow* child);
+    void removeChild(FXMDIChild* child);
     void removeChild(FXMainWindow*  child);
 
     std::vector<std::string> getViewIDs() const;
-    GUIGlChildWindow* getViewByID(const std::string& id) const;
-    const std::vector<GUIGlChildWindow*>& getViews() const {
-        return myGLWindows;
-    }
+    FXMDIChild* getViewByID(const std::string& id) const;
 
     void updateChildren();
 
@@ -105,16 +109,12 @@ public:
      * @return parsed delay in milliseconds
      */
     virtual double getDelay() const {
-        return 0.;
+        return 0;
     }
 
     /** @brief Sets the delay of the parent application
      */
     virtual void setDelay(double) {}
-
-    /** @brief Sets the breakpoints of the parent application
-     */
-    virtual void setBreakpoints(const std::vector<SUMOTime>&) {}
 
     /** @brief Sends an event from the application thread to the GUI and waits until it is handled
      * @param event the event to send
@@ -126,28 +126,11 @@ public:
     /** @brief get the active view or 0 */
     GUISUMOAbstractView* getActiveView() const;
 
-    /// @brief Toggle full screen mode
-    virtual long onCmdFullScreen(FXObject*, FXSelector, void*) {
-        return 1;
-    }
-
-    bool isFullScreen() {
-        return myAmFullScreen;
-    }
-
-    /// @brief retrieve breakpoints if provided by the application
-    virtual const std::vector<SUMOTime> retrieveBreakpoints() const {
-        return std::vector<SUMOTime>();
-    }
-
 protected:
-    /// @brief whether to show the window in full screen mode
-    bool myAmFullScreen;
-
-    std::vector<GUIGlChildWindow*> myGLWindows;
+    std::vector<FXMDIChild*> mySubWindows;
     std::vector<FXMainWindow*> myTrackerWindows;
     /// A lock to make the removal and addition of trackers secure
-    FXMutex myTrackerLock;
+    MFXMutex myTrackerLock;
 
     /// Font used for popup-menu titles
     FXFont* myBoldFont;
@@ -188,8 +171,6 @@ protected:
     /// @brief perform initial window positioning and sizing according to user options / previous call
     void setWindowSizeAndPos();
 
-    /// @brief record window position and size in registry
-    void storeWindowSizeAndPos();
 
 };
 

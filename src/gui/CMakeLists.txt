@@ -5,6 +5,7 @@ set(gui_STAT_SRCS
    GUIApplicationWindow.h
    GUIEvent_SimulationEnded.h
    GUIEvent_SimulationLoaded.h
+   GUIEvent_Screenshot.h
    GUIGlobals.cpp
    GUIGlobals.h
    GUIManipulator.h
@@ -24,5 +25,4 @@ set(gui_STAT_SRCS
 )
 
 add_library(gui STATIC ${gui_STAT_SRCS})
-add_dependencies(gui generate-version-h)
 set_property(TARGET gui PROPERTY PROJECT_LABEL "z_gui")

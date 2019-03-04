@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBTrafficLightLogicCont.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // A container for traffic light definitions and built programs
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 #include <map>
 #include <string>
 #include <algorithm>
@@ -166,7 +173,7 @@ NBTrafficLightLogicCont::computeSingleLogic(OptionsCont& oc, NBTrafficLightDefin
     const std::string& programID = def->getProgramID();
     // build program
     NBTrafficLightLogic* built = def->compute(oc);
-    if (built == nullptr) {
+    if (built == 0) {
         WRITE_WARNING("Could not build program '" + programID + "' for traffic light '" + id + "'");
         return false;
     }
@@ -180,7 +187,7 @@ NBTrafficLightLogicCont::computeSingleLogic(OptionsCont& oc, NBTrafficLightDefin
     }
     // and insert the result after computation
     // make sure we don't leak memory if computeSingleLogic is called externally
-    if (myComputed[id][programID] != nullptr) {
+    if (myComputed[id][programID] != 0) {
         delete myComputed[id][programID];
     }
     myComputed[id][programID] = built;
@@ -237,7 +244,7 @@ NBTrafficLightLogicCont::getDefinition(const std::string& id, const std::string&
             return i2->second;
         }
     }
-    return nullptr;
+    return 0;
 }
 
 const NBTrafficLightLogicCont::Program2Def&
@@ -261,7 +268,7 @@ NBTrafficLightLogicCont::getLogic(const std::string& id, const std::string& prog
             return i2->second;
         }
     }
-    return nullptr;
+    return 0;
 }
 
 

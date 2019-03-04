@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBHeightMapperTest.cpp
 /// @author  Laura Bieker
 /// @author  Michael Behrisch
@@ -14,6 +6,17 @@
 /// @version $Id$
 ///
 // Tests the class NBHeightMapper
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 
 #include <gtest/gtest.h>
@@ -52,11 +55,11 @@ protected :
 /* Test the method 'getZ'*/
 TEST_F(NBHeightMapperTest, test_method_getZ) {
     const NBHeightMapper &hm = NBHeightMapper::get();
-    EXPECT_TRUE(hm.ready());
-    EXPECT_DOUBLE_EQ(0., hm.getZ(Position(0.25, 0.25)));
-    EXPECT_DOUBLE_EQ(1., hm.getZ(Position(0.75, 0.75)));
-    EXPECT_DOUBLE_EQ(2., hm.getZ(Position(1.5, 0.5)));
-    //EXPECT_DOUBLE_EQ(0.5, hm.getZ(Position(0.5, 0.5, 100)));
+	EXPECT_TRUE(hm.ready());
+	EXPECT_FLOAT_EQ(0, hm.getZ(Position(0.25,0.25)));
+	EXPECT_FLOAT_EQ(1, hm.getZ(Position(0.75,0.75)));
+	EXPECT_FLOAT_EQ(2, hm.getZ(Position(1.5,0.5)));
+	//EXPECT_FLOAT_EQ(0.5, hm.getZ(Position(0.5,0.5, 100)));
 }
 
 

@@ -1,0 +1,313 @@
+/****************************************************************************/
+/// @file    GNEDetectorEntry.cpp
+/// @author  Pablo Alvarez Lopez
+/// @date    Nov 2015
+/// @version $Id$
+///
+//
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
+
+// ===========================================================================
+// included modules
+// ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
+#include <config.h>
+#endif
+
+#include <string>
+#include <iostream>
+#include <utility>
+#include <foreign/polyfonts/polyfonts.h>
+#include <utils/geom/PositionVector.h>
+#include <utils/common/RandHelper.h>
+#include <utils/common/SUMOVehicleClass.h>
+#include <utils/common/ToString.h>
+#include <utils/geom/GeomHelper.h>
+#include <utils/gui/windows/GUISUMOAbstractView.h>
+#include <utils/gui/windows/GUIAppEnum.h>
+#include <utils/gui/images/GUITextureSubSys.h>
+#include <utils/gui/div/GUIParameterTableWindow.h>
+#include <utils/gui/globjects/GUIGLObjectPopupMenu.h>
+#include <utils/gui/div/GUIGlobalSelection.h>
+#include <utils/gui/div/GLHelper.h>
+#include <utils/gui/windows/GUIAppEnum.h>
+#include <utils/gui/images/GUITexturesHelper.h>
+#include <utils/xml/SUMOSAXHandler.h>
+
+#include "GNEDetectorEntry.h"
+#include "GNEDetectorE3.h"
+#include "GNELane.h"
+#include "GNEViewNet.h"
+#include "GNEUndoList.h"
+#include "GNENet.h"
+#include "GNEChange_Attribute.h"
+
+
+// ===========================================================================
+// member method definitions
+// ===========================================================================
+
+GNEDetectorEntry::GNEDetectorEntry(GNEViewNet* viewNet, GNEDetectorE3* parent, GNELane* lane, double pos, bool friendlyPos) :
+    GNEDetector(parent->generateEntryID(), viewNet, SUMO_TAG_DET_ENTRY, ICON_E3ENTRY, lane, pos, 0, "", friendlyPos),
+    myE3Parent(parent) {
+    // Update geometry
+    updateGeometryByParent();
+}
+
+
+GNEDetectorEntry::~GNEDetectorEntry() {}
+
+
+void
+GNEDetectorEntry::updateGeometry() {
+    myE3Parent->updateGeometry();
+}
+
+
+void
+GNEDetectorEntry::updateGeometryByParent() {
+    // Clear all containers
+    myShapeRotations.clear();
+    myShapeLengths.clear();
+
+    // clear Shape
+    myShape.clear();
+
+    // obtain position over lane
+    double fixedPositionOverLane = myPositionOverLane > 1 ? 1 : myPositionOverLane < 0 ? 0 : myPositionOverLane;
+    myShape.push_back(myLane->getShape().positionAtOffset(fixedPositionOverLane * myLane->getShape().length()));
+
+    // Save rotation (angle) of the vector constructed by points f and s
+    myShapeRotations.push_back(myLane->getShape().rotationDegreeAtOffset(fixedPositionOverLane * myLane->getShape().length()) * -1);
+
+    // Set block icon position
+    myBlockIconPosition = myShape.getLineCenter();
+
+    // Set block icon rotation, and using their rotation for logo
+    setBlockIconRotation();
+
+    // Refresh element (neccesary to avoid grabbing problems)
+    myViewNet->getNet()->refreshAdditional(this);
+}
+
+
+GNEDetectorE3*
+GNEDetectorEntry::getE3Parent() const {
+    return myE3Parent;
+}
+
+
+void
+GNEDetectorEntry::writeAdditional(OutputDevice&, bool) const {
+    // This additional cannot be writted calling this function because is writted by their E3Parent
+}
+
+
+bool GNEDetectorEntry::isDetectorPositionFixed() const {
+    // with friendly position enabled position are "always fixed"
+    if (myFriendlyPosition) {
+        return true;
+    } else {
+        // floors are needed to avoid precision problems
+        return ((floor(myPositionOverLane * 1000) / 1000) >= 0) && ((floor(myPositionOverLane * 1000) / 1000) <= 1);
+    }
+}
+
+
+void
+GNEDetectorEntry::drawGL(const GUIVisualizationSettings& s) const {
+    // Start drawing adding gl identificator
+    glPushName(getGlID());
+
+    // Push detector matrix
+    glPushMatrix();
+    glTranslated(0, 0, getType());
+
+    // Set initial values
+    if (isAdditionalSelected()) {
+        GLHelper::setColor(myViewNet->getNet()->selectedAdditionalColor);
+    } else {
+        GLHelper::setColor(RGBColor(0, 204, 0));
+    }
+    const double exaggeration = s.addSize.getExaggeration(s);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    // Push polygon matrix
+    glPushMatrix();
+    glScaled(exaggeration, exaggeration, 1);
+    glTranslated(myShape[0].x(), myShape[0].y(), 0);
+    glRotated(myShapeRotations[0], 0, 0, 1);
+
+    // Draw polygon
+    glBegin(GL_LINES);
+    glVertex2d(1.7, 0);
+    glVertex2d(-1.7, 0);
+    glEnd();
+    glBegin(GL_QUADS);
+    glVertex2d(-1.7, .5);
+    glVertex2d(-1.7, -.5);
+    glVertex2d(1.7, -.5);
+    glVertex2d(1.7, .5);
+    glEnd();
+
+    // first Arrow
+    glTranslated(1.5, 0, 0);
+    GLHelper::drawBoxLine(Position(0, 4), 0, 2, .05);
+    GLHelper::drawTriangleAtEnd(Position(0, 4), Position(0, 1), (double) 1, (double) .25);
+
+    // second Arrow
+    glTranslated(-3, 0, 0);
+    GLHelper::drawBoxLine(Position(0, 4), 0, 2, .05);
+    GLHelper::drawTriangleAtEnd(Position(0, 4), Position(0, 1), (double) 1, (double) .25);
+
+    // Pop polygon matrix
+    glPopMatrix();
+
+    // Pop detector matrix
+    glPopMatrix();
+
+    // Check if the distance is enought to draw details
+    if (s.scale * exaggeration >= 10) {
+        // Push matrix
+        glPushMatrix();
+        // Traslate to center of detector
+        glTranslated(myShape.getLineCenter().x(), myShape.getLineCenter().y(), getType() + 0.1);
+        // Rotate depending of myBlockIconRotation
+        glRotated(myBlockIconRotation, 0, 0, -1);
+        //move to logo position
+        glTranslated(1.9, 0, 0);
+        // draw E2 logo
+        if (isAdditionalSelected()) {
+            GLHelper::drawText("E3", Position(), .1, 2.8, myViewNet->getNet()->selectedAdditionalColor);
+        } else {
+            GLHelper::drawText("E3", Position(), .1, 2.8, RGBColor(0, 204, 0));
+        }
+        //move to logo position
+        glTranslated(1.7, 0, 0);
+        // Rotate depending of myBlockIconRotation
+        glRotated(90, 0, 0, 1);
+        // draw E2 logo
+        if (isAdditionalSelected()) {
+            GLHelper::drawText("Entry", Position(), .1, 1, myViewNet->getNet()->selectedAdditionalColor);
+        } else {
+            GLHelper::drawText("Entry", Position(), .1, 1, RGBColor(0, 204, 0));
+        }
+        // pop matrix
+        glPopMatrix();
+        // Show Lock icon depending of the Edit mode
+        drawLockIcon(0.4);
+    }
+    // Draw name
+    drawName(getCenteringBoundary().getCenter(), s.scale, s.addName);
+
+    // pop gl identificator
+    glPopName();
+}
+
+
+std::string
+GNEDetectorEntry::getAttribute(SumoXMLAttr key) const {
+    switch (key) {
+        case SUMO_ATTR_ID:
+            return getAdditionalID();
+        case SUMO_ATTR_LANE:
+            return toString(myLane->getAttribute(SUMO_ATTR_ID));
+        case SUMO_ATTR_POSITION:
+            return toString(getAbsolutePositionOverLane());
+        case SUMO_ATTR_FRIENDLY_POS:
+            return toString(myFriendlyPosition);
+        case GNE_ATTR_BLOCK_MOVEMENT:
+            return toString(myBlocked);
+        default:
+            throw InvalidArgument(toString(getTag()) + " doesn't have an attribute of type '" + toString(key) + "'");
+    }
+}
+
+
+void
+GNEDetectorEntry::setAttribute(SumoXMLAttr key, const std::string& value, GNEUndoList* undoList) {
+    if (value == getAttribute(key)) {
+        return; //avoid needless changes, later logic relies on the fact that attributes have changed
+    }
+    switch (key) {
+        case SUMO_ATTR_ID:
+        case SUMO_ATTR_LANE:
+        case SUMO_ATTR_POSITION:
+        case SUMO_ATTR_FRIENDLY_POS:
+        case GNE_ATTR_BLOCK_MOVEMENT:
+            undoList->p_add(new GNEChange_Attribute(this, key, value));
+            updateGeometry();
+            break;
+        default:
+            throw InvalidArgument(toString(getTag()) + " doesn't have an attribute of type '" + toString(key) + "'");
+    }
+}
+
+
+bool
+GNEDetectorEntry::isValid(SumoXMLAttr key, const std::string& value) {
+    switch (key) {
+        case SUMO_ATTR_ID:
+            if (isValidID(value) && (myViewNet->getNet()->getAdditional(getTag(), value) == NULL)) {
+                return true;
+            } else {
+                return false;
+            }
+        case SUMO_ATTR_LANE:
+            if (myViewNet->getNet()->retrieveLane(value, false) != NULL) {
+                return true;
+            } else {
+                return false;
+            }
+        case SUMO_ATTR_POSITION:
+            return canParse<double>(value);
+        case SUMO_ATTR_FRIENDLY_POS:
+            return canParse<bool>(value);
+        case GNE_ATTR_BLOCK_MOVEMENT:
+            return canParse<bool>(value);
+        default:
+            throw InvalidArgument(toString(getTag()) + " doesn't have an attribute of type '" + toString(key) + "'");
+    }
+}
+
+void
+GNEDetectorEntry::setAttribute(SumoXMLAttr key, const std::string& value) {
+    switch (key) {
+        case SUMO_ATTR_ID:
+            setAdditionalID(value);
+            break;
+        case SUMO_ATTR_LANE:
+            changeLane(value);
+            break;
+        case SUMO_ATTR_POSITION:
+            myPositionOverLane = parse<double>(value) / myLane->getLaneParametricLength();
+            updateGeometry();
+            getViewNet()->update();
+            break;
+        case SUMO_ATTR_FRIENDLY_POS:
+            myFriendlyPosition = parse<bool>(value);
+            getViewNet()->update();
+            break;
+        case GNE_ATTR_BLOCK_MOVEMENT:
+            myBlocked = parse<bool>(value);
+            getViewNet()->update();
+            break;
+        default:
+            throw InvalidArgument(toString(getTag()) + " doesn't have an attribute of type '" + toString(key) + "'");
+    }
+}
+
+/****************************************************************************/

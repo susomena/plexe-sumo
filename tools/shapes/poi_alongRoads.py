@@ -1,22 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    poi_alongRoads.py
-# @author  Ronald Nippold
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2009-20-10
-# @version $Id$
 
 """
-Usage:   poi_alongRoads.py <NET> <EDGE_ID>[,<EDGE_ID>]* <DISTANCE>
+@file    poi_alongRoads.py
+@author  Ronald Nippold
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2009-20-10
+@version
+@usage   poi_alongRoads.py <NET> <EDGE_ID>[,<EDGE_ID>]* <DISTANCE>
 
 Spatial distribute of POIs along given edges on a given network.
 Edges are separated with comma and without spaces in between.
@@ -26,6 +18,15 @@ So far POIs are situated in the middle on all edges without regard to the type o
  Edges may be given in arbitrary order, connected edges are found automatically
  Therefore: crossing chains of connected edges are not allowed -> this needs two different runs of this script
  Output is written in file 'pois.add.xml'
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -33,7 +34,7 @@ from __future__ import print_function
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import sumolib.net  # noqa
+import sumolib.net
 
 if len(sys.argv) < 4:
     print("Usage: " +
@@ -68,7 +69,6 @@ def findSucc(connEdgesTmp, edgeList, success=0):
 def poiAppend(poi_edge, poi_nr, poi_x, poi_y, poi_buf):
     poi_buf.append('    <poi id="%s-%s" type="default" color="1,0,0" layer="0" x="%.2f" y="%.2f"/>' %
                    (poi_edge, poi_nr, poi_x, poi_y))
-
 
 print("Reading net ...")
 net = sumolib.net.readNet(sys.argv[1])

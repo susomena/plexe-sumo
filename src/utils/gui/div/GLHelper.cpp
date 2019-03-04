@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GLHelper.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,33 +8,37 @@
 ///
 // Some methods which help to draw certain geometrical objects in openGL
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <utils/geom/GeomHelper.h>
 #include <utils/common/StdDefs.h>
-#include <utils/common/MsgHandler.h>
+#include <utils/common/RandHelper.h>
 #include <utils/common/ToString.h>
-#define FONTSTASH_IMPLEMENTATION // Expands implementation
-#ifdef _MSC_VER
-#pragma warning(disable: 4505) // do not warn about unused functions
-#endif
-#if __GNUC__ > 3
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
-#endif
-#include <foreign/fontstash/fontstash.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/gui/globjects/GLIncludes.h>
-#include <utils/gui/settings/GUIVisualizationSettings.h>
-#define GLFONTSTASH_IMPLEMENTATION // Expands implementation
-#include <foreign/fontstash/glfontstash.h>
-#include "Roboto.h"
 #include "GLHelper.h"
+
 
 #define CIRCLE_RESOLUTION (double)10 // inverse in degrees
 
@@ -50,9 +46,7 @@
 // static member definitions
 // ===========================================================================
 std::vector<std::pair<double, double> > GLHelper::myCircleCoords;
-std::vector<RGBColor> GLHelper::myDottedcontourColors;
-FONScontext* GLHelper::myFont = nullptr;
-double GLHelper::myFontSize = 50.0;
+
 
 void APIENTRY combCallback(GLdouble coords[3],
                            GLdouble* vertex_data[4],
@@ -104,7 +98,7 @@ GLHelper::drawFilledPolyTesselated(const PositionVector& v, bool close) {
     gluTessCallback(tobj, GLU_TESS_END, (GLvoid(APIENTRY*)()) &glEnd);
     gluTessCallback(tobj, GLU_TESS_COMBINE, (GLvoid(APIENTRY*)()) &combCallback);
     gluTessProperty(tobj, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
-    gluTessBeginPolygon(tobj, nullptr);
+    gluTessBeginPolygon(tobj, NULL);
     gluTessBeginContour(tobj);
     double* points = new double[(v.size() + int(close)) * 3];
 
@@ -189,26 +183,27 @@ GLHelper::drawBoxLines(const PositionVector& geom,
         for (int i = 1; i < e; i++) {
             glPushMatrix();
             glTranslated(geom[i].x(), geom[i].y(), 0.1);
-            double angleBeg = -rots[i - 1];
-            double angleEnd = 180 - rots[i];
             if (rightTurn(rots[i - 1], rots[i])) {
-                std::swap(angleBeg, angleEnd);
+                // inside corner
+                drawFilledCircle(MIN2(lengths[i], width - offset), cornerDetail);
+            } else {
+                // outside corner, make sure to only draw a segment of the circle
+                double angleBeg = -rots[i - 1];
+                double angleEnd = 180 - rots[i];
+                // avoid drawing more than 360 degrees
+                if (angleEnd - angleBeg > 360) {
+                    angleBeg += 360;
+                }
+                if (angleEnd - angleBeg < -360) {
+                    angleEnd += 360;
+                }
+                // for a left tur, draw the right way around
+                if (angleEnd > angleBeg) {
+                    angleEnd -= 360;
+                }
+                drawFilledCircle(MIN2(lengths[i], width + offset), cornerDetail, angleBeg, angleEnd);
             }
-            // only draw the missing piece
-            angleBeg -= 90;
-            angleEnd += 90;
-            // avoid drawing more than 360 degrees
-            if (angleEnd - angleBeg > 360) {
-                angleBeg += 360;
-            }
-            if (angleEnd - angleBeg < -360) {
-                angleEnd += 360;
-            }
-            // draw the right way around
-            if (angleEnd > angleBeg) {
-                angleEnd -= 360;
-            }
-            drawFilledCircle(width + offset, cornerDetail, angleBeg, angleEnd);
+            glEnd();
             glPopMatrix();
         }
     }
@@ -346,20 +341,6 @@ GLHelper::drawFilledCircle(double width, int steps) {
 }
 
 
-std::vector<Position>
-GLHelper::drawFilledCircleReturnVertices(double width, int steps) {
-    drawFilledCircle(width, steps, 0, 360);
-    std::vector<Position> result;
-    const double inc = 360 / (double)steps;
-    // obtain all vertices
-    for (int i = 0; i <= steps; ++i) {
-        const std::pair<double, double>& vertex = myCircleCoords[angleLookup(i * inc)];
-        result.push_back(Position(vertex.first * width, vertex.second * width));
-    }
-    return result;
-}
-
-
 void
 GLHelper::drawFilledCircle(double width, int steps, double beg, double end) {
     if (myCircleCoords.size() == 0) {
@@ -453,122 +434,6 @@ GLHelper::drawTriangleAtEnd(const Position& p1, const Position& p2,
 }
 
 
-const std::vector<RGBColor>&
-GLHelper::getDottedcontourColors(const int size) {
-    // check if more colors has to be added
-    while ((int)myDottedcontourColors.size() < size) {
-        if (myDottedcontourColors.empty() || myDottedcontourColors.back() == RGBColor::WHITE) {
-            myDottedcontourColors.push_back(RGBColor::BLACK);
-        } else {
-            myDottedcontourColors.push_back(RGBColor::WHITE);
-        }
-    }
-    return myDottedcontourColors;
-}
-
-
-void
-GLHelper::drawShapeDottedContour(const int type, const PositionVector& shape, const double width) {
-    glPushMatrix();
-    // build contour using shapes of first and last lane shapes
-    PositionVector contourFront = shape;
-    // only add an contourback if width is greather of 0
-    if (width > 0) {
-        PositionVector contourback = contourFront;
-        contourFront.move2side(width);
-        contourback.move2side(-width);
-        contourback = contourback.reverse();
-        for (auto i : contourback) {
-            contourFront.push_back(i);
-        }
-        contourFront.push_back(shape.front());
-    }
-    // resample shape
-    PositionVector resampledShape = contourFront.resample(1);
-    // draw contour over shape
-    glTranslated(0, 0, type + 2);
-    // set custom line width
-    glLineWidth(3);
-    // draw contour
-    drawLine(resampledShape, getDottedcontourColors((int)resampledShape.size()));
-    //restore line width
-    glLineWidth(1);
-    glPopMatrix();
-}
-
-
-void
-GLHelper::drawShapeDottedContour(const int type, const PositionVector& shape) {
-    glPushMatrix();
-    // resample junction shape
-    PositionVector resampledShape = shape.resample(1);
-    // draw contour over shape
-    glTranslated(0, 0, type + 0.1);
-    // set custom line width
-    glLineWidth(3);
-    // draw contour
-    GLHelper::drawLine(resampledShape, GLHelper::getDottedcontourColors((int)resampledShape.size()));
-    //restore line width
-    glLineWidth(1);
-    glPopMatrix();
-}
-
-
-void
-GLHelper::drawShapeDottedContour(const int type, const PositionVector& frontShape, const double offsetFrontShape, const PositionVector& backShape, const double offsetBackShape) {
-    glPushMatrix();
-    // build contour using shapes of first and last lane shapes
-    PositionVector contourFront = frontShape;
-    PositionVector contourback = backShape;
-    contourFront.move2side(offsetFrontShape);
-    contourback.move2side(offsetBackShape);
-    contourback = contourback.reverse();
-    for (auto i : contourback) {
-        contourFront.push_back(i);
-    }
-    contourFront.push_back(frontShape.front());
-    // resample shape
-    PositionVector resampledShape = contourFront.resample(1);
-    // draw contour over shape
-    glTranslated(0, 0, type + 2);
-    // set custom line width
-    glLineWidth(3);
-    // draw contour
-    GLHelper::drawLine(resampledShape, getDottedcontourColors((int)resampledShape.size()));
-    //restore line width
-    glLineWidth(1);
-    glPopMatrix();
-}
-
-
-void
-GLHelper::drawShapeDottedContour(const int type, const Position& center, const double width, const double height, const double rotation, const double offsetX, const double offsetY) {
-    glPushMatrix();
-    // create shape around center
-    PositionVector shape;
-    shape.push_back(Position(width / 2, height / 2));
-    shape.push_back(Position(width / -2, height / 2));
-    shape.push_back(Position(width / -2, height / -2));
-    shape.push_back(Position(width / 2, height / -2));
-    shape.push_back(Position(width / 2, height / 2));
-    // resample shape
-    shape = shape.resample(1);
-    // draw contour over shape
-    glTranslated(center.x(), center.y(), type + 2);
-    // set custom line width
-    glLineWidth(3);
-    // rotate
-    glRotated(rotation, 0, 0, 1);
-    // translate offset
-    glTranslated(offsetX, offsetY, 0);
-    // draw contour
-    GLHelper::drawLine(shape, getDottedcontourColors((int)shape.size()));
-    //restore line width
-    glLineWidth(1);
-    glPopMatrix();
-}
-
-
 void
 GLHelper::setColor(const RGBColor& c) {
     glColor4ub(c.red(), c.green(), c.blue(), c.alpha());
@@ -587,96 +452,60 @@ GLHelper::getColor() {
 
 
 void
-GLHelper::resetFont() {
-    glfonsDelete(myFont);
-    myFont = nullptr;
-}
-
-
-bool
-GLHelper::initFont() {
-    if (myFont == nullptr) {
-        myFont = glfonsCreate(2048, 2048, FONS_ZERO_BOTTOMLEFT);
-        if (myFont != nullptr) {
-            const int fontNormal = fonsAddFontMem(myFont, "medium", data_font_Roboto_Medium_ttf, data_font_Roboto_Medium_ttf_len, 0);
-            fonsSetFont(myFont, fontNormal);
-            fonsSetSize(myFont, (float)myFontSize);
-        }
-    }
-    return myFont != nullptr;
-}
-
-
-void
 GLHelper::drawText(const std::string& text, const Position& pos,
                    const double layer, const double size,
-                   const RGBColor& col, const double angle, const int align,
-                   double width) {
-    if (width <= 0) {
-        width = size;
-    }
-    if (!initFont()) {
-        return;
-    };
+                   const RGBColor& col, const double angle) {
     glPushMatrix();
-    glAlphaFunc(GL_GREATER, 0.5);
-    glEnable(GL_ALPHA_TEST);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    setColor(col);
     glTranslated(pos.x(), pos.y(), layer);
-    glScaled(width / myFontSize, size / myFontSize, 1.);
-    glRotated(-angle, 0, 0, 1);
-    fonsSetAlign(myFont, align == 0 ? FONS_ALIGN_CENTER | FONS_ALIGN_MIDDLE : align);
-    fonsSetColor(myFont, glfonsRGBA(col.red(), col.green(), col.blue(), col.alpha()));
-    fonsDrawText(myFont, 0., 0., text.c_str(), nullptr);
+    pfSetPosition(0, 0);
+    pfSetScale(size);
+    double w = pfdkGetStringWidth(text.c_str());
+    glRotated(180, 1, 0, 0);
+    glRotated(angle, 0, 0, 1);
+    glTranslated(-w / 2., size / 4, 0);
+    pfDrawString(text.c_str());
     glPopMatrix();
 }
-
-
-void
-GLHelper::drawTextSettings(
-    const GUIVisualizationTextSettings& settings,
-    const std::string& text, const Position& pos,
-    const double scale,
-    const double angle,
-    const double layer) {
-    drawTextBox(text, pos, layer,
-                settings.scaledSize(scale),
-                settings.color,
-                settings.bgColor,
-                RGBColor::INVISIBLE,
-                angle, 0, 0.2);
-}
-
 
 void
 GLHelper::drawTextBox(const std::string& text, const Position& pos,
                       const double layer, const double size,
                       const RGBColor& txtColor, const RGBColor& bgColor, const RGBColor& borderColor,
-                      const double angle,
-                      const double relBorder,
-                      const double relMargin) {
-    if (!initFont()) {
-        return;
-    };
-    if (bgColor.alpha() != 0) {
-        const double boxAngle = 90;
-        const double stringWidth = size / myFontSize * fonsTextBounds(myFont, 0, 0, text.c_str(), nullptr, nullptr);
-        const double borderWidth = size * relBorder;
-        const double boxHeight = size * (0.32 + 0.6 * relMargin);
-        const double boxWidth = stringWidth + size * relMargin;
-        glPushMatrix();
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glTranslated(pos.x(), pos.y(), layer);
-        glRotated(-angle, 0, 0, 1);
-        Position left(-boxWidth * 0.5, 0);
-        setColor(borderColor);
-        drawBoxLine(left, boxAngle, boxWidth, boxHeight);
-        left.add(borderWidth * 1.5, 0);
-        setColor(bgColor);
-        glTranslated(0, 0, 0.01);
-        drawBoxLine(left, boxAngle, boxWidth - 3 * borderWidth, boxHeight - 2 * borderWidth);
-        glPopMatrix();
+                      const double angle) {
+    double boxAngle = angle + 90;
+    if (boxAngle > 360) {
+        boxAngle -= 360;
     }
-    drawText(text, pos, layer + 0.02, size, txtColor, angle);
+    pfSetScale(size);
+    const double stringWidth = pfdkGetStringWidth(text.c_str());
+    const double borderWidth = size / 20;
+    const double boxHeight = size * 0.8;
+    const double boxWidth = stringWidth + size / 2;
+    glPushMatrix();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glTranslated(0, 0, layer);
+    setColor(borderColor);
+    Position left = pos;
+    left.sub(boxWidth / 2, -boxHeight / 2.7);
+    drawBoxLine(left, boxAngle, boxWidth, boxHeight);
+    left.add(borderWidth * 1.5, 0);
+    setColor(bgColor);
+    glTranslated(0, 0, 0.01);
+    drawBoxLine(left, boxAngle, boxWidth - 3 * borderWidth, boxHeight - 2 * borderWidth);
+    // actually we should be able to use drawText here. however, there's
+    // something about the constant 0.4 offset which causes trouble
+    //drawText(text, pos, layer+0.02, size, txtColor, angle);
+    setColor(txtColor);
+    glTranslated(pos.x(), pos.y(), 0.01);
+    pfSetPosition(0, 0);
+    pfSetScale(size);
+    glRotated(180, 1, 0, 0);
+    glRotated(angle, 0, 0, 1);
+    glTranslated(-stringWidth / 2., 0, 0);
+    pfDrawString(text.c_str());
+    glPopMatrix();
 }
 
 
@@ -693,54 +522,13 @@ GLHelper::drawTextAtEnd(const std::string& text, const PositionVector& shape, do
 }
 
 
-void
-GLHelper::drawCrossTies(const PositionVector& geom,
-                        const std::vector<double>& rots,
-                        const std::vector<double>& lengths,
-                        double length, double spacing,
-                        double halfWidth, bool drawForSelecting) {
-    glPushMatrix();
-    // draw on top of of the white area between the rails
-    glTranslated(0, 0, 0.1);
-    int e = (int) geom.size() - 1;
-    for (int i = 0; i < e; ++i) {
-        glPushMatrix();
-        glTranslated(geom[i].x(), geom[i].y(), 0.0);
-        glRotated(rots[i], 0, 0, 1);
-        // draw crossing depending if isn't being drawn for selecting
-        if (!drawForSelecting) {
-            for (double t = 0; t < lengths[i]; t += spacing) {
-                glBegin(GL_QUADS);
-                glVertex2d(-halfWidth, -t);
-                glVertex2d(-halfWidth, -t - length);
-                glVertex2d(halfWidth, -t - length);
-                glVertex2d(halfWidth, -t);
-                glEnd();
-            }
-        } else {
-            // only draw a single rectangle if it's being drawn only for selecting
-            glBegin(GL_QUADS);
-            glVertex2d(-halfWidth, 0);
-            glVertex2d(-halfWidth, -lengths.back());
-            glVertex2d(halfWidth, -lengths.back());
-            glVertex2d(halfWidth, 0);
-            glEnd();
-        }
-        // pop three draw matrix
-        glPopMatrix();
-    }
-    glPopMatrix();
-}
-
 
 void
 GLHelper::debugVertices(const PositionVector& shape, double size, double layer) {
-    RGBColor color = RGBColor::randomHue();
+    RGBColor color = RGBColor::fromHSV(RandHelper::rand(360), 1, 1);
     for (int i = 0; i < (int)shape.size(); ++i) {
         GLHelper::drawText(toString(i), shape[i], layer, size, color, 0);
     }
 }
-
-
 /****************************************************************************/
 

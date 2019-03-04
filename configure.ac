@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(sumo, git)
+AC_INIT(sumo, 0.31.0)
 AC_CONFIG_SRCDIR(src/sumo_main.cpp)
 AC_CANONICAL_SYSTEM
 
@@ -7,15 +7,9 @@ dnl create an config-header
 AC_CONFIG_HEADER(src/config.h)
 
 dnl enable automake-support
-AM_INIT_AUTOMAKE([foreign dist-zip tar-ustar])
+AM_INIT_AUTOMAKE([gnu dist-zip tar-ustar])
 
 AC_LANG([C++])
-
-# avoiding warnings on ubuntu 16.04, there seem to be two variants of the ARFLAGS, one for automake, one for libttol
-ARFLAGS=cr
-AC_SUBST(ARFLAGS)
-AR_FLAGS=cr
-AC_SUBST(AR_FLAGS)
 
 dnl the debug check has to be made before the program checks because it modifies
 dnl CXXFLAGS.
@@ -73,8 +67,17 @@ AM_PROG_LIBTOOL
 AC_DEFINE([POSITION_EPS], [0.1], [defines the epsilon to use on position comparison])
 AC_DEFINE([NUMERICAL_EPS], [0.001], [defines the epsilon to use on general floating point comparison])
 
-AM_CONDITIONAL([WITH_VERSION_H], test -d .git)
-if test -d .git || test x$PACKAGE_VERSION == xgit -a -f src/version.h; then
+AC_ARG_ENABLE([traci],[AS_HELP_STRING([--disable-traci],[disable Traffic Control Interface (TraCI) Server [default=no].])])
+AM_CONDITIONAL(TRACI, test x$enable_traci != xno)
+if test x$enable_traci != xno; then
+    ac_enabled="$ac_enabled TRACI"
+else
+    AC_DEFINE(NO_TRACI, 1, [Define to 1 in order to disable TraCI Server.])
+    ac_disabled="$ac_disabled TRACI"
+fi
+
+AM_CONDITIONAL([WITH_VERSION_H], test -d .svn)
+if test -d .svn || test x$PACKAGE_VERSION == xsvn -a -f src/version.h; then
    AC_DEFINE([HAVE_VERSION_H], [1], [Define if auto-generated version.h should be used.])
 else
    AC_DEFINE_UNQUOTED(VERSION_STRING, "$PACKAGE_VERSION", [Defined if auto-generated version.h is unavailable.])
@@ -99,7 +102,10 @@ dnl Make sure we are on architecture that supports SIMD
    AC_DEFINE([NOMINMAX], [1], [Including windows.h gives errors otherwise (cygwin)])
    ;;
    *-darwin*)
-   AM_CPPFLAGS="-I/opt/X11/include -I/opt/local/include -I/usr/local/include $AM_CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -I/opt/local/include"
+   export CPPFLAGS
+   LDFLAGS="$LDFLAGS -L/opt/local/lib"
+   export LDFLAGS
    ;;
 esac
 
@@ -128,7 +134,6 @@ dnl   ... for libs
 LIB_XERCES="xerces-c"
 AC_ARG_WITH([xerces-libraries], [AS_HELP_STRING([--with-xerces-libraries=DIR],[where the Xerces-C library is installed.])])
 if test x"$with_xerces_libraries" = x; then
-   LDFLAGS="$LDFLAGS -L/usr/local/lib"
    AC_CHECK_LIB([$LIB_XERCES], [main], [true],
                 [AC_MSG_ERROR([xerces-lib not found. Specify path with option --with-xerces-libraries=DIR.])])
 else
@@ -278,7 +283,7 @@ if test x"$with_fox_config" != xno; then
         ac_disabled="$ac_disabled GUI"
     else
         FOX_CFLAGS="`$FOX_CONFIG --cflags`"
-        FOX_LDFLAGS="`$FOX_CONFIG --libs` -L/opt/X11/lib"
+        FOX_LDFLAGS="`$FOX_CONFIG --libs`"
         AC_SUBST([FOX_LDFLAGS])
 
         save_cppflags=$CPPFLAGS
@@ -339,10 +344,10 @@ if test x"$with_python" == x; then
     with_python=no
 fi
 if test x"$with_python" != xno; then
-    PYTHON_LIBS=`python -c "import distutils.sysconfig; bl = distutils.sysconfig.get_config_var('BLDLIBRARY'); print(bl if bl else '-lpython2.7')"`
+    PYTHON_LIBS=`python -c "import distutils.sysconfig; bl = distutils.sysconfig.get_config_var('BLDLIBRARY'); print bl if bl else '-lpython2.7'"`
     AC_SUBST(PYTHON_LIBS)
     save_cppflags=$CPPFLAGS
-    PYTHON_INCLUDES=`python -c "import distutils.sysconfig; print(distutils.sysconfig.get_config_var('INCLUDEPY'))"`
+    PYTHON_INCLUDES=`python -c "import distutils.sysconfig; print distutils.sysconfig.get_config_var('INCLUDEPY')"`
     CPPFLAGS="$CPPFLAGS -I$PYTHON_INCLUDES"
     export CPPFLAGS
     AC_CHECK_HEADER([Python.h], [AM_CPPFLAGS="$CPPFLAGS $AM_CPPFLAGS"],
@@ -438,9 +443,10 @@ src/activitygen/activities/Makefile
 src/activitygen/city/Makefile
 src/foreign/Makefile
 src/foreign/eulerspiral/Makefile
-src/foreign/fontstash/Makefile
+src/foreign/gl2ps/Makefile
 src/foreign/PHEMlight/Makefile
 src/foreign/PHEMlight/cpp/Makefile
+src/foreign/polyfonts/Makefile
 src/foreign/rtree/Makefile
 src/foreign/tcpip/Makefile
 src/gui/Makefile
@@ -451,7 +457,6 @@ src/microsim/Makefile
 src/microsim/actions/Makefile
 src/microsim/cfmodels/Makefile
 src/microsim/devices/Makefile
-src/microsim/engine/Makefile
 src/microsim/lcmodels/Makefile
 src/microsim/logging/Makefile
 src/microsim/output/Makefile
@@ -460,12 +465,6 @@ src/microsim/traffic_lights/Makefile
 src/microsim/trigger/Makefile
 src/marouter/Makefile
 src/netbuild/Makefile
-src/netedit/additionals/Makefile
-src/netedit/changes/Makefile
-src/netedit/dialogs/Makefile
-src/netedit/frames/Makefile
-src/netedit/netelements/Makefile
-src/netedit/demandelements/Makefile
 src/netedit/Makefile
 src/mesogui/Makefile 
 src/mesosim/Makefile 
@@ -486,7 +485,7 @@ src/jtrrouter/Makefile
 src/tools/Makefile
 src/traci_testclient/Makefile
 src/traci-server/Makefile
-src/libsumo/Makefile
+src/traci-server/lib/Makefile
 src/utils/Makefile
 src/utils/common/Makefile
 src/utils/distribution/Makefile
@@ -498,15 +497,12 @@ src/utils/gui/div/Makefile
 src/utils/gui/events/Makefile
 src/utils/gui/globjects/Makefile
 src/utils/gui/images/Makefile
-src/utils/gui/cursors/Makefile
-src/utils/gui/shortcuts/Makefile
 src/utils/gui/settings/Makefile
 src/utils/gui/tracker/Makefile
 src/utils/gui/windows/Makefile
 src/utils/importio/Makefile
 src/utils/iodevices/Makefile
 src/utils/options/Makefile
-src/utils/router/Makefile
 src/utils/shapes/Makefile
 src/utils/traci/Makefile
 src/utils/vehicle/Makefile

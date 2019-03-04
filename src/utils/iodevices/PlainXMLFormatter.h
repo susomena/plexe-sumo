@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PlainXMLFormatter.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,6 +7,17 @@
 ///
 // Output formatter for plain XML output
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef PlainXMLFormatter_h
 #define PlainXMLFormatter_h
 
@@ -22,7 +25,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "OutputFormatter.h"
 
@@ -100,7 +107,7 @@ public:
      * @return Whether a further element existed in the stack and could be closed
      * @todo it is not verified that the topmost element was closed
      */
-    bool closeTag(std::ostream& into, const std::string& comment = "");
+    bool closeTag(std::ostream& into);
 
 
     /** @brief writes a preformatted tag to the device but ensures that any
@@ -109,10 +116,6 @@ public:
      * @param[in] val The preformatted data
      */
     void writePreformattedTag(std::ostream& into, const std::string& val);
-
-    /** @brief writes arbitrary padding
-     */
-    void writePadding(std::ostream& into, const std::string& val);
 
 
     /** @brief writes an arbitrary attribute

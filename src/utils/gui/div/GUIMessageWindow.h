@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2003-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIMessageWindow.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -15,6 +7,17 @@
 ///
 // A logging window for the gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2003-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIMessageWindow_h
 #define GUIMessageWindow_h
 
@@ -22,7 +25,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <fx.h>
@@ -59,11 +66,13 @@ public:
      */
     GUIMessageWindow(FXComposite* parent);
 
+
     /// @brief Destructor
     ~GUIMessageWindow();
 
-    /// @brief set cursor position over a certain line
+
     virtual void setCursorPos(FXint pos, FXbool notify = FALSE);
+
 
     /** @brief Adds new text to the window
      *
@@ -75,16 +84,16 @@ public:
      */
     void appendMsg(GUIEventType eType, const std::string& msg);
 
+
     /// @brief Adds a a separator to this log window
     void addSeparator();
+
 
     /// @brief Clears the window
     void clear();
 
-    /// @brief register message handlers
+    /// @brief register and unregister message handlers
     void registerMsgHandlers();
-
-    /// @brief unregister message handlers
     void unregisterMsgHandlers();
 
     /// @brief switch locate links on and off
@@ -97,52 +106,46 @@ public:
         return myLocateLinks;
     }
 
+
 private:
-    /// @brief class MsgOutputDevice
     class MsgOutputDevice : public OutputDevice {
     public:
-        /// @brief constructor
         MsgOutputDevice(GUIMessageWindow* msgWindow, GUIEventType type) :
             myMsgWindow(msgWindow),
             myType(type) { }
 
-        /// @brief destructor
         ~MsgOutputDevice() { }
 
     protected:
-        /// @brief get Output Stream
         std::ostream& getOStream() {
             return myStream;
         }
-        /// @brief write hook
         void postWriteHook() {
             myMsgWindow->appendMsg(myType, myStream.str());
             myStream.str("");
         }
 
     private:
-        /// @brief pointer to message Windows
         GUIMessageWindow* myMsgWindow;
-
-        /// @brief output string stream
         std::ostringstream myStream;
-
-        /// @brief type of event
         GUIEventType myType;
     };
 
-    /// @brief get active string object
     const GUIGlObject* getActiveStringObject(const FXString& text, const FXint pos, const FXint lineS, const FXint lineE) const;
 
 private:
+
     /// @brief whether messages are linked to the GUI elements
     static bool myLocateLinks;
 
     /// @brief The text colors used
     FXHiliteStyle* myStyles;
 
-    /// @brief The instances of message retriever encapsulations
-    OutputDevice* myErrorRetriever, *myDebugRetriever, *myGLDebugRetriever, *myMessageRetriever, *myWarningRetriever;
+    /** @brief The instances of message retriever encapsulations */
+    OutputDevice* myErrorRetriever, *myMessageRetriever, *myWarningRetriever;
+
+
+
 };
 
 

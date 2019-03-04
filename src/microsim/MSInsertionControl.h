@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSInsertionControl.h
 /// @author  Christian Roessel
 /// @author  Daniel Krajzewicz
@@ -17,6 +9,17 @@
 ///
 // Inserts vehicles into the network when their departure time is reached
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSInsertionControl_h
 #define MSInsertionControl_h
 
@@ -24,12 +27,15 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <map>
 #include <string>
-#include "MSNet.h"
 #include "MSVehicleContainer.h"
 
 
@@ -68,7 +74,7 @@ public:
      * @param[in] checkEdgesOnce Whether an edge on which a vehicle could not depart should be ignored in the same step
      * @param[in] maxVehicleNumber The maximum number of vehicles that should not be exceeded
      */
-    MSInsertionControl(MSVehicleControl& vc, SUMOTime maxDepartDelay, bool checkEdgesOnce, int maxVehicleNumber, SUMOTime randomDepartOffset);
+    MSInsertionControl(MSVehicleControl& vc, SUMOTime maxDepartDelay, bool checkEdgesOnce, int maxVehicleNumber);
 
 
     /// @brief Destructor.
@@ -105,11 +111,10 @@ public:
 
     /** @brief Adds parameter for a vehicle flow for departure
      *
-     * @param[in] pars The flow parameters to add for later insertion
-     * @param[in] index The current index when loading this flow from a simulation state
+     * @param[in] flow The flow to add for later insertion
      * @return whether it could be added (no other flow with the same id was present)
      */
-    bool addFlow(SUMOVehicleParameter* const pars, int index = -1);
+    bool add(SUMOVehicleParameter* const pars);
 
 
     /** @brief Returns the number of waiting vehicles
@@ -132,11 +137,11 @@ public:
     void alreadyDeparted(SUMOVehicle* veh);
 
     /// @brief stops trying to emit the given vehicle (and delete it)
-    void descheduleDeparture(const SUMOVehicle* veh);
+    void descheduleDeparture(SUMOVehicle* veh);
 
 
     /// @brief clears out all pending vehicles from a route, "" for all routes
-    void clearPendingVehicles(const std::string& route);
+    void clearPendingVehicles(std::string& route);
 
 
     /** @brief Checks for all vehicles whether they can be emitted
@@ -147,20 +152,6 @@ public:
 
     /// @brief return the number of pending emits for the given lane
     int getPendingEmits(const MSLane* lane);
-
-    void adaptIntermodalRouter(MSNet::MSIntermodalRouter& router) const;
-
-    /// @brief compute (optional) random offset to the departure time
-    SUMOTime computeRandomDepartOffset() const;
-
-    /** @brief Saves the current state into the given stream
-     */
-    void saveState(OutputDevice& out);
-
-    /// @brief retrieve internal RNG
-    std::mt19937* getFlowRNG() {
-        return &myFlowRNG;
-    }
 
 private:
     /** @brief Tries to emit the vehicle
@@ -189,7 +180,6 @@ private:
     void checkCandidates(SUMOTime time, const bool preCheck);
 
 
-
 private:
     /// @brief The assigned vehicle control (needed for vehicle re-insertion and deletion)
     MSVehicleControl& myVehicleControl;
@@ -204,13 +194,13 @@ private:
     std::set<SUMOVehicle*> myEmitCandidates;
 
     /// @brief Set of vehicles which shall not be inserted anymore
-    std::set<const SUMOVehicle*> myAbortedEmits;
+    std::set<SUMOVehicle*> myAbortedEmits;
 
-    /** @struct Flow
-     * @brief Definition of vehicle flow with the current index for vehicle numbering
+    /** @struct Stop
+     * @brief Definition of vehicle stop (position and duration)
      */
     struct Flow {
-        /// @brief The parameters
+        /// @brief The paramters
         SUMOVehicleParameter* pars;
         /// @brief the running index
         int index;
@@ -237,8 +227,6 @@ private:
     /// @brief the number of pending emits for each edge in the current time step
     std::map<const MSLane*, int> myPendingEmitsForLane;
 
-    /// @brief The maximum random offset to be added to vehicles departure times (non-negative)
-    SUMOTime myMaxRandomDepartOffset;
 
 private:
     /// @brief Invalidated copy constructor.
@@ -247,8 +235,6 @@ private:
     /// @brief Invalidated assignment operator.
     MSInsertionControl& operator=(const MSInsertionControl&);
 
-    /// @brief A random number generator for probabilistic flows
-    std::mt19937 myFlowRNG;
 
 };
 

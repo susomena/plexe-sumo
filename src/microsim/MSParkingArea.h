@@ -1,18 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2015-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSParkingArea.h
 /// @author  Mirco Sturari
 /// @date    Tue, 19.01.2016
 /// @version $Id$
 ///
 // A area where vehicles can park next to the road
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2015-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef MSParkingArea_h
 #define MSParkingArea_h
@@ -21,7 +24,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <algorithm>
@@ -74,9 +81,8 @@ public:
      */
     MSParkingArea(const std::string& id,
                   const std::vector<std::string>& lines, MSLane& lane,
-                  double begPos, double endPos, int capacity,
-                  double width, double length, double angle, const std::string& name,
-                  bool onRoad);
+                  double begPos, double endPos, unsigned int capacity,
+                  double width, double length, double angle);
 
     /// @brief Destructor
     virtual ~MSParkingArea();
@@ -87,11 +93,6 @@ public:
      * @return The capacity
      */
     int getCapacity() const;
-
-    /// @brief whether vehicles park on the road
-    bool parkOnRoad() const {
-        return myOnRoad;
-    }
 
 
     /** @brief Returns the area occupancy
@@ -134,26 +135,25 @@ public:
     double getLastFreePos(const SUMOVehicle& forVehicle) const;
 
 
-    /** @brief Returns the last free position on this stop including
-     * reservatiosn from the current lane and time step
-     *
-     * @return The last free position of this bus stop
-     */
-    double getLastFreePosWithReservation(SUMOTime t, const SUMOVehicle& forVehicle);
-
-
     /** @brief Returns the position of parked vehicle
      *
      * @return The position of parked vehicle
      */
-    Position getVehiclePosition(const SUMOVehicle& forVehicle) const;
+    Position getVehiclePosition(const SUMOVehicle& forVehicle);
 
 
     /** @brief Returns the angle of parked vehicle
      *
      * @return The angle of parked vehicle
      */
-    double getVehicleAngle(const SUMOVehicle& forVehicle) const;
+    double getVehicleAngle(const SUMOVehicle& forVehicle);
+
+
+    /** @brief Returns the space dimension
+     *
+     * @return The space dimension
+     */
+    double getSpaceDim() const;
 
 
     /** @brief Add a lot entry to parking area
@@ -166,8 +166,8 @@ public:
      * @param[in] angle Angle of the lot rectangle
      * @return Whether the lot entry could be added
      */
-    virtual void addLotEntry(double x, double y, double z,
-                             double width, double length, double angle);
+    void addLotEntry(double x, double y, double z,
+                     double width, double length, double angle);
 
 
     /** @brief Returns the lot rectangle width
@@ -190,10 +190,6 @@ public:
      */
     double getAngle() const;
 
-
-    /// @brief update state so that vehicles wishing to enter cooperate with exiting vehicles
-    void notifyEgressBlocked();
-
 protected:
 
     /** @struct LotSpaceDefinition
@@ -201,7 +197,7 @@ protected:
     */
     struct LotSpaceDefinition {
         /// @brief the running index
-        int index;
+        unsigned int index;
         /// @brief The last parked vehicle or 0
         SUMOVehicle* vehicle;
         /// @brief The position of the vehicle when parking in this space
@@ -225,14 +221,11 @@ protected:
      */
     void computeLastFreePos();
 
-    /// @brief Last free lot number (-1 no free lot)
+    /// @brief Last free lot number (0 no free lot)
     int myLastFreeLot;
 
     /// @brief Stop area capacity
     int myCapacity;
-
-    /// @brief Whether vehicles stay on the road
-    bool myOnRoad;
 
     /// @brief The default width of each parking space
     double myWidth;
@@ -244,19 +237,11 @@ protected:
     double myAngle;
 
 
-    /// @brief All the spaces in this parking area
-    std::vector<LotSpaceDefinition> mySpaceOccupancies;
+    /// @brief A map from objects (vehicles) to the areas they acquire after entering the stop
+    std::map<unsigned int, LotSpaceDefinition > mySpaceOccupancies;
 
     /// @brief The roadside shape of this parkingArea
     PositionVector myShape;
-
-    /// @brief whether a vehicle wants to exit but is blocked
-    bool myEgressBlocked;
-
-    /// @brief track parking reservations from the lane for the current time step
-    SUMOTime myReservationTime;
-    int myReservations;
-    double myReservationMaxLength;
 
 private:
 

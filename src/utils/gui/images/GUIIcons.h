@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIIcons.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // An enumeration of icons used by the gui applications
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIIcons_h
 #define GUIIcons_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 
 // ===========================================================================
@@ -36,19 +43,17 @@
 enum GUIIcon {
     /// @name general Interface icons
     /// @{
+    ICON_APP = 0,
+    ICON_DLR,
     ICON_SUMO,
-    ICON_SUMO_MINI,
-    ICON_SUMO_LOGO,
     ICON_EMPTY,
     ICON_OPEN_CONFIG,
     ICON_OPEN_NET,
     ICON_OPEN_SHAPES,
     ICON_OPEN_ADDITIONALS,
-    ICON_OPEN_TLSPROGRAMS,
     ICON_RELOAD,
     ICON_SAVE,
     ICON_CLOSE,
-    ICON_HELP,
     /// @}
 
     /// @name simulation control icons
@@ -61,7 +66,7 @@ enum GUIIcon {
     /// @name simulation view icons
     /// @{
     ICON_MICROVIEW,
-    ICON_OSGVIEW,
+    ICON_LAGGRVIEW,
     /// @}
 
     /// @name simulation view icons (other)
@@ -177,12 +182,10 @@ enum GUIIcon {
     ICON_UNDO,
     ICON_REDO,
     ICON_NETEDIT,
-    ICON_NETEDIT_MINI,
     ICON_LOCK,
     ICON_ADD,
     ICON_REMOVE,
-    ICON_NETEDITARROWLEFT,
-    ICON_NETEDITARROWRIGHT,
+    ICON_NETEDITARROW,
     /// @}
 
     /// @name lane icons
@@ -190,39 +193,23 @@ enum GUIIcon {
     ICON_LANEPEDESTRIAN,
     ICON_LANEBUS,
     ICON_LANEBIKE,
-    ICON_LANEGREENVERGE,
     /// @}
 
-    /// @name netedit supermode icons
-    /// @{
-    ICON_SUPERMODENETWORK,
-    ICON_SUPERMODEDEMAND,
-    /// @}
-
-    /// @name NETEDIT Network modes icons
+    /// @name netedit modes icons
     /// @{
     ICON_MODEADDITIONAL,
     ICON_MODECONNECTION,
     ICON_MODECREATEEDGE,
     ICON_MODECROSSING,
-    ICON_MODETAZ,
     ICON_MODEDELETE,
     ICON_MODEINSPECT,
     ICON_MODEMOVE,
     ICON_MODESELECT,
     ICON_MODETLS,
     ICON_MODEPOLYGON,
-    ICON_MODEPROHIBITION,
     /// @}
 
-    /// @name NETEDIT Demand modes icons
-    /// @{
-    ICON_MODEROUTE,
-    ICON_MODEVEHICLE,
-    ICON_MODEVEHICLETYPE,
-    /// @}
-
-    /// @name NETEDIT processing icons
+    /// @name netedit processing icons
     /// @{
     ICON_CLEANJUNCTIONS,
     ICON_COMPUTEJUNCTIONS,
@@ -230,7 +217,7 @@ enum GUIIcon {
     ICON_OPTIONS,
     /// @}
 
-    /// @name NETEDIT netElements icons
+    /// @name netedit netElements icons
     /// @{
     ICON_JUNCTION,
     ICON_EDGE,
@@ -240,10 +227,9 @@ enum GUIIcon {
     ICON_CROSSING,
     /// @}
 
-    /// @name NETEDIT additional icons
+    /// @name netedit additional icons
     /// @{
     ICON_BUSSTOP,
-    ICON_ACCESS,
     ICON_CONTAINERSTOP,
     ICON_CHARGINGSTATION,
     ICON_E1,
@@ -251,32 +237,11 @@ enum GUIIcon {
     ICON_E3,
     ICON_E3ENTRY,
     ICON_E3EXIT,
-    ICON_E1INSTANT,
     ICON_REROUTER,
     ICON_ROUTEPROBE,
     ICON_VAPORIZER,
     ICON_VARIABLESPEEDSIGN,
     ICON_CALIBRATOR,
-    ICON_PARKINGAREA,
-    ICON_PARKINGSPACE,
-    ICON_REROUTERINTERVAL,
-    ICON_VSSSTEP,
-    ICON_CLOSINGREROUTE,
-    ICON_CLOSINGLANEREROUTE,
-    ICON_DESTPROBREROUTE,
-    ICON_PARKINGZONEREROUTE,
-    ICON_ROUTEPROBREROUTE,
-    ICON_TAZ,
-    ICON_TAZEDGE,
-    /// @}
-
-    /// @name NETEDIT DemandElements icons
-    /// @{
-    ICON_FLOW,
-    ICON_ROUTE,
-    ICON_VTYPE,
-    ICON_VEHICLE,
-    ICON_TRIP,
     /// @}
 
     /// @name vehicle Class icons
@@ -307,38 +272,6 @@ enum GUIIcon {
     ICON_VCLASS_SHIP,
     ICON_VCLASS_CUSTOM1,
     ICON_VCLASS_CUSTOM2,
-    /// @}
-
-    /// @name vehicle Shape icons
-    /// @{
-    ICON_VSHAPE_PEDESTRIAN,
-    ICON_VSHAPE_BICYCLE,
-    ICON_VSHAPE_MOPED,
-    ICON_VSHAPE_MOTORCYCLE,
-    ICON_VSHAPE_PASSENGER,
-    ICON_VSHAPE_PASSENGER_SEDAN,
-    ICON_VSHAPE_PASSENGER_HATCHBACK,
-    ICON_VSHAPE_PASSENGER_WAGON,
-    ICON_VSHAPE_PASSENGER_VAN,
-    ICON_VSHAPE_DELIVERY,
-    ICON_VSHAPE_TRUCK,
-    ICON_VSHAPE_TRUCK_SEMITRAILER,
-    ICON_VSHAPE_TRUCK_1TRAILER,
-    ICON_VSHAPE_BUS,
-    ICON_VSHAPE_BUS_COACH,
-    ICON_VSHAPE_BUS_FLEXIBLE,
-    ICON_VSHAPE_BUS_TROLLEY,
-    ICON_VSHAPE_RAIL,
-    ICON_VSHAPE_RAIL_CAR,
-    ICON_VSHAPE_RAIL_CARGO,
-    ICON_VSHAPE_E_VEHICLE,
-    ICON_VSHAPE_ANT,
-    ICON_VSHAPE_SHIP,
-    ICON_VSHAPE_EMERGENCY,
-    ICON_VSHAPE_FIREBRIGADE,
-    ICON_VSHAPE_POLICE,
-    ICON_VSHAPE_RICKSHAW,
-    ICON_VSHAPE_UNKNOWN,
     /// @}
 
     /// @name icons for status

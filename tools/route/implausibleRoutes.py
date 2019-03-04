@@ -1,24 +1,25 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    implausibleRoutes.py
-# @author  Jakob Erdmann
-# @date    2017-03-28
-# @version $Id$
-
 """
+@file    implausibleRoutes.py
+@author  Jakob Erdmann
+@date    2017-03-28
+@version $Id$
+
 Find routes that are implausible due to:
  - being longer than the shortest path between the first and last edge
  - being longer than the air-distance between the first and the last edge
 
 The script computes an implausibility-score from configurable factors and
 reports all routes above the specified threshold.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -29,12 +30,13 @@ from optparse import OptionParser
 import subprocess
 
 if 'SUMO_HOME' in os.environ:
-    sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
+    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
+    sys.path.append(os.path.join(tools))
     import sumolib  # noqa
     from sumolib.output import parse  # noqa
     from sumolib.net import readNet  # noqa
     from sumolib.miscutils import Statistics, euclidean, Colorgen  # noqa
-    from route2poly import generate_poly  # noqa
+    from route2poly import generate_poly
 else:
     sys.exit("please declare environment variable 'SUMO_HOME'")
 
@@ -48,40 +50,24 @@ def get_options():
                          help="Routes with an implausibility-score above treshold are reported")
     optParser.add_option("--airdist-ratio-factor", type="float", default=1, dest="airdist_ratio_factor",
                          help="Implausibility factor for the ratio of routeDist/airDist ")
-    optParser.add_option("--detour-ratio-factor", type="float", default=1, dest="detour_ratio_factor",
+    optParser.add_option("--detour-ratio-factor", type="float", default=1,  dest="detour_ratio_factor",
                          help="Implausibility factor for the ratio of routeDuration/shortestDuration ")
     optParser.add_option("--detour-factor", type="float", default=0.01, dest="detour_factor",
-                         help="Implausibility factor for the absolute detour time in (routeDuration-shortestDuration)" +
-                              " in seconds")
-    optParser.add_option("--min-dist", type="float", default=0, dest="min_dist",
-                         help="Minimum shortest-path distance below which routes are implausible")
-    optParser.add_option("--min-air-dist", type="float", default=0, dest="min_air_dist",
-                         help="Minimum air distance below which routes are implausible")
+                         help="Implausibility factor for the absolute detour time in (routeDuration-shortestDuration) in seconds")
     optParser.add_option("--standalone", action="store_true",
-                         default=False, help="Parse stand-alone routes that are not define as child-element of " +
-                                             "a vehicle")
+                         default=False, help="Parse stand-alone routes that are not define as child-element of a vehicle")
     optParser.add_option("--blur", type="float", default=0,
                          help="maximum random disturbance to output polygon geometry")
     optParser.add_option("--ignore-routes", dest="ignore_routes",
-                         help="List of route IDs (one per line) that are filtered when generating polygons and " +
-                              "command line output (they will still be added to restrictions-output)")
+                         help="List of route IDs (one per line) that are filtered when generating polygons and command line output (they will still be added to restrictions-output)")
     optParser.add_option("--restriction-output", dest="restrictions_output",
                          help="Write flow-restriction output suitable for passing to flowrouter.py to FILE")
-    optParser.add_option("--od-restrictions", action="store_true", dest="odrestrictions",
-                         default=False, help="Write restrictions for origin-destination relations rather than " +
-                                             "whole routes")
     options, args = optParser.parse_args()
 
     if len(args) != 2:
         sys.exit(USAGE)
     options.network = args[0]
     options.routeFile = args[1]
-    # options for generate_poly
-    options.layer = 100
-    options.geo = False
-    options.internal = False
-    options.spread = None
-
     return options
 
 
@@ -143,18 +129,15 @@ def main():
         if len(routeAlts) == 1:
             routeInfos[vehicle.id].detour = 0
             routeInfos[vehicle.id].detourRatio = 1
-            routeInfos[vehicle.id].shortest_path_distance = routeInfos[vehicle.id].length
         else:
             oldCosts = float(routeAlts[0].cost)
             newCosts = float(routeAlts[1].cost)
             assert(routeAlts[0].edges.split() == routeInfos[vehicle.id].edges)
-            routeInfos[vehicle.id].shortest_path_distance = getRouteLength(net, routeAlts[1].edges.split())
             if oldCosts <= newCosts:
                 routeInfos[vehicle.id].detour = 0
                 routeInfos[vehicle.id].detourRatio = 1
                 if oldCosts < newCosts:
-                    sys.stderr.write(("Warning: fastest route for '%s' is slower than original route " +
-                                      "(old=%s, new=%s). Check vehicle types\n") % (
+                    sys.stderr.write("Warning: fastest route for '%s' is slower than original route (old=%s, new=%s). Check vehicle types\n" % (
                         vehicle.id, oldCosts, newCosts))
             else:
                 routeInfos[vehicle.id].detour = oldCosts - newCosts
@@ -167,9 +150,7 @@ def main():
         ri = routeInfos[rID]
         ri.implausibility = (options.airdist_ratio_factor * ri.airDistRatio +
                              options.detour_factor * ri.detour +
-                             options.detour_ratio_factor * ri.detourRatio +
-                             max(0, options.min_dist / ri.shortest_path_distance - 1) +
-                             max(0, options.min_air_dist / ri.airDist - 1))
+                             options.detour_ratio_factor * ri.detourRatio)
         allRoutesStats.add(ri.implausibility, rID)
         if ri.implausibility > options.threshold:
             implausible.append((ri.implausibility, rID, ri))
@@ -179,16 +160,13 @@ def main():
     if options.restrictions_output is not None:
         with open(options.restrictions_output, 'w') as outf:
             for score, rID, ri in sorted(implausible):
-                edges = ri.edges
-                if options.odrestrictions and len(edges) > 2:
-                    edges = [edges[0], edges[-1]]
-                outf.write("0 %s\n" % " ".join(edges))
+                outf.write("0 %s\n" % " ".join(ri.edges))
 
     if options.ignore_routes is not None:
         numImplausible = len(implausible)
         ignored = set([r.strip() for r in open(options.ignore_routes)])
         implausible = [r for r in implausible if r not in ignored]
-        print("Loaded %s routes to ignore. Reducing implausible from %s to %s" % (
+        print("Loadeded %s routes to ignore. Reducing implausible from %s to %s" % (
             len(ignored), numImplausible, len(implausible)))
 
     # generate polygons
@@ -197,14 +175,12 @@ def main():
     with open(polyOutput, 'w') as outf:
         outf.write('<additional>\n')
         for score, rID, ri in sorted(implausible):
-            generate_poly(options, net, rID, colorgen(), ri.edges, outf, score)
+            generate_poly(net, rID, colorgen(), 100, False, ri.edges, options.blur, outf, score)
         outf.write('</additional>\n')
 
-    sys.stdout.write('score\troute\t(airDistRatio, detourRatio, detour, shortestDist, airDist)\n')
     for score, rID, ri in sorted(implausible):
         # , ' '.join(ri.edges)))
-        sys.stdout.write('%.7f\t%s\t%s\n' % (score, rID, (ri.airDistRatio, ri.detourRatio,
-                                                          ri.detour, ri.shortest_path_distance, ri.airDist)))
+        sys.stdout.write('%s\t%s\t%s\n' % (score, rID, (ri.airDistRatio, ri.detourRatio, ri.detour)))
 
     print(allRoutesStats)
     print(implausibleRoutesStats)

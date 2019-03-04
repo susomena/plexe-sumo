@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIVissimConnection.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // -------------------
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -68,7 +75,7 @@ NIVissimConnection::NIVissimConnection(int id,
 
 NIVissimConnection::~NIVissimConnection() {
     for (NIVissimClosedLanesVector::iterator i = myClosedLanes.begin(); i != myClosedLanes.end(); i++) {
-        delete (*i);
+        delete(*i);
     }
     myClosedLanes.clear();
 }
@@ -90,7 +97,7 @@ NIVissimConnection*
 NIVissimConnection::dictionary(int id) {
     DictType::iterator i = myDict.find(id);
     if (i == myDict.end()) {
-        return nullptr;
+        return 0;
     }
     return (*i).second;
 }
@@ -211,13 +218,13 @@ int
 NIVissimConnection::buildEdgeConnections(NBEdgeCont& ec) {
     int unsetConnections = 0;
     // try to determine the connected edges
-    NBEdge* fromEdge = nullptr;
-    NBEdge* toEdge = nullptr;
+    NBEdge* fromEdge = 0;
+    NBEdge* toEdge = 0;
     NIVissimEdge* vissimFrom = NIVissimEdge::dictionary(getFromEdgeID());
     if (vissimFrom->wasWithinAJunction()) {
         // this edge was not built, try to get one that approaches it
         vissimFrom = vissimFrom->getBestIncoming();
-        if (vissimFrom != nullptr) {
+        if (vissimFrom != 0) {
             fromEdge = ec.retrievePossiblySplit(toString(vissimFrom->getID()), toString(getFromEdgeID()), true);
         }
     } else {
@@ -227,7 +234,7 @@ NIVissimConnection::buildEdgeConnections(NBEdgeCont& ec) {
     NIVissimEdge* vissimTo = NIVissimEdge::dictionary(getToEdgeID());
     if (vissimTo->wasWithinAJunction()) {
         vissimTo = vissimTo->getBestOutgoing();
-        if (vissimTo != nullptr) {
+        if (vissimTo != 0) {
             toEdge = ec.retrievePossiblySplit(toString(vissimTo->getID()), toString(getToEdgeID()), true);
         }
     } else {
@@ -239,7 +246,7 @@ NIVissimConnection::buildEdgeConnections(NBEdgeCont& ec) {
     NBEdge *fromEdge = ec.retrievePossiblySplit(toString(getFromEdgeID()), toString(getToEdgeID()), true);
     NBEdge *toEdge = ec.retrievePossiblySplit(toString(getToEdgeID()), toString(getFromEdgeID()), false);
     */
-    if (fromEdge == nullptr || toEdge == nullptr) {
+    if (fromEdge == 0 || toEdge == 0) {
         WRITE_WARNING("Could not build connection between '" + toString(getFromEdgeID()) + "' and '" + toString(getToEdgeID()) + "'.");
         return 1; // !!! actually not 1
     }

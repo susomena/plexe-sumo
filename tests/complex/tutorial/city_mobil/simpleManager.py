@@ -1,23 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    simpleManager.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@date    2008-10-09
+@version $Id$
 
-# @file    simpleManager.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @date    2008-10-09
-# @version $Id$
+Control the CityMobil parking lot with a simple first come first serve approach.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import vehicleControl
 import statistics
-from constants import DOUBLE_ROWS, WAIT_PER_PERSON
+from constants import *
 
 
 class SimpleManager(vehicleControl.Manager):
@@ -27,7 +31,7 @@ class SimpleManager(vehicleControl.Manager):
         self.personsWaitingAt = {}
 
     def personArrived(self, personID, edge, target):
-        if edge not in self.personsWaitingAt:
+        if not edge in self.personsWaitingAt:
             self.personsWaitingAt[edge] = []
         self.personsWaitingAt[edge].append((personID, target))
 
@@ -59,7 +63,6 @@ class SimpleManager(vehicleControl.Manager):
         else:
             vehicleControl.stopAt(vehicleID, "cyberout")
         self.cyberCarLoad[vehicleID] = load
-
 
 if __name__ == "__main__":
     vehicleControl.init(SimpleManager())

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUICalibrator.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,10 +8,25 @@
 ///
 // Changes flow and speed on a set of lanes (gui version)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/MsgHandler.h>
@@ -33,6 +40,7 @@
 #include <microsim/MSEdge.h>
 #include <guisim/GUINet.h>
 #include <guisim/GUIEdge.h>
+#include "GUICalibrator.h"
 #include <utils/gui/globjects/GUIGLObjectPopupMenu.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 #include <gui/GUIGlobals.h>
@@ -40,11 +48,10 @@
 #include <gui/GUIApplicationWindow.h>
 #include <microsim/logging/FunctionBinding.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/gui/images/GUIIconSubSys.h>
 #include <guisim/GUICalibrator.h>
 #include <utils/gui/globjects/GLIncludes.h>
-
-#include "GUICalibrator.h"
 
 
 // ===========================================================================
@@ -91,7 +98,7 @@ GUICalibrator::GUIManip_Calibrator::GUIManip_Calibrator(
     GUIManipulator(app, name, 0, 0),
     myParent(&app),
     myChosenValue(0),
-    myChosenTarget(myChosenValue, nullptr, MID_OPTION),
+    myChosenTarget(myChosenValue, NULL, MID_OPTION),
     //mySpeed(o.getDefaultSpeed()),
     mySpeed(0),
     mySpeedTarget(mySpeed),
@@ -149,16 +156,15 @@ GUICalibrator::GUIManip_Calibrator::GUIManip_Calibrator(
                           ICON_BEFORE_TEXT | LAYOUT_SIDE_TOP | LAYOUT_CENTER_Y,
                           0, 0, 0, 0,   2, 2, 0, 0);
         myUserDefinedSpeed =
-            new FXRealSpinner(gf12, 10, this, MID_USER_DEF,
-                              LAYOUT_TOP | FRAME_SUNKEN | FRAME_THICK);
-        //myUserDefinedSpeed->setFormatString("%.0f km/h");
-        //myUserDefinedSpeed->setIncrements(1, 10, 10);
-        myUserDefinedSpeed->setIncrement(10);
+            new FXRealSpinDial(gf12, 10, this, MID_USER_DEF,
+                               LAYOUT_TOP | FRAME_SUNKEN | FRAME_THICK);
+        myUserDefinedSpeed->setFormatString("%.0f km/h");
+        myUserDefinedSpeed->setIncrements(1, 10, 10);
         myUserDefinedSpeed->setRange(0, 300);
         myUserDefinedSpeed->setValue(0);
         //static_cast<GUICalibrator*>(myObject)->getDefaultSpeed() * 3.6);
     }
-    new FXButton(f1, "Close", nullptr, this, MID_CLOSE,
+    new FXButton(f1, "Close", NULL, this, MID_CLOSE,
                  BUTTON_INITIAL | BUTTON_DEFAULT | FRAME_RAISED | FRAME_THICK | LAYOUT_TOP | LAYOUT_LEFT | LAYOUT_CENTER_X, 0, 0, 0, 0, 30, 30, 4, 4);
     //static_cast<GUICalibrator*>(myObject)->setOverriding(true);
 }
@@ -277,11 +283,11 @@ GUICalibrator::GUICalibrator(const std::string& id,
                              const SUMOTime freq,
                              const MSRouteProbe* probe) :
     MSCalibrator(id, edge, lane, pos, aXMLFilename, outputFilename, freq, edge->getLength(), probe),
-    GUIGlObject_AbstractAdd(GLO_CALIBRATOR, id),
+    GUIGlObject_AbstractAdd("calibrator", GLO_TRIGGER, id),
     myShowAsKMH(true) {
     const std::vector<MSLane*>& destLanes = edge->getLanes();
     for (std::vector<MSLane*>::const_iterator i = destLanes.begin(); i != destLanes.end(); ++i) {
-        if (lane == nullptr || (*i) == lane) {
+        if (lane == 0 || (*i) == lane) {
             const PositionVector& v = (*i)->getShape();
             myFGPositions.push_back(v.positionAtOffset(pos));
             myBoundary.add(v.positionAtOffset(pos));
@@ -355,7 +361,7 @@ GUICalibrator::drawGL(const GUIVisualizationSettings& s) const {
             flow = toString((int)myCurrentStateInterval->q) + "v/h";
         }
     }
-    const double exaggeration = s.addSize.getExaggeration(s, this);
+    const double exaggeration = s.addSize.getExaggeration(s);
     for (int i = 0; i < (int)myFGPositions.size(); ++i) {
         const Position& pos = myFGPositions[i];
         double rot = myFGRotations[i];
@@ -380,9 +386,29 @@ GUICalibrator::drawGL(const GUIVisualizationSettings& s) const {
         // draw text
         if (s.scale * exaggeration >= 1.) {
             glTranslated(0, 0, .1);
-            GLHelper::drawText("C", Position(0, 2), 0.1, 3, RGBColor::BLACK, 180);
-            GLHelper::drawText(flow, Position(0, 4), 0.1, 0.7, RGBColor::BLACK, 180);
-            GLHelper::drawText(speed, Position(0, 5), 0.1, 0.7, RGBColor::BLACK, 180);
+            glColor3d(0, 0, 0);
+            pfSetPosition(0, 0);
+            pfSetScale(3.f);
+            double w = pfdkGetStringWidth("C");
+            glRotated(180, 0, 1, 0);
+            glTranslated(-w / 2., 2, 0);
+            pfDrawString("C");
+            glTranslated(w / 2., -2, 0);
+
+
+            pfSetPosition(0, 0);
+            pfSetScale(.7f);
+            w = pfdkGetStringWidth(flow.c_str());
+            glTranslated(-w / 2., 4, 0);
+            pfDrawString(flow.c_str());
+            glTranslated(w / 2., -4, 0);
+
+            pfSetPosition(0, 0);
+            pfSetScale(.7f);
+            w = pfdkGetStringWidth(speed.c_str());
+            glTranslated(-w / 2., 5, 0);
+            pfDrawString(speed.c_str());
+            glTranslated(-w / 2., -5, 0);
         }
         glPopMatrix();
     }

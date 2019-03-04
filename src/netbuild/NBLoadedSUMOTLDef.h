@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBLoadedSUMOTLDef.h
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
@@ -16,6 +8,17 @@
 // A complete traffic light logic loaded from a sumo-net. (opted to reimplement
 // since NBLoadedTLDef is quite vissim specific)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBLoadedSUMOTLDef_h
 #define NBLoadedSUMOTLDef_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <string>
@@ -85,10 +92,8 @@ public:
     void replaceRemoved(NBEdge* removed, int removedLane,
                         NBEdge* by, int byLane);
 
-    /** @brief patches signal plans by modifying lane indices
-     * with the given offset, only indices with a value above threshold are modified
-     */
-    void shiftTLConnectionLaneIndex(NBEdge* edge, int offset, int threshold = -1);
+    /// @brief patches signal plans by modifying lane indices
+    void shiftTLConnectionLaneIndex(NBEdge* edge, int offset);
 
     /** @brief Adds a phase to the logic
      * the new phase is inserted at the end of the list of already added phases
@@ -97,7 +102,7 @@ public:
      * @param[in] minDur The minimum duration of the phase to add
      * @param[in] maxDur The maximum duration of the phase to add
      */
-    void addPhase(SUMOTime duration, const std::string& state, SUMOTime minDur, SUMOTime maxDur, int next, const std::string& name);
+    void addPhase(SUMOTime duration, const std::string& state, SUMOTime minDur, SUMOTime maxDur);
 
     /// @brief mark phases as load
     void phasesLoaded() {
@@ -137,17 +142,6 @@ public:
     /// @brief whether the given index must yield to the foeIndex while turing right on a red light
     bool rightOnRedConflict(int index, int foeIndex) const;
 
-    /* @brief shortens phase states to remove states that are not referenced by
-     * any controlled link and returns whether states were shortened
-    */
-    bool cleanupStates();
-
-    /// @brief whether this definition uses signal group (multiple connections with the same link index)
-    bool usingSignalGroups() const;
-
-    /// @brief join nodes and states from the given logic (append red state)
-    void joinLogic(NBTrafficLightDefinition* def);
-
 protected:
     /** @brief Collects the links participating in this traffic light
      *    (only if not previously loaded)
@@ -168,12 +162,6 @@ protected:
 
     /* initialize myNeedsContRelation and set myNeedsContRelationReady to true */
     void initNeedsContRelation() const;
-
-    /// @brief return the highest known tls link index used by any controlled connection or crossing
-    int getMaxIndex();
-
-    ///@brief Returns the maximum index controlled by this traffic light
-    int getMaxValidIndex();
 
 private:
 
@@ -203,9 +191,6 @@ private:
 
     /// @brief adapt to removal or addition of connections
     void reconstructLogic();
-
-    /// @brief return whether all tls link indices are valid
-    bool hasValidIndices() const;
 
 private:
     /// @brief class for identifying connections

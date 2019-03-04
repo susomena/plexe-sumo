@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PCLoaderOSM.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // A reader of pois and polygons stored in OSM-format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef PCLoaderOSM_h
 #define PCLoaderOSM_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include "PCPolyContainer.h"
@@ -75,8 +82,6 @@ protected:
         double lon;
         /// @brief The latitude the node is located at
         double lat;
-        /// @brief The nodes name (if any)
-        std::string name;
         /// @brief Additional attributes
         std::map<std::string, std::string> myAttributes;
     };
@@ -89,12 +94,8 @@ protected:
         long long int id;
         /// @brief The relation's name (if any)
         std::string name;
-        /// @brief The list of ways this relation is made of
-        std::vector<long long int> myWays;
         /// @brief Additional attributes
         std::map<std::string, std::string> myAttributes;
-        /// @brief whether this relation is a valid polygon
-        bool keep;
     };
 
 
@@ -111,8 +112,6 @@ protected:
         std::vector<long long int> myCurrentNodes;
         /// @brief Additional attributes
         std::map<std::string, std::string> myAttributes;
-        // @brief Wether this way constitutes a complete polygon object
-        bool standalone;
     };
 
     typedef std::vector<PCOSMRelation*> Relations;
@@ -126,7 +125,7 @@ protected:
 
     /// @brief try add the POI and return the next index on success
     static int addPOI(const PCOSMNode* node, const Position& pos, const PCTypeMap::TypeDef& def,
-                      const std::string& fullType, int index, bool useName, PCPolyContainer& toFill, bool ignorePruning, bool withAttributes);
+                      const std::string& fullType, int index, PCPolyContainer& toFill, bool ignorePruning, bool withAttributes);
 
 
 protected:
@@ -135,8 +134,6 @@ protected:
 private:
     static std::set<std::string> initMyKeysToInclude();
 
-    /// @brief retrieve cartesian coordinate for given node
-    static Position convertNodePosition(PCOSMNode* n);
 
 protected:
     /**

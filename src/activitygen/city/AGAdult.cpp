@@ -1,14 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-// activitygen module
-// Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    AGAdult.cpp
 /// @author  Piotr Woznica
 /// @author  Walter Bamberger
@@ -19,12 +9,29 @@
 ///
 // Person in working age: can be linked to a work position.
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+// activitygen module
+// Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "AGAdult.h"
 #include "AGWorkPosition.h"
@@ -44,14 +51,14 @@ AGAdult::randomFreeWorkPosition(std::vector<AGWorkPosition>* wps) {
         }
     }
     if (freePos.empty()) {
-        return nullptr;
+        return 0;
     }
     return RandHelper::getRandomFrom(freePos);
 }
 
 
 AGAdult::AGAdult(int age)
-    : AGPerson(age), work(nullptr) {}
+    : AGPerson(age), work(0) {}
 
 
 void
@@ -67,13 +74,13 @@ AGAdult::tryToWork(double rate, std::vector<AGWorkPosition>* wps) {
         // This avoids that the current one is the same as the new one.
         AGWorkPosition* newWork = randomFreeWorkPosition(wps);
 
-        if (work != nullptr) {
+        if (work != 0) {
             work->let();
         }
         work = newWork;
         work->take(this);
     } else {
-        if (work != nullptr) {
+        if (work != 0) {
             // Also sets work = 0 with the call back lostWorkPosition
             work->let();
         }
@@ -83,19 +90,19 @@ AGAdult::tryToWork(double rate, std::vector<AGWorkPosition>* wps) {
 
 bool
 AGAdult::isWorking() const {
-    return (work != nullptr);
+    return (work != 0);
 }
 
 
 void
 AGAdult::lostWorkPosition() {
-    work = nullptr;
+    work = 0;
 }
 
 
 void
 AGAdult::resignFromWorkPosition() {
-    if (work != nullptr) {
+    if (work != 0) {
         work->let();
     }
 }
@@ -103,7 +110,7 @@ AGAdult::resignFromWorkPosition() {
 
 const AGWorkPosition&
 AGAdult::getWorkPosition() const {
-    if (work != nullptr) {
+    if (work != 0) {
         return *work;
     }
     throw std::runtime_error("AGAdult::getWorkPosition: Adult is unemployed.");

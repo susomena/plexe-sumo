@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RODFDetFlowLoader.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Eric Nicolay
@@ -17,10 +9,25 @@
 ///
 // A loader for detector flows
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <fstream>
@@ -30,7 +37,7 @@
 #include <utils/common/StringTokenizer.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/FileHelpers.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/UtilExceptions.h>
 #include "RODFDetFlowLoader.h"
 
@@ -68,7 +75,7 @@ RODFDetFlowLoader::read(const std::string& file) {
             if (!myDetectorContainer.knows(detName)) {
                 continue;
             }
-            const double parsedTime = StringUtils::toDouble((myLineHandler.get("time"))) * myTimeScale - myTimeOffset;
+            const double parsedTime = TplConvert::_2double((myLineHandler.get("time").c_str())) * myTimeScale - myTimeOffset;
             // parsing as float to handle values which would cause int overflow
             if (parsedTime < myStartTime || parsedTime >= myEndTime) {
                 if (!myHaveWarnedAboutOverridingBoundaries) {
@@ -80,18 +87,18 @@ RODFDetFlowLoader::read(const std::string& file) {
             const SUMOTime time = (SUMOTime)(parsedTime + .5);
             FlowDef fd;
             fd.isLKW = 0;
-            fd.qPKW = StringUtils::toDouble(myLineHandler.get("qpkw"));
+            fd.qPKW = TplConvert::_2double(myLineHandler.get("qpkw").c_str());
             fd.vPKW = 0;
             if (myLineHandler.know("vPKW")) {
-                fd.vPKW = StringUtils::toDouble(myLineHandler.get("vpkw"));
+                fd.vPKW = TplConvert::_2double(myLineHandler.get("vpkw").c_str());
             }
             fd.qLKW = 0;
             if (myLineHandler.know("qLKW")) {
-                fd.qLKW = StringUtils::toDouble(myLineHandler.get("qlkw"));
+                fd.qLKW = TplConvert::_2double(myLineHandler.get("qlkw").c_str());
             }
             fd.vLKW = 0;
             if (myLineHandler.know("vLKW")) {
-                fd.vLKW = StringUtils::toDouble(myLineHandler.get("vlkw"));
+                fd.vLKW = TplConvert::_2double(myLineHandler.get("vlkw").c_str());
             }
             if (fd.qLKW < 0) {
                 fd.qLKW = 0;

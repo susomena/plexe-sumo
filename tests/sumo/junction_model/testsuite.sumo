@@ -1,31 +1,3 @@
-# test behavior at different types of junction
-junction_type
-
-# effects of the visibility attribute for links 
-visibility
-
-# test the ApproachingVehicleInformation for accuracy
-approachInformation
-
-# test dynamics on internal lanes
-internalLanes
-
 # tests for ignoring keepClear rules
 ignoreKeepClear
 driveAfterRedTime
-
-# tests for ignoring right of way
-ignoreRightOfWay
-
-# configure timegap to observe when passing a minor link
-timegapMinor
-
-# Tests for the stopOffset
-stopOffset
-
-# Tests for indirect left turns
-indirect_left_turn
-
-# vehicles turning left from opposite directions at the same time
-opposite_left_turn
-jmSigmaMinor

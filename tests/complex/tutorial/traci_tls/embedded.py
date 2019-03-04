@@ -1,20 +1,24 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    embedded.py
+@author  Lena Kalleske
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2009-03-26
+@version $Id$
 
-# @file    embedded.py
-# @author  Lena Kalleske
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2009-03-26
-# @version $Id$
+Tutorial for traffic light control via the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR/TS, Germany
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 
 import os
@@ -23,7 +27,7 @@ import subprocess
 # the embedded python does not add the current dir to the python path, so
 # we need to do it
 sys.path.append(os.path.dirname(__file__))
-import runner  # noqa
+import runner
 
 
 if runner.traci.isEmbedded():

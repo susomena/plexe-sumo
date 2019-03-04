@@ -1,17 +1,21 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+A script for building grid-like networks.
 
-# @file    grid.py
-# @author  Daniel Krajzewicz
-# @date    2013-10-10
-# @version $Id$
+@file    grid.py
+@author  Daniel Krajzewicz
+@date    2013-10-10
+@version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2013 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import os
 import sys
@@ -20,7 +24,7 @@ sys.path.append(
 sys.path.append(os.path.join(os.environ.get("SUMO_HOME", os.path.join(
     os.path.dirname(__file__), '..', '..', '..', '..')), 'tools'))
 
-from . import network  # noqa
+from . import network
 
 
 def grid(numIntersectionsX=10, numIntersectionsY=5, defaultNode=None, defaultEdge=None, centralReservation=0):
@@ -55,7 +59,6 @@ def grid(numIntersectionsX=10, numIntersectionsY=5, defaultNode=None, defaultEdg
 #  d = demand.Demand()
 #  d.addStream(demand.Stream("1/0_to_1/2", 10, "1/0 1/2"))
 #  d.build(3600)
-
 
 if __name__ == "__main__":
     net = grid()

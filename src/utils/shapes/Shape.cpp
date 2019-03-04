@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    Shape.cpp
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
@@ -15,13 +7,27 @@
 ///
 // A 2D- or 3D-Shape
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
-#include <utils/gui/globjects/GUIGlObjectTypes.h>
+#endif
 
 #include "Shape.h"
 
@@ -30,11 +36,8 @@
 // ===========================================================================
 const std::string Shape::DEFAULT_TYPE = "";
 const double Shape::DEFAULT_LAYER = 128;
-const double Shape::DEFAULT_LINEWIDTH = 1;
-const double Shape::DEFAULT_LAYER_POI = (double)GLO_POI;
 const double Shape::DEFAULT_ANGLE = 0;
 const std::string Shape::DEFAULT_IMG_FILE = "";
-const bool Shape::DEFAULT_RELATIVEPATH = false;
 const double Shape::DEFAULT_IMG_WIDTH = 1;
 const double Shape::DEFAULT_IMG_HEIGHT = 1;
 
@@ -43,14 +46,13 @@ const double Shape::DEFAULT_IMG_HEIGHT = 1;
 // ===========================================================================
 Shape::Shape(const std::string& id, const std::string& type,
              const RGBColor& color, double layer,
-             double angle, const std::string& imgFile, bool relativePath) :
+             double angle, const std::string& imgFile) :
     Named(id),
     myType(type),
     myColor(color),
     myLayer(layer),
     myNaviDegreeAngle(angle),
-    myImgFile(imgFile),
-    myRelativePath(relativePath) {
+    myImgFile(imgFile) {
 }
 
 

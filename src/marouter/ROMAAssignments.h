@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ROMAAssignments.h
 /// @author  Yun-Pang Floetteroed
 /// @author  Laura Bieker
@@ -16,6 +8,17 @@
 ///
 // Assignment methods
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef ROMAAssignments_h
 #define ROMAAssignments_h
 
@@ -23,9 +26,13 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <utils/router/SUMOAbstractRouter.h>
+#include <utils/vehicle/SUMOAbstractRouter.h>
 #include <utils/common/SUMOTime.h>
 
 // ===========================================================================
@@ -88,7 +95,7 @@ public:
      * @param[in] v The (default) vehicle that is routed
      * @param[in] t The time for which the effort shall be returned
      * @return The effort (time to pass in this case) for an edge
-     * @see DijkstraRouter_ByProxi
+     * @see DijkstraRouterTT_ByProxi
      */
     static double getPenalizedEffort(const ROEdge* const e, const ROVehicle* const v, double t);
 
@@ -101,7 +108,7 @@ public:
      * @param[in] v The (default) vehicle that is routed
      * @param[in] t The time for which the effort shall be returned
      * @return The effort (time to pass in this case) for an edge
-     * @see DijkstraRouter_ByProxi
+     * @see DijkstraRouterTT_ByProxi
      */
     static double getPenalizedTT(const ROEdge* const e, const ROVehicle* const v, double t);
 
@@ -114,15 +121,13 @@ public:
      * @param[in] v The (default) vehicle that is routed
      * @param[in] t The time for which the effort shall be returned
      * @return The effort (time to pass in this case) for an edge
-     * @see DijkstraRouter_ByProxi
+     * @see DijkstraRouterTT_ByProxi
      */
     static double getTravelTime(const ROEdge* const e, const ROVehicle* const v, double t);
 
 private:
     /// @brief add a route and check for duplicates
-    bool addRoute(const ConstROEdgeVector& edges, std::vector<RORoute*>& paths, std::string routeId, double prob);
-
-    const ConstROEdgeVector computePath(const ODCell* cell, const SUMOTime time = 0, SUMOAbstractRouter<ROEdge, ROVehicle>* router = nullptr);
+    bool addRoute(ConstROEdgeVector& edges, std::vector<RORoute*>& paths, std::string routeId, double prob);
 
     /// @brief get the k shortest paths
     void getKPaths(const int kPaths, const double penalty);

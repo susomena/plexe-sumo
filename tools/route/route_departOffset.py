@@ -1,18 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    route_departOffset.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    11.09.2009
+@version $Id$
 
-# @file    route_departOffset.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    11.09.2009
-# @version $Id$
+Applies a given offset to the given route's departure time
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import os
@@ -44,23 +48,19 @@ def get_options(args=None):
     optParser.add_option("-d", "--depart-offset", dest="offset",
                          type="float", help="the depart offset to apply")
     optParser.add_option("-i", "--depart-interval", dest="interval",
-                         help="time intervals a,b,c,d where all vehicles departing in the interval" +
-                         "[a,b[ are mapped to the interval [c,d[")
+                         help="time intervals a,b,c,d where all vehicles departing in the interval [a,b[ are mapped to the interval [c,d[")
     optParser.add_option("--modify-ids", dest="modify_ids", action="store_true",
                          default=False, help="whether ids should be modified as well")
     optParser.add_option("--heterogeneous", dest="heterogeneous",
-                         action="store_true", default=False, help="whether heterogeneous objects shall be parsed " +
-                                                                  "(i.e. vehicles with embeded and referenced routes)")
+                         action="store_true", default=False, help="whether heterogeneous objects shall be parsed (i.e. vehicles with embeded and referenced routes)")
     optParser.add_option("--depart-edges", dest="depart_edges",
                          help="only modify departure times of vehicles departing on the given edges")
     optParser.add_option("--depart-edges.file", dest="depart_edges_file",
-                         help="only modify departure times of vehicles departing on edges or lanes in the " +
-                              "given selection file")
+                         help="only modify departure times of vehicles departing on edges or lanes in the given selection file")
     optParser.add_option("--arrival-edges", dest="arrival_edges",
                          help="only modify departure times of vehicles arriving on the given edges")
     optParser.add_option("--arrival-edges.file", dest="arrival_edges_file",
-                         help="only modify departure times of vehicles arriving on edges or lanes in the " +
-                              "given selection file")
+                         help="only modify departure times of vehicles arriving on edges or lanes in the given selection file")
 
     (options, args) = optParser.parse_args(args=args)
     if options.infile is None or options.outfile is None:

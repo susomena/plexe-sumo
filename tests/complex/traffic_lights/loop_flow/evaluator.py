@@ -1,23 +1,30 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    evaluator.py
+@author  Daniel Krajzewicz
+@date    13-06-07
+@version $Id$
 
-# @file    evaluator.py
-# @author  Daniel Krajzewicz
-# @date    13-06-07
-# @version $Id$
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
 
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 from __future__ import absolute_import
 from __future__ import print_function
 
 import sumolib.output
-from pylab import clf, colorbar, imshow, legend, savefig, title, xticks, yticks
-from runner import flow1def, flow2def, types
+from matplotlib.pyplot import figure, show, axes, sci
+from matplotlib import cm, colors
+from pylab import *
+import numpy as np
+from mpl_toolkits.mplot3d import axes3d
+
+from runner import types, flow1def, flow2def, fillSteps, measureSteps, simSteps
 
 
 durationM = {}
@@ -62,23 +69,23 @@ for t in types:
                 waitStepsMinMax[1] = waitSteps
 
     """
-   <interval begin="0.00" end="60.00" id="2i_l0" nSamples="55"
-   meanSpeed="13.89" meanOccupancy="1.19" maxOccupancy="3.90"
-   meanMaxJamLengthInVehicles="0.00" meanMaxJamLengthInMeters="0.00" maxJamLengthInVehicles="0"
-   maxJamLengthInMeters="0.00" jamLengthInVehiclesSum="0" jamLengthInMetersSum="0.00" meanHaltingDuration="0.00"
-   maxHaltingDuration="0.00" haltingDurationSum="0.00" meanIntervalHaltingDuration="0.00"
-   maxIntervalHaltingDuration="0.00" intervalHaltingDurationSum="0.00"
+   <interval begin="0.00" end="60.00" id="2i_l0" nSamples="55" 
+   meanSpeed="13.89" meanOccupancy="1.19" maxOccupancy="3.90" 
+   meanMaxJamLengthInVehicles="0.00" meanMaxJamLengthInMeters="0.00" maxJamLengthInVehicles="0" maxJamLengthInMeters="0.00" 
+   jamLengthInVehiclesSum="0" jamLengthInMetersSum="0.00" meanHaltingDuration="0.00" maxHaltingDuration="0.00" 
+   haltingDurationSum="0.00" meanIntervalHaltingDuration="0.00" maxIntervalHaltingDuration="0.00" intervalHaltingDurationSum="0.00" 
    startedHalts="0.00" meanVehicleNumber="0.92" maxVehicleNumber="3" />
     """
 
 
 def makeIMSHOWfigure(matrix, oname, t, rangeX, rangeY, minMax=None):
     if minMax:
-        imshow(matrix, vmin=minMax[0], vmax=minMax[1], interpolation='nearest')
+        im = imshow(
+            matrix, vmin=minMax[0], vmax=minMax[1], interpolation='nearest')
     else:
-        imshow(matrix, interpolation='nearest')
+        im = imshow(matrix, interpolation='nearest')
     legend()
-    colorbar(shrink=0.5)
+    cb = colorbar(shrink=0.5)
     xticks(range(0, len(matrix)), rangeX, size=14)
     yticks(range(0, len(matrix[0])), rangeY, size=14)
     title(t)

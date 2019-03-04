@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    OutputDevice.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // Static storage of an output device and its base (abstract) implementation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef OutputDevice_h
 #define OutputDevice_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -119,7 +126,7 @@ public:
 
     /**  Closes all registered devices
      */
-    static void closeAll(bool keepErrorRetrievers = false);
+    static void closeAll();
     /// @}
 
 
@@ -137,7 +144,7 @@ public:
     /// @{
 
     /// @brief Constructor
-    OutputDevice(const bool binary = false, const int defaultIndentation = 0, const std::string& filename = "");
+    OutputDevice(const bool binary = false, const int defaultIndentation = 0);
 
 
     /// @brief Destructor
@@ -149,8 +156,6 @@ public:
      */
     virtual bool ok();
 
-    /// @brief get filename or suitable description of this device
-    const std::string& getFilename();
 
     /** @brief Closes the device and removes it from the dictionary
      */
@@ -215,7 +220,7 @@ public:
     OutputDevice& openTag(const SumoXMLTag& xmlElement);
 
 
-    /** @brief Closes the most recently opened tag and optionally adds a comment
+    /** @brief Closes the most recently opened tag
      *
      * The topmost xml-element from the stack is written into the stream
      *  as a closing element. Depending on the formatter used
@@ -225,7 +230,7 @@ public:
      * @return Whether a further element existed in the stack and could be closed
      * @todo it is not verified that the topmost element was closed
      */
-    bool closeTag(const std::string& comment = "");
+    bool closeTag();
 
 
 
@@ -304,11 +309,6 @@ public:
         return *this;
     }
 
-    /// @brief writes padding (ignored for binary output)
-    OutputDevice& writePadding(const std::string& val) {
-        myFormatter->writePadding(getOStream(), val);
-        return *this;
-    }
 
     /** @brief Retrieves a message to this device.
      *
@@ -327,10 +327,6 @@ public:
         getOStream() << t;
         postWriteHook();
         return *this;
-    }
-
-    void flush() {
-        getOStream().flush();
     }
 
 protected:
@@ -355,9 +351,6 @@ private:
     OutputFormatter* myFormatter;
 
     const bool myAmBinary;
-
-protected:
-    std::string myFilename;
 
 public:
     /// @brief Invalidated copy constructor.

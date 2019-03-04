@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSLinkCont.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -15,12 +7,27 @@
 ///
 // Helpers for link vector
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSLinkCont.h"
 #include "MSLane.h"
@@ -37,14 +44,14 @@ MSLinkContHelper::getInternalFollowingEdge(const MSLane* fromLane,
     for (MSLinkCont::const_iterator j = lc.begin(); j != lc.end(); j++) {
         MSLink* link = *j;
         if (&link->getLane()->getEdge() == followerAfterInternal) {
-            if (link->getViaLane() != nullptr) {
+            if (link->getViaLane() != 0) {
                 return &link->getViaLane()->getEdge();
             } else {
-                return nullptr; // network without internal links
+                return 0; // network without internal links
             }
         }
     }
-    return nullptr;
+    return 0;
 }
 
 
@@ -56,14 +63,14 @@ MSLinkContHelper::getInternalFollowingLane(const MSLane* fromLane,
     for (MSLinkCont::const_iterator j = lc.begin(); j != lc.end(); j++) {
         MSLink* link = *j;
         if (link->getLane() == followerAfterInternal) {
-            if (link->getViaLane() != nullptr) {
+            if (link->getViaLane() != 0) {
                 return link->getViaLane();
             } else {
-                return nullptr; // network without internal links
+                return 0; // network without internal links
             }
         }
     }
-    return nullptr;
+    return 0;
 }
 
 
@@ -78,7 +85,7 @@ MSLinkContHelper::getConnectingLink(const MSLane& from, const MSLane& to) {
             return link;
         }
     }
-    return nullptr;
+    return 0;
 }
 
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBOwnTLDef.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // A traffic light logics which must be computed (only nodes/edges are given)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBOwnTLDef_h
 #define NBOwnTLDef_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <set>
@@ -133,9 +140,6 @@ public:
     /* build optional all-red phase */
     void buildAllRedState(SUMOTime allRedTime, NBTrafficLightLogic* logic, const std::string& state);
 
-    ///@brief Returns the maximum index controlled by this traffic light
-    int getMaxIndex();
-
 protected:
     /// @name Protected methods from NBTrafficLightDefinition-interface
     /// @{
@@ -168,10 +172,6 @@ protected:
 
 
 protected:
-
-    /// @brief test whether a joined tls with layout 'opposites' would be built without dedicated left-turn phase
-    bool corridorLike() const;
-        
     /** @brief Returns the weight of a stream given its direction
      * @param[in] dir The direction of the stream
      * @return This stream's weight
@@ -219,25 +219,8 @@ protected:
     static EdgeVector getConnectedOuterEdges(const EdgeVector& incoming);
 
 
-    /// @brief allow connections that are compatible with the chosen edges
-    std::string allowCompatible(std::string state, const EdgeVector& fromEdges, const EdgeVector& toEdges,
-            const std::vector<int>& fromLanes, const std::vector<int>& toLanes);
-
-    std::string allowSingleEdge(std::string state, const EdgeVector& fromEdges);
-
-    std::string allowFollowers(std::string state, const EdgeVector& fromEdges, const EdgeVector& toEdges);
-            
-    std::string allowPredecessors(std::string state, const EdgeVector& fromEdges, const EdgeVector& toEdges,
-            const std::vector<int>& fromLanes, const std::vector<int>& toLanes);
-
-    std::string allowUnrelated(std::string state, const EdgeVector& fromEdges, const EdgeVector& toEdges,
-            const std::vector<bool>& isTurnaround,
-            const std::vector<NBNode::Crossing*>& crossings);
-
-    std::string allowByVClass(std::string state, const EdgeVector& fromEdges, const EdgeVector& toEdges, SVCPermissions perm);
-
-    /// @brief whether the given index is forbidden by a green link in the current state
-    bool forbidden(const std::string& state, int index, const EdgeVector& fromEdges, const EdgeVector& toEdges);
+    /// @brief allow connections that follow on of the chosen edges
+    std::string allowFollowersOfChosen(std::string state, const EdgeVector& fromEdges, const EdgeVector& toEdges);
 
     /** @brief change 'G' to 'g' for conflicting connections
      * @param[in] state
@@ -255,9 +238,6 @@ protected:
                                    const std::vector<int>& fromLanes,
                                    const std::vector<bool>& hadGreenMajor,
                                    bool& haveForbiddenLeftMover, std::vector<bool>& rightTurnConflicts);
-
-    /// @brief fix states in regard to custom crossing indices
-    void checkCustomCrossingIndices(NBTrafficLightLogic* logic) const;
 
     /** @class edge_by_incoming_priority_sorter
      * @brief Sorts edges by their priority within the node they end at

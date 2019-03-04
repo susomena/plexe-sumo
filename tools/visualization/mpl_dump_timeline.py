@@ -1,30 +1,31 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    mpl_dump_timeline.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2007-10-25
-# @version $Id$
-
 """
+@file    mpl_dump_timeline.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2007-10-25
+@version $Id$
+
 
 This script reads the value of designated edges from
  a set of given dump-files and displays them.
 
 matplotlib has to be installed for this purpose
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
 
 from matplotlib import rcParams
-from pylab import arange, figure, plot, savefig, show, xlim, xticks, ylim, yticks
+from pylab import *
 from optparse import OptionParser
 from xml.sax import make_parser, handler
 
@@ -56,7 +57,6 @@ class WeightsReader(handler.ContentHandler):
             id = attrs['id']
             if id in self._edges:
                 self._edge2value[self._time][id] = float(attrs[self._value])
-
 
 # initialise
 optParser = OptionParser()

@@ -1,26 +1,27 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    basic_rilsanet.py
+@author  Daniel Krajzewicz
+@date    2014-09-01
+@version $Id$
 
-# @file    basic_rilsanet.py
-# @author  Daniel Krajzewicz
-# @date    2014-09-01
-# @version $Id$
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
 
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
 
-from . import fileNeedsRebuild, Scenario
+from . import *
 import os
-import shutil
 import sumolib.net.generator.grid as netGenerator
 import sumolib.net.generator.demand as demandGenerator
-from sumolib.net.generator.network import Edge, Lane
+from sumolib.net.generator.network import *
 
 
 flowsRiLSA1 = [
@@ -98,27 +99,21 @@ class Scenario_BasicRiLSANet(Scenario):
                     fdow.write(
                         '   <tlLogic id="%s/%s" type="static" programID="adapted" offset="0">\n' % (x, y))
                     fdow.write(
-                        ('      <phase duration="31" state="rrrrrGGgrrrrrGGgGrGr" minDur="10" maxDur="50" ' +
-                         'type="target;decisional" targetLanes="%s_1 %s_2 %s_1 %s_2"/>\n') % (
-                            eedge, eedge, wedge, wedge))
+                        '      <phase duration="31" state="rrrrrGGgrrrrrGGgGrGr" minDur="10" maxDur="50" type="target;decisional" targetLanes="%s_1 %s_2 %s_1 %s_2"/>\n' % (eedge, eedge, wedge, wedge))
                     fdow.write(
                         '      <phase duration="4"  state="rrrrryygrrrrryygrrrr" type="transient"/>\n')
                     fdow.write(
-                        ('      <phase duration="6"  state="rrrrrrrGrrrrrrrGrrrr" minDur="2" maxDur="20" ' +
-                         'type="decisional" targetLanes="%s_2 %s_2"/>\n') % (eedge, wedge))
+                        '      <phase duration="6"  state="rrrrrrrGrrrrrrrGrrrr" minDur="2" maxDur="20" type="decisional" targetLanes="%s_2 %s_2"/>\n' % (eedge, wedge))
                     fdow.write(
                         '      <phase duration="4"  state="rrrrrrryrrrrrrryrrrr" type="transient"/>\n')
                     fdow.write(
                         '      <phase duration="4"  state="rrrrrrrrrrrrrrrrrrrr" type="transient;commit"/>\n')
                     fdow.write(
-                        ('      <phase duration="31" state="rGGgrrrrrGGgrrrrrGrG" minDur="10" maxDur="50" ' +
-                         'type="target;decisional" targetLanes="%s_1 %s_2 %s_1 %s_2"/>\n') % (
-                            sedge, sedge, nedge, nedge))
+                        '      <phase duration="31" state="rGGgrrrrrGGgrrrrrGrG" minDur="10" maxDur="50" type="target;decisional" targetLanes="%s_1 %s_2 %s_1 %s_2"/>\n' % (sedge, sedge, nedge, nedge))
                     fdow.write(
                         '      <phase duration="4"  state="ryygrrrrryygrrrrrrrr" type="transient"/>\n')
                     fdow.write(
-                        ('      <phase duration="6"  state="rrrGrrrrrrrGrrrrrrrr" minDur="2" maxDur="20" ' +
-                         'type="decisional" targetLanes="%s_2 %s_2"/>\n') % (sedge, nedge))
+                        '      <phase duration="6"  state="rrrGrrrrrrrGrrrrrrrr" minDur="2" maxDur="20" type="decisional" targetLanes="%s_2 %s_2"/>\n' % (sedge, nedge))
                     fdow.write(
                         '      <phase duration="4"  state="ryryrrrrryryrrrrrrrr" type="transient"/>\n')
                     fdow.write(
@@ -168,12 +163,8 @@ class Scenario_BasicRiLSANet(Scenario):
                                 oedge = "1/%s_to_0/%s.-100" % (ie, ie)
                             if rel[0] == "me":
                                 oedge = "3/%s_to_4/%s.-100" % (ie, ie)
-                            self.demand.addStream(demandGenerator.Stream(iedge + "__" + oedge, 0, 3600, flow, iedge,
-                                                                         oedge,
-                                                                         {"passenger": pkwEprob,
-                                                                          "COLOMBO_undetectable_passenger": pkwNprob,
-                                                                          "hdv": lkwEprob,
-                                                                          "COLOMBO_undetectable_hdv": lkwNprob}))
+                            self.demand.addStream(demandGenerator.Stream(iedge + "__" + oedge, 0, 3600, flow, iedge, oedge,
+                                                                         {"passenger": pkwEprob, "COLOMBO_undetectable_passenger": pkwNprob, "hdv": lkwEprob, "COLOMBO_undetectable_hdv": lkwNprob}))
                             continue
                         for oee in range(1, 4):
                             if rel[0] == "mn":
@@ -185,14 +176,10 @@ class Scenario_BasicRiLSANet(Scenario):
                             if rel[0] == "me":
                                 oedge = "3/%s_to_4/%s.-100" % (oee, oee)
                             print("%s %s " % (oee, via))
-                            self.demand.addStream(demandGenerator.Stream(iedge + "__" + oedge, 0, 3600, int(flow / 3.),
-                                                                         iedge, oedge,
-                                                                         {"passenger": pkwEprob,
-                                                                          "COLOMBO_undetectable_passenger": pkwNprob,
-                                                                          "hdv": lkwEprob,
-                                                                          "COLOMBO_undetectable_hdv": lkwNprob}))
+                            self.demand.addStream(demandGenerator.Stream(iedge + "__" + oedge, 0, 3600, int(flow / 3.), iedge, oedge,
+                                                                         {"passenger": pkwEprob, "COLOMBO_undetectable_passenger": pkwNprob, "hdv": lkwEprob, "COLOMBO_undetectable_hdv": lkwNprob}))
             if fileNeedsRebuild(self.demandName, "duarouter"):
                 self.demand.build(0, 86400, self.netName, self.demandName)
 
-        shutil.copy(self.NET_FILE, self.sandboxPath(self.NET_FILE))
-        shutil.copy(self.TLS_FILE, self.sandboxPath(self.TLS_FILE))
+        shutils.copy(self.NET_FILE, self.sandboxPath(self.NET_FILE))
+        shutils.copy(self.TLS_FILE, self.sandboxPath(self.TLS_FILE))

@@ -1,41 +1,33 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2017-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@author Leonhard Luecken
+@date   2017-04-09
 
-# @file    _pvehicle.py
-# @author Leonhard Luecken
-# @date   2017-04-09
-# @version $Id$
+-----------------------------------
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
 
-import os
-import sys
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+-----------------------------------
+"""
 from collections import defaultdict
 
-if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:
-    sys.exit("please declare environment variable 'SUMO_HOME'")
+import traci
+import traci.constants as tc
 
-import traci  # noqa
-import traci.constants as tc  # noqa
+from simpla._platoon import Platoon
+import simpla._config as cfg
+from simpla._reporting import Warner, Reporter
+from simpla._platoonmode import PlatoonMode
 
-from simpla._platoon import Platoon  # noqa
-import simpla._reporting as rp  # noqa
-import simpla._config as cfg  # noqa
-from simpla._platoonmode import PlatoonMode  # noqa
-
-warn = rp.Warner("PVehicle")
-report = rp.Reporter("PVehicle")
+warn = Warner("PVehicle")
+report = Reporter("PVehicle")
 
 # lookup table for vType parameters
 vTypeParameters = defaultdict(dict)
-
-WARNED_DEFAULT = dict([(mode, False) for mode in PlatoonMode])
 
 
 class pVehicleState(object):
@@ -85,7 +77,6 @@ class PVehicle(object):
             self._vTypes[mode] = self._determinePlatoonVType(mode)
             self._laneChangeModes[mode] = cfg.LC_MODE[mode]
             self._speedFactors[mode] = cfg.SPEEDFACTOR[mode]
-        self._speedFactors[PlatoonMode.NONE] = traci.vehicletype.getSpeedFactor(self._vTypes[PlatoonMode.NONE])
 
         # Initialize platoon mode to none
         self._currentPlatoonMode = PlatoonMode.NONE
@@ -114,27 +105,21 @@ class PVehicle(object):
         between original and platoon-vTypes. If the original vType is not mapped to any platoon-vtypes,
         the original vType is used for platooning as well
         '''
-        global WARNED_DEFAULT
         # original vType
         origVType = self._vTypes[PlatoonMode.NONE]
         if origVType not in cfg.PLATOON_VTYPES \
                 or mode not in cfg.PLATOON_VTYPES[origVType] \
                 or cfg.PLATOON_VTYPES[origVType][mode] is "":
             if "default" in cfg.PLATOON_VTYPES and mode in cfg.PLATOON_VTYPES["default"]:
-                if rp.VERBOSITY >= 1 and not WARNED_DEFAULT[mode]:
-                    warn(("Using default vType '%s' for vehicle '%s' (PlatoonMode: '%s'). " +
-                          "This warning is issued only once.") %
+                if cfg.VERBOSITY >= 2:
+                    warn("Using default vType '%s' for vehicle '%s' (PlatoonMode: '%s')." %
                          (cfg.PLATOON_VTYPES["default"][mode], self._ID, PlatoonMode(mode).name))
-                    WARNED_DEFAULT[mode] = True
                 return cfg.PLATOON_VTYPES["default"][mode]
             else:
-                if rp.VERBOSITY >= 1 and not WARNED_DEFAULT[mode]:
-                    warn(("No vType specified for PlatoonMode '%s' for vehicle '%s'. Behavior within " +
-                          "platoon is NOT altered. This warning is issued only once.") % (
-                        PlatoonMode(mode).name, self._ID))
-                    WARNED_DEFAULT[mode] = True
+                warn("No vType specified for PlatoonMode '%s' for vehicle '%s'. Behavior within platoon is NOT altered." % (
+                    PlatoonMode(mode).name, self._ID))
                 return origVType
-        if rp.VERBOSITY >= 3:
+        if cfg.VERBOSITY >= 3:
             report("Using vType '%s' for vehicle '%s' (PlatoonMode: '%s')." %
                    (cfg.PLATOON_VTYPES[origVType][mode], self._ID, PlatoonMode(mode).name))
         return cfg.PLATOON_VTYPES[origVType][mode]
@@ -191,7 +176,7 @@ class PVehicle(object):
             # do nothing mode is already chosen
             return
 
-        if rp.VERBOSITY >= 3:
+        if cfg.VERBOSITY >= 3:
             report("Vehicle '%s': Setting PlatoonMode '%s'" % (self._ID, PlatoonMode(mode).name))
 
         if self._vTypes[mode] != self._vTypes[self._currentPlatoonMode]:
@@ -227,7 +212,7 @@ class PVehicle(object):
         Increases the mode-specific waiting time for a switch, and decreases the active speed factor accordingly
         '''
         self._switchWaitingTime[mode] += increment
-        if rp.VERBOSITY >= 4:
+        if cfg.VERBOSITY >= 4:
             report("Vehicle '%s' increases switch waiting time for %s to %s" %
                    (self._ID, mode, self._switchWaitingTime[mode]), 3)
         self._setActiveSpeedFactor(self._switchWaitingTime[mode])
@@ -238,7 +223,7 @@ class PVehicle(object):
         Resets waiting time for a switch to a mode to 0. or, if mode==None, all times are reset to 0.
         The active speed factor is also reset.
         '''
-        if rp.VERBOSITY >= 4:
+        if cfg.VERBOSITY >= 4:
             report("Vehicle '%s' resets switch waiting time." % self._ID, 3)
         if mode is None:
             for e in PlatoonMode:
@@ -256,8 +241,8 @@ class PVehicle(object):
         TODO: This mechanism does not work on highways, where the vehicles maxspeed is determining
               the travel speed and not the road's speed limit.
         '''
-        self._activeSpeedFactor = cfg.SPEEDFACTOR[self._currentPlatoonMode] \
-            / (1. + self._switchImpatienceFactor * switchWaitingTime)
+        self._activeSpeedFactor = cfg.SPEEDFACTOR[self._currentPlatoonMode] / \
+            (1. + self._switchImpatienceFactor * switchWaitingTime)
         traci.vehicle.setSpeedFactor(self._ID, self._activeSpeedFactor)
 
     def _resetActiveSpeedFactor(self):
@@ -266,9 +251,6 @@ class PVehicle(object):
         Resets the active speed factor to the mode specific base value
         '''
         self._activeSpeedFactor = cfg.SPEEDFACTOR[self._currentPlatoonMode]
-        if self._activeSpeedFactor is None:
-            assert(self._currentPlatoonMode is PlatoonMode.NONE)
-            self._activeSpeedFactor = self._speedFactors[self._currentPlatoonMode]
         traci.vehicle.setSpeedFactor(self._ID, self._activeSpeedFactor)
 
     def splitCountDown(self, dt):
@@ -277,7 +259,7 @@ class PVehicle(object):
         Decreases the time until the vehicle is split from its platoon
         '''
         self._timeUntilSplit -= dt
-        if rp.VERBOSITY >= 4:
+        if cfg.VERBOSITY >= 3:
             report("Time until split from platoon for veh '%s': %s" % (self._ID, self._timeUntilSplit))
         return self._timeUntilSplit
 
@@ -316,12 +298,10 @@ class PVehicle(object):
 
         # Check value of switchImpatience
         if (switchImpatience > 1.):
-            if rp.VERBOSITY >= 1:
-                warn("Given parameter switchImpatience > 1. Assuming == 1.")
+            warn("Given parameter switchImpatience > 1. Assuming == 1.")
             switchImpatience = 1.
         elif (switchImpatience < 0.):
-            if rp.VERBOSITY >= 1:
-                warn("Given parameter switchImpatience < 0. Assuming == 0.")
+            warn("Given parameter switchImpatience < 0. Assuming == 0.")
             switchImpatience = 0.
 
         # obtain the preferred deceleration and the tau of the target vType
@@ -369,7 +349,7 @@ class PVehicle(object):
         headwayDist = speed * tau
         followerBrakeGap = PVehicle.brakeGap(speed, maxDecel)
 
-        if rp.VERBOSITY >= 4:
+        if cfg.VERBOSITY >= 4:
             report("leaderSpeed = %s" % leaderSpeed +
                    "\nleaderDecel = %s" % leaderDecel +
                    "\ngap = %s" % gap +

@@ -1,20 +1,24 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    edge.py
+@author  Daniel Krajzewicz
+@author  Laura Bieker
+@author  Karol Stosiek
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2011-11-28
+@version $Id$
 
-# @file    edge.py
-# @author  Daniel Krajzewicz
-# @author  Laura Bieker
-# @author  Karol Stosiek
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2011-11-28
-# @version $Id$
+This file contains a Python-representation of a single edge.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from .connection import Connection
 from .lane import addJunctionPos
 
@@ -37,7 +41,6 @@ class Edge:
         self._length = None
         self._incoming = {}
         self._outgoing = {}
-        self._crossingEdges = []
         self._shape = None
         self._shapeWithJunctions = None
         self._shape3D = None
@@ -47,7 +50,6 @@ class Edge:
         self._function = function
         self._tls = None
         self._name = name
-        self._params = {}
 
     def getName(self):
         return self._name
@@ -69,9 +71,6 @@ class Edge:
     def getTLS(self):
         return self._tls
 
-    def getCrossingEdges(self):
-        return self._crossingEdges
-
     def addLane(self, lane):
         self._lanes.append(lane)
         self._speed = lane.getSpeed()
@@ -87,10 +86,6 @@ class Edge:
             self._incoming[conn._from] = []
         self._incoming[conn._from].append(conn)
 
-    def _addCrossingEdge(self, edge):
-        if edge not in self._crossingEdges:
-            self._crossingEdges.append(edge)
-
     def setRawShape(self, shape):
         self._rawShape3D = shape
 
@@ -102,10 +97,6 @@ class Edge:
 
     def getOutgoing(self):
         return self._outgoing
-
-    def getConnections(self, toEdge):
-        """Returns all connections to the given target edge"""
-        return self._outgoing.get(toEdge, [])
 
     def getRawShape(self):
         """Return the shape that was used in netconvert for building this edge (2D)."""
@@ -145,7 +136,7 @@ class Edge:
             xmax = max(xmax, p[0])
             ymin = min(ymin, p[1])
             ymax = max(ymax, p[1])
-        assert(xmin != xmax or ymin != ymax or self._function == "internal")
+        assert(xmin != xmax or ymin != ymax)
         return (xmin, ymin, xmax, ymax)
 
     def getClosestLanePosDist(self, point, perpendicular=False):
@@ -193,14 +184,11 @@ class Edge:
                 self._shape3D.append(
                     (x / float(numLanes), y / float(numLanes), z / float(numLanes)))
 
-        if self._function in ["crossing", "walkingarea"]:
-            self._shapeWithJunctions3D = self._shape3D
-            self._rawShape3D = self._shape3D
-        else:
-            self._shapeWithJunctions3D = addJunctionPos(self._shape3D,
-                                                        self._from.getCoord3D(), self._to.getCoord3D())
-            if self._rawShape3D == []:
-                self._rawShape3D = [self._from.getCoord3D(), self._to.getCoord3D()]
+        self._shapeWithJunctions3D = addJunctionPos(self._shape3D,
+                                                    self._from.getCoord3D(), self._to.getCoord3D())
+
+        if self._rawShape3D == []:
+            self._rawShape3D = [self._from.getCoord3D(), self._to.getCoord3D()]
 
         # 2d - versions
         self._shape = [(x, y) for x, y, z in self._shape3D]
@@ -232,18 +220,9 @@ class Edge:
     def allows(self, vClass):
         """true if this edge has a lane which allows the given vehicle class"""
         for lane in self._lanes:
-            if lane.allows(vClass):
+            if vClass in lane._allowed:
                 return True
         return False
-
-    def setParam(self, key, value):
-        self._params[key] = value
-
-    def getParam(self, key, default=None):
-        return self._params.get(key, default)
-
-    def getParams(self):
-        return self._params
 
     def __repr__(self):
         if self.getFunction() == '':

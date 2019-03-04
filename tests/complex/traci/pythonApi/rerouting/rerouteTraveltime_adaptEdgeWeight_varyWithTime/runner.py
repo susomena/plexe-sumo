@@ -1,42 +1,50 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Jakob Erdmann
+@date    2017-01-23
+@version $Id$
 
-# @file    runner.py
-# @author  Jakob Erdmann
-# @date    2017-01-23
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 from __future__ import print_function
 from __future__ import absolute_import
 import os
+import subprocess
 import sys
-
-SUMO_HOME = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..", "..")
-sys.path.append(os.path.join(os.environ.get("SUMO_HOME", SUMO_HOME), "tools"))
-if len(sys.argv) > 1:
-    import libsumo as traci  # noqa
-else:
-    import traci  # noqa
+import random
+sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
+import traci
 import sumolib  # noqa
+
+sumoBinary = os.environ["SUMO_BINARY"]
+PORT = sumolib.miscutils.getFreeSocketPort()
+sumoProcess = subprocess.Popen([sumoBinary,
+                                '-c', 'sumo.sumocfg',
+                                '-S', '-Q',
+                                '--remote-port', str(PORT)], stdout=sys.stdout)
 
 
 def checkMiddleEdges():
-    now = traci.simulation.getTime()
+    now = traci.simulation.getCurrentTime() // 1000
     for edge in ["middle", "middle2", "middle3"]:
-        print("edge=%s current=%s adapted=%s" % (edge, traci.edge.getTraveltime(edge),
+        print("edge=%s current=%s adapted=%s" % (edge,
+                                                 traci.edge.getTraveltime(
+                                                     edge),
                                                  traci.edge.getAdaptedTraveltime(edge, now)))
 
-
 vehID = "ego"
-traci.start([sumolib.checkBinary('sumo'), "-c", "sumo.sumocfg"])
+traci.init(PORT)
 traci.simulationStep()
 checkMiddleEdges()
 traci.edge.adaptTraveltime("middle", 20, 300, 600)
@@ -47,3 +55,4 @@ traci.vehicle.rerouteTraveltime(vehID, False)
 while traci.simulation.getMinExpectedNumber() > 0:
     traci.simulationStep()
 traci.close()
+sumoProcess.wait()

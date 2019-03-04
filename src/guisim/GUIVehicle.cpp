@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIVehicle.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,16 +8,32 @@
 ///
 // A MSVehicle extended by some values for usage within the gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cmath>
 #include <vector>
 #include <string>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/common/StringUtils.h>
 #include <utils/vehicle/SUMOVehicleParameter.h>
 #include <utils/emissions/PollutantsInterface.h>
@@ -39,7 +47,6 @@
 #include <utils/gui/div/GLHelper.h>
 #include <utils/gui/div/GLObjectValuePassConnector.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
-#include <utils/gui/div/GUIBaseVehicleHelper.h>
 #include <microsim/MSGlobals.h>
 #include <microsim/MSVehicle.h>
 #include <microsim/MSJunction.h>
@@ -48,13 +55,10 @@
 #include <microsim/logging/FunctionBinding.h>
 #include <microsim/lcmodels/MSAbstractLaneChangeModel.h>
 #include <microsim/devices/MSDevice_Vehroutes.h>
-#include <microsim/devices/MSDevice_Routing.h>
-#include <microsim/devices/MSRoutingEngine.h>
 #include <microsim/devices/MSDevice_Transportable.h>
 #include <microsim/devices/MSDevice_BTreceiver.h>
 #include <gui/GUIApplicationWindow.h>
 #include <gui/GUIGlobals.h>
-
 #include "GUIVehicle.h"
 #include "GUIPerson.h"
 #include "GUIContainer.h"
@@ -62,6 +66,7 @@
 #include "GUIEdge.h"
 #include "GUILane.h"
 
+//#define DRAW_BOUNDING_BOX
 //#define DEBUG_FOES
 
 // ===========================================================================
@@ -97,16 +102,12 @@ GUIVehicle::getParameterWindow(GUIMainWindow& app,
                                GUISUMOAbstractView&) {
     const int sublaneParams = MSGlobals::gLateralResolution > 0 ? 4 : 0;
     GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 39 + sublaneParams + (int)getParameter().getParametersMap().size());
+        new GUIParameterTableWindow(app, *this, 37 + sublaneParams + (int)getParameter().getMap().size());
     // add items
     ret->mkItem("lane [id]", false, Named::getIDSecure(myLane, "n/a"));
-    if (MSAbstractLaneChangeModel::haveLateralDynamics()) {
+    if (MSGlobals::gLaneChangeDuration > 0 || MSGlobals::gLateralResolution > 0) {
         const MSLane* shadowLane = getLaneChangeModel().getShadowLane();
-        ret->mkItem("shadow lane [id]", false, shadowLane == nullptr ? "" : shadowLane->getID());
-    }
-    if (MSGlobals::gLateralResolution > 0) {
-        const MSLane* targetLane = getLaneChangeModel().getTargetLane();
-        ret->mkItem("target lane [id]", false, targetLane == nullptr ? "" : targetLane->getID());
+        ret->mkItem("shadow lane [id]", false, shadowLane == 0 ? "" : shadowLane->getID());
     }
     ret->mkItem("position [m]", true,
                 new FunctionBinding<GUIVehicle, double>(this, &MSVehicle::getPositionOnLane));
@@ -164,21 +165,24 @@ GUIVehicle::getParameterWindow(GUIMainWindow& app,
                 new FunctionBinding<GUIVehicle, double>(this, &MSVehicle::getElectricityConsumption));
     ret->mkItem("noise (Harmonoise) [dB]", true,
                 new FunctionBinding<GUIVehicle, double>(this, &MSVehicle::getHarmonoise_NoiseEmissions));
-    ret->mkItem("devices", false, toString(myDevices));
+    std::ostringstream str;
+    for (std::vector<MSDevice*>::const_iterator i = myDevices.begin(); i != myDevices.end(); ++i) {
+        if (i != myDevices.begin()) {
+            str << ' ';
+        }
+        str << (*i)->getID().substr(0, (*i)->getID().find(getID()));
+    }
+    ret->mkItem("devices", false, str.str());
     ret->mkItem("persons", true,
                 new FunctionBinding<GUIVehicle, int>(this, &MSVehicle::getPersonNumber));
     ret->mkItem("containers", true,
                 new FunctionBinding<GUIVehicle, int>(this, &MSVehicle::getContainerNumber));
-
-    ret->mkItem("lcState right", false, toString((LaneChangeAction)getLaneChangeModel().getSavedState(-1).second));
-    ret->mkItem("lcState left", false, toString((LaneChangeAction)getLaneChangeModel().getSavedState(1).second));
     // close building
     if (MSGlobals::gLateralResolution > 0) {
         ret->mkItem("right side on edge [m]", true, new FunctionBinding<GUIVehicle, double>(this, &GUIVehicle::getRightSideOnEdge2));
         ret->mkItem("left side on edge [m]", true, new FunctionBinding<GUIVehicle, double>(this, &GUIVehicle::getLeftSideOnEdge));
         ret->mkItem("rightmost edge sublane [#]", true, new FunctionBinding<GUIVehicle, int>(this, &GUIVehicle::getRightSublaneOnEdge));
         ret->mkItem("leftmost edge sublane [#]", true, new FunctionBinding<GUIVehicle, int>(this, &GUIVehicle::getLeftSublaneOnEdge));
-        ret->mkItem("lane change maneuver distance [m]", true, new FunctionBinding<GUIVehicle, double>(this, &GUIVehicle::getManeuverDist));
     }
     ret->closeBuilding(&getParameter());
     return ret;
@@ -189,10 +193,7 @@ GUIParameterTableWindow*
 GUIVehicle::getTypeParameterWindow(GUIMainWindow& app,
                                    GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 26
-                                    + (int)myType->getParameter().getParametersMap().size()
-                                    + (int)myType->getParameter().lcParameter.size()
-                                    + (int)myType->getParameter().jmParameter.size());
+        new GUIParameterTableWindow(app, *this, 24 + (int)myType->getParameter().getMap().size());
     // add items
     ret->mkItem("Type Information:", false, "");
     ret->mkItem("type [id]", false, myType->getID());
@@ -202,9 +203,7 @@ GUIVehicle::getTypeParameterWindow(GUIMainWindow& app,
     ret->mkItem("minGap", false, myType->getMinGap());
     ret->mkItem("vehicle class", false, SumoVehicleClassStrings.getString(myType->getVehicleClass()));
     ret->mkItem("emission class", false, PollutantsInterface::getName(myType->getEmissionClass()));
-    ret->mkItem("carFollowModel", false, SUMOXMLDefinitions::CarFollowModels.getString((SumoXMLTag)getCarFollowModel().getModelID()));
-    ret->mkItem("LaneChangeModel", false, SUMOXMLDefinitions::LaneChangeModels.getString(getLaneChangeModel().getModelID()));
-    ret->mkItem("guiShape", false, getVehicleShapeName(myType->getGuiShape()));
+    ret->mkItem("car follow model", false, SUMOXMLDefinitions::CarFollowModels.getString((SumoXMLTag)getCarFollowModel().getModelID()));
     ret->mkItem("maximum speed [m/s]", false, getMaxSpeed());
     ret->mkItem("maximum acceleration [m/s^2]", false, getCarFollowModel().getMaxAccel());
     ret->mkItem("maximum deceleration [m/s^2]", false, getCarFollowModel().getMaxDecel());
@@ -220,14 +219,6 @@ GUIVehicle::getTypeParameterWindow(GUIMainWindow& app,
         ret->mkItem("minGapLat", false, myType->getMinGapLat());
         ret->mkItem("maxSpeedLat", false, myType->getMaxSpeedLat());
         ret->mkItem("latAlignment", false, toString(myType->getPreferredLateralAlignment()));
-    } else if (MSGlobals::gLaneChangeDuration > 0) {
-        ret->mkItem("maxSpeedLat", false, myType->getMaxSpeedLat());
-    }
-    for (auto item : myType->getParameter().lcParameter) {
-        ret->mkItem(toString(item.first).c_str(), false, toString(item.second));
-    }
-    for (auto item : myType->getParameter().jmParameter) {
-        ret->mkItem(toString(item.first).c_str(), false, toString(item.second));
     }
 
     // close building
@@ -237,16 +228,56 @@ GUIVehicle::getTypeParameterWindow(GUIMainWindow& app,
 
 
 
+
+void
+GUIVehicle::drawAction_drawPersonsAndContainers(const GUIVisualizationSettings& s) const {
+    if (myPersonDevice != 0) {
+        const std::vector<MSTransportable*>& ps = myPersonDevice->getTransportables();
+        int personIndex = 0;
+        for (std::vector<MSTransportable*>::const_iterator i = ps.begin(); i != ps.end(); ++i) {
+            GUIPerson* person = dynamic_cast<GUIPerson*>(*i);
+            assert(person != 0);
+            person->setPositionInVehicle(getSeatPosition(personIndex++));
+            person->drawGL(s);
+        }
+    }
+    if (myContainerDevice != 0) {
+        const std::vector<MSTransportable*>& cs = myContainerDevice->getTransportables();
+        int containerIndex = 0;
+        for (std::vector<MSTransportable*>::const_iterator i = cs.begin(); i != cs.end(); ++i) {
+            GUIContainer* container = dynamic_cast<GUIContainer*>(*i);
+            assert(container != 0);
+            container->setPositionInVehicle(getSeatPosition(containerIndex++));
+            container->drawGL(s);
+        }
+    }
+#ifdef DRAW_BOUNDING_BOX
+    glPushName(getGlID());
+    glPushMatrix();
+    glTranslated(0, 0, getType());
+    PositionVector boundingBox = getBoundingBox();
+    boundingBox.push_back(boundingBox.front());
+    PositionVector smallBB = getBoundingPoly();
+    glColor3d(0, .8, 0);
+    GLHelper::drawLine(boundingBox);
+    glColor3d(0.5, .8, 0);
+    GLHelper::drawLine(smallBB);
+    //GLHelper::drawBoxLines(getBoundingBox(), 0.5);
+    glPopMatrix();
+    glPopName();
+#endif
+}
+
+
 void
 GUIVehicle::drawAction_drawLinkItems(const GUIVisualizationSettings& s) const {
-    glTranslated(0, 0, getType() + .2); // draw on top of cars
     for (DriveItemVector::const_iterator i = myLFLinkLanes.begin(); i != myLFLinkLanes.end(); ++i) {
-        if ((*i).myLink == nullptr) {
+        if ((*i).myLink == 0) {
             continue;
         }
         MSLink* link = (*i).myLink;
         MSLane* via = link->getViaLaneOrLane();
-        if (via != nullptr) {
+        if (via != 0) {
             Position p = via->getShape()[0];
             if ((*i).mySetRequest) {
                 glColor3d(0, .8, 0);
@@ -263,152 +294,31 @@ GUIVehicle::drawAction_drawLinkItems(const GUIVisualizationSettings& s) const {
             UNUSED_PARAMETER(avi); // only used for assertion
         }
     }
-    glTranslated(0, 0, getType() - .2); // draw on top of cars
 }
 
 
-void
-GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool asImage) const {
-    RGBColor current = GLHelper::getColor();
-    RGBColor darker = current.changedBrightness(-51);
-    const double exaggeration = s.vehicleSize.getExaggeration(s, this);
-    const double totalLength = getVType().getLength();
-    double upscaleLength = exaggeration;
-    if (exaggeration > 1 && totalLength > 5) {
-        // reduce the length/width ratio because this is not usefull at high zoom
-        upscaleLength = MAX2(1.0, upscaleLength * (5 + sqrt(totalLength - 5)) / totalLength);
+bool
+GUIVehicle::drawAction_drawCarriageClass(const GUIVisualizationSettings& s, SUMOVehicleShape guiShape, bool asImage) const {
+    switch (guiShape) {
+        case SVS_BUS_FLEXIBLE:
+            drawAction_drawRailCarriages(s, 8.25, 0, 0, asImage); // 16.5 overall, 2 modules http://de.wikipedia.org/wiki/Ikarus_180
+            break;
+        case SVS_RAIL:
+            drawAction_drawRailCarriages(s, 24.5, 1, 1, asImage); // http://de.wikipedia.org/wiki/UIC-Y-Wagen_%28DR%29
+            break;
+        case SVS_RAIL_CAR:
+            drawAction_drawRailCarriages(s, 16.85, 1, 0, asImage); // 67.4m overall, 4 carriages http://de.wikipedia.org/wiki/DB-Baureihe_423
+//            drawAction_drawRailCarriages(s, 5.71, 0, 0, asImage); // 40.0m overall, 7 modules http://de.wikipedia.org/wiki/Bombardier_Flexity_Berlin
+//            drawAction_drawRailCarriages(s, 9.44, 1, 1, asImage); // actually length of the locomotive http://de.wikipedia.org/wiki/KJI_Nr._20_und_21
+//            drawAction_drawRailCarriages(s, 24.775, 0, 0, asImage); // http://de.wikipedia.org/wiki/ICE_3
+            break;
+        case SVS_RAIL_CARGO:
+            drawAction_drawRailCarriages(s, 13.86, 1, 0, asImage); // UIC 571-1 http://de.wikipedia.org/wiki/Flachwagen
+            break;
+        default:
+            return false;
     }
-    const double locomotiveLength = getVehicleType().getParameter().locomotiveLength * upscaleLength;
-    if (exaggeration == 0) {
-        return;
-    }
-    const double defaultLength = getVehicleType().getParameter().carriageLength * upscaleLength;
-    const int firstPassengerCarriage = defaultLength == locomotiveLength ? 0 : 1;
-    const double carriageGap = getVehicleType().getParameter().carriageGap * upscaleLength;
-    const double length = totalLength * upscaleLength;
-    const double halfWidth = getVehicleType().getWidth() / 2.0 * exaggeration;
-    glPopMatrix(); // undo initial translation and rotation
-    const double xCornerCut = 0.3 * exaggeration;
-    const double yCornerCut = 0.4 * exaggeration;
-    // round to closest integer
-    const int numCarriages = MAX2(1, 1 + (int)((length - locomotiveLength) / (defaultLength + carriageGap) + 0.5));
-    assert(numCarriages > 0);
-    double carriageLengthWithGap = length / numCarriages;
-    double carriageLength = carriageLengthWithGap - carriageGap;
-    double firstCarriageLength = carriageLength;
-    if (defaultLength != locomotiveLength && numCarriages > 1) {
-        firstCarriageLength = locomotiveLength;
-        carriageLengthWithGap = (length - locomotiveLength) / (numCarriages - 1);
-        carriageLength = carriageLengthWithGap - carriageGap;
-    }
-    // lane on which the carriage front is situated
-    MSLane* lane = myLane;
-    int routeIndex = getRoutePosition();
-    // lane on which the carriage back is situated
-    MSLane* backLane = myLane;
-    int backRouteIndex = routeIndex;
-    // offsets of front and back
-    double carriageOffset = myState.pos();
-    double carriageBackOffset = myState.pos() - firstCarriageLength;
-    // handle seats
-    int requiredSeats = getNumPassengers();
-    if (requiredSeats > 0) {
-        mySeatPositions.clear();
-    }
-    Position front, back;
-    double angle = 0.;
-    // draw individual carriages
-    double curCLength = firstCarriageLength;
-    //std::cout << SIMTIME << " veh=" << getID() << " curCLength=" << curCLength << " loc=" << locomotiveLength << " car=" << carriageLength << " tlen=" << totalLength << " len=" << length << "\n";
-    for (int i = 0; i < numCarriages; ++i) {
-        if (i > 0) {
-            curCLength = carriageLength;
-        }
-        while (carriageOffset < 0) {
-            MSLane* prev = getPreviousLane(lane, routeIndex);
-            if (prev != lane) {
-                carriageOffset += prev->getLength();
-            } else {
-                // no lane available for drawing.
-                carriageOffset = 0;
-            }
-            lane = prev;
-        }
-        while (carriageBackOffset < 0) {
-            MSLane* prev = getPreviousLane(backLane, backRouteIndex);
-            if (prev != backLane) {
-                carriageBackOffset += prev->getLength();
-            } else {
-                // no lane available for drawing.
-                carriageBackOffset = 0;
-            }
-            backLane = prev;
-        }
-        front = lane->geometryPositionAtOffset(carriageOffset);
-        back = backLane->geometryPositionAtOffset(carriageBackOffset);
-        if (front == back) {
-            // no place for drawing available
-            continue;
-        }
-        const double drawnCarriageLength = front.distanceTo2D(back);
-        angle = atan2((front.x() - back.x()), (back.y() - front.y())) * (double) 180.0 / (double) M_PI;
-        if (i >= firstPassengerCarriage) {
-            computeSeats(front, back, requiredSeats);
-        }
-        glPushMatrix();
-        glTranslated(front.x(), front.y(), getType());
-        glRotated(angle, 0, 0, 1);
-        if (!asImage || !GUIBaseVehicleHelper::drawAction_drawVehicleAsImage(s, getVType().getImgFile(), this, getVType().getWidth(), curCLength)) {
-            switch(getVType().getGuiShape()) {
-                case SVS_TRUCK_SEMITRAILER:
-                case SVS_TRUCK_1TRAILER:
-                    if (i == 0) {
-                        GUIBaseVehicleHelper::drawAction_drawVehicleAsPoly(s, getVType().getGuiShape(), getVType().getWidth() * exaggeration, curCLength, i); 
-                    } else {
-                        GLHelper::setColor(current);
-                        GLHelper::drawBoxLine(Position(0, 0), 180, curCLength, halfWidth);
-                    }
-                    break;
-                default: {
-                    if (i == 0) {
-                        GLHelper::setColor(darker);
-                    } else {
-                        GLHelper::setColor(current);
-                    }
-                    // generic rail carriage
-                    glBegin(GL_TRIANGLE_FAN);
-                    glVertex2d(-halfWidth + xCornerCut, 0);
-                    glVertex2d(-halfWidth, yCornerCut);
-                    glVertex2d(-halfWidth, drawnCarriageLength - yCornerCut);
-                    glVertex2d(-halfWidth + xCornerCut, drawnCarriageLength);
-                    glVertex2d(halfWidth - xCornerCut, drawnCarriageLength);
-                    glVertex2d(halfWidth, drawnCarriageLength - yCornerCut);
-                    glVertex2d(halfWidth, yCornerCut);
-                    glVertex2d(halfWidth - xCornerCut, 0);
-                    glEnd();
-                }
-            }
-        }
-        glPopMatrix();
-        carriageOffset -= (curCLength + carriageGap);
-        carriageBackOffset -= carriageLengthWithGap;
-    }
-    if (getVType().getGuiShape() == SVS_RAIL_CAR) {
-        glPushMatrix();
-        glTranslated(front.x(), front.y(), getType());
-        glRotated(angle, 0, 0, 1);
-        drawAction_drawVehicleBlinker(curCLength);
-        drawAction_drawVehicleBrakeLight(curCLength);
-        glPopMatrix();
-    }
-    // restore matrix
-    glPushMatrix();
-    front = getPosition();
-    glTranslated(front.x(), front.y(), getType());
-    const double degAngle = RAD2DEG(getAngle() + M_PI / 2.);
-    glRotated(degAngle, 0, 0, 1);
-    glScaled(exaggeration, upscaleLength, 1);
-
+    return true;
 }
 
 #define BLINKER_POS_FRONT .5
@@ -486,57 +396,45 @@ GUIVehicle::getColorValue(int activeScheme) const {
         case 8:
             return getSpeed();
         case 9:
-            // color by action step
-            if (isActionStep(SIMSTEP)) {
-                // Upcoming simstep is actionstep (t was already increased before drawing)
-                return 1.;
-            } else if (isActive()) {
-                // Completed simstep was actionstep
-                return 2.;
-            } else {
-                // not active
-                return 0.;
-            }
-        case 10:
             return getWaitingSeconds();
-        case 11:
+        case 10:
             return getAccumulatedWaitingSeconds();
-        case 12:
+        case 11:
             return getLastLaneChangeOffset();
-        case 13:
+        case 12:
             return getLane()->getVehicleMaxSpeed(this);
-        case 14:
+        case 13:
             return getCO2Emissions();
-        case 15:
+        case 14:
             return getCOEmissions();
-        case 16:
+        case 15:
             return getPMxEmissions();
-        case 17:
+        case 16:
             return getNOxEmissions();
-        case 18:
+        case 17:
             return getHCEmissions();
-        case 19:
+        case 18:
             return getFuelConsumption();
-        case 20:
+        case 19:
             return getHarmonoise_NoiseEmissions();
-        case 21:
+        case 20:
             if (getNumberReroutes() == 0) {
                 return -1;
             }
             return getNumberReroutes();
-        case 22:
+        case 21:
             return gSelected.isSelected(GLO_VEHICLE, getGlID());
+        case 22:
+            return getBestLaneOffset();
         case 23:
-            return getLaneChangeModel().isOpposite() ? -100 : getBestLaneOffset();
-        case 24:
             return getAcceleration();
-        case 25:
+        case 24:
             return getTimeGapOnLane();
-        case 26:
+        case 25:
             return STEPS2TIME(getDepartDelay());
-        case 27:
+        case 26:
             return getElectricityConsumption();
-        case 28:
+        case 27:
             return getTimeLossSeconds();
     }
     return 0;
@@ -579,9 +477,8 @@ GUIVehicle::drawBestLanes() const {
 
 
 void
-GUIVehicle::drawRouteHelper(const GUIVisualizationSettings& s, const MSRoute& r, bool future) const {
-    const double exaggeration = s.vehicleSize.getExaggeration(s, this);
-    MSRouteIterator i = future ? myCurrEdge : r.begin();
+GUIVehicle::drawRouteHelper(const MSRoute& r, double exaggeration) const {
+    MSRouteIterator i = r.begin();
     const std::vector<MSLane*>& bestLaneConts = getBestLanesContinuation();
     // draw continuation lanes when drawing the current route where available
     int bestLaneIndex = (&r == myRoute ? 0 : (int)bestLaneConts.size());
@@ -592,7 +489,7 @@ GUIVehicle::drawRouteHelper(const GUIVisualizationSettings& s, const MSRoute& r,
             ++bestLaneIndex;
         } else {
             const std::vector<MSLane*>* allowed = (*i)->allowedLanes(getVClass());
-            if (allowed != nullptr && allowed->size() != 0) {
+            if (allowed != 0 && allowed->size() != 0) {
                 lane = static_cast<GUILane*>((*allowed)[0]);
             } else {
                 lane = static_cast<GUILane*>((*i)->getLanes()[0]);
@@ -600,60 +497,122 @@ GUIVehicle::drawRouteHelper(const GUIVisualizationSettings& s, const MSRoute& r,
         }
         GLHelper::drawBoxLines(lane->getShape(), lane->getShapeRotations(), lane->getShapeLengths(), exaggeration);
     }
-    // draw stop labels
-    // (vertical shift for repeated stops at the same position
-    std::map<std::pair<const MSLane*, double>, int> repeat; // count repeated occurrences of the same position
-    int stopIndex = 0;
-    for (const Stop& stop : myStops) {
-        Position pos = stop.lane->geometryPositionAtOffset(stop.reached ? getPositionOnLane() : stop.getEndPos(*this));
-        GLHelper::drawBoxLines(stop.lane->getShape().getOrthogonal(pos, 10, true, stop.lane->getWidth()), 0.1);
-        std::string label = stop.reached ? "stopped" : "stop " + toString(stopIndex);
-#ifdef _DEBUG
-        label += " (" + toString(stop.edge - myCurrEdge) + "e)";
-#endif
-        if (stop.pars.until >= 0) {
-            label += " until:" + time2string(stop.pars.until);
-        }
-        if (stop.duration >= 0) {
-            label += " duration:" + time2string(stop.duration);
-        }
-        std::pair<const MSLane*, double> stopPos = std::make_pair(stop.lane, stop.getEndPos(*this));
-        const double textSize = s.vehicleName.size / s.scale;
-        GLHelper::drawText(label, pos - Position(0, textSize * repeat[stopPos]), 1.0, textSize, s.vehicleName.color);
-        repeat[stopPos]++;
-        stopIndex++;
-    }
 }
 
 
 
 MSLane*
-GUIVehicle::getPreviousLane(MSLane* current, int& routeIndex) const {
-    if (current->isInternal()) {
-        return current->getIncomingLanes().front().lane;
+GUIVehicle::getPreviousLane(MSLane* current, int& furtherIndex) const {
+    if (furtherIndex < (int)myFurtherLanes.size()) {
+        return myFurtherLanes[furtherIndex++];
+    } else {
+        return current;
     }
-    if (routeIndex > 0) {
-        routeIndex--;
-        const MSEdge* prevNormal = myRoute->getEdges()[routeIndex];
-        for (MSLane* cand : prevNormal->getLanes()) {
-            for (MSLink* link : cand->getLinkCont()) {
-                if (link->getLane() == current) {
-                    if (link->getViaLane() != nullptr) {
-                        return link->getViaLane();
-                    } else {
-                        return const_cast<MSLane*>(link->getLaneBefore());
-                    }
-                }
+}
+
+
+void
+GUIVehicle::drawAction_drawRailCarriages(const GUIVisualizationSettings& s, double defaultLength, double carriageGap, int firstPassengerCarriage, bool asImage) const {
+    RGBColor current = GLHelper::getColor();
+    RGBColor darker = current.changedBrightness(-51);
+    const double exaggeration = s.vehicleSize.getExaggeration(s);
+    defaultLength *= exaggeration;
+    if (exaggeration == 0) {
+        return;
+    }
+    carriageGap *= exaggeration;
+    const double length = getVehicleType().getLength() * exaggeration;
+    const double halfWidth = getVehicleType().getWidth() / 2.0 * exaggeration;
+    glPopMatrix(); // undo scaling and 90 degree rotation
+    glPopMatrix(); // undo initial translation and rotation
+    GLHelper::setColor(darker);
+    const double xCornerCut = 0.3 * exaggeration;
+    const double yCornerCut = 0.4 * exaggeration;
+    // round to closest integer
+    const int numCarriages = (int)(length / (defaultLength + carriageGap) + 0.5);
+    assert(numCarriages > 0);
+    const double carriageLengthWithGap = length / numCarriages;
+    const double carriageLength = carriageLengthWithGap - carriageGap;
+    // lane on which the carriage front is situated
+    MSLane* lane = myLane;
+    int furtherIndex = 0;
+    // lane on which the carriage back is situated
+    MSLane* backLane = myLane;
+    int backFurtherIndex = furtherIndex;
+    // offsets of front and back
+    double carriageOffset = myState.pos();
+    double carriageBackOffset = myState.pos() - carriageLength;
+    // handle seats
+    int requiredSeats = getNumPassengers();
+    if (requiredSeats > 0) {
+        mySeatPositions.clear();
+    }
+    Position front, back;
+    double angle = 0.;
+    // draw individual carriages
+    for (int i = 0; i < numCarriages; ++i) {
+        while (carriageOffset < 0) {
+            MSLane* prev = getPreviousLane(lane, furtherIndex);
+            if (prev != lane) {
+                carriageOffset += prev->getLength();
+            } else {
+                // no lane available for drawing.
+                carriageOffset = 0;
             }
+            lane = prev;
         }
+        while (carriageBackOffset < 0) {
+            MSLane* prev = getPreviousLane(backLane, backFurtherIndex);
+            if (prev != backLane) {
+                carriageBackOffset += prev->getLength();
+            } else {
+                // no lane available for drawing.
+                carriageBackOffset = 0;
+            }
+            backLane = prev;
+        }
+        front = lane->geometryPositionAtOffset(carriageOffset);
+        back = backLane->geometryPositionAtOffset(carriageBackOffset);
+        if (front == back) {
+            // no place for drawing available
+            continue;
+        }
+        const double drawnCarriageLength = front.distanceTo2D(back);
+        angle = atan2((front.x() - back.x()), (back.y() - front.y())) * (double) 180.0 / (double) M_PI;
+        if (i >= firstPassengerCarriage) {
+            computeSeats(front, back, requiredSeats);
+        }
+        glPushMatrix();
+        glTranslated(front.x(), front.y(), getType());
+        glRotated(angle, 0, 0, 1);
+        if (!asImage || !drawAction_drawVehicleAsImage(s, carriageLength)) {
+            glBegin(GL_TRIANGLE_FAN);
+            glVertex2d(-halfWidth + xCornerCut, 0);
+            glVertex2d(-halfWidth, yCornerCut);
+            glVertex2d(-halfWidth, drawnCarriageLength - yCornerCut);
+            glVertex2d(-halfWidth + xCornerCut, drawnCarriageLength);
+            glVertex2d(halfWidth - xCornerCut, drawnCarriageLength);
+            glVertex2d(halfWidth, drawnCarriageLength - yCornerCut);
+            glVertex2d(halfWidth, yCornerCut);
+            glVertex2d(halfWidth - xCornerCut, 0);
+            glEnd();
+        }
+        glPopMatrix();
+        carriageOffset -= carriageLengthWithGap;
+        carriageBackOffset -= carriageLengthWithGap;
+        GLHelper::setColor(current);
     }
-    return current;
+    // restore matrices
+    glPushMatrix();
+    glTranslated(front.x(), front.y(), getType());
+    glRotated(angle, 0, 0, 1);
+    glPushMatrix();
 }
 
 
 int
 GUIVehicle::getNumPassengers() const {
-    if (myPersonDevice != nullptr) {
+    if (myPersonDevice != 0) {
         return (int)myPersonDevice->size();
     }
     return 0;
@@ -692,19 +651,13 @@ GUIVehicle::getStopInfo() const {
         result += "parking";
     } else if (isStopped()) {
         result += "stopped";
-    } else if (hasStops()) {
-        return "next: " + myStops.front().getDescription();
     } else {
         return "";
     }
-    if (myStops.front().pars.triggered) {
+    if (myStops.front().triggered) {
         result += ", triggered";
-    } else if (myStops.front().pars.containerTriggered) {
+    } else if (myStops.front().containerTriggered) {
         result += ", containerTriggered";
-    } else if (myStops.front().collision) {
-        result += ", collision";
-    } else if (myStops.front().pars.until != -1) {
-        result += ", until=" + time2string(myStops.front().pars.until);
     } else {
         result += ", duration=" + time2string(myStops.front().duration);
     }
@@ -715,34 +668,29 @@ GUIVehicle::getStopInfo() const {
 void
 GUIVehicle::selectBlockingFoes() const {
     double dist = myLane->getLength() - getPositionOnLane();
-#ifdef DEBUG_FOES
-    std::cout << SIMTIME << " selectBlockingFoes veh=" << getID() << " dist=" << dist << " numLinks=" << myLFLinkLanes.size() << "\n";
-#endif
     for (DriveItemVector::const_iterator i = myLFLinkLanes.begin(); i != myLFLinkLanes.end(); ++i) {
         const DriveProcessItem& dpi = *i;
-        if (dpi.myLink == nullptr) {
-            /// XXX if the vehicle intends to stop on an intersection, there could be a relevant exitLink (see #4299)
+        if (dpi.myLink == 0) {
             continue;
         }
         std::vector<const SUMOVehicle*> blockingFoes;
         std::vector<const MSPerson*> blockingPersons;
 #ifdef DEBUG_FOES
-        std::cout << "   foeLink=" << dpi.myLink->getViaLaneOrLane()->getID() << "\n";
         const bool isOpen =
 #endif
             dpi.myLink->opened(dpi.myArrivalTime, dpi.myArrivalSpeed, dpi.getLeaveSpeed(), getVehicleType().getLength(),
                                getImpatience(), getCarFollowModel().getMaxDecel(), getWaitingTime(), getLateralPositionOnLane(), &blockingFoes);
 #ifdef DEBUG_FOES
         if (!isOpen) {
-            std::cout << "     closed due to:\n";
+            std::cout << SIMTIME << " veh=" << getID() << " foes at link=" << dpi.myLink->getViaLaneOrLane()->getID() << ":\n";
             for (std::vector<const SUMOVehicle*>::const_iterator it = blockingFoes.begin(); it != blockingFoes.end(); ++it) {
                 std::cout << "   " << (*it)->getID() << "\n";
             }
         }
 #endif
-        if (getLaneChangeModel().getShadowLane() != nullptr) {
+        if (getLaneChangeModel().getShadowLane() != 0) {
             MSLink* parallelLink = dpi.myLink->getParallelLink(getLaneChangeModel().getShadowDirection());
-            if (parallelLink != nullptr) {
+            if (parallelLink != 0) {
                 const double shadowLatPos = getLateralPositionOnLane() - getLaneChangeModel().getShadowDirection() * 0.5 * (
                                                 myLane->getWidth() + getLaneChangeModel().getShadowLane()->getWidth());
 #ifdef DEBUG_FOES
@@ -754,7 +702,7 @@ GUIVehicle::selectBlockingFoes() const {
                                          getWaitingTime(), shadowLatPos, &blockingFoes);
 #ifdef DEBUG_FOES
                 if (!isShadowOpen) {
-                    std::cout <<  "    foes at shadow link=" << parallelLink->getViaLaneOrLane()->getID() << ":\n";
+                    std::cout << SIMTIME << " veh=" << getID() << " foes at shadow link=" << parallelLink->getViaLaneOrLane()->getID() << ":\n";
                     for (std::vector<const SUMOVehicle*>::const_iterator it = blockingFoes.begin(); it != blockingFoes.end(); ++it) {
                         std::cout << "   " << (*it)->getID() << "\n";
                     }
@@ -765,27 +713,21 @@ GUIVehicle::selectBlockingFoes() const {
         for (std::vector<const SUMOVehicle*>::const_iterator it = blockingFoes.begin(); it != blockingFoes.end(); ++it) {
             gSelected.select(static_cast<const GUIVehicle*>(*it)->getGlID());
         }
-#ifdef DEBUG_FOES
-        gDebugFlag1 = true;
-#endif
         const MSLink::LinkLeaders linkLeaders = (dpi.myLink)->getLeaderInfo(this, dist, &blockingPersons);
-#ifdef DEBUG_FOES
-        gDebugFlag1 = false;
-#endif
         for (MSLink::LinkLeaders::const_iterator it = linkLeaders.begin(); it != linkLeaders.end(); ++it) {
             // the vehicle to enter the junction first has priority
             const GUIVehicle* leader = dynamic_cast<const GUIVehicle*>(it->vehAndGap.first);
-            if (leader != nullptr) {
-                if (isLeader(dpi.myLink, leader)) {
+            if (leader != 0) {
+                if (dpi.myLink->isLeader(this, leader)) {
                     gSelected.select(leader->getGlID());
 #ifdef DEBUG_FOES
-                    std::cout << "      linkLeader=" << leader->getID() << "\n";
+                    std::cout << SIMTIME << " veh=" << getID() << " linkLeader at link=" << dpi.myLink->getViaLaneOrLane()->getID() << " foe=" << leader->getID() << "\n";
 #endif
                 }
             } else {
                 for (std::vector<const MSPerson*>::iterator it_p = blockingPersons.begin(); it_p != blockingPersons.end(); ++it_p) {
                     const GUIPerson* foe = dynamic_cast<const GUIPerson*>(*it_p);
-                    if (foe != nullptr) {
+                    if (foe != 0) {
                         gSelected.select(foe->getGlID());
                         //std::cout << SIMTIME << " veh=" << getID() << " is blocked on link " << dpi.myLink->getRespondIndex() << " to " << dpi.myLink->getViaLaneOrLane()->getID() << " by pedestrian. dist=" << it->second << "\n";
                     }
@@ -801,7 +743,7 @@ void
 GUIVehicle::drawOutsideNetwork(bool add) {
     GUIMainWindow* mw = GUIMainWindow::getInstance();
     GUISUMOAbstractView* view = mw->getActiveView();
-    if (view != nullptr) {
+    if (view != 0) {
         if (add) {
             if ((myAdditionalVisualizations[view] & VO_DRAW_OUTSIDE_NETWORK) == 0) {
                 myAdditionalVisualizations[view] |= VO_DRAW_OUTSIDE_NETWORK;
@@ -841,68 +783,6 @@ GUIVehicle::getLeftSublaneOnEdge() const {
         }
     }
     return -1;
-}
-
-double
-GUIVehicle::getManeuverDist() const {
-    return getLaneChangeModel().getManeuverDist();
-}
-
-void
-GUIVehicle::rerouteDRTStop(MSStoppingPlace* busStop, SUMOTime intermediateDuration, SUMOTime finalDuration) {
-    // if the stop is already in the list of stops, cancel all stops that come
-    // after it and set the stop duration
-    std::string line = "";
-    int destinations = 0;
-    bool add = true;
-    for (auto it = myStops.begin(); it != myStops.end(); it++) {
-        if (!it->reached && destinations < 2 && it->busstop != nullptr) {
-            line += it->busstop->getID();
-            destinations++;
-        }
-        if (it->busstop == busStop) {
-            it->duration = finalDuration;
-            myStops.erase(++it, myStops.end());
-            add = false;
-            break;
-        } else {
-            it->duration = MIN2(it->duration, intermediateDuration);
-        }
-    }
-    if (destinations < 2) {
-        line += busStop->getID();
-    }
-    if (add) {
-        // create new stop
-        SUMOVehicleParameter::Stop stopPar;
-        stopPar.busstop = busStop->getID();
-        stopPar.lane = busStop->getLane().getID();
-        stopPar.startPos = busStop->getBeginLanePosition();
-        stopPar.endPos = busStop->getEndLanePosition();
-        stopPar.duration = finalDuration;
-        stopPar.until = -1;
-        stopPar.triggered = false;
-        stopPar.containerTriggered = false;
-        stopPar.parking = false;
-        stopPar.index = STOP_INDEX_FIT;
-        stopPar.parametersSet = STOP_START_SET | STOP_END_SET;
-        // clean up prior route to improve visualisation, ensure that the stop can be added immediately 
-        ConstMSEdgeVector edges = myRoute->getEdges();
-        edges.erase(edges.begin(), edges.begin() + getRoutePosition());
-        edges.push_back(&busStop->getLane().getEdge());
-        replaceRouteEdges(edges, -1, 0, "DRT.tmp", false, false, false);
-        std::string errorMsg;
-        // add stop
-        addStop(stopPar, errorMsg);
-    }
-    const bool hasReroutingDevice = getDevice(typeid(MSDevice_Routing)) != nullptr;
-    SUMOAbstractRouter<MSEdge, SUMOVehicle>& router = hasReroutingDevice
-        ? MSRoutingEngine::getRouterTT()
-        : MSNet::getInstance()->getRouterTT();
-    // reroute to ensure the new stop is reached
-    reroute(MSNet::getInstance()->getCurrentTimeStep(), "DRT", router);
-    myParameter->line = line;
-    assert(haveValidStopEdges());
 }
 
 /****************************************************************************/

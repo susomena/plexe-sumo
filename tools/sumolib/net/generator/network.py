@@ -1,16 +1,21 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+#!/usr/bin/env python
+"""
+A module for building road networks.
 
-# @file    network.py
-# @author  Daniel Krajzewicz
-# @date    2013-10-10
-# @version $Id$
+@file    network.py
+@author  Daniel Krajzewicz
+@date    2013-10-10
+@version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2013 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import sumolib
@@ -63,7 +68,9 @@ class Edge:
         self.maxSpeed = maxSpeed
         self.lanes = lanes
         if self.lanes is None:
-            self.lanes = [Lane() for _ in range(numLanes)]
+            self.lanes = []
+            for i in range(0, self.numLanes):
+                self.lanes.append(Lane())
         self.splits = splits
         if self.splits is None:
             self.splits = []
@@ -80,13 +87,17 @@ class Edge:
             self.splits.append(Split(0, lanes))
             lanes = range(0, self.numLanes + lanesToRight + lanesToLeft)
             self.splits.append(Split(distance, lanes))
-            self.lanes = [Lane() for _ in range(lanesToRight)] + self.lanes
-            self.lanes += [Lane() for _ in range(lanesToLeft)]
+            for i in range(0, lanesToRight):
+                self.lanes.insert(0, Lane())
+            for i in range(0, lanesToLeft):
+                self.lanes.append(Lane())
 
     def getConnections(self, net):
         ret = []
 
         seen = {}
+        seenRight = 0
+        seenLeft = 0
         for i, l in enumerate(self.lanes):
             for d in l.dirs:
                 if d not in seen:
@@ -236,7 +247,8 @@ class Net:
             print('    <edge id="%s" from="%s" to="%s" numLanes="%s" speed="%s">' % (
                 e.eid, e.fromNode.nid, e.toNode.nid, e.numLanes, e.maxSpeed), file=edgesFile)
             for s in e.splits:
-                print('        <split pos="%s" lanes="%s"/>' % (-s.distance, " ".join(map(str, s.lanes))), file=edgesFile)
+                print('        <split pos="%s" lanes="%s"/>' % (-s.distance, str(
+                    s.lanes)[1:-1].replace(",", "")), file=edgesFile)
 
             """
         for i,l in enumerate(e.lanes):
@@ -299,8 +311,8 @@ class Net:
 
         netconvert = sumolib.checkBinary("netconvert")
 
-        subprocess.call([netconvert, "-v", "-n", nodesFile.name, "-e", edgesFile.name, "-x", connectionsFile.name,
-                         "-o", netName])
+        retCode = subprocess.call(
+            [netconvert, "-v", "-n", nodesFile.name, "-e", edgesFile.name, "-x", connectionsFile.name, "-o", netName])
         os.remove(nodesFile.name)
         os.remove(edgesFile.name)
         os.remove(connectionsFile.name)

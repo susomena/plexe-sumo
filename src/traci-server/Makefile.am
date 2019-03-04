@@ -1,6 +1,7 @@
 noinst_LIBRARIES = libtraciserver.a
 
 libtraciserver_a_SOURCES = TraCIConstants.h \
+TraCIDefs.h \
 TraCIServer.h TraCIServer.cpp \
 TraCIServerAPI_Edge.h TraCIServerAPI_Edge.cpp \
 TraCIServerAPI_InductionLoop.h TraCIServerAPI_InductionLoop.cpp \
@@ -13,6 +14,9 @@ TraCIServerAPI_POI.h TraCIServerAPI_POI.cpp \
 TraCIServerAPI_Polygon.h TraCIServerAPI_Polygon.cpp \
 TraCIServerAPI_Route.h TraCIServerAPI_Route.cpp \
 TraCIServerAPI_Simulation.h TraCIServerAPI_Simulation.cpp \
-TraCIServerAPI_TrafficLight.h TraCIServerAPI_TrafficLight.cpp \
+TraCIServerAPI_TLS.h TraCIServerAPI_TLS.cpp \
 TraCIServerAPI_Vehicle.h TraCIServerAPI_Vehicle.cpp \
 TraCIServerAPI_VehicleType.h TraCIServerAPI_VehicleType.cpp
+
+SUBDIRS = lib
+

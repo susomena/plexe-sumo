@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NWFrame.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Sets and checks options for netwrite
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/options/Option.h>
@@ -42,7 +49,7 @@
 // ===========================================================================
 // static members
 // ===========================================================================
-const std::string NWFrame::MAJOR_VERSION = "1.1";
+const std::string NWFrame::MAJOR_VERSION = "0.27";
 
 
 // ===========================================================================
@@ -65,9 +72,6 @@ NWFrame::fillOptions(bool forNetgen) {
     oc.doRegister("junctions.join-output", new Option_FileName());
     oc.addDescription("junctions.join-output", "Output",
                       "Writes information about joined junctions to FILE (can be loaded as additional node-file to reproduce joins");
-
-    oc.doRegister("prefix", new Option_String(""));
-    oc.addDescription("prefix", "Output", "Defines a prefix for edge and junction names");
 
 #ifdef HAVE_PROJ
     if (!forNetgen) {
@@ -105,17 +109,6 @@ NWFrame::fillOptions(bool forNetgen) {
         oc.addDescription("ptstop-output", "Output", "Writes public transport stops to FILE");
         oc.doRegister("ptline-output", new Option_FileName());
         oc.addDescription("ptline-output", "Output", "Writes public transport lines to FILE");
-        oc.doRegister("ptline-clean-up", new Option_Bool(false));
-        oc.addDescription("ptline-clean-up", "Output", "Clean-up pt stops that are not served by any line");
-
-        oc.doRegister("parking-output", new Option_FileName());
-        oc.addDescription("parking-output", "Output", "Writes parking areas to FILE");
-
-        oc.doRegister("railway.topology.output", new Option_FileName());
-        oc.addDescription("railway.topology.output", "Output", "Analyse topology of the railway network");
-
-        oc.doRegister("polygon-output", new Option_FileName());
-        oc.addDescription("polygon-output", "Output", "Write shapes that are embedded in the network input and that are not supported by polyconvert (OpenDRIVE)");
     }
 
     // register opendrive options
@@ -146,9 +139,6 @@ NWFrame::checkOptions() {
         WRITE_ERROR("OpenDRIVE export needs internal links computation.");
         ok = false;
     }
-    if (oc.isSet("opendrive-output") && oc.isDefault("no-internal-links")) {
-        oc.set("no-internal-links", "false");
-    }
     if (oc.isSet("opendrive-output") && oc.isDefault("rectangular-lane-cut")) {
         oc.set("rectangular-lane-cut", "true");
     }
@@ -158,15 +148,9 @@ NWFrame::checkOptions() {
     if (oc.isSet("dlr-navteq-output") && oc.isDefault("numerical-ids")) {
         oc.set("numerical-ids", "true");
     }
-    if (oc.isSet("dlr-navteq-output") && oc.isDefault("osm.all-attributes")) {
-        oc.set("osm.all-attributes", "true");
-    }
     if (oc.exists("ptline-output") && oc.isSet("ptline-output") && !oc.isSet("ptstop-output")) {
         WRITE_ERROR("public transport lines output requires 'ptstop-output' to be set");
         ok = false;
-    }
-    if (oc.exists("ptline-clean-up") && oc.getBool("ptline-clean-up") && !oc.isSet("ptline-output")) {
-        WRITE_WARNING("'ptline-clean-up' only works in conjunction with 'ptline-output'. Ignoring invalid option.");
     }
 
     return ok;

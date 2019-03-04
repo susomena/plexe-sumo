@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Thu Nov 16 21:48:43 2017 by SUMO Version v0_31_0+1176-104ac3e
-This data file and the accompanying materials
-are made available under the terms of the Eclipse Public License v2.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v20.html
-SPDX-License-Identifier: EPL-2.0
+<!-- generated on 03/15/17 15:16:14 by SUMO Version dev-SVN-r22880
+<?xml version="1.0" encoding="UTF-8"?>
+
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
@@ -184,7 +181,7 @@ SPDX-License-Identifier: EPL-2.0
         <vehicle id="veh0" energyConsumed="-4.6022" actualBatteryCapacity="12943.9629" maximumBatteryCapacity="35000.0000" chargingStationId="CS3" energyCharged="0.0000" energyChargedInTransit="0.0000" energyChargedStopped="0.0000" speed="0.0000" acceleration="-5.0000" x="-830.0000" y="995.0500" lane="D2_0" posOnLane="170.0000" timeStopped="1"/>
     </timestep>
     <timestep time="50.00">
-        <vehicle id="veh0" energyConsumed="0.0139" actualBatteryCapacity="12943.9490" maximumBatteryCapacity="35000.0000" chargingStationId="CS3" energyCharged="0.0000" energyChargedInTransit="0.0000" energyChargedStopped="0.0000" speed="0.0000" acceleration="0.0000" x="-830.0000" y="995.0500" lane="D2_0" posOnLane="170.0000" timeStopped="2"/>
+        <vehicle id="veh0" energyConsumed="0.0139" actualBatteryCapacity="12943.9490" maximumBatteryCapacity="35000.0000" chargingStationId="CS3" energyCharged="0.0000" energyChargedInTransit="0.0000" energyChargedStopped="0.0000" speed="0.0000" acceleration="-0.0000" x="-830.0000" y="995.0500" lane="D2_0" posOnLane="170.0000" timeStopped="2"/>
     </timestep>
     <timestep time="51.00">
         <vehicle id="veh0" energyConsumed="0.0139" actualBatteryCapacity="12943.9351" maximumBatteryCapacity="35000.0000" chargingStationId="CS3" energyCharged="0.0000" energyChargedInTransit="0.0000" energyChargedStopped="0.0000" speed="0.0000" acceleration="0.0000" x="-830.0000" y="995.0500" lane="D2_0" posOnLane="170.0000" timeStopped="3"/>
@@ -535,7 +532,7 @@ SPDX-License-Identifier: EPL-2.0
         <vehicle id="veh0" energyConsumed="7.9906" actualBatteryCapacity="12396.9616" maximumBatteryCapacity="35000.0000" chargingStationId="NULL" energyCharged="0.0000" energyChargedInTransit="0.0000" energyChargedStopped="0.0000" speed="13.8900" acceleration="0.0000" x="82.6900" y="995.0500" lane="L12_1" posOnLane="81.1900" timeStopped="0"/>
     </timestep>
     <timestep time="167.00">
-        <vehicle id="veh0" energyConsumed="7.9906" actualBatteryCapacity="12388.9709" maximumBatteryCapacity="35000.0000" chargingStationId="NULL" energyCharged="0.0000" energyChargedInTransit="0.0000" energyChargedStopped="0.0000" speed="13.8900" acceleration="0.0000" x="96.5800" y="995.0500" lane="L12_1" posOnLane="95.0800" timeStopped="0"/>
+        <vehicle id="veh0" energyConsumed="7.9906" actualBatteryCapacity="12388.9709" maximumBatteryCapacity="35000.0000" chargingStationId="NULL" energyCharged="0.0000" energyChargedInTransit="0.0000" energyChargedStopped="0.0000" speed="13.8900" acceleration="0.0000" x="96.5800" y="991.7500" lane="L12_0" posOnLane="95.0800" timeStopped="0"/>
     </timestep>
     <timestep time="168.00">
         <vehicle id="veh0" energyConsumed="7.9906" actualBatteryCapacity="12380.9803" maximumBatteryCapacity="35000.0000" chargingStationId="NULL" energyCharged="0.0000" energyChargedInTransit="0.0000" energyChargedStopped="0.0000" speed="13.8900" acceleration="0.0000" x="110.4700" y="991.7500" lane="L12_0" posOnLane="108.9700" timeStopped="0"/>

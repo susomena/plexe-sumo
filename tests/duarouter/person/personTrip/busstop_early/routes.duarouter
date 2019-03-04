@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Wed Mar 28 11:06:38 2018 by SUMO duarouter Version v0_32_0+0923-1eeb288
-This data file and the accompanying materials
-are made available under the terms of the Eclipse Public License v2.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v20.html
-SPDX-License-Identifier: EPL-2.0
+<!-- generated on Tue Jun 20 23:59:34 2017 by SUMO duarouter Version dev-SVN-r24506
+<?xml version="1.0" encoding="UTF-8"?>
+
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/duarouterConfiguration.xsd">
 
     <input>
@@ -15,9 +12,7 @@ SPDX-License-Identifier: EPL-2.0
     </input>
 
     <output>
-        <write-license value="true"/>
         <output-file value="routes.rou.xml"/>
-        <alternatives-output value="routes.rou.alt.xml"/>
     </output>
 
     <report>
@@ -29,10 +24,50 @@ SPDX-License-Identifier: EPL-2.0
 -->
 
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
-    <person id="p0" depart="200.00">
+    <person id="p0" depart="0.00">
         <walk edges="beg" busStop="beg_0"/>
-        <ride busStop="left_0" lines="bus" intended="bus.0" depart="1010.00"/>
-        <ride busStop="end_0" lines="bus2" intended="bus2.0" depart="1070.00"/>
+        <ride busStop="left_0" lines="bus"/>
+        <ride busStop="end_0" lines="bus2"/>
         <walk edges="end"/>
     </person>
+    <vehicle id="bus.0" depart="1000.00" line="bus">
+        <route edges="beg beg2left left left2end end"/>
+        <stop busStop="beg_0" until="1010.00"/>
+        <stop busStop="left_0" until="1060.00"/>
+    </vehicle>
+    <vehicle id="bus2.0" depart="1000.00" line="bus2">
+        <route edges="beg beg2left left left2end end"/>
+        <stop busStop="left_0" until="1070.00"/>
+        <stop busStop="end_0" until="1110.00"/>
+    </vehicle>
+    <vehicle id="bus.1" depart="1300.00" line="bus">
+        <route edges="beg beg2left left left2end end"/>
+        <stop busStop="beg_0" until="1310.00"/>
+        <stop busStop="left_0" until="1360.00"/>
+    </vehicle>
+    <vehicle id="bus2.1" depart="1300.00" line="bus2">
+        <route edges="beg beg2left left left2end end"/>
+        <stop busStop="left_0" until="1370.00"/>
+        <stop busStop="end_0" until="1410.00"/>
+    </vehicle>
+    <vehicle id="bus.2" depart="1600.00" line="bus">
+        <route edges="beg beg2left left left2end end"/>
+        <stop busStop="beg_0" until="1610.00"/>
+        <stop busStop="left_0" until="1660.00"/>
+    </vehicle>
+    <vehicle id="bus2.2" depart="1600.00" line="bus2">
+        <route edges="beg beg2left left left2end end"/>
+        <stop busStop="left_0" until="1670.00"/>
+        <stop busStop="end_0" until="1710.00"/>
+    </vehicle>
+    <vehicle id="bus.3" depart="1900.00" line="bus">
+        <route edges="beg beg2left left left2end end"/>
+        <stop busStop="beg_0" until="1910.00"/>
+        <stop busStop="left_0" until="1960.00"/>
+    </vehicle>
+    <vehicle id="bus2.3" depart="1900.00" line="bus2">
+        <route edges="beg beg2left left left2end end"/>
+        <stop busStop="left_0" until="1970.00"/>
+        <stop busStop="end_0" until="2010.00"/>
+    </vehicle>
 </routes>

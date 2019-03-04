@@ -1,60 +1,58 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    cadytsIterate.py
-# @author  Jakob Erdmann
-# @author  Yun-Pang Floetteroed
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2010-09-15
-# @version $Id$
-
 """
+@file    cadytsIterate.py
+@author  Jakob Erdmann
+@author  Yun-Pang Floetteroed
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2010-09-15
+@version $Id$
+
 Run cadyts to calibrate the simulation with given routes and traffic measurements.
 Respective traffic zones information has to exist in the given route files.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
-import glob
 from datetime import datetime
 from argparse import ArgumentParser
 from duaIterate import call, writeSUMOConf, addGenericOptions
 
-TOOLS_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(TOOLS_DIR)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import sumolib  # noqa
 
 
 def initOptions():
-    jars = glob.glob(os.path.join(TOOLS_DIR, "contributed", "calibration", "*", "target", "*.jar")) + \
-        glob.glob(os.path.join(TOOLS_DIR, "..", "bin", "*.jar"))
     argParser = ArgumentParser()
     addGenericOptions(argParser)
+
     argParser.add_argument("-r", "--route-alternatives", dest="routes",
                            help="route alternatives from sumo (comma separated list, mandatory)", metavar="FILE")
     argParser.add_argument("-d", "--detector-values", dest="detvals",
                            help="adapt to the flow on the given edges", metavar="FILE")
-    argParser.add_argument("-c", "--classpath", dest="classpath", default=os.pathsep.join(jars),
+    argParser.add_argument("-c", "--classpath", dest="classpath",
+                           default=os.path.join(os.path.dirname(
+                               sys.argv[0]), "..", "contributed", "calibration", "cadytsSumoController.jar"),
                            help="classpath for the calibrator [default: %default]")
     argParser.add_argument("-l", "--last-calibration-step", dest="calibStep",
                            type=int, default=100, help="last step of the calibration [default: %default]")
     argParser.add_argument("-S", "--demandscale", dest="demandscale",
                            type=float, default=2., help="scaled demand [default: %default]")
     argParser.add_argument("-F", "--freezeit",  dest="freezeit",
-                           type=int, default=85, help="define the number of iterations for stablizing the results " +
-                                                      "in the DTA-calibration")
+                           type=int, default=85, help="define the number of iterations for stablizing the results in the DTA-calibration")
     argParser.add_argument("-V", "--varscale",  dest="varscale",
-                           type=float, default=1., help="define variance of the measured traffic flows for the" +
-                                                        "DTA-calibration")
+                           type=float, default=1., help="define variance of the measured traffic flows for the DTA-calibration")
     argParser.add_argument("-P", "--PREPITS",  type=int, dest="PREPITS",
                            default=5, help="number of preparatory iterations")
     argParser.add_argument("-W", "--evaluation-prefix", dest="evalprefix",
@@ -74,11 +72,9 @@ def initOptions():
     argParser.add_argument("-N", "--clone-postfix", dest="clonepostfix",
                            default='-CLONE', help="postfix attached to clone ids")
     argParser.add_argument("-X", "--cntfirstlink", action="store_true", dest="cntfirstlink",
-                           default=False, help="if entering vehicles are assumed to cross the upstream sensor of" +
-                                               "their entry link")
+                           default=False, help="if entering vehicles are assumed to cross the upstream sensor of their entry link")
     argParser.add_argument("-K", "--cntlastlink", action="store_true", dest="cntlastlink",
-                           default=False, help="if exiting vehicles are assumed to cross the upstream sensor of" +
-                           "their exit link")
+                           default=False, help="if exiting vehicles are assumed to cross the upstream sensor of their exit link")
     argParser.add_argument("remaining_args", nargs='*')
     return argParser
 
@@ -96,7 +92,7 @@ def main():
     else:
         sumoBinary = sumolib.checkBinary("sumo", options.path)
     calibrator = ["java", "-cp", options.classpath, "-Xmx1G",
-                  "floetteroed.cadyts.interfaces.sumo.SumoController"]
+                  "cadyts.interfaces.sumo.SumoController"]
     log = open("cadySumo-log.txt", "w+")
 
     # calibration init
@@ -110,16 +106,14 @@ def main():
         call(calibrator + ["INIT", "-varscale", options.varscale, "-freezeit", options.freezeit,
                            "-measfile", options.detvals, "-binsize", options.aggregation, "-PREPITS", options.PREPITS,
                            "-bruteforce", options.bruteforce, "-demandscale", options.demandscale,
-                           "-mincountstddev", options.mincountstddev, "-overridett", options.overridett,
-                           "-clonepostfix", options.clonepostfix, "-fmaprefix", options.fmaprefix,
-                           "-cntfirstlink", options.cntfirstlink, "-cntlastlink", options.cntlastlink], log)
+                           "-mincountstddev", options.mincountstddev, "-overridett", options.overridett, "-clonepostfix", options.clonepostfix,
+                           "-fmaprefix", options.fmaprefix, "-cntfirstlink", options.cntfirstlink, "-cntlastlink", options.cntlastlink], log)
     else:
         call(calibrator + ["INIT", "-varscale", options.varscale, "-freezeit", options.freezeit,
                            "-measfile", options.detvals, "-binsize", options.aggregation, "-PREPITS", options.PREPITS,
                            "-bruteforce", options.bruteforce, "-demandscale", options.demandscale,
                            "-mincountstddev", options.mincountstddev, "-overridett", options.overridett,
-                           "-clonepostfix", options.clonepostfix, "-cntfirstlink", options.cntfirstlink,
-                           "-cntlastlink", options.cntlastlink], log)
+                           "-clonepostfix", options.clonepostfix, "-cntfirstlink", options.cntfirstlink, "-cntlastlink", options.cntlastlink], log)
 
     for step in range(options.calibStep):
         print('calibration step:', step)
@@ -142,7 +136,8 @@ def main():
         btime = datetime.now()
         print(">>> Begin time: %s" % btime)
         writeSUMOConf(sumoBinary, step, options, [], ",".join(files))
-        call([sumoBinary, "-c", "iteration_%03i.sumocfg" % step], log)
+        retCode = call(
+            [sumoBinary, "-c", "iteration_%03i.sumocfg" % step], log)
         etime = datetime.now()
         print(">>> End time: %s" % etime)
         print(">>> Duration: %s" % (etime - btime))
@@ -162,7 +157,6 @@ def main():
 
     print("calibration ended (duration: %s)" % (datetime.now() - starttime))
     log.close()
-
 
 if __name__ == "__main__":
     main()

@@ -1,20 +1,21 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    validate.py
-# @author  Michael Behrisch
-# @date    2013-06-12
-# @version $Id$
-
 """
+@file    validate.py
+@author  Michael Behrisch
+@date    2013-06-12
+@version $Id$
+
 This script validates detector data resulting from dfrouter
 validation detectors against the original data fed into dfrouter
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -24,7 +25,7 @@ import collections
 from optparse import OptionParser
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt  # noqa
+import matplotlib.pyplot as plt
 sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
 import sumolib  # noqa
 
@@ -100,8 +101,7 @@ if options.validation:
     countOut = 0
     start = 0
     end = options.interval
-#   <interval begin="0.00" end="60.00" id="validation_MQ11O_DS_FS1_ERU"
-#             nVehContrib="1" flow="60.00" occupancy="1.35" speed="6.19" length="5.00" nVehEntered="1"/>
+#   <interval begin="0.00" end="60.00" id="validation_MQ11O_DS_FS1_ERU" nVehContrib="1" flow="60.00" occupancy="1.35" speed="6.19" length="5.00" nVehEntered="1"/>
     for interval in sumolib.output.parse_fast(options.validation, "interval", ["begin", "id", "speed", "nVehEntered"]):
         detId = interval.id[11:]
         time = int(float(interval.begin) / 60)

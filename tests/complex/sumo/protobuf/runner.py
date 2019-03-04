@@ -1,23 +1,27 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Michael Behrisch
+@date    2014-03-14
+@version $Id$
 
-# @file    runner.py
-# @author  Michael Behrisch
-# @date    2014-03-14
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 
 import os
 import subprocess
 import sys
 import time
+import threading
 import socket
 import difflib
 toolDir = os.path.join(
@@ -55,7 +59,6 @@ def connect(inPort, outPort, numTries=10):
     o.close()
     i.close()
 
-
 SUMO_PORT = sumolib.miscutils.getFreeSocketPort()
 IN_PORT = sumolib.miscutils.getFreeSocketPort()
 OUT_PORT = sumolib.miscutils.getFreeSocketPort()
@@ -80,7 +83,7 @@ try:
     sumoPro.wait()
     pPro.wait()
     xPro.wait()
-except Exception:
+except:
     sumoPro.kill()
     pPro.kill()
     xPro.kill()

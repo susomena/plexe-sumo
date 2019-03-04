@@ -1,14 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// activitygen module
-// Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    activitygen_main.cpp
 /// @author  Piotr Woznica
 /// @author  Walter Bamberger
@@ -20,12 +10,29 @@
 ///
 // Main object of the ActivityGen application
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+// activitygen module
+// Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
@@ -69,7 +76,7 @@ loadNet(RONet& toFill, ROAbstractEdgeBuilder& eb) {
         throw ProcessError("The network file '" + file + "' could not be accessed.");
     }
     PROGRESS_BEGIN_MESSAGE("Loading net");
-    RONetHandler handler(toFill, eb, true, 0);
+    RONetHandler handler(toFill, eb);
     handler.setFileName(file);
     if (!XMLSubSys::runParser(handler, file, true)) {
         PROGRESS_FAILED_MESSAGE();
@@ -89,11 +96,11 @@ main(int argc, char* argv[]) {
     OptionsCont& oc = OptionsCont::getOptions();
     // give some application descriptions
     oc.setApplicationDescription(
-        "Generates trips of persons throughout a day for the microscopic, multi-modal traffic simulation SUMO.");
-    oc.setApplicationName("activitygen", "Eclipse SUMO activitygen Version " VERSION_STRING);
+        "Generates routes of persons throughout a day for the microscopic road traffic simulation SUMO.");
+    oc.setApplicationName("activitygen", "SUMO activitygen Version " VERSION_STRING);
     oc.addCopyrightNotice("Copyright (C) 2010-2012 Technische Universitaet Muenchen");
     int ret = 0;
-    RONet* net = nullptr;
+    RONet* net = 0;
     try {
         // Initialise subsystems and process options
         XMLSubSys::init();
@@ -107,13 +114,12 @@ main(int argc, char* argv[]) {
         XMLSubSys::setValidation(oc.getString("xml-validation"), oc.getString("xml-validation.net"));
         MsgHandler::initOutputOptions();
         RandHelper::initRandGlobal();
-        SystemFrame::checkOptions();
 
         // Load network
         net = new RONet();
         AGStreet::Builder builder;
         loadNet(*net, builder);
-        WRITE_MESSAGE("Loaded " + toString(net->getEdgeNumber()) + " edges.");
+        WRITE_MESSAGE("Loaded " + toString(net->getEdgeNo()) + " edges.");
         if (oc.getBool("debug")) {
             WRITE_MESSAGE("\n\t ---- begin AcitivtyGen ----\n");
         }

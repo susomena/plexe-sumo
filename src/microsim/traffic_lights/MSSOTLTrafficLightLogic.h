@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSSOTLTrafficLightLogic.h
 /// @author  Gianfilippo Slager
 /// @author	 Anna Chiara Bellini
@@ -16,13 +8,28 @@
 ///
 // The base abstract class for SOTL logics
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSSOTLTrafficLightLogic_h
 #define MSSOTLTrafficLightLogic_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/common/SwarmDebug.h>
 
@@ -31,7 +38,7 @@
 #include "MSPhasedTrafficLightLogic.h"
 #include "MSSOTLE2Sensors.h"
 #include <utils/common/RandHelper.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 
 
 // ===========================================================================
@@ -64,15 +71,14 @@ public:
      * @brief Constructor without sensors passed
      * @param[in] tlcontrol The tls control responsible for this tls
      * @param[in] id This traffic light id
-     * @param[in] programID This tls' sub-id (program id)
-     * @param[in] logicType This tls' type (static, actuated etc.)
+     * @param[in] subid This tls' sub-id (program id)
      * @param[in] phases Definitions of the phases
      * @param[in] step The initial phase index
      * @param[in] delay The time to wait before the first switch
      * @param[in] parameters Parameters defined for the tll
      */
     MSSOTLTrafficLightLogic(MSTLLogicControl& tlcontrol, const std::string& id,
-                            const std::string& programID, const TrafficLightType logicType, const Phases& phases, int step,
+                            const std::string& subid, const Phases& phases, int step,
                             SUMOTime delay,
                             const std::map<std::string, std::string>& parameters);
 
@@ -80,8 +86,7 @@ public:
      * @brief Constructor with sensors passed
      * @param[in] tlcontrol The tls control responsible for this tls
      * @param[in] id This tls' id
-     * @param[in] programID This tls' sub-id (program id)
-     * @param[in] logicType This tls' type (static, actuated etc.)
+     * @param[in] subid This tls' sub-id (program id)
      * @param[in] phases Definitions of the phases
      * @param[in] step The initial phase index
      * @param[in] delay The time to wait before the first switch
@@ -89,7 +94,7 @@ public:
      * @param[in] sensors The already defined sensor logic
      */
     MSSOTLTrafficLightLogic(MSTLLogicControl& tlcontrol, const std::string& id,
-                            const std::string& programID, const TrafficLightType logicType, const Phases& phases, int step,
+                            const std::string& subid, const Phases& phases, int step,
                             SUMOTime delay,
                             const std::map<std::string, std::string>& parameters,
                             MSSOTLSensors* sensors);
@@ -103,7 +108,7 @@ public:
      * @param[in] nb The detector builder
      * @exception ProcessError If something fails on initialisation
      */
-    void init(NLDetectorBuilder& nb);
+    void init(NLDetectorBuilder& nb) throw(ProcessError);
 
     /*
      * This member implements the base operations for all SOTL logics.
@@ -150,19 +155,19 @@ protected:
     bool isPushButtonPressed();
 
     int getThreshold() {
-        return StringUtils::toInt(getParameter("THRESHOLD", "10"));
+        return TplConvert::_2int(getParameter("THRESHOLD", "10").c_str());
     }
 
     double getSpeedThreshold() {
-        return StringUtils::toDouble(getParameter("THRESHOLDSPEED", "2"));
+        return TplConvert::_2double(getParameter("THRESHOLDSPEED", "2").c_str());
     }
 
     double getInputSensorsLength() {
-        return StringUtils::toDouble(getParameter("INSENSORSLENGTH", "100"));
+        return TplConvert::_2double(getParameter("INSENSORSLENGTH", "100").c_str());
     }
 
     double getOutputSensorsLength() {
-        return StringUtils::toDouble(getParameter("OUTSENSORSLENGTH", "80"));
+        return TplConvert::_2double(getParameter("OUTSENSORSLENGTH", "80").c_str());
     }
 
     /*
@@ -273,7 +278,7 @@ private:
      * 2-> queue length
      */
     int getMode() {
-        return StringUtils::toInt(getParameter("MODE", "0"));
+        return TplConvert::_2int(getParameter("MODE", "0").c_str());
     }
     /*
      * Decay threshold that should be used in case of penetration rate != 100%
@@ -281,11 +286,11 @@ private:
      * 1-> active
      */
     bool isDecayThresholdActivated() {
-        return StringUtils::toBool(getParameter("DECAY_THRESHOLD", "0"));
+        return TplConvert::_2bool(getParameter("DECAY_THRESHOLD", "0").c_str());
     }
 
     double getDecayConstant() {
-        return StringUtils::toDouble(getParameter("DECAY_CONSTANT", "-0.001"));
+        return TplConvert::_2double(getParameter("DECAY_CONSTANT", "-0.001").c_str());
     }
 
 };

@@ -1,18 +1,19 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    CC_Const.h
 /// @author  Michele Segata
 /// @date    Fri, 11 Apr 2014
-/// @version $Id$
+/// @version $Id: $
 ///
 // File defining constants, structs, and enums for cruise controllers
+/****************************************************************************/
+// Copyright (C) 2012-2017 Michele Segata (segata@ccs-labs.org)
+/****************************************************************************/
+//
+//   This program is free software; you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation; either version 2 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef CC_CONST_H
 #define CC_CONST_H
@@ -43,7 +44,7 @@ enum PLATOONING_LANE_CHANGE_ACTION {
  * leave the control to the mobility model which reproduces a human driver
  */
 enum ACTIVE_CONTROLLER
-{DRIVER = 0, ACC = 1, CACC = 2, FAKED_CACC = 3, PLOEG = 4, CONSENSUS = 5, FLATBED = 6};
+{DRIVER = 0, ACC = 1, CACC = 2, FAKED_CACC = 3, PLOEG = 4, CONSENSUS = 5};
 
 /**
  * @brief struct used as header for generic data passing to this model through
@@ -65,10 +66,6 @@ struct VEHICLE_DATA {
     double positionY;    //position of the vehicle in the simulation
     double time;         //time at which such information was read from vehicle's sensors
     double length;       //vehicle length
-    double u;            //controller acceleration
-    double speedX;       //vehicle speed on the X axis
-    double speedY;       //vehicle speed on the Y axis
-    double angle;        //vehicle angle in radians
 };
 
 #define MAX_N_CARS 8
@@ -94,18 +91,9 @@ struct VEHICLE_DATA {
 #define CC_PAR_CACC_C1                   "ccc1"    //C1
 #define CC_PAR_ENGINE_TAU                "cctau"   //engine time constant
 
-#define CC_PAR_UMIN                      "ccumin"  //lower saturation for u
-#define CC_PAR_UMAX                      "ccumax"  //upper saturation for u
-
 #define CC_PAR_PLOEG_H                   "ccph"    //time headway of ploeg's CACC
 #define CC_PAR_PLOEG_KP                  "ccpkp"   //kp parameter of ploeg's CACC
 #define CC_PAR_PLOEG_KD                  "ccpkd"   //kd parameter of ploeg's CACC
-
-#define CC_PAR_FLATBED_KA                "ccfka"   //ka parameter of flatbed CACC
-#define CC_PAR_FLATBED_KV                "ccfkv"   //kv parameter of flatbed CACC
-#define CC_PAR_FLATBED_KP                "ccfkp"   //kp parameter of flatbed CACC
-#define CC_PAR_FLATBED_H                 "ccfh"    //h parameter of flatbed CACC
-#define CC_PAR_FLATBED_D                 "ccfd"    //distance parameter of flatbed CACC
 
 #define CC_PAR_VEHICLE_ENGINE_MODEL      "ccem"    //set the engine model for a vehicle
 
@@ -129,9 +117,6 @@ struct VEHICLE_DATA {
 
 // set speed and acceleration of the platoon leader
 #define PAR_LEADER_SPEED_AND_ACCELERATION "cclsa"
-
-// set whether CACCs should use real or controller acceleration
-#define PAR_USE_CONTROLLER_ACCELERATION "ccca"
 
 // get lane count for the street the vehicle is currently traveling
 #define PAR_LANES_COUNT                  "cclc"
@@ -165,19 +150,6 @@ struct VEHICLE_DATA {
 
 // return engine information (for the realistic engine model)
 #define PAR_ENGINE_DATA                  "cced"
-
-// enabling/disabling auto feeding
-#define PAR_USE_AUTO_FEEDING             "ccaf"
-
-// enabling/disabling data prediction
-#define PAR_USE_PREDICTION               "ccup"
-
-// add/remove members from own platoon
-#define PAR_ADD_MEMBER                   "ccam"
-#define PAR_REMOVE_MEMBER                "ccrm"
-
-// let the leader automatically change lane for the whole platoon if there is a speed advantage
-#define PAR_ENABLE_AUTO_LANE_CHANGE      "ccalc"
 
 }
 

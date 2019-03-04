@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBTrafficLightLogic.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // A SUMO-compliant built logic for a traffic light
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <bitset>
@@ -44,6 +51,18 @@
 // ===========================================================================
 // static members
 // ===========================================================================
+const char NBTrafficLightLogic::allowedStatesInitializer[] = {LINKSTATE_TL_GREEN_MAJOR,
+                                                              LINKSTATE_TL_GREEN_MINOR,
+                                                              LINKSTATE_STOP, // used for NODETYPE_TRAFFIC_LIGHT_RIGHT_ON_RED
+                                                              LINKSTATE_TL_RED,
+                                                              LINKSTATE_TL_REDYELLOW,
+                                                              LINKSTATE_TL_YELLOW_MAJOR,
+                                                              LINKSTATE_TL_YELLOW_MINOR,
+                                                              LINKSTATE_TL_OFF_BLINKING,
+                                                              LINKSTATE_TL_OFF_NOSIGNAL
+                                                             };
+
+const std::string NBTrafficLightLogic::ALLOWED_STATES(NBTrafficLightLogic::allowedStatesInitializer, 9);
 
 // ===========================================================================
 // member method definitions
@@ -67,15 +86,15 @@ NBTrafficLightLogic::NBTrafficLightLogic(const NBTrafficLightLogic* logic) :
 NBTrafficLightLogic::~NBTrafficLightLogic() {}
 
 void
-NBTrafficLightLogic::addStep(SUMOTime duration, const std::string& state, int next, const std::string& name, int index) {
+NBTrafficLightLogic::addStep(SUMOTime duration, const std::string& state, int index) {
     addStep(duration, state,
             NBTrafficLightDefinition::UNSPECIFIED_DURATION,
             NBTrafficLightDefinition::UNSPECIFIED_DURATION,
-            next, name, index);
+            index);
 }
 
 void
-NBTrafficLightLogic::addStep(SUMOTime duration, const std::string& state, SUMOTime minDur, SUMOTime maxDur, int next, const std::string& name, int index) {
+NBTrafficLightLogic::addStep(SUMOTime duration, const std::string& state, SUMOTime minDur, SUMOTime maxDur, int index) {
     // check state size
     if (myNumLinks == 0) {
         // initialize
@@ -85,7 +104,7 @@ NBTrafficLightLogic::addStep(SUMOTime duration, const std::string& state, SUMOTi
                            " does not match declared number of links " + toString(myNumLinks));
     }
     // check state contents
-    const std::string::size_type illegal = state.find_first_not_of(SUMOXMLDefinitions::ALLOWED_TLS_LINKSTATES);
+    const std::string::size_type illegal = state.find_first_not_of(ALLOWED_STATES);
     if (std::string::npos != illegal) {
         throw ProcessError("When adding phase: illegal character '" + toString(state[illegal]) + "' in state");
     }
@@ -94,7 +113,7 @@ NBTrafficLightLogic::addStep(SUMOTime duration, const std::string& state, SUMOTi
         // insert at the end
         index = (int)myPhases.size();
     }
-    myPhases.insert(myPhases.begin() + index, PhaseDefinition(duration, state, minDur, maxDur, next, name));
+    myPhases.insert(myPhases.begin() + index, PhaseDefinition(duration, state, minDur, maxDur));
 }
 
 
@@ -105,22 +124,6 @@ NBTrafficLightLogic::deletePhase(int index) {
                               + toString(myPhases.size()) + " phases.");
     }
     myPhases.erase(myPhases.begin() + index);
-}
-
-
-void
-NBTrafficLightLogic::setStateLength(int numLinks, LinkState fill) {
-    if (myNumLinks > numLinks) {
-        for (PhaseDefinition& p : myPhases) {
-            p.state = p.state.substr(0, numLinks);
-        }
-    } else {
-        std::string add(numLinks - myNumLinks, (char)fill);
-        for (PhaseDefinition& p : myPhases) {
-            p.state = p.state + add;
-        }
-    }
-    myNumLinks = numLinks;
 }
 
 
@@ -211,17 +214,6 @@ NBTrafficLightLogic::setPhaseMaxDuration(int phaseIndex, SUMOTime duration) {
     myPhases[phaseIndex].maxDur = duration;
 }
 
-void
-NBTrafficLightLogic::setPhaseNext(int phaseIndex, int next) {
-    assert(phaseIndex < (int)myPhases.size());
-    myPhases[phaseIndex].next = next;
-}
-
-void
-NBTrafficLightLogic::setPhaseName(int phaseIndex, const std::string& name) {
-    assert(phaseIndex < (int)myPhases.size());
-    myPhases[phaseIndex].name = name;
-}
 
 /****************************************************************************/
 

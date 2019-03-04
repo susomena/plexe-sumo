@@ -1,19 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2013-01-14
+@version $Id$
 
-# @file    evaluateHBEFA3vsPHEM.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2013-01-14
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -29,28 +32,27 @@ hbefa = collections.defaultdict(lambda: collections.defaultdict(list))
 phem = collections.defaultdict(lambda: collections.defaultdict(list))
 maxVal = collections.defaultdict(float)
 for line in open('nefz_hbefa3/output.complex'):
-    lh = line.split(":")
+    l = line.split(":")
     if line[:7] == "Running":
         ec = line.split('/')[1][:-2]
-    elif len(lh) > 1:
-        val = float(lh[1])
-        hbefa[ec][lh[0]].append(val)
-        maxVal[lh[0]] = max(maxVal[lh[0]], val)
-for line in open('nefz_phemlight/output.complex'):
-    lp = line.split(":")
+    elif len(l) > 1:
+        val = float(l[1])
+        hbefa[ec][l[0]].append(val)
+        maxVal[l[0]] = max(maxVal[l[0]], val)
+for line in open('nefz_phemlightV4/output.complex'):
+    l = line.split(":")
     if line[:7] == "Running":
         ec = line.split('/')[1][:-2]
         if ec[:3] == "PKW":
             ec = "PC" + ec[3:]
         if ec[:3] == "LNF":
             ec = "LDV" + ec[3:ec.rfind("_")]
-    elif len(lp) > 1:
-        measure = lp[0]
-        val = float(lp[1])
-        phem[ec][measure].append(val)
-        if ec in hbefa and len(hbefa[ec][measure]) < len(phem[ec][measure]):
-            hbefa[ec][measure].append(hbefa[ec][measure][0])
-        maxVal[measure] = max(maxVal[measure], val)
+    elif len(l) > 1:
+        val = float(l[1])
+        phem[ec][l[0]].append(val)
+        if ec in hbefa and len(hbefa[ec][l[0]]) < len(phem[ec][l[0]]):
+            hbefa[ec][l[0]].append(hbefa[ec][l[0]][0])
+        maxVal[l[0]] = max(maxVal[l[0]], val)
 
 marker = {"PC_G_": "s", "PC_D_": "^", "LDV_G": "o", "LDV_D": "v"}
 # color = {"0": "k", "1": "r", "2": "y", "3": "g", "4": "m", "5": "b", "6": "c"}

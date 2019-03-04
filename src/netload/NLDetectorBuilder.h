@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NLDetectorBuilder.h
 /// @author  Daniel Krajzewicz
 /// @author  Clemens Honomichl
@@ -17,6 +9,17 @@
 ///
 // Builds detectors for microsim
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NLDetectorBuilder_h
 #define NLDetectorBuilder_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <microsim/output/MSCrossSection.h>
@@ -157,7 +164,7 @@ public:
      */
     void beginE3Detector(const std::string& id, const std::string& device, SUMOTime splInterval,
                          double haltingSpeedThreshold, SUMOTime haltingTimeThreshold,
-                         const std::string& vTypes, bool openEntry);
+                         const std::string& vTypes);
 
 
     /** @brief Builds an entry point of an e3 detector
@@ -315,7 +322,7 @@ public:
     virtual MSDetectorFileOutput* createE3Detector(const std::string& id,
             const CrossSectionVector& entries, const CrossSectionVector& exits,
             double haltingSpeedThreshold, SUMOTime haltingTimeThreshold,
-            const std::string& vTypes, bool openEntry);
+            const std::string& vTypes);
 
 
     /** @brief Creates edge based mean data collector using the given specification
@@ -382,7 +389,7 @@ protected:
         E3DetectorDefinition(const std::string& id,
                              const std::string& device, double haltingSpeedThreshold,
                              SUMOTime haltingTimeThreshold, SUMOTime splInterval,
-                             const std::string& vTypes, bool openEntry);
+                             const std::string& vTypes);
 
         /// @brief Destructor
         ~E3DetectorDefinition();
@@ -403,8 +410,6 @@ protected:
         SUMOTime mySampleInterval;
         /// @brief The device the detector shall use
         const std::string myVehicleTypes;
-        /// @brief Whether the detector is declared as having incomplete entry detectors
-        bool myOpenEntry;
         //@}
 
     private:

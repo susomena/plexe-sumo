@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSBatteryExport.cpp
 /// @author  Mario Krumnow
 /// @author  Tamas Kurczveil
@@ -16,12 +8,27 @@
 ///
 // Realises dumping Battery Data
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <microsim/MSEdgeControl.h>
 #include <microsim/MSEdge.h>
@@ -56,7 +63,9 @@ MSBatteryExport::write(OutputDevice& of, SUMOTime timestep, int precision) {
         std::string fclass = veh->getVehicleType().getID();
         fclass = fclass.substr(0, fclass.find_first_of("@"));
 
-        if (static_cast<MSDevice_Battery*>(veh->getDevice(typeid(MSDevice_Battery))) != nullptr) {
+        Position pos = veh->getLane()->getShape().positionAtOffset(veh->getPositionOnLane());
+
+        if (static_cast<MSDevice_Battery*>(veh->getDevice(typeid(MSDevice_Battery))) != 0) {
             MSDevice_Battery* batteryToExport = dynamic_cast<MSDevice_Battery*>(veh->getDevice(typeid(MSDevice_Battery)));
             if (batteryToExport->getMaximumBatteryCapacity() > 0) {
                 // Open Row
@@ -89,17 +98,12 @@ MSBatteryExport::write(OutputDevice& of, SUMOTime timestep, int precision) {
                 of.writeAttr(SUMO_ATTR_SPEED, veh->getSpeed());
                 // Write Acceleration
                 of.writeAttr(SUMO_ATTR_ACCELERATION, veh->getAcceleration());
-
-                Position pos = veh->getPosition();
+                // Write pos x
                 of.writeAttr(SUMO_ATTR_X, veh->getPosition().x());
+                // Write pos y
                 of.writeAttr(SUMO_ATTR_Y, veh->getPosition().y());
-
-                // Write Lane ID / edge ID
-                if (MSGlobals::gUseMesoSim) {
-                    of.writeAttr(SUMO_ATTR_EDGE, veh->getEdge()->getID());
-                } else {
-                    of.writeAttr(SUMO_ATTR_LANE, veh->getLane()->getID());
-                }
+                // Write Lane ID
+                of.writeAttr(SUMO_ATTR_LANE, veh->getLane()->getID());
                 // Write vehicle position in the lane
                 of.writeAttr(SUMO_ATTR_POSONLANE, veh->getPositionOnLane());
                 // Write Time stopped (In all cases)

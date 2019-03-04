@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIImporter_MATSim.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Importer for networks stored in MATSim format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 #include <set>
 #include <functional>
 #include <sstream>
@@ -37,7 +44,7 @@
 #include <utils/options/OptionsCont.h>
 #include <utils/common/FileHelpers.h>
 #include <utils/common/StringTokenizer.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/xml/XMLSubSys.h>
 #include "NILoader.h"
 #include "NIImporter_MATSim.h"
@@ -139,7 +146,7 @@ NIImporter_MATSim::NodesHandler::myStartElement(int element, const SUMOSAXAttrib
     }
     // get the id, report a warning if not given or empty...
     bool ok = true;
-    std::string id = attrs.get<std::string>(MATSIM_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(MATSIM_ATTR_ID, 0, ok);
     double x = attrs.get<double>(MATSIM_ATTR_X, id.c_str(), ok);
     double y = attrs.get<double>(MATSIM_ATTR_Y, id.c_str(), ok);
     if (!ok) {
@@ -197,9 +204,9 @@ NIImporter_MATSim::EdgesHandler::myStartElement(int element,
             return;
         }
         try {
-            int hours = StringUtils::toInt(st.next());
-            int minutes = StringUtils::toInt(st.next());
-            int seconds = StringUtils::toInt(st.next());
+            int hours = TplConvert::_2int(st.next().c_str());
+            int minutes = TplConvert::_2int(st.next().c_str());
+            int seconds = TplConvert::_2int(st.next().c_str());
             myCapacityNorm = (double)(hours * 3600 + minutes * 60 + seconds);
         } catch (NumberFormatException&) {
         } catch (EmptyData&) {
@@ -211,7 +218,7 @@ NIImporter_MATSim::EdgesHandler::myStartElement(int element,
     if (element != MATSIM_TAG_LINK) {
         return;
     }
-    std::string id = attrs.get<std::string>(MATSIM_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(MATSIM_ATTR_ID, 0, ok);
     std::string fromNodeID = attrs.get<std::string>(MATSIM_ATTR_FROM, id.c_str(), ok);
     std::string toNodeID = attrs.get<std::string>(MATSIM_ATTR_TO, id.c_str(), ok);
     double length = attrs.get<double>(MATSIM_ATTR_LENGTH, id.c_str(), ok); // override computed?
@@ -223,20 +230,20 @@ NIImporter_MATSim::EdgesHandler::myStartElement(int element,
     std::string origid = attrs.getOpt<std::string>(MATSIM_ATTR_ORIGID, id.c_str(), ok, "");
     NBNode* fromNode = myNodeCont.retrieve(fromNodeID);
     NBNode* toNode = myNodeCont.retrieve(toNodeID);
-    if (fromNode == nullptr) {
+    if (fromNode == 0) {
         WRITE_ERROR("Could not find from-node for edge '" + id + "'.");
     }
-    if (toNode == nullptr) {
+    if (toNode == 0) {
         WRITE_ERROR("Could not find to-node for edge '" + id + "'.");
     }
-    if (fromNode == nullptr || toNode == nullptr) {
+    if (fromNode == 0 || toNode == 0) {
         return;
     }
     if (myLanesFromCapacity) {
         permLanes = myCapacity2Lanes.get(capacity);
     }
     NBEdge* edge = new NBEdge(id, fromNode, toNode, "", freeSpeed, (int) permLanes, -1, NBEdge::UNSPECIFIED_WIDTH, NBEdge::UNSPECIFIED_OFFSET);
-    edge->setParameter("capacity", toString(capacity));
+    edge->addParameter("capacity", toString(capacity));
     if (myKeepEdgeLengths) {
         edge->setLoadedLength(length);
     }

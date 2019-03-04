@@ -1,18 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2007-10-25
+@version $Id$
 
-# @file    runner.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2007-10-25
-# @version $Id$
+This script is a test runner for the broken networks.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2016 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -198,29 +202,27 @@ def tinyPath(xmlStruct, path, newValue):
         else:
             print("Unsupported modification defined", file=sys.stderr)
 
-
 if sys.argv[1] == "sumo":
     call = [checkBinary('sumo'), "--no-step-log", "--no-duration-log"]
-elif sys.argv[1] == "netconvert":
-    call = [checkBinary('netconvert'), "-o", "/dev/null"]
 elif sys.argv[1] == "dfrouter":
-    call = [checkBinary('dfrouter'), "--detector-files", "input_additional.add.xml"]
+    call = [checkBinary('dfrouter'),
+            "--detector-files", "input_additional.add.xml"]
 elif sys.argv[1] == "duarouter" or sys.argv[1] == "jtrrouter":
     call = [checkBinary(sys.argv[1]), "--no-step-log",
             "-o", "dummy.xml", "-a", "input_additional.add.xml"]
 else:
     print("Unsupported application defined", file=sys.stderr)
-call += sys.argv[2:] + ["-n"]
-if sys.argv[1] == "netconvert":
-    call[-1] = "-s"
+call += sys.argv[2:]
 
 netconvertBinary = checkBinary('netconvert')
 
 # build the correct network, first
 print(">>> Building the correct network")
-retcode = subprocess.call([netconvertBinary, "-c", "netconvert.netccfg"])
+retcode = subprocess.call(
+    [netconvertBinary, "-c", "netconvert.netccfg"], stdout=sys.stdout, stderr=sys.stderr)
 print(">>> Trying the correct network")
-retcode = subprocess.call(call + ["correct.net.xml"])
+retcode = subprocess.call(
+    call + ["-n", "correct.net.xml"], stdout=sys.stdout, stderr=sys.stderr)
 if retcode != 0:
     print("Error on processing the 'correct' network!")
     sys.exit()
@@ -236,7 +238,8 @@ for c in changes:
     writer.close()
     print("------------------ " + c[0] + ":" + c[1], file=sys.stderr)
     sys.stderr.flush()
-    retcode = subprocess.call(call + ["mod.net.xml"])
+    retcode = subprocess.call(
+        call + ["-n", "mod.net.xml"], stdout=sys.stdout, stderr=sys.stderr)
     sys.stderr.flush()
     sys.stdout.flush()
     if retcode != 1:

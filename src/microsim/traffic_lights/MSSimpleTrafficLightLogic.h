@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSSimpleTrafficLightLogic.h
 /// @author  Daniel Krajzewicz
 /// @author  Julia Ringel
@@ -18,6 +10,17 @@
 ///
 // A fixed traffic light logic
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSSimpleTrafficLightLogic_h
 #define MSSimpleTrafficLightLogic_h
 
@@ -25,7 +28,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utility>
 #include <vector>
@@ -57,17 +64,13 @@ public:
     /** @brief Constructor
      * @param[in] tlcontrol The tls control responsible for this tls
      * @param[in] id This tls' id
-     * @param[in] programID This tls' sub-id (program id)
-     * @param[in] logicType This tls' type (static, actuated etc.)
-     * @param[in] delay The time to wait before the first switch
+     * @param[in] subid This tls' sub-id (program id)
      * @param[in] phases Definitions of the phases
      * @param[in] step The initial phase index
      * @param[in] delay The time to wait before the first switch
-     * @param[in] parameters Additional parameters (especially for actuated logics)
      */
     MSSimpleTrafficLightLogic(MSTLLogicControl& tlcontrol,
-                              const std::string& id, const std::string& programID,
-                              const TrafficLightType logicType,
+                              const std::string& id, const std::string& subid,
                               const Phases& phases, int step, SUMOTime delay,
                               const std::map<std::string, std::string>& parameters);
 

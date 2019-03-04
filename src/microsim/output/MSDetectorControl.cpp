@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDetectorControl.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -19,12 +11,27 @@
 ///
 // Detectors container; responsible for string and output generation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include "MSDetectorControl.h"
@@ -111,13 +118,14 @@ MSDetectorControl::getTypedDetectors(SumoXMLTag type) const {
 
 void
 MSDetectorControl::updateDetectors(const SUMOTime step) {
-    for (const auto& i : myDetectors) {
-        for (const auto& j : getTypedDetectors(i.first)) {
-            j.second->detectorUpdate(step);
+    for (std::map<SumoXMLTag, NamedObjectCont<MSDetectorFileOutput*> >::const_iterator i = myDetectors.begin(); i != myDetectors.end(); ++i) {
+        const std::map<std::string, MSDetectorFileOutput*>& dets = getTypedDetectors((*i).first).getMyMap();
+        for (std::map<std::string, MSDetectorFileOutput*>::const_iterator j = dets.begin(); j != dets.end(); ++j) {
+            (*j).second->detectorUpdate(step);
         }
     }
-    for (MSMeanData* const i : myMeanData) {
-        i->detectorUpdate(step);
+    for (std::vector<MSMeanData*>::const_iterator i = myMeanData.begin(); i != myMeanData.end(); ++i) {
+        (*i)->detectorUpdate(step);
     }
 }
 

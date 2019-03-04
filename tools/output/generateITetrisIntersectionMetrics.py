@@ -1,28 +1,30 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    generateITetrisIntersectionMetrics.py
+@author  Daniel Krajzewicz
+@author  Lena Kalleske
+@author  Michael Behrisch
+@date    2007-10-25
+@version $Id$
 
-# @file    generateITetrisIntersectionMetrics.py
-# @author  Daniel Krajzewicz
-# @author  Lena Kalleske
-# @author  Michael Behrisch
-# @date    2007-10-25
-# @version $Id$
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
 
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 from optparse import OptionParser
 import os
 import sys
-from numpy import mean, log
+from numpy import mean
 from xml.sax import parse, handler
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import sumolib.net  # noqa
+import sumolib.net
 
 
 def getBasicStats(net, lanesInfo, T):
@@ -296,11 +298,9 @@ class HBEFAReader(handler.ContentHandler):
 # initialise
 optParser = OptionParser()
 optParser.add_option("-n", "--netfile", dest="netfile",
-                     help="name of the netfile (f.e. 'inputs\\pasubio\\a_costa.net.xml')", metavar="<FILE>",
-                     type="string")
+                     help="name of the netfile (f.e. 'inputs\\pasubio\\a_costa.net.xml')", metavar="<FILE>", type="string")
 optParser.add_option("-p", "--path", dest="path",
-                     help="name of folder to work with (f.e. 'inputs\\a_costa\\')", metavar="<FOLDER>",
-                     type="string", default="./")
+                     help="name of folder to work with (f.e. 'inputs\\a_costa\\')", metavar="<FOLDER>", type="string", default="./")
 optParser.add_option("-o", "--harmonoiseFile", dest="harmonoiseFile",
                      help="name of the harmonoise file", metavar="<FOLDER>", type="string")
 optParser.add_option("-e", "--HBEFAFile", dest="hbefaFile",
@@ -334,7 +334,7 @@ if options.harmonoiseFile:
 
 if options.hbefaFile:
     hbefaOutput = HBEFAReader(net, tlsID2NodeID)
-    parse(options.hbefaFile, hbefaOutput)
+    parse(hbefaFile, hbefaOutput)
     mergeInfos(tlsInfo, hbefaOutput._tlsCO, 'CO')
     mergeInfos(tlsInfo, hbefaOutput._tlsCO2, 'CO2')
     mergeInfos(tlsInfo, hbefaOutput._tlsHC, 'HC')

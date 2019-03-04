@@ -1,4 +1,5 @@
 set(utils_common_STAT_SRCS
+   AbstractMutex.h
    Command.h
    FileHelpers.cpp
    FileHelpers.h
@@ -33,6 +34,8 @@ set(utils_common_STAT_SRCS
    SysUtils.h
    SysUtils.cpp
    ToString.h
+   TplCheck.h
+   TplConvert.h
    UtilExceptions.h
    ValueRetriever.h
    ValueSource.h

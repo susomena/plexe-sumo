@@ -6,16 +6,16 @@ create
 #create_values
 
 # delete additional
-delete
+#delete
 
 # inspect additional
-inspect
-
-# inspect selection of additionals
-inspect_selection
+#inspect
 
 # load additional
 load
+
+# load values of additional
+load_values
 
 # volatile recomputing
 volatileRecomputing

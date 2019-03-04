@@ -1,6 +1,7 @@
 noinst_LIBRARIES = libcommon.a
 
-libcommon_a_SOURCES = Command.h \
+libcommon_a_SOURCES = AbstractMutex.h \
+Command.h \
 FileHelpers.cpp FileHelpers.h \
 IDSupplier.h IDSupplier.cpp \
 MsgHandler.h MsgHandler.cpp \
@@ -17,7 +18,8 @@ SUMOTime.cpp SUMOTime.h \
 SUMOVehicleClass.cpp SUMOVehicleClass.h \
 SystemFrame.cpp SystemFrame.h \
 SysUtils.h SysUtils.cpp \
-ToString.h UtilExceptions.h \
+ToString.h TplCheck.h \
+TplConvert.h UtilExceptions.h \
 ValueRetriever.h ValueSource.h \
 ValueTimeLine.h VectorHelper.h \
 WrappingCommand.h SwarmDebug.h

@@ -1,47 +1,26 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@author Leonhard Luecken
+@date   2017-04-09
 
-# @file    _reporting.py
-# @author Leonhard Luecken
-# @date   2017-04-09
-# @version $Id$
+-----------------------------------
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
 
-from collections import deque
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+-----------------------------------
+"""
+
+import simpla._config as cfg
 import sys
 import traci
 
-VERBOSITY = 1
-WARNING_LOG = deque()
-REPORT_LOG = deque()
-
-
-def initDefaults():
-    global VERBOSITY, MAX_LOG_SIZE, WARNING_LOG, REPORT_LOG
-    # control level of verbosity
-    # 0 - silent (only errors)
-    # 1 - standard (errors and warnings)
-    # 2 - log (additional status messages for platoons)
-    # 3 - extended log (more status information)
-    # 4 - insane (all kind of single vehicle detailed state infos)
-    VERBOSITY = 1
-
-    # log storage
-    MAX_LOG_SIZE = 1000
-    WARNING_LOG = deque()
-    REPORT_LOG = deque()
-
-
-# perform default init
-initDefaults()
-
 
 def simTime():
-    return traci.simulation.getTime()
+    return traci.simulation.getCurrentTime() / 1000.
 
 
 def array2String(a):
@@ -55,17 +34,13 @@ class Warner(object):
     def __init__(self, domain):
         self._domain = domain
 
-    def __call__(self, msg, omitReportTime=False):
-        global MAX_LOG_SIZE, WARNING_LOG
-        if len(WARNING_LOG) >= MAX_LOG_SIZE:
-            WARNING_LOG.popleft()
-        time = str(simTime())
-        rep = "WARNING: " + str(msg) + " (" + self._domain + ")"
-        if not omitReportTime:
-            sys.stderr.write(time + ": " + rep + "\n")
-        else:
-            sys.stderr.write(rep + "\n")
-        WARNING_LOG.append((time, rep))
+    def __call__(self, msg, minVerbosityLevel=0, omitReportTime=False):
+
+        if minVerbosityLevel <= cfg.VERBOSITY:
+            if omitReportTime:
+                sys.stderr.write("WARNING: " + str(msg) + " (" + self._domain + ")\n")
+            else:
+                sys.stderr.write(str(simTime()) + ": WARNING: " + str(msg) + " (" + self._domain + ")\n")
 
 
 class Reporter(object):
@@ -73,14 +48,9 @@ class Reporter(object):
     def __init__(self, domain):
         self._domain = domain
 
-    def __call__(self, msg, omitReportTime=False):
-        global MAX_LOG_SIZE, REPORT_LOG
-        if len(REPORT_LOG) >= MAX_LOG_SIZE:
-            REPORT_LOG.popleft()
-        time = str(simTime())
-        rep = str(msg) + " (" + self._domain + ")"
-        if not omitReportTime:
-            sys.stdout.write(time + ": " + rep + "\n")
-        else:
-            sys.stdout.write(rep + "\n")
-        REPORT_LOG.append((time, rep))
+    def __call__(self, msg, minVerbosityLevel=0, omitReportTime=False):
+        if minVerbosityLevel <= cfg.VERBOSITY:
+            if omitReportTime:
+                print(str(msg) + " (" + self._domain + ")")
+            else:
+                print(str(simTime()) + ": " + str(msg) + " (" + self._domain + ")")

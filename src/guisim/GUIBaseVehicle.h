@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIBaseVehicle.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // A MSVehicle extended by some values for usage within the gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIBaseVehicle_h
 #define GUIBaseVehicle_h
 
@@ -24,13 +27,17 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <set>
 #include <string>
-#include <fx.h>
 #include <utils/common/RGBColor.h>
+#include <utils/foxtools/MFXMutex.h>
 #include <utils/geom/GeomHelper.h>
 #include <utils/geom/PositionVector.h>
 #include <utils/gui/globjects/GUIGlObject.h>
@@ -90,8 +97,8 @@ public:
     /// @brief gets the color value according to the current scheme index
     virtual double getColorValue(int activeScheme) const = 0;
 
-    /// @brief draws the given guiShape with distinct carriages/modules
-    virtual void drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool asImage) const = 0;
+    /// @brief draws the given guiShape if it has distinc carriages/modules and eturns true if so
+    virtual bool drawAction_drawCarriageClass(const GUIVisualizationSettings& s, SUMOVehicleShape guiShape, bool asImage) const = 0;
 
     /** @brief Returns the time since the last lane change in seconds
      * @see MSVehicle::myLastLaneChangeOffset
@@ -102,7 +109,7 @@ public:
     /** @brief Draws the route
      * @param[in] r The route to draw
      */
-    virtual void drawRouteHelper(const GUIVisualizationSettings& s, const MSRoute& r, bool future) const = 0;
+    virtual void drawRouteHelper(const MSRoute& r, double exaggeration) const = 0;
 
     /// @brief retrieve information about the current stop state
     virtual std::string getStopInfo() const = 0;
@@ -133,7 +140,7 @@ public:
         UNUSED_PARAMETER(onlyOne);
     }
     virtual void drawAction_drawLinkItems(const GUIVisualizationSettings& /*s*/) const {}
-    virtual void drawAction_drawPersonsAndContainers(const GUIVisualizationSettings& s) const;
+    virtual void drawAction_drawPersonsAndContainers(const GUIVisualizationSettings& /*s*/) const {}
     /** @brief Draws the vehicle's best lanes */
     virtual void drawBestLanes() const {};
     virtual void drawAction_drawVehicleBlueLight() const {}
@@ -245,10 +252,6 @@ public:
         long onCmdShowCurrentRoute(FXObject*, FXSelector, void*);
         /// @brief Called if the current route of the vehicle shall be hidden
         long onCmdHideCurrentRoute(FXObject*, FXSelector, void*);
-        /// @brief Called if the current route of the vehicle shall be shown
-        long onCmdShowFutureRoute(FXObject*, FXSelector, void*);
-        /// @brief Called if the current route of the vehicle shall be hidden
-        long onCmdHideFutureRoute(FXObject*, FXSelector, void*);
         /// @brief Called if the vehicle's best lanes shall be shown
         long onCmdShowBestLanes(FXObject*, FXSelector, void*);
         /// @brief Called if the vehicle's best lanes shall be hidden
@@ -292,9 +295,7 @@ public:
         /// @brief LFLinkItems
         VO_SHOW_LFLINKITEMS = 8,
         /// @brief draw vehicle outside the road network
-        VO_DRAW_OUTSIDE_NETWORK = 16,
-        /// @brief show vehicle's current continued from the current position
-        VO_SHOW_FUTURE_ROUTE = 32
+        VO_DRAW_OUTSIDE_NETWORK = 16
     };
 
     /// @brief Enabled visualisations, per view
@@ -306,7 +307,7 @@ public:
      * @param[in] routeNo The route to show (0: the current, >0: prior)
      * @param[in] darken The amount to darken the route by
      */
-    void drawRoute(const GUIVisualizationSettings& s, int routeNo, double darken, bool future=false) const;
+    void drawRoute(const GUIVisualizationSettings& s, int routeNo, double darken) const;
 
 
     /// @}
@@ -318,6 +319,21 @@ protected:
     /// @brief sets the color according to the currente settings
     void setColor(const GUIVisualizationSettings& s) const;
 
+    /// @name drawing helper methods
+    /// @{
+    static void drawPoly(double* poses, double offset);
+
+    void drawAction_drawVehicleAsBoxPlus() const;
+    void drawAction_drawVehicleAsTrianglePlus() const;
+    void drawAction_drawVehicleAsPoly(const GUIVisualizationSettings& s) const;
+
+    /* @brief try to draw vehicle as raster image and return true if sucessful
+     * @param[in] length The custom length of the vehicle
+     *   (defaults to the * length specified in the vehicle type if -1 is passed)
+    */
+    bool drawAction_drawVehicleAsImage(const GUIVisualizationSettings& s, double length = -1) const;
+    /// @}
+
     /// @brief returns the seat position for the person with the given index
     const Position& getSeatPosition(int personIndex) const;
 
@@ -328,12 +344,13 @@ protected:
         return myVehicle.getVehicleType();
     }
 
-    /// @brief draw vehicle body and return whether carriages are being drawn
-    bool drawAction_drawVehicleAsPolyWithCarriagges(const GUIVisualizationSettings& s, bool asImage=false) const;
 
 protected:
     /// The mutex used to avoid concurrent updates of the vehicle buffer
-    mutable FXMutex myLock;
+    mutable MFXMutex myLock;
+
+    /// Variable to set with the length of the last drawn carriage or the vehicle length
+    mutable double myCarriageLength;
 
     /// @brief positions of seats in the vehicle (updated at every drawing step)
     mutable PositionVector mySeatPositions;

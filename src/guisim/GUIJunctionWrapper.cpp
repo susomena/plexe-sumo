@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIJunctionWrapper.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // }
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utility>
@@ -36,8 +43,6 @@
 #include <utils/geom/Position.h>
 #include <microsim/MSNet.h>
 #include <microsim/MSInternalJunction.h>
-#include <microsim/traffic_lights/MSTrafficLightLogic.h>
-#include <microsim/traffic_lights/MSTLLogicControl.h>
 #include <gui/GUIApplicationWindow.h>
 #include <gui/GUIGlobals.h>
 #include <utils/gui/windows/GUIAppEnum.h>
@@ -47,6 +52,7 @@
 #include <utils/gui/div/GUIGlobalSelection.h>
 #include <utils/gui/div/GUIParameterTableWindow.h>
 #include <utils/gui/div/GLHelper.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/gui/globjects/GLIncludes.h>
 
 //#define GUIJunctionWrapper_DEBUG_DRAW_NODE_SHAPE_VERTICES
@@ -54,10 +60,9 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-GUIJunctionWrapper::GUIJunctionWrapper(MSJunction& junction, const std::string& tllID):
-    GUIGlObject(GLO_JUNCTION, junction.getID()),
-    myJunction(junction),
-    myTLLID(tllID) {
+GUIJunctionWrapper::GUIJunctionWrapper(MSJunction& junction)
+    : GUIGlObject(GLO_JUNCTION, junction.getID()),
+      myJunction(junction) {
     if (myJunction.getShape().size() == 0) {
         Position pos = myJunction.getPosition();
         myBoundary = Boundary(pos.x() - 1., pos.y() - 1., pos.x() + 1., pos.y() + 1.);
@@ -67,25 +72,16 @@ GUIJunctionWrapper::GUIJunctionWrapper(MSJunction& junction, const std::string& 
     myMaxSize = MAX2(myBoundary.getWidth(), myBoundary.getHeight());
     myIsInternal = myJunction.getType() == NODETYPE_INTERNAL;
     myAmWaterway = myJunction.getIncoming().size() + myJunction.getOutgoing().size() > 0;
-    myAmRailway = myJunction.getIncoming().size() + myJunction.getOutgoing().size() > 0;
-    for (auto it = myJunction.getIncoming().begin(); it != myJunction.getIncoming().end() && (myAmWaterway || myAmRailway); ++it) {
-        if (!(*it)->isInternal()) {
-            if (!isWaterway((*it)->getPermissions())) {
-                myAmWaterway = false;
-            }
-            if (!isRailway((*it)->getPermissions())) {
-                myAmRailway = false;
-            }
+    for (ConstMSEdgeVector::const_iterator it = myJunction.getIncoming().begin(); it != myJunction.getIncoming().end(); ++it) {
+        if (!(*it)->isInternal() && !isWaterway((*it)->getPermissions())) {
+            myAmWaterway = false;
+            break;
         }
     }
-    for (auto it = myJunction.getOutgoing().begin(); it != myJunction.getOutgoing().end() && (myAmWaterway || myAmRailway); ++it) {
-        if (!(*it)->isInternal()) {
-            if (!isWaterway((*it)->getPermissions())) {
-                myAmWaterway = false;
-            }
-            if (!isRailway((*it)->getPermissions())) {
-                myAmRailway = false;
-            }
+    for (ConstMSEdgeVector::const_iterator it = myJunction.getOutgoing().begin(); it != myJunction.getOutgoing().end(); ++it) {
+        if (!(*it)->isInternal() && !isWaterway((*it)->getPermissions())) {
+            myAmWaterway = false;
+            break;
         }
     }
 }
@@ -102,21 +98,15 @@ GUIJunctionWrapper::getPopUpMenu(GUIMainWindow& app,
     buildCenterPopupEntry(ret);
     buildNameCopyPopupEntry(ret);
     buildSelectionPopupEntry(ret);
-    buildShowParamsPopupEntry(ret);
     buildPositionCopyEntry(ret, false);
     return ret;
 }
 
 
 GUIParameterTableWindow*
-GUIJunctionWrapper::getParameterWindow(GUIMainWindow& app, GUISUMOAbstractView&) {
-    GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 12 + (int)myJunction.getParametersMap().size());
-    // add items
-    ret->mkItem("type", false, toString(myJunction.getType()));
-    // close building
-    ret->closeBuilding(&myJunction);
-    return ret;
+GUIJunctionWrapper::getParameterWindow(GUIMainWindow& /*app*/,
+                                       GUISUMOAbstractView&) {
+    return 0;
 }
 
 
@@ -130,57 +120,43 @@ GUIJunctionWrapper::getCenteringBoundary() const {
 
 void
 GUIJunctionWrapper::drawGL(const GUIVisualizationSettings& s) const {
+    // check whether it is not too small
+    if (s.scale * myMaxSize < 1.) {
+        return;
+    }
     if (!myIsInternal && s.drawJunctionShape) {
-        // check whether it is not too small
-        const double exaggeration = s.junctionSize.getExaggeration(s, this, 4);
-        if (s.scale * exaggeration >= s.junctionSize.minSize) {
-            glPushMatrix();
-            glPushName(getGlID());
-            const double colorValue = getColorValue(s);
-            GLHelper::setColor(s.junctionColorer.getScheme().getColor(colorValue));
+        glPushMatrix();
+        glPushName(getGlID());
+        const double colorValue = getColorValue(s);
+        GLHelper::setColor(s.junctionColorer.getScheme().getColor(colorValue));
 
-            // recognize full transparency and simply don't draw
-            GLfloat color[4];
-            glGetFloatv(GL_CURRENT_COLOR, color);
-            if (color[3] != 0) {
-                PositionVector shape = myJunction.getShape();
-                shape.closePolygon();
-                if (exaggeration > 1) {
-                    shape.scaleRelative(exaggeration);
-                }
-                glTranslated(0, 0, getType());
-                if (s.scale * myMaxSize < 40.) {
-                    GLHelper::drawFilledPoly(shape, true);
-                } else {
-                    GLHelper::drawFilledPolyTesselated(shape, true);
-                }
-#ifdef GUIJunctionWrapper_DEBUG_DRAW_NODE_SHAPE_VERTICES
-                GLHelper::debugVertices(shape, 80 / s.scale);
-#endif
-                // make small junctions more visible when coloring by type
-                if (myJunction.getType() == NODETYPE_RAIL_SIGNAL && s.junctionColorer.getActive() == 2) {
-                    glTranslated(myJunction.getPosition().x(), myJunction.getPosition().y(), getType() + 0.05);
-                    GLHelper::drawFilledCircle(2 * exaggeration, 12);
-                }
+        // recognize full transparency and simply don't draw
+        GLfloat color[4];
+        glGetFloatv(GL_CURRENT_COLOR, color);
+        const double exaggeration = s.junctionSize.getExaggeration(s);
+        if (color[3] != 0 && s.scale * exaggeration > s.junctionSize.minSize) {
+            PositionVector shape = myJunction.getShape();
+            shape.closePolygon();
+            if (exaggeration > 1) {
+                shape.scaleRelative(exaggeration);
             }
-            glPopName();
-            glPopMatrix();
+            glTranslated(0, 0, getType());
+            if (s.scale * myMaxSize < 40.) {
+                GLHelper::drawFilledPoly(shape, true);
+            } else {
+                GLHelper::drawFilledPolyTesselated(shape, true);
+            }
+#ifdef GUIJunctionWrapper_DEBUG_DRAW_NODE_SHAPE_VERTICES
+            GLHelper::debugVertices(shape, 80 / s.scale);
+#endif
         }
+        glPopName();
+        glPopMatrix();
     }
     if (myIsInternal) {
-        drawName(myJunction.getPosition(), s.scale, s.internalJunctionName, s.angle);
+        drawName(myJunction.getPosition(), s.scale, s.internalJunctionName);
     } else {
-        drawName(myJunction.getPosition(), s.scale, s.junctionName, s.angle);
-        if (s.tlsPhaseIndex.show && myTLLID != "") {
-            const MSTrafficLightLogic* active = MSNet::getInstance()->getTLSControl().getActive(myTLLID);
-            const int index = active->getCurrentPhaseIndex();
-            const std::string& name = active->getCurrentPhaseDef().getName();
-            GLHelper::drawTextSettings(s.tlsPhaseIndex, toString(index), myJunction.getPosition(), s.scale, s.angle);
-            if (name != "") {
-                const Position lower = myJunction.getPosition() - Position(0, 0.8 * s.tlsPhaseIndex.scaledSize(s.scale));
-                GLHelper::drawTextSettings(s.tlsPhaseIndex, name, lower, s.scale, s.angle);
-            }
-        }
+        drawName(myJunction.getPosition(), s.scale, s.junctionName);
     }
 }
 
@@ -191,8 +167,6 @@ GUIJunctionWrapper::getColorValue(const GUIVisualizationSettings& s) const {
         case 0:
             if (myAmWaterway) {
                 return 1;
-            } else if (myAmRailway && MSNet::getInstance()->hasInternalLinks()) {
-                return 2;
             } else {
                 return 0;
             }
@@ -232,13 +206,12 @@ GUIJunctionWrapper::getColorValue(const GUIVisualizationSettings& s) const {
                 case NODETYPE_RAIL_CROSSING:
                     return 12;
             }
-        case 3:
-            return myJunction.getPosition().z();
         default:
             assert(false);
             return 0;
     }
 }
+
 
 #ifdef HAVE_OSG
 void

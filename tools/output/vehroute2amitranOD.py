@@ -1,18 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    vehroute2amitranOD.py
+@author  Michael Behrisch
+@date    2014-04-08
+@version $Id$
 
-# @file    vehroute2amitranOD.py
-# @author  Michael Behrisch
-# @date    2014-04-08
-# @version $Id$
+Convert a vehroute-output file into amitran route and od files
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import os
 import sys
@@ -72,14 +76,13 @@ def convert(vehRoutes, routeOut, odOut, interval):
                         od.write('            <odPair origin="%s" destination="%s" amount="%s">\n' % (
                             orig, dest, total))
                         for idx, (amount, ttSum) in routeMap.iteritems():
-                            od.write(('                <routeCost routeId="%s" amount="%s" ' +
-                                      'averageTraveltime="%s"/>\n') % (idx, amount, int(1000. * ttSum / amount)))
+                            od.write('                <routeCost routeId="%s" amount="%s" averageTraveltime="%s"/>\n' % (
+                                idx, amount, int(1000. * ttSum / amount)))
                             total += amount
                         od.write('            </odPair>\n')
                     od.write('        </timeSlice>\n')
             od.write('    <actorConfig/>\n')
         od.write("</demand>\n")
-
 
 if __name__ == "__main__":
     optParser = OptionParser()

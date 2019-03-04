@@ -1,14 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// activitygen module
-// Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    AGWorkPosition.cpp
 /// @author  Piotr Woznica
 /// @author  Walter Bamberger
@@ -19,12 +9,29 @@
 ///
 // Location and schedules of a work position: linked with one adult
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+// activitygen module
+// Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "AGWorkPosition.h"
 #include "AGStreet.h"
@@ -41,7 +48,7 @@
 AGWorkPosition::AGWorkPosition(AGDataAndStatistics* ds, const AGStreet& inStreet) :
     myStatData(ds),
     myLocation(inStreet),
-    myAdult(nullptr),
+    myAdult(0),
     myOpeningTime(generateOpeningTime(*ds)),
     myClosingTime(generateClosingTime(*ds)) {
     ds->workPositions++;
@@ -51,7 +58,7 @@ AGWorkPosition::AGWorkPosition(AGDataAndStatistics* ds, const AGStreet& inStreet
 AGWorkPosition::AGWorkPosition(AGDataAndStatistics* ds, const AGStreet& inStreet, double pos) :
     myStatData(ds),
     myLocation(inStreet, pos),
-    myAdult(nullptr),
+    myAdult(0),
     myOpeningTime(generateOpeningTime(*ds)),
     myClosingTime(generateClosingTime(*ds)) {
     ds->workPositions++;
@@ -105,23 +112,23 @@ AGWorkPosition::generateClosingTime(const AGDataAndStatistics& ds) {
 
 bool
 AGWorkPosition::isTaken() const {
-    return (myAdult != nullptr);
+    return (myAdult != 0);
 }
 
 
 void
 AGWorkPosition::let() {
-    if (myAdult != nullptr) {
+    if (myAdult != 0) {
         myStatData->workPositions++;
         myAdult->lostWorkPosition();
-        myAdult = nullptr;
+        myAdult = 0;
     }
 }
 
 
 void
 AGWorkPosition::take(AGAdult* worker) {
-    if (myAdult == nullptr) {
+    if (myAdult == 0) {
         myStatData->workPositions--;
         myAdult = worker;
     } else {

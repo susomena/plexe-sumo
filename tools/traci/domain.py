@@ -1,21 +1,25 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    domain.py
+@author  Michael Behrisch
+@author  Lena Kalleske
+@author  Mario Krumnow
+@author  Daniel Krajzewicz
+@author  Jakob Erdmann
+@date    2008-10-09
+@version $Id$
 
-# @file    domain.py
-# @author  Michael Behrisch
-# @author  Lena Kalleske
-# @author  Mario Krumnow
-# @author  Daniel Krajzewicz
-# @author  Jakob Erdmann
-# @date    2008-10-09
-# @version $Id$
+Python implementation of the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 import copy
@@ -87,7 +91,7 @@ class Domain:
         self._subscribeResponseID = subscribeResponseID
         self._contextID = contextID
         self._contextResponseID = contextResponseID
-        self._retValFunc = {tc.TRACI_ID_LIST: Storage.readStringList,
+        self._retValFunc = {tc.ID_LIST: Storage.readStringList,
                             tc.ID_COUNT: Storage.readInt}
         self._retValFunc.update(retValFunc)
         self._deprecatedFor = deprecatedFor
@@ -120,7 +124,7 @@ class Domain:
 
         Returns a list of all objects in the network.
         """
-        return self._getUniversal(tc.TRACI_ID_LIST, "")
+        return self._getUniversal(tc.ID_LIST, "")
 
     def getIDCount(self):
         """getIDCount() -> integer
@@ -129,7 +133,7 @@ class Domain:
         """
         return self._getUniversal(tc.ID_COUNT, "")
 
-    def subscribe(self, objectID, varIDs=None, begin=tc.INVALID_DOUBLE_VALUE, end=tc.INVALID_DOUBLE_VALUE):
+    def subscribe(self, objectID, varIDs=None, begin=0, end=2**31 - 1):
         """subscribe(string, list(integer), double, double) -> None
 
         Subscribe to one or more object values for the given interval.
@@ -138,7 +142,7 @@ class Domain:
             if tc.LAST_STEP_VEHICLE_NUMBER in self._retValFunc:
                 varIDs = (tc.LAST_STEP_VEHICLE_NUMBER,)
             else:
-                varIDs = (tc.TRACI_ID_LIST,)
+                varIDs = (tc.ID_LIST,)
         self._connection._subscribe(
             self._subscribeID, begin, end, objectID, varIDs)
 
@@ -148,12 +152,13 @@ class Domain:
         Unsubscribe from receiving object values.
         """
         self._connection._subscribe(
-            self._subscribeID, tc.INVALID_DOUBLE_VALUE, tc.INVALID_DOUBLE_VALUE, objectID, [])
+            self._subscribeID, 0, 2**31 - 1, objectID, [])
 
-    def getSubscriptionResults(self, objectID):
+    def getSubscriptionResults(self, objectID=None):
         """getSubscriptionResults(string) -> dict(integer: <value_type>)
 
         Returns the subscription results for the last time step and the given object.
+        If no object id is given, all subscription results are returned in a dict.
         If the object id is unknown or the subscription did for any reason return no data,
         'None' is returned.
         It is not possible to retrieve older subscription results than the ones
@@ -161,17 +166,7 @@ class Domain:
         """
         return self._connection._getSubscriptionResults(self._subscribeResponseID).get(objectID)
 
-    def getAllSubscriptionResults(self):
-        """getAllSubscriptionResults() -> dict(string: dict(integer: <value_type>))
-
-        Returns the subscription results for the last time step and all objects of the domain.
-        It is not possible to retrieve older subscription results than the ones
-        from the last time step.
-        """
-        return self._connection._getSubscriptionResults(self._subscribeResponseID).get(None)
-
-    def subscribeContext(self, objectID, domain, dist, varIDs=None,
-                         begin=tc.INVALID_DOUBLE_VALUE, end=tc.INVALID_DOUBLE_VALUE):
+    def subscribeContext(self, objectID, domain, dist, varIDs=None, begin=0, end=2**31 - 1):
         """subscribeContext(string, int, double, list(integer), double, double) -> None
 
         Subscribe to objects of the given domain (specified as domain=traci.constants.CMD_GET_<DOMAIN>_VARIABLE),
@@ -181,19 +176,16 @@ class Domain:
             if tc.LAST_STEP_VEHICLE_NUMBER in self._retValFunc:
                 varIDs = (tc.LAST_STEP_VEHICLE_NUMBER,)
             else:
-                varIDs = (tc.TRACI_ID_LIST,)
+                varIDs = (tc.ID_LIST,)
         self._connection._subscribeContext(
             self._contextID, begin, end, objectID, domain, dist, varIDs)
 
     def unsubscribeContext(self, objectID, domain, dist):
         self._connection._subscribeContext(
-            self._contextID, tc.INVALID_DOUBLE_VALUE, tc.INVALID_DOUBLE_VALUE, objectID, domain, dist, [])
+            self._contextID, 0, 2**31 - 1, objectID, domain, dist, [])
 
-    def getContextSubscriptionResults(self, objectID):
+    def getContextSubscriptionResults(self, objectID=None):
         return self._connection._getSubscriptionResults(self._contextResponseID).getContext(objectID)
-
-    def getAllContextSubscriptionResults(self):
-        return self._connection._getSubscriptionResults(self._contextResponseID).getContext(None)
 
     def getParameter(self, objID, param):
         """getParameter(string, string) -> string

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NLHandler.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // The XML-Handler for network loading
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NLHandler_h
 #define NLHandler_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/geom/Boundary.h>
 #include <utils/shapes/ShapeHandler.h>
@@ -289,6 +296,7 @@ private:
     /// @brief Parses the given character into an enumeration typed link state
     LinkState parseLinkState(const std::string& state);
 
+
 protected:
     /// @brief A builder for object actions
     NLDiscreteEventBuilder myActionBuilder;
@@ -313,7 +321,7 @@ protected:
     std::string myCurrentDistrictID;
 
     /// internal information whether a tls-logic is currently read
-    bool myAmParsingTLLogicOrJunction;
+    bool myAmInTLLogicMode;
 
     /// The id of the currently processed WAUT
     std::string myCurrentWAUTID;
@@ -329,10 +337,9 @@ protected:
 
     bool myCurrentIsBroken;
 
-    bool myHaveWarnedAboutInvalidTLType;
+    bool myHaveWarnedAboutDeprecatedLanes;
 
-    Parameterised myLastEdgeParameters;
-    std::vector<Parameterised*> myLastParameterised;
+    Parameterised* myLastParameterised;
 
     /// @brief whether the loaded network contains internal lanes
     bool myHaveSeenInternalEdge;

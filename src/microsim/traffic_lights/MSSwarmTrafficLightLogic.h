@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSSwarmTrafficLightLogic.h
 /// @author  Gianfilippo Slager
 /// @author  Federico Caselli
@@ -15,13 +7,28 @@
 ///
 // The class for Swarm-based logics
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSSwarmTrafficLightLogic_h
 #define MSSwarmTrafficLightLogic_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 //#define SWARM_DEBUG
 #include <utils/common/SwarmDebug.h>
@@ -42,7 +49,7 @@ public:
     }
 
     virtual ~CircularBuffer() {
-        delete[] m_buffer;
+        delete m_buffer;
     }
 
     bool addValue(const T newValue, T& replacedValue) {
@@ -105,14 +112,14 @@ public:
      * @brief Constructor without sensors passed
      * @param[in] tlcontrol The tls control responsible for this tls
      * @param[in] id This tls' id
-     * @param[in] programID This tls' sub-id (program id)
+     * @param[in] subid This tls' sub-id (program id)
      * @param[in] phases Definitions of the phases
      * @param[in] step The initial phase index
      * @param[in] delay The time to wait before the first switch
      * @param[in] parameters Parameters defined for the tll
      */
     MSSwarmTrafficLightLogic(MSTLLogicControl& tlcontrol, const std::string& id,
-                             const std::string& programID, const Phases& phases, int step,
+                             const std::string& subid, const Phases& phases, int step,
                              SUMOTime delay,
                              const std::map<std::string, std::string>& parameters);
 
@@ -124,54 +131,54 @@ public:
      * @param[in] nb The detector builder
      * @exception ProcessError If something fails on initialisation
      */
-    void init(NLDetectorBuilder& nb);
+    void init(NLDetectorBuilder& nb) throw(ProcessError);
 
     SUMOTime getMaxCongestionDuration() {
-        return StringUtils::toInt(getParameter("MAX_CONGESTION_DUR", "120"));
+        return TplConvert::_2int(getParameter("MAX_CONGESTION_DUR", "120").c_str());
     }
 
     double getPheroMaxVal() {
-        return StringUtils::toDouble(getParameter("PHERO_MAXVAL", "10"));
+        return TplConvert::_2double(getParameter("PHERO_MAXVAL", "10").c_str());
     }
 
     double getBetaNo() {
-        return StringUtils::toDouble(getParameter("BETA_NO", "0.99"));
+        return TplConvert::_2double(getParameter("BETA_NO", "0.99").c_str());
     }
 
     double getGammaNo() {
-        return StringUtils::toDouble(getParameter("GAMMA_NO", "1.0"));
+        return TplConvert::_2double(getParameter("GAMMA_NO", "1.0").c_str());
     }
 
     double getBetaSp() {
-        return StringUtils::toDouble(getParameter("BETA_SP", "0.99"));
+        return TplConvert::_2double(getParameter("BETA_SP", "0.99").c_str());
     }
 
     double getGammaSp() {
-        return StringUtils::toDouble(getParameter("GAMMA_SP", "1.0"));
+        return TplConvert::_2double(getParameter("GAMMA_SP", "1.0").c_str());
     }
 
     double getChangePlanProbability() {
-        return StringUtils::toDouble(getParameter("CHANGE_PLAN_PROBABILITY", "0.003"));
+        return TplConvert::_2double(getParameter("CHANGE_PLAN_PROBABILITY", "0.003").c_str());
     }
 
     double getThetaMax() {
-        return StringUtils::toDouble(getParameter("THETA_MAX", "0.8"));
+        return TplConvert::_2double(getParameter("THETA_MAX", "0.8").c_str());
     }
 
     double getThetaMin() {
-        return StringUtils::toDouble(getParameter("THETA_MIN", "0.2"));
+        return TplConvert::_2double(getParameter("THETA_MIN", "0.2").c_str());
     }
 
     double getThetaInit() {
-        return StringUtils::toDouble(getParameter("THETA_INIT", "0.5"));
+        return TplConvert::_2double(getParameter("THETA_INIT", "0.5").c_str());
     }
 
     double getLearningCox() {
-        return StringUtils::toDouble(getParameter("LEARNING_COX", "0.0005"));
+        return TplConvert::_2double(getParameter("LEARNING_COX", "0.0005").c_str());
     }
 
     double getForgettingCox() {
-        return StringUtils::toDouble(getParameter("FORGETTING_COX", "0.0005"));
+        return TplConvert::_2double(getParameter("FORGETTING_COX", "0.0005").c_str());
     }
 
     double getScaleFactorDispersionIn() {
@@ -327,7 +334,7 @@ protected:
      * 2-> ratio
      */
     int getReinforcementMode() {
-        return StringUtils::toInt(getParameter("REIMODE", "0"));
+        return TplConvert::_2int(getParameter("REIMODE", "0").c_str());
     }
 
     void initScaleFactorDispersionIn(int lanes_in) {

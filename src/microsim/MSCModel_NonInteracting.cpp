@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCModel_NonInteracting.cpp
 /// @author  Melanie Weber
 /// @author  Andreas Kendziorra
@@ -15,11 +7,26 @@
 ///
 // The container following model for tranship (prototype)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 //
 #include <cmath>
 #include <algorithm>
@@ -36,7 +43,7 @@
 // ===========================================================================
 // static members
 // ===========================================================================
-MSCModel_NonInteracting* MSCModel_NonInteracting::myModel(nullptr);
+MSCModel_NonInteracting* MSCModel_NonInteracting::myModel(0);
 
 
 // named constants
@@ -60,7 +67,7 @@ MSCModel_NonInteracting::~MSCModel_NonInteracting() {
 
 MSCModel_NonInteracting*
 MSCModel_NonInteracting::getModel() {
-    if (myModel == nullptr) {
+    if (myModel == 0) {
         MSNet* net = MSNet::getInstance();
         myModel = new MSCModel_NonInteracting(net);
     }
@@ -70,7 +77,7 @@ MSCModel_NonInteracting::getModel() {
 CState*
 MSCModel_NonInteracting::add(MSTransportable* container, MSContainer::MSContainerStage_Tranship* stage, SUMOTime now) {
     CState* state = new CState();
-    const SUMOTime firstEdgeDuration = state->computeTranshipTime(nullptr, *stage, now);
+    const SUMOTime firstEdgeDuration = state->computeTranshipTime(0, *stage, now);
     myNet->getBeginOfTimestepEvents()->addEvent(new MoveToNextEdge(container, *stage), now + firstEdgeDuration);
     return state;
 }
@@ -78,9 +85,9 @@ MSCModel_NonInteracting::add(MSTransportable* container, MSContainer::MSContaine
 
 void
 MSCModel_NonInteracting::cleanup() {
-    if (myModel != nullptr) {
+    if (myModel != 0) {
         delete myModel;
-        myModel = nullptr;
+        myModel = 0;
     }
 }
 

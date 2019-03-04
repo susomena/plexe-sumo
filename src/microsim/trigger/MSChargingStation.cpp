@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSChargingStation.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Tamas Kurczveil
@@ -16,15 +8,30 @@
 ///
 // Chargin Station for Electric vehicles
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
 
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/vehicle/SUMOVehicle.h>
 #include <microsim/MSVehicleType.h>
 #include <microsim/MSStoppingPlace.h>
@@ -39,9 +46,8 @@
 // ===========================================================================
 
 MSChargingStation::MSChargingStation(const std::string& chargingStationID, MSLane& lane, double startPos, double endPos,
-                                     const std::string& name,
-                                     double chargingPower, double efficency, bool chargeInTransit, double chargeDelay) :
-    MSStoppingPlace(chargingStationID, std::vector<std::string>(), lane, startPos, endPos, name),
+                                     double chargingPower, double efficency, bool chargeInTransit, int chargeDelay) :
+    MSStoppingPlace(chargingStationID, std::vector<std::string>(), lane, startPos, endPos),
     myChargingPower(0),
     myEfficiency(0),
     myChargeInTransit(chargeInTransit),
@@ -127,7 +133,7 @@ MSChargingStation::setChargeInTransit(bool chargeInTransit) {
 
 
 void
-MSChargingStation::setChargeDelay(double chargeDelay) {
+MSChargingStation::setChargeDelay(int chargeDelay) {
     if (chargeDelay < 0) {
         WRITE_WARNING("New " + toString(SUMO_ATTR_CHARGEDELAY) + " for " + toString(SUMO_TAG_CHARGING_STATION) + " with ID = " + getID() + " isn't valid (" + toString(chargeDelay) + ").")
     } else {
@@ -227,13 +233,13 @@ MSChargingStation::writeChargingStationOutput(OutputDevice& output) {
         output.writeAttr(SUMO_ATTR_ID, myChargeValues.at(0).vehicleID);
         output.writeAttr(SUMO_ATTR_TYPE, myChargeValues.at(0).vehicleType);
         output.writeAttr(SUMO_ATTR_TOTALENERGYCHARGED_VEHICLE, charge.at(0));
-        output.writeAttr(SUMO_ATTR_CHARGINGBEGIN, time2string(vectorBeginEndCharge.at(0).first));
-        output.writeAttr(SUMO_ATTR_CHARGINGEND, time2string(vectorBeginEndCharge.at(0).second));
+        output.writeAttr(SUMO_ATTR_CHARGINGBEGIN, vectorBeginEndCharge.at(0).first);
+        output.writeAttr(SUMO_ATTR_CHARGINGEND, vectorBeginEndCharge.at(0).second);
         // iterate over charging values
         for (std::vector<MSChargingStation::charge>::const_iterator i = myChargeValues.begin(); i != myChargeValues.end(); i++) {
             // open tag for timestep and write all parameters
             output.openTag(SUMO_TAG_STEP);
-            output.writeAttr(SUMO_ATTR_TIME, time2string(i->timeStep));
+            output.writeAttr(SUMO_ATTR_TIME, i->timeStep);
             // charge values
             output.writeAttr(SUMO_ATTR_CHARGING_STATUS, i->status);
             output.writeAttr(SUMO_ATTR_ENERGYCHARGED, i->WCharged);

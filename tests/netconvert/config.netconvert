@@ -16,7 +16,6 @@ copy_test_path:elmar_connected_lanes.txt
 copy_test_path:visum.net
 copy_test_path:vissim.inp
 copy_test_path:input_net.net.xml
-copy_test_path:input_net2.net.xml
 copy_test_path:osm.xml
 copy_test_path:matsim.xml
 copy_test_path:vissim.inpx
@@ -25,15 +24,11 @@ copy_test_path:input_plain.nod.xml
 copy_test_path:input_plain.edg.xml
 copy_test_path:input_plain.con.xml
 copy_test_path:input_plain.tll.xml
-copy_test_path:input_plain.typ.xml
 copy_test_path:heightmap.tif
 copy_test_path:edge_ids.txt
 copy_test_path:data
-copy_test_path:input_ptstops.xml
-copy_test_path:input_ptlines.xml
-copy_test_path:osmNetconvertPedestrians.typ.xml
-copy_test_path:osmNetconvert.typ.xml
-copy_test_path:osmNetconvertUrbanDe.typ.xml
+copy_test_path:additional.xml
+copy_test_path:ptlines.xml
 
 [collate_file]
 net:net.net.xml
@@ -55,7 +50,6 @@ elmar_connected_lanes:elmar_output_connected_lanes.txt
 pois:pois.add.xml
 additional:additional.xml
 ptlines:ptlines.xml
-topology:topology.xml
 
 [run_dependent_text]
 plain_nodes:<!--{[->]}-->
@@ -66,7 +60,6 @@ plain_connections:<!--{[->]}-->
 plain_tllogic:<!--{[->]}-->
 plain_types:<!--{[->]}-->
 joined_nodes:<!--{[->]}-->
-topology:<!--{[->]}-->
 net:<!--{[->]}-->
 foreign:date="[^"]*"{REPLACE date="DATE"}
 pois:<!--{[->]}-->
@@ -76,25 +69,15 @@ log:done \(.*\)\.{REPLACE done.}
 errors:Leaked object at 
 errors:*** 9 leaks found
 errors:delete: freed
-elmar_links:<proj.scale value="1e-005"/>{REPLACE <proj.scale value="1e-05"/>}
-elmar_nodes:<proj.scale value="1e-005"/>{REPLACE <proj.scale value="1e-05"/>}
-elmar_names:<proj.scale value="1e-005"/>{REPLACE <proj.scale value="1e-05"/>}
-elmar_traffic_signals:<proj.scale value="1e-005"/>{REPLACE <proj.scale value="1e-05"/>}
-elmar_prohibited_manoeuvres:<proj.scale value="1e-005"/>{REPLACE <proj.scale value="1e-05"/>}
-elmar_connected_lanes:<proj.scale value="1e-005"/>{REPLACE <proj.scale value="1e-05"/>}
-elmar_links:# <!--{[->]}-->
-elmar_nodes:# <!--{[->]}-->
-elmar_names:# <!--{[->]}-->
-elmar_traffic_signals:# <!--{[->]}-->
-elmar_prohibited_manoeuvres:# <!--{[->]}-->
-elmar_connected_lanes:# <!--{[->]}-->
+elmar_links:# Generated
+elmar_nodes:# Generated
+elmar_names:# Generated
+elmar_traffic_signals:# Generated
+elmar_prohibited_manoeuvres:# Generated
+elmar_connected_lanes:# Generated
 
 [floating_point_tolerance]
 net:0.0101
 output:0.0101
-foreign:0.0101
-ptlines:0.0101
+foreign:0.0001
 cfg:0.000000001
-plain_nodes:0.00000101
-plain_edges:0.00000101
-elmar_nodes:0.0101

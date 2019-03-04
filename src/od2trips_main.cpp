@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    od2trips_main.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // Main for OD2TRIPS
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
@@ -34,6 +41,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <string>
+#include <xercesc/parsers/SAXParser.hpp>
+#include <xercesc/sax2/SAX2XMLReader.hpp>
 #include <utils/options/Option.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/options/OptionsIO.h>
@@ -47,7 +56,7 @@
 #include <od/ODDistrictCont.h>
 #include <od/ODDistrictHandler.h>
 #include <od/ODMatrix.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/StringTokenizer.h>
 #include <utils/common/FileHelpers.h>
@@ -146,7 +155,7 @@ fillOptions() {
 
     oc.doRegister("ignore-errors", new Option_Bool(false)); // !!! describe, document
     oc.addSynonyme("ignore-errors", "dismiss-loading-errors", true);
-    oc.addDescription("ignore-errors", "Report", "Continue on broken input");
+    oc.addDescription("ignore-errors", "Processing", "Continue on broken input");
 
     oc.doRegister("no-step-log", new Option_Bool(false));
     oc.addDescription("no-step-log", "Processing", "Disable console output of current time step");
@@ -222,7 +231,6 @@ checkOptions() {
         WRITE_ERROR(error);
         ok = false;
     }
-    ok &= SystemFrame::checkOptions();
     return ok;
 }
 
@@ -236,8 +244,8 @@ int
 main(int argc, char** argv) {
     OptionsCont& oc = OptionsCont::getOptions();
     // give some application descriptions
-    oc.setApplicationDescription("Importer of O/D-matrices for the microscopic, multi-modal traffic simulation SUMO.");
-    oc.setApplicationName("od2trips", "Eclipse SUMO od2trips Version " VERSION_STRING);
+    oc.setApplicationDescription("Importer of O/D-matrices for the road traffic simulation SUMO.");
+    oc.setApplicationName("od2trips", "SUMO od2trips Version " VERSION_STRING);
     int ret = 0;
     try {
         // initialise subsystems

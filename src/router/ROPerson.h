@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ROPerson.h
 /// @author  Robert Hilbrich
 /// @author  Michael Behrisch
@@ -15,13 +7,28 @@
 ///
 // A person as used by router
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef ROPerson_h
 #define ROPerson_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <iostream>
@@ -65,7 +72,7 @@ public:
                  const std::string& vTypes, const double departPos, const double arrivalPos, const std::string& busStop,
                  double walkFactor);
 
-    void addRide(const ROEdge* const from, const ROEdge* const to, const std::string& lines, double arrivalPos, const std::string& destStop);
+    void addRide(const ROEdge* const from, const ROEdge* const to, const std::string& lines, const std::string& destStop);
 
     void addWalk(const ConstROEdgeVector& edges, const double duration, const double speed,
                  const double departPos, const double arrivalPos, const std::string& busStop);
@@ -87,9 +94,8 @@ public:
         }
         virtual const ROEdge* getOrigin() const = 0;
         virtual const ROEdge* getDestination() const = 0;
-        virtual double getDestinationPos() const = 0;
         virtual void saveVehicles(OutputDevice& /* os */, OutputDevice* const /* typeos */, bool /* asAlternatives */, OptionsCont& /* options */) const {}
-        virtual void saveAsXML(OutputDevice& os, const bool extended) const = 0;
+        virtual void saveAsXML(OutputDevice& os) const = 0;
         virtual bool isStop() const {
             return false;
         }
@@ -112,10 +118,7 @@ public:
         const ROEdge* getDestination() const {
             return edge;
         }
-        double getDestinationPos() const {
-            return stopDesc.endPos;
-        }
-        void saveAsXML(OutputDevice& os, const bool /* extended */) const {
+        void saveAsXML(OutputDevice& os) const {
             stopDesc.write(os);
         }
         bool isStop() const {
@@ -138,18 +141,12 @@ public:
      */
     class TripItem {
     public:
-        TripItem(const double _cost)
-            : cost(_cost) {}
-
         /// @brief Destructor
         virtual ~TripItem() {}
 
         virtual const ROEdge* getOrigin() const = 0;
         virtual const ROEdge* getDestination() const = 0;
-        virtual double getDestinationPos() const = 0;
-        virtual void saveAsXML(OutputDevice& os, const bool extended) const = 0;
-    protected:
-        double cost;
+        virtual void saveAsXML(OutputDevice& os) const = 0;
     };
 
     /**
@@ -159,16 +156,8 @@ public:
     class Ride : public TripItem {
     public:
         Ride(const ROEdge* const _from, const ROEdge* const _to,
-             const std::string& _lines, const double _cost, const double arrivalPos,
-             const std::string& _destStop = "", const std::string& _intended = "", const SUMOTime _depart = -1) :
-            TripItem(_cost),
-            from(_from), to(_to),
-            lines(_lines),
-            destStop(_destStop),
-            intended(_intended),
-            depart(_depart),
-            arr(arrivalPos) {
-        }
+             const std::string& _lines, const std::string& _destStop = "")
+            : from(_from), to(_to), lines(_lines), destStop(_destStop) {}
 
         const ROEdge* getOrigin() const {
             return from;
@@ -176,19 +165,13 @@ public:
         const ROEdge* getDestination() const {
             return to;
         }
-        double getDestinationPos() const {
-            return arr;
-        }
-        void saveAsXML(OutputDevice& os, const bool extended) const;
+        void saveAsXML(OutputDevice& os) const;
 
     private:
         const ROEdge* const from;
         const ROEdge* const to;
         const std::string lines;
         const std::string destStop;
-        const std::string intended;
-        const SUMOTime depart;
-        const double arr;
 
     private:
         /// @brief Invalidated assignment operator
@@ -202,24 +185,21 @@ public:
      */
     class Walk : public TripItem {
     public:
-        Walk(const ConstROEdgeVector& _edges, const double _cost,
+        Walk(const ConstROEdgeVector& _edges,
              double departPos = std::numeric_limits<double>::infinity(),
              double arrivalPos = std::numeric_limits<double>::infinity(),
              const std::string& _destStop = "")
-            : TripItem(_cost), edges(_edges), dur(-1), v(-1), dep(departPos), arr(arrivalPos), destStop(_destStop) {}
-        Walk(const ConstROEdgeVector& edges, const double _cost, const double duration, const double speed,
+            : edges(_edges), dur(-1), v(-1), dep(departPos), arr(arrivalPos), destStop(_destStop) {}
+        Walk(const ConstROEdgeVector& edges, const double duration, const double speed,
              const double departPos, const double arrivalPos, const std::string& _destStop)
-            : TripItem(_cost), edges(edges), dur(duration), v(speed), dep(departPos), arr(arrivalPos), destStop(_destStop) {}
+            : edges(edges), dur(duration), v(speed), dep(departPos), arr(arrivalPos), destStop(_destStop) {}
         const ROEdge* getOrigin() const {
             return edges.front();
         }
         const ROEdge* getDestination() const {
             return edges.back();
         }
-        double getDestinationPos() const {
-            return arr;
-        }
-        void saveAsXML(OutputDevice& os, const bool extended) const;
+        void saveAsXML(OutputDevice& os) const;
 
     private:
         const ConstROEdgeVector edges;
@@ -239,17 +219,17 @@ public:
     class PersonTrip : public PlanItem {
     public:
         PersonTrip()
-            : from(0), to(0), modes(SVC_PEDESTRIAN), dep(0), arr(0), stopDest(""), walkFactor(1.0) {}
+            : from(0), to(0), modes(SVC_PEDESTRIAN), dep(0), arr(0), busStop(""), walkFactor(1.0) {}
         PersonTrip(const ROEdge* const from, const ROEdge* const to, const SVCPermissions modeSet,
-                   const double departPos, const double arrivalPos, const std::string& _stopDest, double _walkFactor)
-            : from(from), to(to), modes(modeSet), dep(departPos), arr(arrivalPos), stopDest(_stopDest), walkFactor(_walkFactor) {}
+                   const double departPos, const double arrivalPos, const std::string& busStop, double _walkFactor)
+            : from(from), to(to), modes(modeSet), dep(departPos), arr(arrivalPos), busStop(busStop), walkFactor(_walkFactor) {}
         /// @brief Destructor
         virtual ~PersonTrip() {
             for (std::vector<TripItem*>::const_iterator it = myTripItems.begin(); it != myTripItems.end(); ++it) {
                 delete *it;
             }
             for (std::vector<ROVehicle*>::const_iterator it = myVehicles.begin(); it != myVehicles.end(); ++it) {
-                delete (*it)->getRouteDefinition();
+                delete(*it)->getRouteDefinition();
                 delete *it;
             }
         }
@@ -267,14 +247,7 @@ public:
             return from != 0 ? from : myTripItems.front()->getOrigin();
         }
         const ROEdge* getDestination() const {
-            return to;
-        }
-        double getDestinationPos() const {
-            if (myTripItems.empty()) {
-                return getArrivalPos(true);
-            } else {
-                return myTripItems.back()->getDestinationPos();
-            }
+            return to != 0 ? to : myTripItems.back()->getDestination();
         }
         double getDepartPos(bool replaceDefault = true) const {
             return dep == std::numeric_limits<double>::infinity() && replaceDefault ? 0 : dep;
@@ -285,16 +258,16 @@ public:
         SVCPermissions getModes() const {
             return modes;
         }
-        const std::string& getStopDest() const {
-            return stopDest;
+        bool hasBusStopDest() const {
+            return busStop != "";
         }
         virtual bool needsRouting() const {
             return myTripItems.empty();
         }
         void saveVehicles(OutputDevice& os, OutputDevice* const typeos, bool asAlternatives, OptionsCont& options) const;
-        void saveAsXML(OutputDevice& os, const bool extended) const {
+        void saveAsXML(OutputDevice& os) const {
             for (std::vector<TripItem*>::const_iterator it = myTripItems.begin(); it != myTripItems.end(); ++it) {
-                (*it)->saveAsXML(os, extended);
+                (*it)->saveAsXML(os);
             }
         }
         double getWalkFactor() const {
@@ -306,7 +279,7 @@ public:
         const ROEdge* to;
         const SVCPermissions modes;
         const double dep, arr;
-        const std::string stopDest;
+        const std::string busStop;
         /// @brief the fully specified trips
         std::vector<TripItem*> myTripItems;
         /// @brief the vehicles which may be used for routing

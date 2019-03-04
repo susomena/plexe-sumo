@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RORouteHandler.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Parser and container for routes during their loading
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef RORouteHandler_h
 #define RORouteHandler_h
 
@@ -23,15 +26,18 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
 #include <utils/distribution/RandomDistributor.h>
 #include <utils/common/SUMOTime.h>
-#include <utils/common/NamedRTree.h>
-#include <utils/router/PedestrianRouter.h>
-#include <utils/vehicle/SUMORouteHandler.h>
+#include <utils/vehicle/PedestrianRouter.h>
+#include <utils/xml/SUMORouteHandler.h>
 
 
 // ===========================================================================
@@ -63,8 +69,7 @@ public:
     RORouteHandler(RONet& net, const std::string& file,
                    const bool tryRepair,
                    const bool emptyDestinationsAllowed,
-                   const bool ignoreErrors,
-                   const bool checkSchema);
+                   const bool ignoreErrors);
 
     /// standard destructor
     virtual ~RORouteHandler();
@@ -145,18 +150,8 @@ protected:
     void parseEdges(const std::string& desc, ConstROEdgeVector& into,
                     const std::string& rid);
 
-    /// Parse edges from coordinates
-    void parseGeoEdges(const PositionVector& positions, bool geo,
-            ConstROEdgeVector& into, const std::string& rid);
-
-    /// @brief add a routing request for a walking or intermodal person
-    void addPersonTrip(const SUMOSAXAttributes& attrs);
-
-    /// @brief add a fully specified walk
-    void addWalk(const SUMOSAXAttributes& attrs);
-
-    /// @brief initialize lane-RTree
-    NamedRTree* getLaneTree();
+    /// @brief add a routing request for a walking person
+    bool addPersonTrip(const SUMOSAXAttributes& attrs);
 
 protected:
     /// @brief The current route
@@ -197,9 +192,6 @@ protected:
 
     /// @brief The currently parsed route alternatives
     RORouteDef* myCurrentAlternatives;
-
-    /// @brief RTree for finding lanes
-    NamedRTree* myLaneTree;
 
 private:
     /// @brief Invalidated copy constructor

@@ -1,23 +1,24 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    runner.py
-# @author  Lena Kalleske
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2009-03-26
-# @version $Id$
-
 """
+@file    runner.py
+@author  Lena Kalleske
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2009-03-26
+@version $Id$
+
 Tutorial for traffic light control via the TraCI interface.
 This scenario models a pedestrian crossing which switches on demand.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR/TS, Germany
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -26,6 +27,7 @@ import os
 import sys
 import optparse
 import subprocess
+import random
 
 
 # the directory in which this script resides
@@ -35,14 +37,18 @@ THISDIR = os.path.dirname(__file__)
 # we need to import python modules from the $SUMO_HOME/tools directory
 # If the the environment variable SUMO_HOME is not set, try to locate the python
 # modules relative to this script
-if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:
-    sys.exit("please declare environment variable 'SUMO_HOME'")
-import traci  # noqa
-from sumolib import checkBinary  # noqa
-import randomTrips  # noqa
+try:
+    # tutorial in tests
+    sys.path.append(os.path.join(THISDIR, '..', '..', '..', '..', "tools"))
+    sys.path.append(os.path.join(os.environ.get("SUMO_HOME", os.path.join(
+        THISDIR, "..", "..", "..")), "tools"))  # tutorial in docs
+
+    import traci
+    from sumolib import checkBinary  # noqa
+    import randomTrips
+except ImportError:
+    sys.exit(
+        "please declare environment variable 'SUMO_HOME' as the root directory of your sumo installation (it should contain folders 'bin', 'tools' and 'docs')")
 
 # minimum green time for the vehicles
 MIN_GREEN_TIME = 15
@@ -75,14 +81,14 @@ def run():
         # phase for the vehicles exceeds its minimum duration
         if not activeRequest:
             activeRequest = checkWaitingPersons()
-        if traci.trafficlight.getPhase(TLSID) == VEHICLE_GREEN_PHASE:
+        if traci.trafficlights.getPhase(TLSID) == VEHICLE_GREEN_PHASE:
             greenTimeSoFar += 1
             if greenTimeSoFar > MIN_GREEN_TIME:
                 # check whether someone has pushed the button
 
                 if activeRequest:
                     # switch to the next phase
-                    traci.trafficlight.setPhase(
+                    traci.trafficlights.setPhase(
                         TLSID, VEHICLE_GREEN_PHASE + 1)
                     # reset state
                     activeRequest = False

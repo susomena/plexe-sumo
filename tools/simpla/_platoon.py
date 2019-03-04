@@ -1,33 +1,29 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2017-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@author Leonhard Luecken
+@date   2017-04-09
 
-# @file    _platoon.py
-# @author Leonhard Luecken
-# @date   2017-04-09
-# @version $Id$
+-----------------------------------
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
 
-import os
-import sys
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+-----------------------------------
+"""
 
-if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:
-    sys.exit("please declare environment variable 'SUMO_HOME'")
+from simpla._reporting import Warner, Reporter
+from simpla._platoonmode import PlatoonMode
+import simpla._config as cfg
 
-from simpla._platoonmode import PlatoonMode  # noqa
-import simpla._reporting as rp  # noqa
-
-warn = rp.Warner("Platoon")
-report = rp.Reporter("Platoon")
+warn = Warner("Platoon")
+report = Reporter("Platoon")
 
 
 class Platoon(object):
+
     '''
     '''
 
@@ -40,8 +36,7 @@ class Platoon(object):
         Create a Platoon object that holds an ordered list of its members, which is inititialized with 'vehicles'.
         Creator is responsible for setting the platoon mode of the vehicles. If registerVehicles is set, the vehicle's
         platoon reference veh._platoon is set to the newly created platoon. 'deltaT' is the control interval provided
-        to give the platoon a sense of time (used for decreasing active speed factor when trying to switch modes
-        unsuccessfully).
+        to give the platoon a sense of time (used for decreasing active speed factor when trying to switch modes unsuccessfully).
         '''
         self._ID = Platoon._nextID
         Platoon._nextID += 1
@@ -75,18 +70,16 @@ class Platoon(object):
 
         if self.size() == 0:
             return
-        try:
-            if self.size() == 1:
-                self.setMode(PlatoonMode.NONE)
-                return
 
-            if self.getMode() == PlatoonMode.CATCHUP:
-                self.setMode(PlatoonMode.CATCHUP)
-            else:
-                # remains the regular platoon situation
-                self.setMode(PlatoonMode.LEADER)
-        except:
-            warn("Ignoring error (probably due to platoon.setMode() operation on non-existing vehicle).")
+        if self.size() == 1:
+            self.setMode(PlatoonMode.NONE)
+            return
+
+        if self.getMode() == PlatoonMode.CATCHUP:
+            self.setMode(PlatoonMode.CATCHUP)
+        else:
+            # remains the regular platoon situation
+            self.setMode(PlatoonMode.LEADER)
 
     def getID(self):
         '''getID() -> int
@@ -141,18 +134,16 @@ class Platoon(object):
         Only checks for safety with regard to leaders.
         Note: safety assumptions of previous versions are dropped, now
         '''
-        old_mode = self.getMode()
-        success = False
         if mode == PlatoonMode.NONE:
             if self.size() == 1:
                 if (self._vehicles[0].isSwitchSafe(mode)):
                     self._vehicles[0].setPlatoonMode(mode)
-                    success = True
+                    return True
                 else:
-                    success = False
+                    return False
             else:
                 # PlatoonMode.NONE is only admissible for solitons
-                success = False
+                return False
 
         elif mode == PlatoonMode.LEADER:
             if self._vehicles[0].isSwitchSafe(mode):
@@ -160,9 +151,9 @@ class Platoon(object):
                 for veh in self._vehicles[1:]:
                     if veh.isSwitchSafe(PlatoonMode.FOLLOWER):
                         veh.setPlatoonMode(PlatoonMode.FOLLOWER)
-                success = True
+                return True
             else:
-                success = False
+                return False
 
         elif mode == PlatoonMode.CATCHUP:
             if self._vehicles[0].isSwitchSafe(mode):
@@ -170,9 +161,9 @@ class Platoon(object):
                 for veh in self._vehicles[1:]:
                     if veh.isSwitchSafe(PlatoonMode.CATCHUP_FOLLOWER):
                         veh.setPlatoonMode(PlatoonMode.CATCHUP_FOLLOWER)
-                success = True
+                return True
             else:
-                success = False
+                return False
 
         elif mode == PlatoonMode.CATCHUP_FOLLOWER or mode == PlatoonMode.FOLLOWER:
             if self._vehicles[0].isSwitchSafe(mode):
@@ -180,18 +171,12 @@ class Platoon(object):
                 for veh in self._vehicles[1:]:
                     if veh.isSwitchSafe(mode):
                         veh.setPlatoonMode(mode)
-                success = True
+                return True
             else:
-                success = False
+                return False
 
         else:
             raise ValueError("Unknown PlatoonMode %s" % str(mode))
-
-        if rp.VERBOSITY >= 3 and success and not old_mode == mode:
-            report("Activated mode {mode} for platoon '{pltnID}' ({pltn_members})".format(
-                mode=mode, pltnID=self.getID(), pltn_members=str([veh.getID() for veh in self.getVehicles()])))
-
-        return success
 
     def adviseMemberModes(self):
         ''' adviseMemberModes() -> void
@@ -234,8 +219,9 @@ class Platoon(object):
             raise ValueError(
                 "Platoon.split(index) expected and index in [1,%d]. Given value: %s" % (self.size(), index))
 
+        splitLeader = self._vehicles[index]
         mode = PlatoonMode.LEADER if (index < self.size() - 1) else PlatoonMode.NONE
-        # splitImpatience = 1. - math.exp(min([0., self._vehicles[index]._timeUntilSplit]))
+        # splitImpatience = 1. - math.exp(min([0., splitLeader._timeUntilSplit]))
         pltn = Platoon(self._vehicles[index:], self._controlInterval, False)
 
         if not pltn.setModeWithImpatience(mode, self._controlInterval):
@@ -251,6 +237,10 @@ class Platoon(object):
             # only one vehicle remains, turn off its platoon-specific behavior
             self.setModeWithImpatience(PlatoonMode.NONE, self._controlInterval)
 
+        if cfg.VERBOSITY >= 2:
+            report("Platoon '%s' splits (newly formed platoon is '%s'):\n" % (self._ID, pltn.getID()) +
+                   "Platoon '%s': %s\nPlatoon '%s': %s" % (self._ID, str([veh.getID() for veh in self._vehicles]),
+                                                           pltn.getID(), str([veh.getID() for veh in pltn.getVehicles()])), 1)
         return pltn
 
     def join(self, pltn):

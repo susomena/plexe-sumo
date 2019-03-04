@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIVisualizationSettings.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Stores the information about how to visualize structures
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIVisualizationSettings_h
 #define GUIVisualizationSettings_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -39,7 +46,6 @@
 class BaseSchemeInfoSource;
 class OutputDevice;
 class GUIVisualizationSettings;
-class GUIGlObject;
 
 
 // ===========================================================================
@@ -49,21 +55,17 @@ class GUIGlObject;
 // cannot declare this as inner class because it needs to be used in forward
 // declaration (@todo fix inclusion order by removing references to guisim!)
 struct GUIVisualizationTextSettings {
-    GUIVisualizationTextSettings(bool _show, double _size, RGBColor _color, RGBColor _bgColor = RGBColor(128, 0, 0, 0), bool _constSize = true) :
-        show(_show), size(_size), color(_color), bgColor(_bgColor), constSize(_constSize) {}
+    GUIVisualizationTextSettings(bool _show, double _size, RGBColor _color) :
+        show(_show), size(_size), color(_color) {}
 
     bool show;
     double size;
     RGBColor color;
-    RGBColor bgColor;
-    bool constSize;
 
     bool operator==(const GUIVisualizationTextSettings& other) {
         return show == other.show &&
                size == other.size &&
-               color == other.color &&
-               bgColor == other.bgColor &&
-               constSize == other.constSize;
+               color == other.color;
     }
     bool operator!=(const GUIVisualizationTextSettings& other) {
         return !((*this) == other);
@@ -73,19 +75,13 @@ struct GUIVisualizationTextSettings {
         dev.writeAttr(name + "_show", show);
         dev.writeAttr(name + "_size", size);
         dev.writeAttr(name + "_color", color);
-        dev.writeAttr(name + "_bgColor", bgColor);
-        dev.writeAttr(name + "_constantSize", constSize);
-    }
-
-    double scaledSize(double scale, double constFactor = 0.1) const {
-        return constSize ? size / scale : size * constFactor;
     }
 };
 
 
 struct GUIVisualizationSizeSettings {
-    GUIVisualizationSizeSettings(double _minSize, double _exaggeration = 1.0, bool _constantSize = false, bool _constantSizeSelected = false) :
-        minSize(_minSize), exaggeration(_exaggeration), constantSize(_constantSize), constantSizeSelected(_constantSizeSelected) {}
+    GUIVisualizationSizeSettings(double _minSize, double _exaggeration = 1.0, bool _constantSize = false) :
+        minSize(_minSize), exaggeration(_exaggeration), constantSize(_constantSize) {}
 
     /// @brief The minimum size to draw this object
     double minSize;
@@ -93,12 +89,9 @@ struct GUIVisualizationSizeSettings {
     double exaggeration;
     // @brief whether the object shall be drawn with constant size regardless of zoom
     bool constantSize;
-    // @brief whether only selected objects shall be drawn with constant
-    bool constantSizeSelected;
 
     bool operator==(const GUIVisualizationSizeSettings& other) {
         return constantSize == other.constantSize &&
-               constantSizeSelected == other.constantSizeSelected &&
                minSize == other.minSize &&
                exaggeration == other.exaggeration;
     }
@@ -110,11 +103,10 @@ struct GUIVisualizationSizeSettings {
         dev.writeAttr(name + "_minSize", minSize);
         dev.writeAttr(name + "_exaggeration", exaggeration);
         dev.writeAttr(name + "_constantSize", constantSize);
-        dev.writeAttr(name + "_constantSizeSelected", constantSizeSelected);
     }
 
     /// @brief return the drawing size including exaggeration and constantSize values
-    double getExaggeration(const GUIVisualizationSettings& s, const GUIGlObject* o, double factor = 20) const;
+    double getExaggeration(const GUIVisualizationSettings& s, double factor = 20) const;
 };
 
 
@@ -134,9 +126,8 @@ public:
     /// @brief Whether the settings are for Netedit
     bool netedit;
 
-    /// @brief The current view rotation angle
-    double angle;
-
+    /// @brief Information whether antialiase shall be enabled
+    bool antialiase;
     /// @brief Information whether dithering shall be enabled
     bool dither;
 
@@ -168,8 +159,6 @@ public:
     GUIScaler laneScaler;
     /// @brief Information whether lane borders shall be drawn
     bool laneShowBorders;
-    /// @brief Information whether bicycle lane marking shall be drawn
-    bool showBikeMarkings;
     /// @brief Information whether link textures (arrows) shall be drawn
     bool showLinkDecals;
     /// @brief Information whether link rules (colored bars) shall be drawn
@@ -177,7 +166,7 @@ public:
     /// @brief Information whether rails shall be drawn
     bool showRails;
     // Setting bundles for optional drawing names with size and color
-    GUIVisualizationTextSettings edgeName, internalEdgeName, cwaEdgeName, streetName, edgeValue;
+    GUIVisualizationTextSettings edgeName, internalEdgeName, cwaEdgeName, streetName;
 
     bool hideConnectors;
     /// @brief The lane exaggeration (upscale thickness)
@@ -188,15 +177,6 @@ public:
     bool showLaneDirection;
     /// @brief Whether to show sublane boundaries
     bool showSublanes;
-    /// @brief Whether to improve visualisation of superposed (rail) edges
-    bool spreadSuperposed;
-
-    /// @brief key for coloring by edge parameter
-    std::string edgeParam;
-    std::string laneParam;
-
-    /// @brief key for coloring by edgeData
-    std::string edgeData;
     //@}
 
 
@@ -217,9 +197,8 @@ public:
     bool showBTRange;
     // Setting bundles for controling the size of the drawn vehicles
     GUIVisualizationSizeSettings vehicleSize;
-    // Setting bundles for optional drawing vehicle names or color value
+    // Setting bundles for optional drawing vehicle names
     GUIVisualizationTextSettings vehicleName;
-    GUIVisualizationTextSettings vehicleValue;
     //@}
 
 
@@ -234,7 +213,6 @@ public:
     GUIVisualizationSizeSettings personSize;
     // Setting bundles for optional drawing person names
     GUIVisualizationTextSettings personName;
-    GUIVisualizationTextSettings personValue;
     //@}
 
 
@@ -258,7 +236,7 @@ public:
     /// @brief The junction colorer
     GUIColorer junctionColorer;
     // Setting bundles for optional drawing junction names and indices
-    GUIVisualizationTextSettings drawLinkTLIndex, drawLinkJunctionIndex, junctionName, internalJunctionName, tlsPhaseIndex;
+    GUIVisualizationTextSettings drawLinkTLIndex, drawLinkJunctionIndex, junctionName, internalJunctionName;
     /// @brief Information whether lane-to-lane arrows shall be drawn
     bool showLane2Lane;
     /// @brief whether the shape of the junction should be drawn
@@ -280,16 +258,12 @@ public:
     GUIVisualizationSizeSettings addSize;
     // Setting bundles for optional drawing additional names
     GUIVisualizationTextSettings addName;
-    // Setting bundles for optional drawing additional full names
-    GUIVisualizationTextSettings addFullName;
     //@}
 
 
     /// @name shapes visualization settings
     //@{
 
-    /// @brief The POI colorer
-    GUIColorer poiColorer;
     // Setting bundles for controling the size of the drawn POIs
     GUIVisualizationSizeSettings poiSize;
     // Setting bundles for optional drawing poi names
@@ -297,8 +271,6 @@ public:
     // Setting bundles for optional drawing poi types
     GUIVisualizationTextSettings poiType;
 
-    /// @brief The polygon colorer
-    GUIColorer polyColorer;
     // Setting bundles for controling the size of the drawn polygons
     GUIVisualizationSizeSettings polySize;
     // Setting bundles for optional drawing polygon names
@@ -321,13 +293,6 @@ public:
 
     /// @brief the current NETEDIT additional mode (temporary)
     int editAdditionalMode;
-
-    /// @brief NETEDIT special colors
-    RGBColor selectionColor;
-    RGBColor selectedEdgeColor;
-    RGBColor selectedLaneColor;
-    RGBColor selectedConnectionColor;
-    RGBColor selectedAdditionalColor;
 
     /// @brief the current selection scaling in NETEDIT (temporary)
     double selectionScale;
@@ -364,54 +329,13 @@ public:
      */
     GUIScaleScheme& getLaneEdgeScaleScheme();
 
-    /// @brief Comparison operator
+    /** @brief Comparison operator */
     bool operator==(const GUIVisualizationSettings& vs2);
 
-    /// @brief map from LinkState to color constants
+    /* @brief map from LinkState to color constants  */
     static const RGBColor& getLinkColor(const LinkState& ls);
 
-    /// @brief color for busStops
-    static const RGBColor SUMO_color_busStop;
 
-    /// @brief color for busStops signs
-    static const RGBColor SUMO_color_busStop_sign;
-
-    /// @brief color for containerStops
-    static const RGBColor SUMO_color_containerStop;
-
-    /// @brief color for containerStop signs
-    static const RGBColor SUMO_color_containerStop_sign;
-
-    /// @brief color for chargingStations
-    static const RGBColor SUMO_color_chargingStation;
-
-    /// @brief color for chargingStation sign
-    static const RGBColor SUMO_color_chargingStation_sign;
-
-    /// @brief color for chargingStation during charging
-    static const RGBColor SUMO_color_chargingStation_charge;
-
-    /// @brief color for E1 detectors
-    static const RGBColor SUMO_color_E1;
-
-    /// @brief color for E1 Instant detectors
-    static const RGBColor SUMO_color_E1Instant;
-
-    /// @brief color for E2 detectors
-    static const RGBColor SUMO_color_E2;
-
-    /// @brief color for Entrys
-    static const RGBColor SUMO_color_E3Entry;
-
-    /// @brief color for Exits
-    static const RGBColor SUMO_color_E3Exit;
-
-    static const std::string SCHEME_NAME_EDGE_PARAM_NUMERICAL;
-    static const std::string SCHEME_NAME_LANE_PARAM_NUMERICAL;
-    static const std::string SCHEME_NAME_EDGEDATA_NUMERICAL;
-
-    /// @brief return an angle that is suitable for reading text aligned with the given angle (degrees)
-    double getTextAngle(double objectAngle) const;
 };
 
 

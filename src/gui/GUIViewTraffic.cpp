@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIViewTraffic.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // A view on the simulation; this view is a microscopic one
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_FFMPEG
 #include <utils/gui/div/GUIVideoEncoder.h>
@@ -53,13 +60,13 @@
 #include <utils/foxtools/MFXCheckableButton.h>
 #include <utils/gui/images/GUIIconSubSys.h>
 #include <gui/GUIApplicationWindow.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/gui/windows/GUIDialog_ViewSettings.h>
 #include <utils/gui/settings/GUICompleteSchemeStorage.h>
 #include <utils/foxtools/MFXImageHelper.h>
 #include <utils/gui/globjects/GUIGlObjectStorage.h>
 #include <foreign/rtree/SUMORTree.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/div/GUIGlobalSelection.h>
 #include <utils/gui/globjects/GLIncludes.h>
 
 /* -------------------------------------------------------------------------
@@ -87,13 +94,12 @@ GUIViewTraffic::GUIViewTraffic(
     GUISUMOAbstractView(p, app, parent, net.getVisualisationSpeedUp(), glVis, share),
     myTrackedID(GUIGlObject::INVALID_ID)
 #ifdef HAVE_FFMPEG
-    , myCurrentVideo(nullptr)
+    , myCurrentVideo(0)
 #endif
 {}
 
 
 GUIViewTraffic::~GUIViewTraffic() {
-    endSnapshot();
 }
 
 
@@ -103,12 +109,12 @@ GUIViewTraffic::buildViewToolBars(GUIGlChildWindow& v) {
     {
         const std::vector<std::string>& names = gSchemeStorage.getNames();
         for (std::vector<std::string>::const_iterator i = names.begin(); i != names.end(); ++i) {
-            v.getColoringSchemesCombo()->appendItem(i->c_str());
+            v.getColoringSchemesCombo().appendItem((*i).c_str());
             if ((*i) == myVisualizationSettings->name) {
-                v.getColoringSchemesCombo()->setCurrentItem(v.getColoringSchemesCombo()->getNumItems() - 1);
+                v.getColoringSchemesCombo().setCurrentItem(v.getColoringSchemesCombo().getNumItems() - 1);
             }
         }
-        v.getColoringSchemesCombo()->setNumVisible(MAX2(5, (int)names.size() + 1));
+        v.getColoringSchemesCombo().setNumVisible(MAX2(5, (int)names.size() + 1));
     }
     // for junctions
     new FXButton(v.getLocatorPopup(),
@@ -163,7 +169,7 @@ GUIViewTraffic::setColorScheme(const std::string& name) {
     if (!gSchemeStorage.contains(name)) {
         return false;
     }
-    if (myVisualizationChanger != nullptr) {
+    if (myVisualizationChanger != 0) {
         if (myVisualizationChanger->getCurrentScheme() != name) {
             myVisualizationChanger->setCurrentScheme(name);
         }
@@ -176,47 +182,31 @@ GUIViewTraffic::setColorScheme(const std::string& name) {
 
 
 void
-GUIViewTraffic::buildColorRainbow(const GUIVisualizationSettings& s, GUIColorScheme& scheme, int active, GUIGlObjectType objectType) {
-    assert(!scheme.isFixed());
-    double minValue = std::numeric_limits<double>::infinity();
-    double maxValue = -std::numeric_limits<double>::infinity();
-    // retrieve range
+GUIViewTraffic::buildColorRainbow(GUIColorScheme& scheme, int active, GUIGlObjectType objectType) {
     if (objectType == GLO_LANE) {
+        assert(!scheme.isFixed());
+        // retrieve range
+        double minValue = std::numeric_limits<double>::infinity();
+        double maxValue = -std::numeric_limits<double>::infinity();
         // XXX (see #3409) multi-colors are not currently handled. this is a quick hack
         if (active == 22) {
             active = 21; // segment height, fall back to start height
-        } else if (active == 24) {
-            active = 23; // segment incline, fall back to total incline
         }
         const MSEdgeVector& edges = MSEdge::getAllEdges();
         for (MSEdgeVector::const_iterator it = edges.begin(); it != edges.end(); ++it) {
             if (MSGlobals::gUseMesoSim) {
-                const double val = static_cast<GUIEdge*>(*it)->getColorValue(s, active);
+                const double val = static_cast<GUIEdge*>(*it)->getColorValue(active);
                 minValue = MIN2(minValue, val);
                 maxValue = MAX2(maxValue, val);
             } else {
                 const std::vector<MSLane*>& lanes = (*it)->getLanes();
                 for (std::vector<MSLane*>::const_iterator it_l = lanes.begin(); it_l != lanes.end(); it_l++) {
-                    const double val = static_cast<GUILane*>(*it_l)->getColorValue(s, active);
+                    const double val = static_cast<GUILane*>(*it_l)->getColorValue(active);
                     minValue = MIN2(minValue, val);
                     maxValue = MAX2(maxValue, val);
                 }
             }
         }
-    } else if (objectType == GLO_JUNCTION) {
-        if (active == 3) {
-            std::set<const MSJunction*> junctions;
-            for (MSEdge* edge : MSEdge::getAllEdges()) {
-                junctions.insert(edge->getFromJunction());
-                junctions.insert(edge->getToJunction());
-            }
-            for (const MSJunction* junction : junctions) {
-                minValue = MIN2(minValue, junction->getPosition().z());
-                maxValue = MAX2(maxValue, junction->getPosition().z());
-            }
-        }
-    }
-    if (minValue != std::numeric_limits<double>::infinity()) {
         scheme.clear();
         // add new thresholds
         double range = maxValue - minValue;
@@ -231,47 +221,15 @@ GUIViewTraffic::buildColorRainbow(const GUIVisualizationSettings& s, GUIColorSch
 }
 
 
-std::vector<std::string>
-GUIViewTraffic::getEdgeDataAttrs() const {
-    if (GUINet::getGUIInstance() != nullptr) {
-        return GUINet::getGUIInstance()->getEdgeDataAttrs();
-    }
-    return std::vector<std::string>();
-}
-
-
-std::vector<std::string>
-GUIViewTraffic::getEdgeLaneParamKeys(bool edgeKeys) const {
-    std::set<std::string> keys;
-    for (const MSEdge* e : MSEdge::getAllEdges()) {
-        if (edgeKeys) {
-            for (const auto& item : e->getParametersMap()) {
-                keys.insert(item.first);
-            }
-        } else {
-            for (const auto lane : e->getLanes()) {
-                for (const auto& item : lane->getParametersMap()) {
-                    keys.insert(item.first);
-                }
-            }
-        }
-    }
-    return std::vector<std::string>(keys.begin(), keys.end());
-}
-
-
 int
 GUIViewTraffic::doPaintGL(int mode, const Boundary& bound) {
-    // (uncomment the next line to check select mode)
-    //myVisualizationSettings->drawForSelecting = true;
     // init view settings
     glRenderMode(mode);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_ALPHA_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
 
     // draw decals (if not in grabbing mode)
@@ -290,12 +248,12 @@ GUIViewTraffic::doPaintGL(int mode, const Boundary& bound) {
     glEnable(GL_POLYGON_OFFSET_FILL);
     glEnable(GL_POLYGON_OFFSET_LINE);
     int hits2 = myGrid->Search(minB, maxB, *myVisualizationSettings);
-    // Draw additional objects
+    //
     if (myAdditionallyDrawn.size() > 0) {
         glTranslated(0, 0, -.01);
         GUINet::getGUIInstance()->lock();
-        for (auto i : myAdditionallyDrawn) {
-            i.first->drawGLAdditional(this, *myVisualizationSettings);
+        for (std::map<const GUIGlObject*, int>::iterator i = myAdditionallyDrawn.begin(); i != myAdditionallyDrawn.end(); ++i) {
+            (i->first)->drawGLAdditional(this, *myVisualizationSettings);
         }
         GUINet::getGUIInstance()->unlock();
         glTranslated(0, 0, .01);
@@ -336,7 +294,7 @@ void
 GUIViewTraffic::onGamingClick(Position pos) {
     MSTLLogicControl& tlsControl = MSNet::getInstance()->getTLSControl();
     const std::vector<MSTrafficLightLogic*>& logics = tlsControl.getAllLogics();
-    MSTrafficLightLogic* minTll = nullptr;
+    MSTrafficLightLogic* minTll = 0;
     double minDist = std::numeric_limits<double>::infinity();
     for (std::vector<MSTrafficLightLogic*>::const_iterator i = logics.begin(); i != logics.end(); ++i) {
         // get the logic
@@ -353,7 +311,7 @@ GUIViewTraffic::onGamingClick(Position pos) {
             }
         }
     }
-    if (minTll != nullptr) {
+    if (minTll != 0) {
         const MSTLLogicControl::TLSLogicVariants& vars = tlsControl.get(minTll->getID());
         const std::vector<MSTrafficLightLogic*> logics = vars.getAllLogics();
         if (logics.size() > 1) {
@@ -370,71 +328,7 @@ GUIViewTraffic::onGamingClick(Position pos) {
             l->changeStepAndDuration(tlsControl, MSNet::getInstance()->getCurrentTimeStep(), 0, l->getPhase(0).duration);
             update();
         }
-    } else {
-        // DRT game
-        if (MSGlobals::gUseMesoSim) {
-            return;
-        }
-        const std::set<GUIGlID>& sel = gSelected.getSelected(GLO_VEHICLE);
-        if (sel.size() == 0) {
-            // find closest pt vehicle
-            minDist = std::numeric_limits<double>::infinity();
-            GUIVehicle* closest = nullptr;
-            MSVehicleControl& vc = MSNet::getInstance()->getVehicleControl();
-            MSVehicleControl::constVehIt it = vc.loadedVehBegin();
-            MSVehicleControl::constVehIt end = vc.loadedVehEnd();
-            for (it = vc.loadedVehBegin(); it != end; ++it) {
-                GUIVehicle* veh = dynamic_cast<GUIVehicle*>(it->second);
-                assert(veh != 0);
-                if (veh->getParameter().line != "") {
-                    const double dist = veh->getPosition().distanceTo2D(pos);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        closest = veh;
-                    }
-                }
-            }
-            if (closest != nullptr) {
-                gSelected.select(closest->getGlID());
-                closest->addActiveAddVisualisation(this, GUIBaseVehicle::VO_SHOW_FUTURE_ROUTE);
-            }
-        } else {
-            // find closest pt stop
-            minDist = std::numeric_limits<double>::infinity();
-            MSStoppingPlace* closestStop = nullptr;
-            const NamedObjectCont<MSStoppingPlace*>& stops = MSNet::getInstance()->getStoppingPlaces(SUMO_TAG_BUS_STOP);
-            for (auto it = stops.begin(); it != stops.end(); ++it) {
-                MSStoppingPlace* stop = it->second;
-                const double dist = pos.distanceTo2D(stop->getLane().geometryPositionAtOffset(stop->getEndLanePosition()));
-                if (dist < minDist) {
-                    minDist = dist;
-                    closestStop = stop;
-                }
-            }
-            if (closestStop != 0) {
-                GUIGlID id = *sel.begin();
-                GUIVehicle* veh = dynamic_cast<GUIVehicle*>(GUIGlObjectStorage::gIDStorage.getObjectBlocking(id));
-                assert(veh != 0);
-                veh->rerouteDRTStop(closestStop);
-                GUIGlObjectStorage::gIDStorage.unblockObject(id);
-            }
-        }
     }
-}
-
-
-void
-GUIViewTraffic::onGamingRightClick(Position /*pos*/) {
-    const std::set<GUIGlID>& sel = gSelected.getSelected(GLO_VEHICLE);
-    if (sel.size() > 0) {
-        GUIGlID id = *sel.begin();
-        GUIVehicle* veh = dynamic_cast<GUIVehicle*>(GUIGlObjectStorage::gIDStorage.getObjectBlocking(id));
-        if (veh != 0) {
-            veh->removeActiveAddVisualisation(this, GUIBaseVehicle::VO_SHOW_FUTURE_ROUTE);
-        }
-        GUIGlObjectStorage::gIDStorage.unblockObject(id);
-    }
-    gSelected.clear();
 }
 
 
@@ -450,19 +344,19 @@ GUIViewTraffic::getLaneUnderCursor() {
         int id = getObjectUnderCursor();
         if (id != 0) {
             GUIGlObject* o = GUIGlObjectStorage::gIDStorage.getObjectBlocking(id);
-            if (o != nullptr) {
+            if (o != 0) {
                 return dynamic_cast<GUILane*>(o);
             }
         }
         makeNonCurrent();
     }
-    return nullptr;
+    return 0;
 }
 
 long
 GUIViewTraffic::onCmdCloseLane(FXObject*, FXSelector, void*) {
     GUILane* lane = getLaneUnderCursor();
-    if (lane != nullptr) {
+    if (lane != 0) {
         lane->closeTraffic();
         GUIGlObjectStorage::gIDStorage.unblockObject(lane->getGlID());
         update();
@@ -474,7 +368,7 @@ GUIViewTraffic::onCmdCloseLane(FXObject*, FXSelector, void*) {
 long
 GUIViewTraffic::onCmdCloseEdge(FXObject*, FXSelector, void*) {
     GUILane* lane = getLaneUnderCursor();
-    if (lane != nullptr) {
+    if (lane != 0) {
         dynamic_cast<GUIEdge*>(&lane->getEdge())->closeTraffic(lane);
         GUIGlObjectStorage::gIDStorage.unblockObject(lane->getGlID());
         update();
@@ -486,7 +380,7 @@ GUIViewTraffic::onCmdCloseEdge(FXObject*, FXSelector, void*) {
 long
 GUIViewTraffic::onCmdAddRerouter(FXObject*, FXSelector, void*) {
     GUILane* lane = getLaneUnderCursor();
-    if (lane != nullptr) {
+    if (lane != 0) {
         dynamic_cast<GUIEdge*>(&lane->getEdge())->addRerouter();
         GUIGlObjectStorage::gIDStorage.unblockObject(lane->getGlID());
         update();
@@ -495,23 +389,10 @@ GUIViewTraffic::onCmdAddRerouter(FXObject*, FXSelector, void*) {
 }
 
 
-long
-GUIViewTraffic::onDoubleClicked(FXObject*, FXSelector, void*) {
-    // leave fullscreen mode
-    if (myApp->isFullScreen()) {
-        myApp->onCmdFullScreen(nullptr, 0, nullptr);
-    } else {
-        stopTrack();
-    }
-    return 1;
-}
-
-
-
 void
 GUIViewTraffic::saveFrame(const std::string& destFile, FXColor* buf) {
 #ifdef HAVE_FFMPEG
-    if (myCurrentVideo == nullptr) {
+    if (myCurrentVideo == 0) {
         myCurrentVideo = new GUIVideoEncoder(destFile.c_str(), getWidth(), getHeight(), myApp->getDelay());
     }
     myCurrentVideo->writeFrame((uint8_t*)buf);
@@ -525,9 +406,9 @@ GUIViewTraffic::saveFrame(const std::string& destFile, FXColor* buf) {
 void
 GUIViewTraffic::endSnapshot() {
 #ifdef HAVE_FFMPEG
-    if (myCurrentVideo != nullptr) {
+    if (myCurrentVideo != 0) {
         delete myCurrentVideo;
-        myCurrentVideo = nullptr;
+        myCurrentVideo = 0;
     }
 #endif
 }
@@ -535,18 +416,15 @@ GUIViewTraffic::endSnapshot() {
 
 void
 GUIViewTraffic::checkSnapshots() {
+    GUISUMOAbstractView::checkSnapshots();
 #ifdef HAVE_FFMPEG
-    if (myCurrentVideo != nullptr) {
-        addSnapshot(getCurrentTimeStep() - DELTA_T, "");
+    if (myCurrentVideo != 0) {
+        std::string error = makeSnapshot("");
+        if (error != "" && error != "video") {
+            WRITE_WARNING(error);
+        }
     }
 #endif
-    GUISUMOAbstractView::checkSnapshots();
-}
-
-
-const std::vector<SUMOTime>
-GUIViewTraffic::retrieveBreakpoints() const {
-    return myApp->retrieveBreakpoints();
 }
 
 

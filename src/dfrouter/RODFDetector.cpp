@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2006-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RODFDetector.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Eric Nicolay
@@ -20,12 +12,27 @@
 ///
 // Class representing a detector within the DFROUTER
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2006-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include "RODFDetector.h"
@@ -41,7 +48,7 @@
 #include <utils/vehicle/SUMOVTypeParameter.h>
 #include <utils/distribution/RandomDistributor.h>
 #include <utils/common/StdDefs.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/geom/GeomHelper.h>
 #include "RODFNet.h"
 #include <utils/iodevices/OutputDevice.h>
@@ -54,13 +61,13 @@
 // ===========================================================================
 RODFDetector::RODFDetector(const std::string& id, const std::string& laneID,
                            double pos, const RODFDetectorType type)
-    : Named(id), myLaneID(laneID), myPosition(pos), myType(type), myRoutes(nullptr) {}
+    : Named(id), myLaneID(laneID), myPosition(pos), myType(type), myRoutes(0) {}
 
 
 RODFDetector::RODFDetector(const std::string& id, const RODFDetector& f)
     : Named(id), myLaneID(f.myLaneID), myPosition(f.myPosition),
-      myType(f.myType), myRoutes(nullptr) {
-    if (f.myRoutes != nullptr) {
+      myType(f.myType), myRoutes(0) {
+    if (f.myRoutes != 0) {
         myRoutes = new RODFRouteCont(*(f.myRoutes));
     }
 }
@@ -92,7 +99,7 @@ void
 RODFDetector::computeSplitProbabilities(const RODFNet* net, const RODFDetectorCon& detectors,
                                         const RODFDetectorFlows& flows,
                                         SUMOTime startTime, SUMOTime endTime, SUMOTime stepOffset) {
-    if (myRoutes == nullptr) {
+    if (myRoutes == 0) {
         return;
     }
     // compute edges to determine split probabilities
@@ -168,7 +175,7 @@ RODFDetector::buildDestinationDistribution(const RODFDetectorCon& detectors,
         SUMOTime startTime, SUMOTime endTime, SUMOTime stepOffset,
         const RODFNet& net,
         std::map<SUMOTime, RandomDistributor<int>* >& into) const {
-    if (myRoutes == nullptr) {
+    if (myRoutes == 0) {
         if (myType != DISCARDED_DETECTOR && myType != BETWEEN_DETECTOR) {
             WRITE_ERROR("Missing routes for detector '" + myID + "'.");
         }
@@ -196,7 +203,7 @@ RODFDetector::buildDestinationDistribution(const RODFDetectorCon& detectors,
                     continue;
                 }
                 const std::map<RODFEdge*, double>& tprobs = probs[(int)((time - startTime) / stepOffset)];
-                RODFEdge* splitEdge = nullptr;
+                RODFEdge* splitEdge = 0;
                 for (std::map<RODFEdge*, double>::const_iterator k = tprobs.begin(); k != tprobs.end(); ++k) {
                     if (find(j, (*ri).edges2Pass.end(), (*k).first) != (*ri).edges2Pass.end()) {
                         prob *= (*k).second;
@@ -204,8 +211,8 @@ RODFDetector::buildDestinationDistribution(const RODFDetectorCon& detectors,
                         break;
                     }
                 }
-                if (splitEdge != nullptr) {
-                    j = std::find(j, (*ri).edges2Pass.end(), splitEdge);
+                if (splitEdge != 0) {
+                    j = find(j, (*ri).edges2Pass.end(), splitEdge);
                 } else {
                     ++j;
                 }
@@ -257,7 +264,7 @@ RODFDetector::addRoutes(RODFRouteCont* routes) {
 
 void
 RODFDetector::addRoute(RODFRouteDesc& nrd) {
-    if (myRoutes == nullptr) {
+    if (myRoutes == 0) {
         myRoutes = new RODFRouteCont();
     }
     myRoutes->addRouteDesc(nrd);
@@ -266,7 +273,7 @@ RODFDetector::addRoute(RODFRouteDesc& nrd) {
 
 bool
 RODFDetector::hasRoutes() const {
-    return myRoutes != nullptr && myRoutes->get().size() != 0;
+    return myRoutes != 0 && myRoutes->get().size() != 0;
 }
 
 
@@ -286,7 +293,7 @@ RODFDetector::writeEmitterDefinition(const std::string& file,
         out.writeXMLHeader("additional", "additional_file.xsd");
     }
     // routes
-    if (myRoutes != nullptr && myRoutes->get().size() != 0) {
+    if (myRoutes != 0 && myRoutes->get().size() != 0) {
         const std::vector<RODFRouteDesc>& routes = myRoutes->get();
         out.openTag(SUMO_TAG_ROUTE_DISTRIBUTION).writeAttr(SUMO_ATTR_ID, myID);
         bool isEmptyDist = true;
@@ -296,10 +303,11 @@ RODFDetector::writeEmitterDefinition(const std::string& file,
             }
         }
         for (std::vector<RODFRouteDesc>::const_iterator i = routes.begin(); i != routes.end(); ++i) {
-            if (isEmptyDist) {
-                out.openTag(SUMO_TAG_ROUTE).writeAttr(SUMO_ATTR_REFID, (*i).routename).writeAttr(SUMO_ATTR_PROB, 1.0).closeTag();
-            } else if ((*i).overallProb > 0 || includeUnusedRoutes) {
+            if ((*i).overallProb > 0 || includeUnusedRoutes) {
                 out.openTag(SUMO_TAG_ROUTE).writeAttr(SUMO_ATTR_REFID, (*i).routename).writeAttr(SUMO_ATTR_PROB, (*i).overallProb).closeTag();
+            }
+            if (isEmptyDist) {
+                out.openTag(SUMO_TAG_ROUTE).writeAttr(SUMO_ATTR_REFID, (*i).routename).writeAttr(SUMO_ATTR_PROB, double(1)).closeTag();
             }
         }
         out.closeTag(); // routeDistribution
@@ -339,15 +347,7 @@ RODFDetector::writeEmitterDefinition(const std::string& file,
                 // get the vehicle parameter
                 double v = -1;
                 std::string vtype;
-                int destIndex = -1;
-                if (destDist != nullptr) {
-                    if (destDist->getOverallProb() > 0) {
-                        destIndex = destDist->get();
-                    } else if (myRoutes->get().size() > 0) {
-                        // equal probabilities. see writeEmitterDefinition()
-                        destIndex = RandHelper::rand((int)myRoutes->get().size());
-                    }
-                }
+                int destIndex = destDist != 0 && destDist->getOverallProb() > 0 ? (int) destDist->get() : -1;
                 if (srcFD.isLKW >= 1) {
                     srcFD.isLKW = srcFD.isLKW - 1.;
                     v = srcFD.vLKW;
@@ -379,7 +379,7 @@ RODFDetector::writeEmitterDefinition(const std::string& file,
                 if (oc.isSet("departlane")) {
                     out.writeNonEmptyAttr(SUMO_ATTR_DEPARTLANE, oc.getString("departlane"));
                 } else {
-                    out.writeAttr(SUMO_ATTR_DEPARTLANE, StringUtils::toInt(myLaneID.substr(myLaneID.rfind("_") + 1)));
+                    out.writeAttr(SUMO_ATTR_DEPARTLANE, TplConvert::_2int(myLaneID.substr(myLaneID.rfind("_") + 1).c_str()));
                 }
                 if (oc.isSet("departpos")) {
                     std::string posDesc = oc.getString("departpos");
@@ -387,11 +387,11 @@ RODFDetector::writeEmitterDefinition(const std::string& file,
                         double position = myPosition;
                         if (posDesc.length() > 8) {
                             if (posDesc[8] == '+') {
-                                position += StringUtils::toDouble(posDesc.substr(9));
+                                position += TplConvert::_2double(posDesc.substr(9).c_str());
                             } else if (posDesc[8] == '-') {
-                                position -= StringUtils::toDouble(posDesc.substr(9));
+                                position -= TplConvert::_2double(posDesc.substr(9).c_str());
                             } else {
-                                throw NumberFormatException("");
+                                throw NumberFormatException();
                             }
                         }
                         out.writeAttr(SUMO_ATTR_DEPARTPOS, position);
@@ -435,7 +435,7 @@ RODFDetector::writeEmitterDefinition(const std::string& file,
 bool
 RODFDetector::writeRoutes(std::vector<std::string>& saved,
                           OutputDevice& out) {
-    if (myRoutes != nullptr) {
+    if (myRoutes != 0) {
         return myRoutes->save(saved, "", out);
     }
     return false;
@@ -652,17 +652,17 @@ RODFDetectorCon::writeEmitters(const std::string& file,
         // write separate types
         SUMOVTypeParameter pkwType = SUMOVTypeParameter("PKW", SVC_PASSENGER);
         setSpeedFactorAndDev(pkwType, net.getMaxSpeedFactorPKW(), net.getAvgSpeedFactorPKW(), speedDev, forceDev);
-        pkwType.parametersSet |= VTYPEPARS_VEHICLECLASS_SET;
+        pkwType.setParameter |= VTYPEPARS_VEHICLECLASS_SET;
         pkwType.write(vTypeOut);
         SUMOVTypeParameter lkwType = SUMOVTypeParameter("LKW", SVC_TRUCK);
         setSpeedFactorAndDev(lkwType, net.getMaxSpeedFactorLKW(), net.getAvgSpeedFactorLKW(), speedDev, forceDev);
-        lkwType.parametersSet |= VTYPEPARS_VEHICLECLASS_SET;
+        lkwType.setParameter |= VTYPEPARS_VEHICLECLASS_SET;
         lkwType.write(vTypeOut);
     } else {
         // patch default type
         SUMOVTypeParameter type = SUMOVTypeParameter(DEFAULT_VTYPE_ID, SVC_PASSENGER);
         setSpeedFactorAndDev(type, MAX2(net.getMaxSpeedFactorPKW(), net.getMaxSpeedFactorLKW()), net.getAvgSpeedFactorPKW(), speedDev, forceDev);
-        if (type.parametersSet != 0) {
+        if (type.setParameter != 0) {
             type.write(vTypeOut);
         }
     }
@@ -713,15 +713,13 @@ RODFDetectorCon::setSpeedFactorAndDev(SUMOVTypeParameter& type, double maxFactor
         // systematically low speeds can easily be caused by traffic
         // conditions. Whereas elevated speeds probably reflect speeding
         type.speedFactor.getParameter()[0] = avgFactor;
-        type.parametersSet |= VTYPEPARS_SPEEDFACTOR_SET;
+        type.setParameter |= VTYPEPARS_SPEEDFACTOR_SET;
     }
     if (forceDev || (maxFactor > 1 && maxFactor > type.speedFactor.getParameter()[0] + NUMERICAL_EPS)) {
         // setting a non-zero speed deviation causes the simulation to recompute
         // individual speedFactors to match departSpeed (MSEdge::insertVehicle())
         type.speedFactor.getParameter()[1] = dev;
-        type.parametersSet |= VTYPEPARS_SPEEDFACTOR_SET;
-    } else {
-        type.speedFactor.getParameter()[1] = -1; // do not write speedDev, only simple speedFactor
+        type.setParameter |= VTYPEPARS_SPEEDFACTOR_SET;
     }
 }
 
@@ -763,7 +761,7 @@ RODFDetectorCon::getAggFlowFor(const ROEdge* edge, SUMOTime time, SUMOTime perio
                                const RODFDetectorFlows&) const {
     UNUSED_PARAMETER(period);
     UNUSED_PARAMETER(time);
-    if (edge == nullptr) {
+    if (edge == 0) {
         return 0;
     }
 //    double stepOffset = 60; // !!!
@@ -816,7 +814,7 @@ RODFDetectorCon::writeSpeedTrigger(const RODFNet* const net,
         if (det->getType() == SINK_DETECTOR && flows.knows(det->getID())) {
             std::string filename = FileHelpers::getFilePath(file) + "vss_" + det->getID() + ".def.xml";
             out.openTag(SUMO_TAG_VSS).writeAttr(SUMO_ATTR_ID, StringUtils::escapeXML(det->getID())).writeAttr(SUMO_ATTR_LANES, det->getLaneID()).writeAttr(SUMO_ATTR_FILE, filename).closeTag();
-            double defaultSpeed = net != nullptr ? net->getEdge(det->getEdgeID())->getSpeedLimit() : (double) 200.;
+            double defaultSpeed = net != 0 ? net->getEdge(det->getEdgeID())->getSpeedLimit() : (double) 200.;
             det->writeSingleSpeedTrigger(filename, flows, startTime, endTime, stepOffset, defaultSpeed);
         }
     }
@@ -879,7 +877,7 @@ RODFDetectorCon::removeDetector(const std::string& id) {
     myDetectorMap.erase(ri1);
     //
     std::vector<RODFDetector*>::iterator ri2 =
-        std::find(myDetectors.begin(), myDetectors.end(), oldDet);
+        find(myDetectors.begin(), myDetectors.end(), oldDet);
     myDetectors.erase(ri2);
     //
     bool found = false;
@@ -957,7 +955,7 @@ RODFDetectorCon::getAnyDetectorForEdge(const RODFEdge* const edge) const {
 void
 RODFDetectorCon::clearDists(std::map<SUMOTime, RandomDistributor<int>* >& dists) const {
     for (std::map<SUMOTime, RandomDistributor<int>* >::iterator i = dists.begin(); i != dists.end(); ++i) {
-        delete (*i).second;
+        delete(*i).second;
     }
 }
 

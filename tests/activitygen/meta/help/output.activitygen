@@ -1,13 +1,13 @@
-Eclipse SUMO activitygen Version v1_1_0+0040-b68edb7a21e
- Copyright (C) 2001-2019 German Aerospace Center (DLR) and others; http://sumo.dlr.de
+SUMO activitygen Version dev-SVN-r22796
+ Copyright (C) 2001-2017 DLR and contributors; http://sumo.dlr.de
  Copyright (C) 2010-2012 Technische Universitaet Muenchen
-Generates trips of persons throughout a day for the microscopic, multi-modal
-  traffic simulation SUMO.
+Generates routes of persons throughout a day for the microscopic road traffic
+  simulation SUMO.
 
 Usage: activitygen [OPTION]*
 Configuration Options:
   -c, --configuration-file FILE    Loads the named config on startup
-  -C, --save-configuration FILE    Saves current configuration into FILE
+  --save-configuration FILE        Saves current configuration into FILE
   --save-template FILE             Saves a configuration template (empty) into
                                      FILE
   --save-schema FILE               Saves the configuration schema into FILE
@@ -19,7 +19,6 @@ Input Options:
   -s, --stat-file FILE             Loads the SUMO-statistics FILE
 
 Output Options:
-  --write-license                  Include license info into every output file
   --output-prefix STR              Prefix which is applied to all output files.
                                      The special string 'TIME' is replaced by
                                      the current time.
@@ -27,8 +26,6 @@ Output Options:
                                      for floating point output
   --precision.geo INT              Defines the number of digits after the comma
                                      for lon,lat output
-  -H, --human-readable-time        Write time values as hour:minute:second or
-                                     day:hour:minute:second rathern than seconds
   -o, --output-file FILE           Write generated trips to FILE
 
 Processing Options:
@@ -70,5 +67,5 @@ Examples:
   activitygen --net-file <INPUT>.net.xml --stat-file <INPUT>.stat.xml --output <OUTPUT>.rou.xml --duration-d <NBR_OF_DAYS>
     generate a trips file from a stats file on a given net for numerous days (with fixed random seed)
 
-Report bugs at <https://github.com/eclipse/sumo/issues>.
+Report bugs at <http://sumo.dlr.de/trac/>.
 Get in contact via <sumo@dlr.de>.

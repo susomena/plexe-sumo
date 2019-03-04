@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NGRandomNetBuilder.cpp
 /// @author  Markus Hartinger
 /// @author  Daniel Krajzewicz
@@ -16,19 +8,33 @@
 ///
 // Additional structures for building random nets
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <cmath>
 #include <stdlib.h>
 #include "NGRandomNetBuilder.h"
 #include <utils/geom/GeomHelper.h>
-#include <utils/common/StdDefs.h>
 #include <utils/common/RandHelper.h>
 
 
@@ -170,16 +176,10 @@ NGRandomNetBuilder::findPossibleOuterNodes(NGNode* node) {
 
 
 bool
-NGRandomNetBuilder::createNewNode(NGNode* baseNode, bool gridMode) {
+NGRandomNetBuilder::createNewNode(NGNode* baseNode) {
     // calculate position of new node based on BaseNode
     double dist = RandHelper::rand(myMinDistance, myMaxDistance);
     double angle = RandHelper::rand((double)(2 * M_PI));
-    if (gridMode) {
-        // dist must be a multiple of minDist
-        dist = MAX2(1, int(dist / myMinDistance)) * myMinDistance;
-        // angle must be a multiple of 90 degrees
-        angle = RandHelper::rand(4) * 0.5 * M_PI;
-    }
     double x = baseNode->getPosition().x() + dist * cos(angle);
     double y = baseNode->getPosition().y() + dist * sin(angle);
     NGNode* newNode = new NGNode(myNet.getNextFreeID());
@@ -207,7 +207,7 @@ NGRandomNetBuilder::createNewNode(NGNode* baseNode, bool gridMode) {
 
 
 void
-NGRandomNetBuilder::createNet(int numNodes, bool gridMode) {
+NGRandomNetBuilder::createNet(int numNodes) {
     myNumNodes = numNodes;
 
     NGNode* outerNode = new NGNode(myNet.getNextFreeID());
@@ -249,7 +249,7 @@ NGRandomNetBuilder::createNet(int numNodes, bool gridMode) {
         } else {
             int count = 0;
             do {
-                created = createNewNode(outerNode, gridMode);
+                created = createNewNode(outerNode);
                 count++;
             } while ((count <= myNumTries) && !created);
             if (!created) {

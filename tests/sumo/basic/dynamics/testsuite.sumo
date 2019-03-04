@@ -4,6 +4,9 @@ avoid_spill_back
 # tests for driver impatience
 impatience
 
+# test proper behavior at junctions (collision avoidance, efficent usage)
+junction
+
 # test behavior when vehicles cannot drive
 deadlock
 
@@ -12,6 +15,9 @@ ramps
 
 # dynamics at roundabout
 roundabout
+
+# effects of the visibility attribute for links 
+visibility
 
 # tests for vehicle insertion (especially for high flows)
 insertion

@@ -1,17 +1,3 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2016-2019 German Aerospace Center (DLR) and others.
-# SUMOPy module
-# Copyright (C) 2012-2017 University of Bologna - DICAM
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    wxmisc.py
-# @author  Joerg Schweizer
-# @date
-# @version $Id$
 
 
 import sys
@@ -52,6 +38,7 @@ def get_tablecolors():
 
 
 class AgileToolbarMixin:
+
     """
     Easy to use toolbar where strings can be used to identify tools. 
     Mixin for frames.
@@ -110,7 +97,7 @@ class AgileToolbarMixin:
         else:
             name = args['name']
 
-        if widget is not None:
+        if widget != None:
             # tool is a widget
             self.toolbar.AddControl(widget)
         else:
@@ -156,6 +143,7 @@ class AgileToolbarMixin:
 
 
 class AgileToolbarFrameMixin(AgileToolbarMixin):
+
     """
     Easy to use toolbar where strings can be used to identify tools. 
     Mixin for frames only.
@@ -187,6 +175,7 @@ class AgileToolbarFrameMixin(AgileToolbarMixin):
 
 
 class AgileMenuMixin:
+
     """
     Easy to use menue mixin for main menu and popup
     """
@@ -262,7 +251,8 @@ class AgileMenuMixin:
                 # print "  *create submenu",key
                 parentmenu, parentmenu_dict, parentid = self.get_menu(menupath)
                 # print ' PARENTMENU ATTRS: self,dir(parentmenu)',parentmenu,dir(parentmenu)
-                # print '  parentmenu,key,parentmenu_dict,parentid',parentmenu,key,parentmenu_dict,parentid
+                # print '
+                # parentmenu,key,parentmenu_dict,parentid',parentmenu,key,parentmenu_dict,parentid
                 menu, id = self._create_menu(parentmenu, key, **args)
                 parentmenu_dict[key] = (menu, {}, id)
 
@@ -283,7 +273,7 @@ class AgileMenuMixin:
             alt = ''
 
         id = wx.NewId()
-        if menu is None:
+        if menu == None:
             menu = wx.Menu()
 
         if parentmenu == self:
@@ -297,13 +287,14 @@ class AgileMenuMixin:
             else:
                 # !! this is the way to append a menue to toplevel
                 # which is a menubar !!
-                self.Append(menu, alt+data['name'])
+                self.Append(menu, alt + data['name'])
 
         else:
             # attach menu to a submenu
             # print '  make submenu'
 
-            item, id = self._create_item(key, parentmenu, function=None, **args)
+            item, id = self._create_item(
+                key, parentmenu, function=None, **args)
             item.SetSubMenu(menu)
             parentmenu.AppendItem(item)
             # parentmenu.AppendMenu(id,alt+data['name'],menu)
@@ -342,7 +333,7 @@ class AgileMenuMixin:
         # default item
         data = {'alt': True,
                 'shortkey': '',
-                # 'info':'',
+                'info': '',
                 }
 
         # overwrite with args
@@ -350,12 +341,6 @@ class AgileMenuMixin:
 
         if not data.has_key('name'):
             data['name'] = string.capitalize(key)
-
-        if not data.has_key('info'):
-            if function.__doc__ is not None:
-                data['info'] = function.__doc__.replace('\n', ' ').strip()
-            else:
-                data['info'] = data['name']
 
         # print '_create_item',data
 
@@ -365,9 +350,9 @@ class AgileMenuMixin:
             alt = '&'
         else:
             alt = ''
-        itemtext = alt+data['name']
+        itemtext = alt + data['name']
         if data['shortkey'] != '':
-            itemtext += '\t'+data['shortkey']
+            itemtext += '\t' + data['shortkey']
 
         if data.has_key('radio'):
 
@@ -379,7 +364,8 @@ class AgileMenuMixin:
             # check boxes AFTER append
 
         else:
-            item = wx.MenuItem(menu, id, itemtext, data['info'], wx.ITEM_NORMAL)
+            item = wx.MenuItem(menu, id, itemtext, data[
+                               'info'], wx.ITEM_NORMAL)
             # print ' normal item'
 
         if data.has_key('bitmap'):
@@ -389,7 +375,7 @@ class AgileMenuMixin:
             item.SetBitmap(data['bitmap'])
 
         # define callback function
-        if function is not None:  # None for submenueitem
+        if function != None:  # None for submenueitem
             # wx.EVT_MENU(self.parent,id,function)
             self.parent.Bind(wx.EVT_MENU, function, id=id)
 
@@ -428,7 +414,7 @@ class AgileMenuMixin:
             # create main menue entry, if necessary
             if not self.menus.has_key(name):
                 newmenue = wx.Menu()
-                self.Append(newmenue, '&'+name)
+                self.Append(newmenue, '&' + name)
                 self.menus[name] = (-1, {})
 
         elif len(name) == 2:
@@ -436,7 +422,7 @@ class AgileMenuMixin:
             name1, name2 = name
             if not self.menus.has_key(name1):
                 newmenue = wx.Menu()
-                self.Append(newmenue, '&'+name1)
+                self.Append(newmenue, '&' + name1)
                 self.menus[name] = (-1, {})
 
             menuid, submenus = self.menus[name1]
@@ -445,7 +431,7 @@ class AgileMenuMixin:
                 id = wx.NewId()
                 get_menu_item()
                 newmenue = wx.Menu()
-                self.Append(newmenue, '&'+name1)
+                self.Append(newmenue, '&' + name1)
                 self.menus[name] = {}
 
             submenu = self.menus
@@ -465,6 +451,7 @@ class AgileMenuMixin:
 
 
 class AgilePopupMenu(wx.Menu, AgileMenuMixin):
+
     """
     Easy to use popup
     """
@@ -477,15 +464,15 @@ class AgilePopupMenu(wx.Menu, AgileMenuMixin):
         AgileMenuMixin.append_menu(self, '.')
 
     def append_menu(self, path, **args):
-        AgileMenuMixin.append_menu(self, './'+path, popup=True, **args)
+        AgileMenuMixin.append_menu(self, './' + path, popup=True, **args)
 
     def append_item(self, path, function, **args):
-        return AgileMenuMixin.append_item(self, './'+path, function, **args)
+        return AgileMenuMixin.append_item(self, './' + path, function, **args)
 
     def get_menuitem(self, path):
-        return AgileMenuMixin.get_menuitem(self, './'+path)
+        return AgileMenuMixin.get_menuitem(self, './' + path)
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
     # the folling methods are used with contect<sebitive menus
     # on a grid based widget.
     # When initializing the menu the row and column of its location can
@@ -613,6 +600,7 @@ KEYMAP = {
 
 
 class KeyHandler:
+
     """
     Mixin for handling key events in wx
     """
@@ -622,7 +610,7 @@ class KeyHandler:
         Sets events and variables for parent.
         If no parent is defined then self is assumed to be parent.
         """
-        if parent is None:
+        if parent == None:
             parent = self
 
         self.key_pressed = ''  # string code of currently pressed key
@@ -640,7 +628,7 @@ class KeyHandler:
         """
         A key has been pressed down...
         """
-        if self.GUIMode is None:
+        if self.GUIMode == None:
             # try custom tool of metacanvas
             input = self.set_keypress(event)
             # print 'on_key_down',input
@@ -676,7 +664,7 @@ class KeyHandler:
                     keyname = "NUL"
                 elif (keycode < 27) & (not ignore_specials):
                     # keycode is a special control key
-                    keyname = "Ctrl-%s" % chr(ord('A') + keycode-1)
+                    keyname = "Ctrl-%s" % chr(ord('A') + keycode - 1)
                 elif (keycode < 27):
                     keyname = ''
                 else:
@@ -699,13 +687,13 @@ class KeyHandler:
         code = ''
 
         if event.ControlDown():
-            code += 'CONTROL'+sep
+            code += 'CONTROL' + sep
 
         if event.ShiftDown():
-            code += 'SHIFT'+sep
+            code += 'SHIFT' + sep
 
         if event.AltDown():
-            code += 'ALT'+sep
+            code += 'ALT' + sep
 
         return code
 
@@ -713,6 +701,7 @@ class KeyHandler:
 
 
 class OptionsFrame(wx.Frame):
+
     """
     Simple wx frame with some special features.
     """
@@ -721,7 +710,7 @@ class OptionsFrame(wx.Frame):
                  size=wx.DefaultSize, style=wx.DEFAULT_FRAME_STYLE,
                  name='frame'):
 
-        if mainframe is None:
+        if mainframe == None:
             self._mainframe = parent
         else:
             self._mainframe = mainframe
@@ -737,6 +726,7 @@ class OptionsFrame(wx.Frame):
 
 
 class OptionsPanel(AgileToolbarMixin, wx.Panel):
+
     """
     UNUSED
     Simple wx panele with some special features.
@@ -746,7 +736,7 @@ class OptionsPanel(AgileToolbarMixin, wx.Panel):
 
         wx.Panel.__init__(self, parent, -1, wx.DefaultPosition,
                           wx.DefaultSize, wx.SUNKEN_BORDER | wx.WANTS_CHARS)
-        if mainframe is None:
+        if mainframe == None:
             self._mainframe = parent
         else:
             self._mainframe = mainframe
@@ -756,13 +746,14 @@ class OptionsPanel(AgileToolbarMixin, wx.Panel):
 
 
 class AgileStatusbar(wx.StatusBar):
-    def __init__(self, parent, fields=[('action', -4),
+
+    def __init__(self, parent, fields=[('action', -1),
                                        ('message', -4),
-                                       # ('coords',-1),
-                                       # ('zoom',-1),
+                                       #('coords',-1),
+                                       #('zoom',-1),
                                        ('progress', -1),
                                        ('status', -1),
-                                       # ('coords',-1),
+                                       #('coords',-1),
                                        ]):
 
         wx.StatusBar.__init__(self, parent, -1, wx.ST_SIZEGRIP)
@@ -798,9 +789,7 @@ class AgileStatusbar(wx.StatusBar):
         """
         Set bar of progressbar in percent
         """
-        # print 'set_progress',percent
         self.progressbar.SetValue(int(percent))
-        self.Update()
 
     def set_fields(self, fields):
         """
@@ -823,7 +812,6 @@ class AgileStatusbar(wx.StatusBar):
         ind_field = self._ind_fields[key]
         # print 'AgileStatusbar.__setitem__',key,ind_field
         self.SetStatusText(message, ind_field)
-        self.Update()
 
     def has_key(self, key):
         return self._ind_fields.has_key(key)
@@ -851,6 +839,7 @@ class AgileStatusbar(wx.StatusBar):
 
 
 class AgileMenubar(AgileMenuMixin, wx.MenuBar):
+
     """
     Easy to use main menu bar
     """
@@ -862,13 +851,12 @@ class AgileMenubar(AgileMenuMixin, wx.MenuBar):
 
 def get_bitmap(name, size=22):
     """Return bitmap of right size from imgImages library"""
-    name = name + "_"+str(size)
+    name = name + "_" + str(size)
     try:
         return imgImages.catalog[name].getBitmap()
     except:
         print 'WARNING in get_bitmap: failed to return image', name
         return wx.NullBitmap
-
 
 # These are some functions for bitmaps of icons.
 import cPickle
@@ -887,7 +875,7 @@ def GetHandData():
 def GetHandBitmap():
     return wx.BitmapFromXPMData(GetHandData())
 
-# ----------------------------------------------------------------------
+#----------------------------------------------------------------------
 
 
 def GetPlusData():
@@ -902,7 +890,7 @@ def GetPlusData():
 def GetPlusBitmap():
     return wx.BitmapFromXPMData(GetPlusData())
 
-# ----------------------------------------------------------------------
+#----------------------------------------------------------------------
 
 
 def GetMinusData():

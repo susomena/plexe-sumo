@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIImporter_OpenStreetMap.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,6 +10,17 @@
 ///
 // Importer for networks stored in OpenStreetMap format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NIImporter_OpenStreetMap_h
 #define NIImporter_OpenStreetMap_h
 
@@ -25,7 +28,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -78,11 +85,7 @@ protected:
     struct NIOSMNode {
         NIOSMNode(long long int _id, double _lon, double _lat)
             :
-            id(_id), lon(_lon), lat(_lat), ele(0),
-            tlsControlled(false),
-            railwayCrossing(false),
-            railwaySignal(false),
-            railwayBufferStop(false),
+            id(_id), lon(_lon), lat(_lat), ele(0), tlsControlled(false), railwayCrossing(false),
             ptStopPosition(false), ptStopLength(0), name(""),
             permissions(SVC_RAIL | SVC_BUS | SVC_TRAM),
             node(0) { }
@@ -99,10 +102,6 @@ protected:
         bool tlsControlled;
         /// @brief Whether this is a railway crossing
         bool railwayCrossing;
-        /// @brief Whether this is a railway (main) signal
-        bool railwaySignal;
-        /// @brief Whether this is a railway buffer stop
-        bool railwayBufferStop;
         /// @brief Whether this is a public transport stop position
         bool ptStopPosition;
         /// @brief The length of the pt stop
@@ -132,17 +131,6 @@ protected:
         WAY_UNKNOWN = 4
     };
 
-    enum ParkingType {
-        PARKING_NONE = 0,
-        PARKING_LEFT = 1,
-        PARKING_RIGHT = 2,
-        PARKING_BOTH = WAY_FORWARD | WAY_BACKWARD,
-        PARKING_UNKNOWN = 4,
-        PARKING_FORBIDDEN = 8,
-        PARKING_PERPENDICULAR = 16,
-        PARKING_DIAGONAL = 32
-    };
-
 
     /** @brief An internal definition of a loaded edge
      */
@@ -153,8 +141,6 @@ protected:
             id(_id), myNoLanes(-1), myNoLanesForward(0), myMaxSpeed(MAXSPEED_UNGIVEN),
             myCyclewayType(WAY_UNKNOWN), // building of extra lane depends on bikelaneWidth of loaded typemap
             myBuswayType(WAY_NONE), // buslanes are always built when declared
-            mySidewalkType(WAY_UNKNOWN), // building of extra lanes depends on sidewalkWidth of loaded typemap
-            myParkingType(PARKING_NONE), // parking areas exported optionally
             myLayer(0), // layer is non-zero only in conflict areas
             myCurrentIsRoad(false),
             myCurrentIsPlatform(false) { }
@@ -178,10 +164,6 @@ protected:
         WayType myCyclewayType;
         /// @brief Information about the kind of busway along this road
         WayType myBuswayType;
-        /// @brief Information about the kind of sidwalk along this road
-        WayType mySidewalkType;
-        /// @brief Information about road-side parking
-        int myParkingType;
         /// @brief Information about the relative z-ordering of ways
         int myLayer;
         /// @brief The list of nodes this edge is made of
@@ -427,9 +409,6 @@ protected:
         /// @brief A map of non-numeric speed descriptions to their numeric values
         std::map<std::string, double> mySpeedMap;
 
-        /// @brief whether additional way attributes shall be added to the edge
-        bool myAllAttributes;
-
     private:
         /** @brief invalidated copy constructor */
         EdgesHandler(const EdgesHandler& s);
@@ -578,19 +557,13 @@ protected:
         bool myIsRoute;
 
         /// @brief indicates whether current relation is a pt route
-        std::string myPTRouteType;
+        bool myIsPTRoute;
 
         /// @brief name of the relation
         std::string myName;
 
         /// @brief ref of the pt line
         std::string myRef;
-
-        /// @brief service interval of the pt line in seconds
-        int myInterval;
-
-        /// @brief night service information of the pt line
-        std::string myNightService;
     };
 
 };

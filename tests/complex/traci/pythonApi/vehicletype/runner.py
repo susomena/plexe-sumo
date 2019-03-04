@@ -1,28 +1,32 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@date    2011-03-04
+@version $Id$
 
-# @file    runner.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @date    2011-03-04
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 from __future__ import print_function
 from __future__ import absolute_import
 import os
 import subprocess
 import sys
+import random
 sys.path.append(os.path.join(
     os.path.dirname(sys.argv[0]), "..", "..", "..", "..", "..", "tools"))
-import traci  # noqa
+import traci
 import sumolib  # noqa
 
 sumoBinary = sumolib.checkBinary('sumo')
@@ -46,7 +50,6 @@ print("accel", traci.vehicletype.getAccel(typeID))
 print("decel", traci.vehicletype.getDecel(typeID))
 print("emergencyDecel", traci.vehicletype.getEmergencyDecel(typeID))
 print("apparentDecel", traci.vehicletype.getApparentDecel(typeID))
-print("actionStepLength", traci.vehicletype.getActionStepLength(typeID))
 print("imperfection", traci.vehicletype.getImperfection(typeID))
 print("tau", traci.vehicletype.getTau(typeID))
 print("vClass", traci.vehicletype.getVehicleClass(typeID))
@@ -77,8 +80,6 @@ traci.vehicletype.setEmergencyDecel(typeID, 2.2)
 print("emergencyDecel", traci.vehicletype.getEmergencyDecel(typeID))
 traci.vehicletype.setApparentDecel(typeID, 3.3)
 print("apparentDecel", traci.vehicletype.getApparentDecel(typeID))
-traci.vehicletype.setActionStepLength(typeID, 2.2)
-print("actionStepLength", traci.vehicletype.getActionStepLength(typeID))
 traci.vehicletype.setImperfection(typeID, 0.1)
 print("imperfection", traci.vehicletype.getImperfection(typeID))
 traci.vehicletype.setTau(typeID, 1.1)

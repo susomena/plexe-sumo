@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    FXSevenSegment.cpp
 /// @author  Mathew Robertson
 /// @author  Daniel Krajzewicz
@@ -16,12 +8,27 @@
 ///
 //
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 /* =========================================================================
  * included modules
  * ======================================================================= */
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <fxver.h>
 #define NOMINMAX
@@ -216,138 +223,137 @@ void FXSevenSegment::drawFigure(FXDCWindow& dc, FXchar figure) {
             drawSegments(dc, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE);
             break;
         case '(' :
-            drawSegments(dc, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, TRUE);
+            drawSegments(dc, TRUE , TRUE , FALSE, FALSE, TRUE , FALSE, TRUE);
             break;
         case ')' :
-            drawSegments(dc, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE, TRUE);
+            drawSegments(dc, TRUE , FALSE, TRUE , FALSE, FALSE, TRUE , TRUE);
             break;
         case '[' :
-            drawSegments(dc, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, TRUE);
+            drawSegments(dc, TRUE , TRUE , FALSE, FALSE, TRUE , FALSE, TRUE);
             break;
         case ']' :
-            drawSegments(dc, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE, TRUE);
+            drawSegments(dc, TRUE , FALSE, TRUE , FALSE, FALSE, TRUE , TRUE);
             break;
         case '=' :
-            drawSegments(dc, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE);
+            drawSegments(dc, FALSE, FALSE, FALSE, TRUE , FALSE, FALSE, TRUE);
             break;
 //    case '+' : drawSegments (dc, FALSE,FALSE,FALSE,TRUE ,FALSE,FALSE,FALSE); break;
         case '-' :
-            drawSegments(dc, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE);
+            drawSegments(dc, FALSE, FALSE, FALSE, TRUE , FALSE, FALSE, FALSE);
             break;
         case '_' :
         case '.' :
-        case ',' :
             drawSegments(dc, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE);
             break;
         case '0' :
-            drawSegments(dc, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE);
+            drawSegments(dc, TRUE , TRUE , TRUE , FALSE, TRUE , TRUE , TRUE);
             break;
         case '1' :
-            drawSegments(dc, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE);
+            drawSegments(dc, FALSE, FALSE, TRUE , FALSE, FALSE, TRUE , FALSE);
             break;
         case '2' :
-            drawSegments(dc, TRUE, FALSE, TRUE, TRUE, TRUE, FALSE, TRUE);
+            drawSegments(dc, TRUE , FALSE, TRUE , TRUE , TRUE , FALSE, TRUE);
             break;
         case '3' :
-            drawSegments(dc, TRUE, FALSE, TRUE, TRUE, FALSE, TRUE, TRUE);
+            drawSegments(dc, TRUE , FALSE, TRUE , TRUE , FALSE, TRUE , TRUE);
             break;
         case '4' :
-            drawSegments(dc, FALSE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE);
+            drawSegments(dc, FALSE, TRUE , TRUE , TRUE , FALSE, TRUE , FALSE);
             break;
         case '5' :
-            drawSegments(dc, TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, TRUE);
+            drawSegments(dc, TRUE , TRUE , FALSE, TRUE , FALSE, TRUE , TRUE);
             break;
         case '6' :
-            drawSegments(dc, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE);
+            drawSegments(dc, TRUE , TRUE , FALSE, TRUE , TRUE , TRUE , TRUE);
             break;
         case '7' :
-            drawSegments(dc, TRUE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE);
+            drawSegments(dc, TRUE , FALSE, TRUE , FALSE, FALSE, TRUE , FALSE);
             break;
         case '8' :
-            drawSegments(dc, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE);
+            drawSegments(dc, TRUE , TRUE , TRUE , TRUE , TRUE , TRUE , TRUE);
             break;
         case '9' :
-            drawSegments(dc, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE);
+            drawSegments(dc, TRUE , TRUE , TRUE , TRUE , FALSE, TRUE , TRUE);
             break;
         case 'a' :
         case 'A' :
-            drawSegments(dc, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE);
+            drawSegments(dc, TRUE , TRUE , TRUE , TRUE , TRUE , TRUE , FALSE);
             break;
         case 'b' :
         case 'B' :
-            drawSegments(dc, FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE);
+            drawSegments(dc, FALSE, TRUE , FALSE, TRUE , TRUE , TRUE , TRUE);
             break;
         case 'c' :
         case 'C' :
-            drawSegments(dc, TRUE, TRUE, FALSE, FALSE, TRUE, FALSE, TRUE);
+            drawSegments(dc, TRUE , TRUE , FALSE, FALSE, TRUE , FALSE, TRUE);
             break;
         case 'd' :
         case 'D' :
-            drawSegments(dc, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE);
+            drawSegments(dc, FALSE, FALSE, TRUE , TRUE , TRUE , TRUE , TRUE);
             break;
         case 'e' :
         case 'E' :
-            drawSegments(dc, TRUE, TRUE, FALSE, TRUE, TRUE, FALSE, TRUE);
+            drawSegments(dc, TRUE , TRUE , FALSE, TRUE , TRUE , FALSE, TRUE);
             break;
         case 'f' :
         case 'F' :
-            drawSegments(dc, TRUE, TRUE, FALSE, TRUE, TRUE, FALSE, FALSE);
+            drawSegments(dc, TRUE , TRUE , FALSE, TRUE , TRUE , FALSE, FALSE);
             break;
         case 'g' :
         case 'G' :
-            drawSegments(dc, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE);
+            drawSegments(dc, TRUE , TRUE , FALSE, FALSE, TRUE , TRUE , TRUE);
             break;
         case 'h' :
         case 'H' :
-            drawSegments(dc, FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, FALSE);
+            drawSegments(dc, FALSE, TRUE , FALSE, TRUE , TRUE , TRUE , FALSE);
             break;
         case 'i' :
         case 'I' :
-            drawSegments(dc, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE);
+            drawSegments(dc, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE , FALSE);
             break;
         case 'j' :
         case 'J' :
-            drawSegments(dc, FALSE, FALSE, TRUE, FALSE, TRUE, TRUE, TRUE);
+            drawSegments(dc, FALSE, FALSE, TRUE , FALSE, TRUE , TRUE , TRUE);
             break;
 //    case 'k' :
 //    case 'k' : drawSegments (dc, FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE); break;
         case 'l' :
         case 'L' :
-            drawSegments(dc, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, TRUE);
+            drawSegments(dc, FALSE, TRUE , FALSE, FALSE, TRUE , FALSE, TRUE);
             break;
 //    case 'm' :
 //    case 'M' : drawSegments (dc, FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE); break;
         case 'n' :
         case 'N' :
-            drawSegments(dc, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE);
+            drawSegments(dc, FALSE, FALSE, FALSE, TRUE , TRUE , TRUE , FALSE);
             break;
         case 'o' :
         case 'O' :
-            drawSegments(dc, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE);
+            drawSegments(dc, TRUE , TRUE , TRUE , FALSE, TRUE , TRUE , TRUE);
             break;
         case 'p' :
         case 'P' :
-            drawSegments(dc, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE);
+            drawSegments(dc, TRUE , TRUE , TRUE , TRUE , TRUE , FALSE, FALSE);
             break;
         case 'q' :
         case 'Q' :
-            drawSegments(dc, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE);
+            drawSegments(dc, TRUE , TRUE , TRUE , TRUE , FALSE, TRUE , FALSE);
             break;
         case 'r' :
         case 'R' :
-            drawSegments(dc, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE);
+            drawSegments(dc, FALSE, FALSE, FALSE, TRUE , TRUE , FALSE, FALSE);
             break;
         case 's' :
         case 'S' :
-            drawSegments(dc, TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, TRUE);
+            drawSegments(dc, TRUE , TRUE , FALSE, TRUE , FALSE, TRUE , TRUE);
             break;
         case 't' :
         case 'T' :
-            drawSegments(dc, FALSE, TRUE, FALSE, TRUE, TRUE, FALSE, FALSE);
+            drawSegments(dc, FALSE, TRUE , FALSE, TRUE , TRUE , FALSE, FALSE);
             break;
         case 'u' :
         case 'U' :
-            drawSegments(dc, FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE);
+            drawSegments(dc, FALSE, TRUE , TRUE , FALSE, TRUE , TRUE , TRUE);
             break;
 //    case 'v' :
 //    case 'V' : drawSegments (dc, FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE); break;
@@ -355,11 +361,11 @@ void FXSevenSegment::drawFigure(FXDCWindow& dc, FXchar figure) {
 //    case 'W' : drawSegments (dc, FALSE,FALSE,FALSE,FALSE,FALSE,FALSE,FALSE); break;
         case 'x' :
         case 'X' :
-            drawSegments(dc, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE);
+            drawSegments(dc, FALSE, TRUE , TRUE , TRUE , TRUE , TRUE , FALSE);
             break;
         case 'y' :
         case 'Y' :
-            drawSegments(dc, FALSE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE);
+            drawSegments(dc, FALSE, TRUE , TRUE , TRUE , FALSE, TRUE , TRUE);
             break;
 //    case 'z' :
 //    case 'Z' :

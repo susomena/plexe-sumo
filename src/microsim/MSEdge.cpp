@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSEdge.cpp
 /// @author  Christian Roessel
 /// @author  Jakob Erdmann
@@ -20,19 +12,34 @@
 ///
 // A road/street connecting two junctions
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <algorithm>
 #include <iostream>
 #include <cassert>
 #include <utils/common/StringTokenizer.h>
 #include <utils/options/OptionsCont.h>
-#include <microsim/devices/MSRoutingEngine.h>
+#include <microsim/devices/MSDevice_Routing.h>
 #include <mesosim/MELoop.h>
 #include <mesosim/MESegment.h>
 #include <mesosim/MEVehicle.h>
@@ -66,39 +73,34 @@ MSEdge::MSEdge(const std::string& id, int numericalID,
                const std::string& streetName,
                const std::string& edgeType,
                int priority) :
-    Named(id), myNumericalID(numericalID), myLanes(nullptr),
-    myLaneChanger(nullptr), myFunction(function), myVaporizationRequests(0),
+    Named(id), myNumericalID(numericalID), myLanes(0),
+    myLaneChanger(0), myFunction(function), myVaporizationRequests(0),
     myLastFailedInsertionTime(-1),
-    myFromJunction(nullptr), myToJunction(nullptr),
+    myFromJunction(0), myToJunction(0),
     myStreetName(streetName),
     myEdgeType(edgeType),
     myPriority(priority),
-    myWidth(0.),
-    myLength(0.),
-    myEmptyTraveltime(0.),
-    myTimePenalty(0.),
+    myWidth(0),
+    myLength(-1.),
+    myEmptyTraveltime(-1.),
     myAmDelayed(false),
     myAmRoundabout(false),
-    myAmFringe(true),
-    myBidiEdge(nullptr)
-{ }
+    myAmFringe(true) {
+}
 
 
 MSEdge::~MSEdge() {
     delete myLaneChanger;
-    for (auto i : myAllowed) {
-        if (i.second != myLanes) {
-            delete i.second;
-        }
+    for (AllowedLanesCont::iterator i1 = myAllowed.begin(); i1 != myAllowed.end(); i1++) {
+        delete(*i1).second;
     }
-    for (auto i2 : myAllowedTargets) {
-        for (auto i1 : i2.second) {
-            if (i1.second != myLanes) {
-                delete i1.second;
-            }
+    for (ClassedAllowedLanesCont::iterator i2 = myClassedAllowed.begin(); i2 != myClassedAllowed.end(); i2++) {
+        for (AllowedLanesCont::iterator i1 = (*i2).second.begin(); i1 != (*i2).second.end(); i1++) {
+            delete(*i1).second;
         }
     }
     delete myLanes;
+    // Note: Lanes are delete using MSLane::clear();
 }
 
 
@@ -150,44 +152,45 @@ void MSEdge::recalcCache() {
         if (minPenalty > 0) {
             myEmptyTraveltime += STEPS2TIME(minPenalty);
         }
-    } else if (isInternal()) {
-        const MSLink* link = myLanes->front()->getIncomingLanes()[0].viaLink;
-        if (!link->isTLSControlled() && !link->havePriority()) {
-            myEmptyTraveltime += MSGlobals::gMinorPenalty;
-            myTimePenalty = MSGlobals::gMinorPenalty;
-        }
     }
 }
 
 
 void
 MSEdge::closeBuilding() {
-    for (MSLane* const lane : *myLanes) {
-        for (MSLink* const link : lane->getLinkCont()) {
-            link->initParallelLinks();
-            MSLane* const toL = link->getLane();
-            MSLane* const viaL = link->getViaLane();
-            if (toL != nullptr) {
+    myAllowed[0] = new std::vector<MSLane*>();
+    for (std::vector<MSLane*>::const_iterator i = myLanes->begin(); i != myLanes->end(); ++i) {
+        myAllowed[0]->push_back(*i);
+        const MSLinkCont& lc = (*i)->getLinkCont();
+        for (MSLinkCont::const_iterator j = lc.begin(); j != lc.end(); ++j) {
+            (*j)->initParallelLinks();
+            MSLane* toL = (*j)->getLane();
+            if (toL != 0) {
                 MSEdge& to = toL->getEdge();
+                //
                 if (std::find(mySuccessors.begin(), mySuccessors.end(), &to) == mySuccessors.end()) {
                     mySuccessors.push_back(&to);
-                    myViaSuccessors.push_back(std::make_pair(&to, (viaL == nullptr ? nullptr : &viaL->getEdge())));
                 }
                 if (std::find(to.myPredecessors.begin(), to.myPredecessors.end(), this) == to.myPredecessors.end()) {
                     to.myPredecessors.push_back(this);
                 }
-                if (link->getDirection() != LINKDIR_TURN) {
+                //
+                if (myAllowed.find(&to) == myAllowed.end()) {
+                    myAllowed[&to] = new std::vector<MSLane*>();
+                }
+                myAllowed[&to]->push_back(*i);
+                if ((*j)->getDirection() != LINKDIR_TURN) {
                     myAmFringe = false;
                 }
             }
-            if (viaL != nullptr) {
-                MSEdge& to = viaL->getEdge();
+            toL = (*j)->getViaLane();
+            if (toL != 0) {
+                MSEdge& to = toL->getEdge();
                 if (std::find(to.myPredecessors.begin(), to.myPredecessors.end(), this) == to.myPredecessors.end()) {
                     to.myPredecessors.push_back(this);
                 }
             }
         }
-        lane->checkBufferType();
     }
     std::sort(mySuccessors.begin(), mySuccessors.end(), by_id_sorter());
     rebuildAllowedLanes();
@@ -218,7 +221,7 @@ MSEdge::buildLaneChanger() {
 
 
 bool
-MSEdge::allowsLaneChanging() const {
+MSEdge::allowsLaneChanging() {
     if (isInternal()) {
         // allow changing only if all links leading to this internal lane have priority
         // or they are controlled by a traffic light
@@ -241,128 +244,23 @@ MSEdge::allowsLaneChanging() const {
 
 
 void
-MSEdge::addToAllowed(const SVCPermissions permissions, const std::vector<MSLane*>* allowedLanes, AllowedLanesCont& laneCont) const {
-    // recheck whether we had this list to save memory
-    if (allowedLanes->empty()) {
-        delete allowedLanes;
-        allowedLanes = nullptr;
-    } else {
-        for (auto& allowed : laneCont) {
-            if (*allowed.second == *allowedLanes) {
-                delete allowedLanes;
-                allowedLanes = nullptr;
-                allowed.first |= permissions;
-                break;
-            }
+MSEdge::rebuildAllowedLanes() {
+    // clear myClassedAllowed.
+    // it will be rebuilt on demand
+    for (ClassedAllowedLanesCont::iterator i2 = myClassedAllowed.begin(); i2 != myClassedAllowed.end(); i2++) {
+        for (AllowedLanesCont::iterator i1 = (*i2).second.begin(); i1 != (*i2).second.end(); i1++) {
+            delete(*i1).second;
         }
     }
-    if (allowedLanes != nullptr) {
-        laneCont.push_back(std::make_pair(permissions, allowedLanes));
-    }
-}
-
-
-void
-MSEdge::rebuildAllowedLanes() {
+    myClassedAllowed.clear();
+    myClassesSuccessorMap.clear();
     // rebuild myMinimumPermissions and myCombinedPermissions
     myMinimumPermissions = SVCAll;
     myCombinedPermissions = 0;
-    for (MSLane* const lane : *myLanes) {
-        myMinimumPermissions &= lane->getPermissions();
-        myCombinedPermissions |= lane->getPermissions();
+    for (std::vector<MSLane*>::const_iterator i = myLanes->begin(); i != myLanes->end(); ++i) {
+        myMinimumPermissions &= (*i)->getPermissions();
+        myCombinedPermissions |= (*i)->getPermissions();
     }
-    // rebuild myAllowed
-    for (const auto i : myAllowed) {
-        if (i.second != myLanes) {
-            delete i.second;
-        }
-    }
-    myAllowed.clear();
-    if (myCombinedPermissions != myMinimumPermissions) {
-        myAllowed.push_back(std::make_pair(SVC_IGNORING, myLanes));
-        for (SUMOVehicleClass vclass = SVC_PRIVATE; vclass <= SUMOVehicleClass_MAX; vclass = (SUMOVehicleClass)(2 * (int)vclass)) {
-            if ((myCombinedPermissions & vclass) == vclass) {
-                std::vector<MSLane*>* allowedLanes = new std::vector<MSLane*>();
-                for (MSLane* const lane : *myLanes) {
-                    if (lane->allowsVehicleClass(vclass)) {
-                        allowedLanes->push_back(lane);
-                    }
-                }
-                addToAllowed(vclass, allowedLanes, myAllowed);
-            }
-        }
-    }
-    rebuildAllowedTargets(false);
-}
-
-
-void
-MSEdge::rebuildAllowedTargets(const bool updateVehicles) {
-    for (const auto i2 : myAllowedTargets) {
-        for (const auto i1 : i2.second) {
-            if (i1.second != myLanes) {
-                delete i1.second;
-            }
-        }
-    }
-    myAllowedTargets.clear();
-
-    for (const MSEdge* target : mySuccessors) {
-        bool universalMap = true; // whether the mapping for SVC_IGNORING is also valid for all vehicle classes
-        std::vector<MSLane*>* allLanes = new std::vector<MSLane*>();
-        // compute the mapping for SVC_IGNORING
-        for (MSLane* const lane : *myLanes) {
-            SVCPermissions combinedTargetPermissions = 0;
-            for (const MSLink* const link : lane->getLinkCont()) {
-                if (&link->getLane()->getEdge() == target) {
-                    allLanes->push_back(lane);
-                    combinedTargetPermissions |= link->getLane()->getPermissions();
-                }
-            }
-            if (combinedTargetPermissions == 0 || (lane->getPermissions() & combinedTargetPermissions) != lane->getPermissions()) {
-                universalMap = false;
-            }
-        }
-        if (universalMap) {
-            if (myAllowed.empty()) {
-                // we have no lane specific permissions
-                myAllowedTargets[target].push_back(std::make_pair(myMinimumPermissions, myLanes));
-            } else {
-                for (const auto i : myAllowed) {
-                    // we cannot add the lane vectors directly because they are deleted separately (shared_ptr anyone?)
-                    addToAllowed(i.first, new std::vector<MSLane*>(*i.second), myAllowedTargets[target]);
-                }
-            }
-        } else {
-            addToAllowed(SVC_IGNORING, allLanes, myAllowedTargets[target]);
-            // compute the vclass specific mapping
-            for (SUMOVehicleClass vclass = SVC_PRIVATE; vclass <= SUMOVehicleClass_MAX; vclass = (SUMOVehicleClass)(2 * (int)vclass)) {
-                if ((myCombinedPermissions & vclass) == vclass) {
-                    std::vector<MSLane*>* allowedLanes = new std::vector<MSLane*>();
-                    for (MSLane* const lane : *myLanes) {
-                        if (lane->allowsVehicleClass(vclass)) {
-                            for (const MSLink* const link : lane->getLinkCont()) {
-                                if (link->getLane()->allowsVehicleClass(vclass) && &link->getLane()->getEdge() == target) {
-                                    allowedLanes->push_back(lane);
-                                }
-                            }
-                        }
-                    }
-                    addToAllowed(vclass, allowedLanes, myAllowedTargets[target]);
-                }
-            }
-        }
-    }
-    if (updateVehicles) {
-        for (const MSLane* const lane : *myLanes) {
-            const MSLane::VehCont& vehs = lane->getVehiclesSecure();
-            for (MSVehicle* veh : vehs) {
-                veh->updateBestLanes(true);
-            }
-            lane->releaseVehicles();
-        }
-    }
-    myClassesSuccessorMap.clear();
 }
 
 
@@ -383,11 +281,11 @@ MSLane*
 MSEdge::parallelLane(const MSLane* const lane, int offset) const {
     const int index = (int)(find(myLanes->begin(), myLanes->end(), lane) - myLanes->begin());
     if (index == (int)myLanes->size()) {
-        return nullptr;
+        return 0;
     }
     const int resultIndex = index + offset;
     if (resultIndex >= (int)myLanes->size() || resultIndex < 0) {
-        return nullptr;
+        return 0;
     } else {
         return (*myLanes)[resultIndex];
     }
@@ -396,31 +294,82 @@ MSEdge::parallelLane(const MSLane* const lane, int offset) const {
 
 const std::vector<MSLane*>*
 MSEdge::allowedLanes(const MSEdge& destination, SUMOVehicleClass vclass) const {
-    AllowedLanesByTarget::const_iterator i = myAllowedTargets.find(&destination);
-    if (i != myAllowedTargets.end()) {
-        for (const auto& allowed : i->second) {
-            if ((allowed.first & vclass) == vclass) {
-                return allowed.second;
-            }
-        }
-    }
-    return nullptr;
+    return allowedLanes(&destination, vclass);
 }
 
 
 const std::vector<MSLane*>*
 MSEdge::allowedLanes(SUMOVehicleClass vclass) const {
-    if ((myMinimumPermissions & vclass) == vclass) {
-        return myLanes;
+    return allowedLanes(0, vclass);
+}
+
+
+const std::vector<MSLane*>*
+MSEdge::getAllowedLanesWithDefault(const AllowedLanesCont& c, const MSEdge* dest) const {
+    AllowedLanesCont::const_iterator it = c.find(dest);
+    if (it == c.end()) {
+        return 0;
+    }
+    return it->second;
+}
+
+
+const std::vector<MSLane*>*
+MSEdge::allowedLanes(const MSEdge* destination, SUMOVehicleClass vclass) const {
+    if (destination == 0 && (myMinimumPermissions & vclass) == vclass) {
+        // all lanes allow vclass
+        return getAllowedLanesWithDefault(myAllowed, destination);
+    }
+    // look up cached result in myClassedAllowed
+    ClassedAllowedLanesCont::const_iterator i = myClassedAllowed.find(vclass);
+    if (i != myClassedAllowed.end()) {
+        // can use cached value
+        const AllowedLanesCont& c = (*i).second;
+        return getAllowedLanesWithDefault(c, destination);
     } else {
-        if ((myCombinedPermissions & vclass) == vclass) {
-            for (const auto& allowed : myAllowed) {
-                if ((allowed.first & vclass) == vclass) {
-                    return allowed.second;
+        // this vclass is requested for the first time. rebuild all destinations
+        // go through connected edges
+#ifdef HAVE_FOX
+        if (MSDevice_Routing::isParallel()) {
+            MSDevice_Routing::lock();
+        }
+#endif
+        for (AllowedLanesCont::const_iterator i1 = myAllowed.begin(); i1 != myAllowed.end(); ++i1) {
+            const MSEdge* edge = i1->first;
+            const std::vector<MSLane*>* lanes = i1->second;
+            myClassedAllowed[vclass][edge] = new std::vector<MSLane*>();
+            // go through lanes approaching current edge
+            for (std::vector<MSLane*>::const_iterator i2 = lanes->begin(); i2 != lanes->end(); ++i2) {
+                // origin lane allows the current vehicle class?
+                if ((*i2)->allowsVehicleClass(vclass)) {
+                    if (edge == 0) {
+                        myClassedAllowed[vclass][edge]->push_back(*i2);
+                    } else {
+                        // target lane allows the current vehicle class?
+                        const MSLinkCont& lc = (*i2)->getLinkCont();
+                        for (MSLinkCont::const_iterator it_link = lc.begin(); it_link != lc.end(); ++it_link) {
+                            const MSLane* targetLane = (*it_link)->getLane();
+                            if ((&(targetLane->getEdge()) == edge) && targetLane->allowsVehicleClass(vclass)) {
+                                // -> may be used
+                                myClassedAllowed[vclass][edge]->push_back(*i2);
+                                break;
+                            }
+                        }
+                    }
                 }
             }
+            // assert that 0 is returned if no connection is allowed for a class
+            if (myClassedAllowed[vclass][edge]->size() == 0) {
+                delete myClassedAllowed[vclass][edge];
+                myClassedAllowed[vclass][edge] = 0;
+            }
         }
-        return nullptr;
+#ifdef HAVE_FOX
+        if (MSDevice_Routing::isParallel()) {
+            MSDevice_Routing::unlock();
+        }
+#endif
+        return myClassedAllowed[vclass][destination];
     }
 }
 
@@ -442,13 +391,13 @@ MSEdge::decVaporization(SUMOTime) {
 
 MSLane*
 MSEdge::getFreeLane(const std::vector<MSLane*>* allowed, const SUMOVehicleClass vclass, double departPos) const {
-    if (allowed == nullptr) {
+    if (allowed == 0) {
         allowed = allowedLanes(vclass);
     }
-    MSLane* res = nullptr;
-    if (allowed != nullptr) {
+    MSLane* res = 0;
+    if (allowed != 0) {
         double largestGap = 0;
-        MSLane* resByGap = nullptr;
+        MSLane* resByGap = 0;
         double leastOccupancy = std::numeric_limits<double>::max();;
         for (std::vector<MSLane*>::const_iterator i = allowed->begin(); i != allowed->end(); ++i) {
             const double occupancy = (*i)->getBruttoOccupancy();
@@ -457,20 +406,19 @@ MSEdge::getFreeLane(const std::vector<MSLane*>* allowed, const SUMOVehicleClass 
                 leastOccupancy = occupancy;
             }
             const MSVehicle* last = (*i)->getLastFullVehicle();
-            const double lastGap = (last != nullptr ? last->getPositionOnLane() : myLength) - departPos;
+            const double lastGap = (last != 0 ? last->getPositionOnLane() : myLength) - departPos;
             if (lastGap > largestGap) {
                 largestGap = lastGap;
                 resByGap = (*i);
             }
         }
-        if (resByGap != nullptr) {
+        if (resByGap != 0) {
             //if (res != resByGap) std::cout << SIMTIME << " edge=" << getID() << " departPos=" << departPos << " res=" << Named::getIDSecure(res) << " resByGap=" << Named::getIDSecure(resByGap) << " largestGap=" << largestGap << "\n";
             res = resByGap;
         }
     }
     return res;
 }
-
 
 double
 MSEdge::getDepartPosBound(const MSVehicle& veh, bool upper) const {
@@ -498,7 +446,7 @@ MSEdge::getDepartPosBound(const MSVehicle& veh, bool upper) const {
             if (upper) {
                 for (std::vector<MSLane*>::const_iterator i = myLanes->begin(); i != myLanes->end(); ++i) {
                     MSVehicle* last = (*i)->getLastFullVehicle();
-                    if (last != nullptr) {
+                    if (last != 0) {
                         pos = MIN2(pos, last->getPositionOnLane());
                     }
                 }
@@ -521,16 +469,16 @@ MSEdge::getDepartLane(MSVehicle& veh) const {
     switch (veh.getParameter().departLaneProcedure) {
         case DEPART_LANE_GIVEN:
             if ((int) myLanes->size() <= veh.getParameter().departLane || !(*myLanes)[veh.getParameter().departLane]->allowsVehicleClass(veh.getVehicleType().getVehicleClass())) {
-                return nullptr;
+                return 0;
             }
             return (*myLanes)[veh.getParameter().departLane];
         case DEPART_LANE_RANDOM:
             return RandHelper::getRandomFrom(*allowedLanes(veh.getVehicleType().getVehicleClass()));
         case DEPART_LANE_FREE:
-            return getFreeLane(nullptr, veh.getVehicleType().getVehicleClass(), getDepartPosBound(veh, false));
+            return getFreeLane(0, veh.getVehicleType().getVehicleClass(), getDepartPosBound(veh, false));
         case DEPART_LANE_ALLOWED_FREE:
             if (veh.getRoute().size() == 1) {
-                return getFreeLane(nullptr, veh.getVehicleType().getVehicleClass(), getDepartPosBound(veh, false));
+                return getFreeLane(0, veh.getVehicleType().getVehicleClass(), getDepartPosBound(veh, false));
             } else {
                 return getFreeLane(allowedLanes(**(veh.getRoute().begin() + 1), veh.getVehicleType().getVehicleClass()), veh.getVehicleType().getVehicleClass(), getDepartPosBound(veh, false));
             }
@@ -568,12 +516,12 @@ MSEdge::getDepartLane(MSVehicle& veh) const {
                     return *i;
                 }
             }
-            return nullptr;
+            return 0;
         default:
             break;
     }
     if (!(*myLanes)[0]->allowsVehicleClass(veh.getVehicleType().getVehicleClass())) {
-        return nullptr;
+        return 0;
     }
     return (*myLanes)[0];
 }
@@ -590,7 +538,7 @@ MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const
     if (pars.departSpeedProcedure == DEPART_SPEED_GIVEN && pars.departSpeed > getVehicleMaxSpeed(&v)) {
         const std::vector<double>& speedFactorParams = type.getSpeedFactor().getParameter();
         if (speedFactorParams[1] > 0.) {
-            v.setChosenSpeedFactor(type.computeChosenSpeedDeviation(nullptr, pars.departSpeed / getSpeedLimit()));
+            v.setChosenSpeedFactor(type.computeChosenSpeedDeviation(0, pars.departSpeed / getSpeedLimit()));
             if (v.getChosenSpeedFactor() > speedFactorParams[0] + 2 * speedFactorParams[1]) {
                 // only warn for significant deviation
                 WRITE_WARNING("Choosing new speed factor " + toString(v.getChosenSpeedFactor()) + " for vehicle '" + pars.id + "' to match departure speed.");
@@ -629,7 +577,7 @@ MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const
         MESegment* segment = MSGlobals::gMesoNet->getSegmentForEdge(*this, pos);
         MEVehicle* veh = static_cast<MEVehicle*>(&v);
         if (pars.departPosProcedure == DEPART_POS_FREE) {
-            while (segment != nullptr && !result) {
+            while (segment != 0 && !result) {
                 if (checkOnly) {
                     result = segment->hasSpaceFor(veh, time, true);
                 } else {
@@ -652,7 +600,7 @@ MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const
             case DEPART_LANE_DEFAULT:
             case DEPART_LANE_FIRST_ALLOWED: {
                 MSLane* insertionLane = getDepartLane(static_cast<MSVehicle&>(v));
-                if (insertionLane == nullptr) {
+                if (insertionLane == 0) {
                     WRITE_WARNING("could not insert vehicle '" + v.getID() + "' on any lane of edge '" + getID() + "', time=" + time2string(MSNet::getInstance()->getCurrentTimeStep()));
                     return false;
                 }
@@ -670,7 +618,7 @@ MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const
         return false;
     }
     MSLane* insertionLane = getDepartLane(static_cast<MSVehicle&>(v));
-    if (insertionLane == nullptr) {
+    if (insertionLane == 0) {
         return false;
     }
 
@@ -681,7 +629,7 @@ MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const
                 return false;
             }
         } else {
-            // last rejection occurred in a previous timestep, clear cache
+            // last rejection occured in a previous timestep, clear cache
             myFailedInsertionMemory.clear();
         }
     }
@@ -697,7 +645,7 @@ MSEdge::insertVehicle(SUMOVehicle& v, SUMOTime time, const bool checkOnly, const
 
 void
 MSEdge::changeLanes(SUMOTime t) {
-    if (myLaneChanger == nullptr) {
+    if (myLaneChanger == 0) {
         return;
     }
     myLaneChanger->laneChange(t);
@@ -708,18 +656,21 @@ MSEdge::changeLanes(SUMOTime t) {
 const MSEdge*
 MSEdge::getInternalFollowingEdge(const MSEdge* followerAfterInternal) const {
     //@todo to be optimized
-    for (const MSLane* const l : *myLanes) {
-        for (const MSLink* const link : l->getLinkCont()) {
+    for (std::vector<MSLane*>::const_iterator i = myLanes->begin(); i != myLanes->end(); ++i) {
+        MSLane* l = *i;
+        const MSLinkCont& lc = l->getLinkCont();
+        for (MSLinkCont::const_iterator j = lc.begin(); j != lc.end(); ++j) {
+            MSLink* link = *j;
             if (&link->getLane()->getEdge() == followerAfterInternal) {
-                if (link->getViaLane() != nullptr) {
+                if (link->getViaLane() != 0) {
                     return &link->getViaLane()->getEdge();
                 } else {
-                    return nullptr; // network without internal links
+                    return 0; // network without internal links
                 }
             }
         }
     }
-    return nullptr;
+    return 0;
 }
 
 double
@@ -729,7 +680,7 @@ MSEdge::getInternalFollowingLengthTo(const MSEdge* followerAfterInternal) const 
     double dist = 0.;
     const MSEdge* edge = getInternalFollowingEdge(followerAfterInternal);
     // Take into account non-internal lengths until next non-internal edge
-    while (edge != nullptr && edge->isInternal()) {
+    while (edge != 0 && edge->isInternal()) {
         dist += edge->getLength();
         edge = edge->getInternalFollowingEdge(followerAfterInternal);
     }
@@ -740,8 +691,8 @@ const MSEdge*
 MSEdge::getNormalBefore() const {
     const MSEdge* result = this;
     while (result->isInternal()) {
-        assert(result->getPredecessors().size() == 1);
-        result = result->getPredecessors().front();
+        assert(myPredecessors.size() == 1);
+        result = myPredecessors.front();
     }
     return result;
 }
@@ -751,12 +702,10 @@ MSEdge::getMeanSpeed() const {
     double v = 0;
     double no = 0;
     if (MSGlobals::gUseMesoSim) {
-        for (MESegment* segment = MSGlobals::gMesoNet->getSegmentForEdge(*this); segment != nullptr; segment = segment->getNextSegment()) {
-            const int vehNo = segment->getCarNumber();
-            if (vehNo > 0) {
-                v += vehNo * segment->getMeanSpeed();
-                no += vehNo;
-            }
+        for (MESegment* segment = MSGlobals::gMesoNet->getSegmentForEdge(*this); segment != 0; segment = segment->getNextSegment()) {
+            const double vehNo = (double) segment->getCarNumber();
+            v += vehNo * segment->getMeanSpeed();
+            no += vehNo;
         }
         if (no == 0) {
             return getLength() / myEmptyTraveltime; // may include tls-penalty
@@ -766,13 +715,6 @@ MSEdge::getMeanSpeed() const {
             const double vehNo = (double)(*i)->getVehicleNumber();
             v += vehNo * (*i)->getMeanSpeed();
             no += vehNo;
-        }
-        if (myBidiEdge != nullptr) {
-            for (const MSLane* lane : myBidiEdge->getLanes()) {
-                const double vehNo = (double)lane->getVehicleNumber();
-                v += vehNo * lane->getMeanSpeed();
-                no += vehNo;
-            }
         }
         if (no == 0) {
             return getSpeedLimit();
@@ -794,7 +736,7 @@ MSEdge::getCurrentTravelTime(double minSpeed) const {
 
 double
 MSEdge::getRoutingSpeed() const {
-    return MSRoutingEngine::getAssumedSpeed(this);
+    return MSDevice_Routing::getAssumedSpeed(this);
 }
 
 
@@ -820,7 +762,7 @@ MSEdge::dictionary(const std::string& id) {
     DictType::iterator it = myDict.find(id);
     if (it == myDict.end()) {
         // id not in myDict.
-        return nullptr;
+        return 0;
     }
     return it->second;
 }
@@ -841,7 +783,7 @@ MSEdge::getAllEdges() {
 void
 MSEdge::clear() {
     for (DictType::iterator i = myDict.begin(); i != myDict.end(); ++i) {
-        delete (*i).second;
+        delete(*i).second;
     }
     myDict.clear();
     myEdges.clear();
@@ -877,7 +819,7 @@ MSEdge::parseEdgesList(const std::vector<std::string>& desc, ConstMSEdgeVector& 
     for (std::vector<std::string>::const_iterator i = desc.begin(); i != desc.end(); ++i) {
         const MSEdge* edge = MSEdge::dictionary(*i);
         // check whether the edge exists
-        if (edge == nullptr) {
+        if (edge == 0) {
             throw ProcessError("The edge '" + *i + "' within the route " + rid + " is not known."
                                + "\n The route can not be build.");
         }
@@ -887,26 +829,17 @@ MSEdge::parseEdgesList(const std::vector<std::string>& desc, ConstMSEdgeVector& 
 
 
 double
-MSEdge::getDistanceTo(const MSEdge* other, const bool doBoundaryEstimate) const {
-    if (doBoundaryEstimate) {
-        return myBoundary.distanceTo2D(other->myBoundary);
-    }
+MSEdge::getDistanceTo(const MSEdge* other) const {
     if (isTazConnector()) {
         if (other->isTazConnector()) {
-            return myBoundary.distanceTo2D(other->myBoundary);
+            return myTazBoundary.distanceTo2D(other->myTazBoundary);
         }
-        return myBoundary.distanceTo2D(other->getLanes()[0]->getShape()[0]);
+        return myTazBoundary.distanceTo2D(other->getFromJunction()->getPosition());
     }
     if (other->isTazConnector()) {
-        return other->myBoundary.distanceTo2D(getLanes()[0]->getShape()[-1]);
+        return other->myTazBoundary.distanceTo2D(getToJunction()->getPosition());
     }
-    return getLanes()[0]->getShape()[-1].distanceTo2D(other->getLanes()[0]->getShape()[0]);
-}
-
-
-const Position
-MSEdge::getStopPosition(const SUMOVehicleParameter::Stop& stop) {
-    return MSLane::dictionary(stop.lane)->geometryPositionAtOffset((stop.endPos + stop.startPos) / 2.);
+    return getToJunction()->getPosition().distanceTo2D(other->getFromJunction()->getPosition());
 }
 
 
@@ -931,7 +864,7 @@ MSEdge::getVehicleMaxSpeed(const SUMOVehicle* const veh) const {
 
 void
 MSEdge::setMaxSpeed(double val) const {
-    if (myLanes != nullptr) {
+    if (myLanes != 0) {
         for (std::vector<MSLane*>::const_iterator i = myLanes->begin(); i != myLanes->end(); ++i) {
             (*i)->setMaxSpeed(val);
         }
@@ -978,16 +911,15 @@ MSEdge::transportable_by_position_sorter::operator()(const MSTransportable* cons
 
 
 void
-MSEdge::addSuccessor(MSEdge* edge, const MSEdge* via) {
+MSEdge::addSuccessor(MSEdge* edge) {
     mySuccessors.push_back(edge);
-    myViaSuccessors.push_back(std::make_pair(edge, via));
-    if (isTazConnector() && edge->getFromJunction() != nullptr) {
-        myBoundary.add(edge->getFromJunction()->getPosition());
+    if (isTazConnector() && edge->getFromJunction() != 0) {
+        myTazBoundary.add(edge->getFromJunction()->getPosition());
     }
 
     edge->myPredecessors.push_back(this);
-    if (edge->isTazConnector() && getToJunction() != nullptr) {
-        edge->myBoundary.add(getToJunction()->getPosition());
+    if (edge->isTazConnector() && getToJunction() != 0) {
+        edge->myTazBoundary.add(getToJunction()->getPosition());
     }
 }
 
@@ -998,8 +930,8 @@ MSEdge::getSuccessors(SUMOVehicleClass vClass) const {
         return mySuccessors;
     }
 #ifdef HAVE_FOX
-    if (MSRoutingEngine::isParallel()) {
-        MSRoutingEngine::lock();
+    if (MSDevice_Routing::isParallel()) {
+        MSDevice_Routing::lock();
     }
 #endif
     std::map<SUMOVehicleClass, MSEdgeVector>::iterator i = myClassesSuccessorMap.find(vClass);
@@ -1012,8 +944,8 @@ MSEdge::getSuccessors(SUMOVehicleClass vClass) const {
             if ((*it)->isTazConnector()) {
                 i->second.push_back(*it);
             } else {
-                const std::vector<MSLane*>* allowed = allowedLanes(**it, vClass);
-                if (allowed != nullptr && allowed->size() > 0) {
+                const std::vector<MSLane*>* allowed = allowedLanes(*it, vClass);
+                if (allowed != 0 && allowed->size() > 0) {
                     i->second.push_back(*it);
                 }
             }
@@ -1021,82 +953,19 @@ MSEdge::getSuccessors(SUMOVehicleClass vClass) const {
     }
     // can use cached value
 #ifdef HAVE_FOX
-    if (MSRoutingEngine::isParallel()) {
-        MSRoutingEngine::unlock();
+    if (MSDevice_Routing::isParallel()) {
+        MSDevice_Routing::unlock();
     }
 #endif
     return i->second;
 }
 
 
-const MSConstEdgePairVector&
-MSEdge::getViaSuccessors(SUMOVehicleClass vClass) const {
-    if (vClass == SVC_IGNORING || !MSNet::getInstance()->hasPermissions() || myFunction == EDGEFUNC_CONNECTOR) {
-        return myViaSuccessors;
-    }
-#ifdef HAVE_FOX
-    if (MSRoutingEngine::isParallel()) {
-        MSRoutingEngine::lock();
-    }
-#endif
-    auto i = myClassesViaSuccessorMap.find(vClass);
-    if (i != myClassesViaSuccessorMap.end()) {
-        // can use cached value
-#ifdef HAVE_FOX
-        if (MSRoutingEngine::isParallel()) {
-            MSRoutingEngine::unlock();
-        }
-#endif
-        return i->second;
-    }
-    // instantiate vector
-    MSConstEdgePairVector& result = myClassesViaSuccessorMap[vClass];
-    // this vClass is requested for the first time. rebuild all successors
-    for (const auto& viaPair : myViaSuccessors) {
-        if (viaPair.first->isTazConnector()) {
-            result.push_back(viaPair);
-        } else {
-            const std::vector<MSLane*>* allowed = allowedLanes(*viaPair.first, vClass);
-            if (allowed != nullptr && allowed->size() > 0) {
-                result.push_back(viaPair);
-            }
-        }
-    }
-#ifdef HAVE_FOX
-    if (MSRoutingEngine::isParallel()) {
-        MSRoutingEngine::unlock();
-    }
-#endif
-    return result;
-}
-
-
-void
-MSEdge::setJunctions(MSJunction* from, MSJunction* to) {
-    myFromJunction = from;
-    myToJunction = to;
-    if (!isTazConnector()) {
-        myBoundary.add(from->getPosition());
-        myBoundary.add(to->getPosition());
-    }
-}
-
-
 bool
 MSEdge::canChangeToOpposite() {
-    return (!myLanes->empty() && myLanes->back()->getOpposite() != nullptr &&
+    return (!myLanes->empty() && myLanes->back()->getOpposite() != 0 &&
             // do not change on curved internal lanes
             (!isInternal() || myLanes->back()->getIncomingLanes()[0].viaLink->getDirection() == LINKDIR_STRAIGHT));
-}
-
-
-const MSEdge*
-MSEdge::getOppositeEdge() const {
-    if (!myLanes->empty() && myLanes->back()->getOpposite() != nullptr) {
-        return &(myLanes->back()->getOpposite()->getEdge());
-    } else {
-        return nullptr;
-    }
 }
 
 
@@ -1114,32 +983,26 @@ MSEdge::hasMinorLink() const {
 }
 
 
-void MSEdge::checkAndRegisterBiDirEdge(const std::string& bidiID) {
-    if (bidiID != "") {
-        myBidiEdge = dictionary(bidiID);
-        if (myBidiEdge == nullptr) {
-            WRITE_ERROR("Bidi-edge '" + bidiID + "' does not exist");
-        }
-        return;
-    }
+void MSEdge::checkAndRegisterBiDirEdge() {
+    myOppositingSuperposableEdge = 0;
     if (getFunction() != EDGEFUNC_NORMAL) {
         return;
     }
     ConstMSEdgeVector candidates = myToJunction->getOutgoing();
     for (ConstMSEdgeVector::const_iterator it = candidates.begin(); it != candidates.end(); it++) {
         if ((*it)->getToJunction() == myFromJunction) { //reverse edge
-            if (myBidiEdge != nullptr && isSuperposable(*it)) {
+            if (myOppositingSuperposableEdge != 0 && isSuperposable(*it)) {
                 WRITE_WARNING("Ambiguous superposable edges between junction '" + myToJunction->getID() + "' and '" + myFromJunction->getID() + "'.");
                 break;
             }
-            myBidiEdge = isSuperposable(*it) ? *it : nullptr;
+            myOppositingSuperposableEdge = isSuperposable(*it) ? *it : 0;
         }
     }
 }
 
 
 bool MSEdge::isSuperposable(const MSEdge* other) {
-    if (other == nullptr || other->getLanes().size() != myLanes->size()) {
+    if (other == 0 || other->getLanes().size() != myLanes->size()) {
         return false;
     }
     std::vector<MSLane*>::const_iterator it1 = myLanes->begin();
@@ -1155,5 +1018,5 @@ bool MSEdge::isSuperposable(const MSEdge* other) {
     return true;
 }
 
-
 /****************************************************************************/
+

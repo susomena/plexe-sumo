@@ -1,18 +1,3 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2016-2019 German Aerospace Center (DLR) and others.
-# SUMOPy module
-# Copyright (C) 2012-2017 University of Bologna - DICAM
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    result_oglviewer.py
-# @author  Joerg Schweizer
-# @date
-# @version $Id$
-
 import os
 import sys
 import wx
@@ -30,7 +15,7 @@ import numpy as np
 from agilepy.lib_wx.ogleditor import *
 from coremodules.network.network_editor import NetSelectTool, EdgeDrawings, NodeDrawings
 from coremodules.landuse.wxgui import FacilityDrawings
-from collections import OrderedDict
+
 
 COLORMAP_JET = np.array([
     (0.0, 0.0, 0.5, 1.0),
@@ -293,6 +278,7 @@ COLORMAP_JET = np.array([
 
 
 class ResultSelectTool(NetSelectTool):
+
     """
     Result Selection tool for result OGL canvas.
     """
@@ -319,14 +305,15 @@ class ResultSelectTool(NetSelectTool):
         """
         # edgeresultes....
         edgeresults = results.edgeresults
-        attrnames_edgeresults = OrderedDict()
+        attrnames_edgeresults = {}
         edgeresultattrconfigs = edgeresults.get_group_attrs('results')
         edgeresultattrnames = edgeresultattrconfigs.keys()
-        # edgeresultattrnames.sort()
+        edgeresultattrnames.sort()
         for attrname in edgeresultattrnames:
             attrconfig = edgeresultattrconfigs[attrname]
 
-            attrnames_edgeresults[attrconfig.format_symbol()] = attrconfig.attrname
+            attrnames_edgeresults[
+                attrconfig.format_symbol()] = attrconfig.attrname
         self.edgeattrname.choices = attrnames_edgeresults
         self.parent.refresh_optionspanel(self)
         # now somebody needs to take care and refresh the browser..a bit messy
@@ -418,7 +405,8 @@ class ResultSelectTool(NetSelectTool):
                                       mainframe=self.parent.get_mainframe(),
                                       pos=wx.DefaultPosition, size=size, style=wx.MAXIMIZE_BOX | wx.RESIZE_BORDER,
                                       func_apply=self.on_apply_option,
-                                      immediate_apply=False, panelstyle='default',  # 'instrumental'
+                                      # 'instrumental'
+                                      immediate_apply=False, panelstyle='default',
                                       standartbuttons=['apply', 'restore'])
 
         return self._optionspanel
@@ -440,14 +428,17 @@ class ResultSelectTool(NetSelectTool):
 
             # drawobj.update()
             for ident_drawobj in ['facilitydraws', 'nodedraws', 'edgedraws']:
-                drawing.get_drawobj_by_ident(ident_drawobj).set_color_default(self.color_net.get_value())
+                drawing.get_drawobj_by_ident(ident_drawobj).set_color_default(
+                    self.color_net.get_value())
 
-            self._canvas.set_color_background(self.color_background.get_value())
+            self._canvas.set_color_background(
+                self.color_background.get_value())
 
             self._canvas.draw()
 
 
 class SimpleFacilityDrawings(FacilityDrawings):
+
     def __init__(self, ident, facilities, parent,  # self, facilities, parent,
                  color_default=np.array([0.8, 0.8, 0.8, 0.8]),
                  **kwargs):
@@ -486,7 +477,8 @@ class SimpleFacilityDrawings(FacilityDrawings):
         return self._facilities
 
     def get_vertices_array(self):
-        return self._facilities.shapes[self.get_ids()]  # .value[self._inds_map]
+        # .value[self._inds_map]
+        return self._facilities.shapes[self.get_ids()]
 
     def get_vertices(self, ids):
         return self._facilities.shapes[ids]
@@ -502,7 +494,8 @@ class SimpleFacilityDrawings(FacilityDrawings):
         # assumes that arrsy structure did not change
         # print 'FacilityDrawings.update'
         n = len(self)
-        self.colors.value[:] = np.ones((n, 4), np.float32)*self.color_facility_default.value
+        self.colors.value[:] = np.ones(
+            (n, 4), np.float32) * self.color_facility_default.value
         self.colors_highl.value[:] = self._get_colors_highl(self.colors.value)
 
         if is_update:
@@ -511,6 +504,7 @@ class SimpleFacilityDrawings(FacilityDrawings):
 
 
 class SimpleNodeDrawings(NodeDrawings):
+
     def __init__(self, ident, nodes, parent,
                  color_node=np.array([0.8, 0.8, 0.8, 0.8]),
                  **kwargs):
@@ -549,6 +543,7 @@ class SimpleNodeDrawings(NodeDrawings):
 
 
 class SimpleEdgeDrawings(EdgeDrawings):
+
     def __init__(self, ident, edges, parent,
                  info="Simplified edge representation for result viewing",
                  color_edge=np.array([0.8, 0.8, 0.8, 0.8]),
@@ -590,13 +585,13 @@ class SimpleEdgeDrawings(EdgeDrawings):
         # double because only the right half is shown
         # add a little bit to the width to make it a little wider than the lanes contained
         # return 2.2*self._edges.widths.value[self._inds_map]
-        return self.width_edge.value*np.ones(len(self), np.float32)
+        return self.width_edge.value * np.ones(len(self), np.float32)
 
     def set_vertices(self, ids, vertices, is_update=True):
         pass
 
     def get_widths(self, ids):
-        return self.width_edge.value*np.ones(len(ids), np.float32)
+        return self.width_edge.value * np.ones(len(ids), np.float32)
 
     def set_widths(self, ids, values):
         pass
@@ -614,8 +609,10 @@ class SimpleEdgeDrawings(EdgeDrawings):
         Update color, assume that there have not been structural changes of the arrays
         """
         # assumes that edges have been set in set_edges
-        self.colors_fill.value[:] = np.ones((len(self), 1), np.float32)*self.color_default.value
-        self.colors_fill_highl.value[:] = self._get_colors_highl(self.colors_fill.value)
+        self.colors_fill.value[:] = np.ones(
+            (len(self), 1), np.float32) * self.color_default.value
+        self.colors_fill_highl.value[
+            :] = self._get_colors_highl(self.colors_fill.value)
 
         if is_update:
             self._update_vertexvbo()
@@ -623,6 +620,7 @@ class SimpleEdgeDrawings(EdgeDrawings):
 
 
 class ResultviewerTools(ToolsPanel):
+
     """
     Shows a toolpallet with different tools and an options panel.
     Here tools are added which 
@@ -644,6 +642,7 @@ class ResultviewerTools(ToolsPanel):
 
 
 class EdgeresultDrawings(Polylines):
+
     def __init__(self, ident, edgeresults, parent,   **kwargs):
 
         self.resultsattr = None
@@ -679,7 +678,8 @@ class EdgeresultDrawings(Polylines):
         return self._edgeresults
 
     def get_vertices_array(self):
-        return self._edges.shapes[self._edgeresults.ids_edge[self.get_ids()]]  # .value[self._inds_map]#[self.get_ids()]
+        # .value[self._inds_map]#[self.get_ids()]
+        return self._edges.shapes[self._edgeresults.ids_edge[self.get_ids()]]
 
     def get_vertices(self, ids):
         return self._edges.shapes[self._edgeresults.ids_edge[ids]]
@@ -709,8 +709,8 @@ class EdgeresultDrawings(Polylines):
         #self._inds_map = self._edges.get_inds(ids)
         n = len(ids)
         self.add_rows(ids=ids,
-                      beginstyles=np.ones(n)*FLATHEAD,
-                      endstyles=np.ones(n)*TRIANGLEHEAD,
+                      beginstyles=np.ones(n) * FLATHEAD,
+                      endstyles=np.ones(n) * TRIANGLEHEAD,
                       )
         self.update()
 
@@ -726,36 +726,36 @@ class EdgeresultDrawings(Polylines):
         Called by tool.
         """
         self.resultsattr = getattr(self._edgeresults, attrname)
-        print 'configure', self.resultsattr.attrname, is_widthvalue, is_colorvalue
+        print 'configure', self.resultsattr.attrname, is_colorvalue
         # used for normalization
-        if len(self.resultsattr.get_value()) == 0:
-            return
-        self.val_max = float(np.max(self.resultsattr.get_value()))
+        self.val_max = np.max(self.resultsattr.get_value())
         ids = self.get_ids()
         n = len(self)
         if self.val_max > 10.0**-6:
-            values_norm = np.array(self.resultsattr[ids], dtype=np.float32)/self.val_max
+            values_norm = self.resultsattr[ids] / self.val_max
         else:
             values_norm = np.zeros(n, np.float32)
 
         if is_widthvalue:
             # adapt width to resultvalue
             # multiply factor two because of halfwidth
-            self.widths[ids] = 2.0*values_norm * resultwidth
+            self.widths[ids] = 2.0 * values_norm * resultwidth
 
         else:
             # fixed width
-            self.widths[ids] = 2.0*resultwidth
+            self.widths[ids] = 2.0 * resultwidth
 
         self.color_default.set_value(color_fill)
 
         if is_colorvalue:
-            inds_color = np.array(values_norm*(len(COLORMAP_JET)-1), np.int32)
+            inds_color = np.array(
+                values_norm * (len(COLORMAP_JET) - 1), np.int32)
             # print '  len(COLORMAP_JET)-1',len(COLORMAP_JET)-1
             # print '  inds_color',inds_color
             self.colors_fill[ids] = COLORMAP_JET[inds_color]
         else:
-            self.colors_fill.value[:] = np.ones((n, 1), np.float32)*self.color_default.value
+            self.colors_fill.value[:] = np.ones(
+                (n, 1), np.float32) * self.color_default.value
 
         self.update()
 
@@ -767,7 +767,8 @@ class EdgeresultDrawings(Polylines):
         # print 'Edgedrawing.update'
         #edgeinds = self._edges.get_inds()
 
-        self.colors_fill_highl.value[:] = self._get_colors_highl(self.colors_fill.value)
+        self.colors_fill_highl.value[
+            :] = self._get_colors_highl(self.colors_fill.value)
 
         if is_update:
             self._update_vertexvbo()
@@ -787,6 +788,7 @@ RESULTDRAWINGS = [
 
 
 class Resultviewer(OGleditor):
+
     def __init__(self,
                  parent,
                  mainframe=None,
@@ -813,7 +815,8 @@ class Resultviewer(OGleditor):
         self._toolspanel = ResultviewerTools(self)
 
         # compose editor window
-        sizer.Add(self._toolspanel, 0, wx.ALL | wx.ALIGN_LEFT | wx.GROW, 4)  # from NaviPanelTest
+        sizer.Add(self._toolspanel, 0, wx.ALL | wx.ALIGN_LEFT |
+                  wx.GROW, 4)  # from NaviPanelTest
         # sizer.Add(self._canvas,1,wx.GROW)# from NaviPanelTest
         sizer.Add(navcanvas, 1, wx.GROW)
 
@@ -823,14 +826,15 @@ class Resultviewer(OGleditor):
 
     def set_resultsdrawings(self, results):
         for ident_drawob, DrawobjClass, attrname, layer in RESULTDRAWINGS:
-            self.set_elemetdrawing(ident_drawob, DrawobjClass, getattr(results, attrname), layer)
+            self.set_elemetdrawing(
+                ident_drawob, DrawobjClass, getattr(results, attrname), layer)
 
         # add also some simple netdrawings
-        self.set_netdrawings(results.get_scenario().net)
+        self.set_netdrawings(results.parent.net)
 
         # and also simplified buildings
         self.set_elemetdrawing('facilitydraws', SimpleFacilityDrawings, getattr(
-            results.get_scenario().landuse, 'facilities'), 200)
+            results.parent.landuse, 'facilities'), 200)
 
         # TODO: these initialization methods and set_(real)element
         # should be unified and fimplified
@@ -838,14 +842,14 @@ class Resultviewer(OGleditor):
     def set_elemetdrawing(self, ident_drawobj, DrawClass, element, layer=50):
         drawing = self._drawing
         drawobj = drawing.get_drawobj_by_ident(ident_drawobj)
-        if drawobj is not None:
+        if drawobj != None:
             drawobj.set_element(element)
         else:
             drawobj = DrawClass(ident_drawobj, element, drawing)
             drawing.add_drawobj(drawobj, layer)
 
     def set_results(self, results, is_redraw=False):
-        if self._drawing is None:
+        if self._drawing == None:
 
             #drawing = OpenGLdrawing()
             drawing = OGLdrawing()
@@ -875,19 +879,20 @@ class Resultviewer(OGleditor):
 
     def set_netdrawings(self, net):
         for ident_drawob, DrawobjClass, netattrname, layer in NETDRAWINGS:
-            self.set_netdrawing(ident_drawob, DrawobjClass, getattr(net, netattrname), layer)
+            self.set_netdrawing(ident_drawob, DrawobjClass,
+                                getattr(net, netattrname), layer)
 
     def set_netdrawing(self, ident_drawobj, DrawClass, netelement, layer=50):
         drawing = self._drawing
         drawobj = drawing.get_drawobj_by_ident(ident_drawobj)
-        if drawobj is not None:
+        if drawobj != None:
             drawobj.set_netelement(netelement)
         else:
             drawobj = DrawClass(ident_drawobj, netelement, drawing)
             drawing.add_drawobj(drawobj, layer)
 
     def set_net(self, net, is_redraw=False):
-        if self._drawing is None:
+        if self._drawing == None:
             # drawing should be present before showing network elements
             pass
 
@@ -902,6 +907,7 @@ class Resultviewer(OGleditor):
 
 
 class ResultviewrMainframe(AgileToolbarFrameMixin, wx.Frame):
+
     """
     Standalone result viewer....under costruction.
     """
@@ -914,7 +920,8 @@ class ResultviewrMainframe(AgileToolbarFrameMixin, wx.Frame):
         # Forcing a specific style on the window.
         #   Should this include styles passed?
         style = wx.DEFAULT_FRAME_STYLE | wx.NO_FULL_REPAINT_ON_RESIZE
-        wx.Frame.__init__(self, None, wx.NewId(), title, pos, size=size, style=style, name=name)
+        wx.Frame.__init__(self, None, wx.NewId(), title, pos,
+                          size=size, style=style, name=name)
         self.gleditor = Neteditor(self)
 
         self.Show()  # must be here , before putting stuff on canvas

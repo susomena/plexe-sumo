@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    netconvert_main.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Main for NETCONVERT
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
@@ -61,16 +68,12 @@ fillOptions() {
     oc.addOptionSubTopic("Input");
     oc.addOptionSubTopic("Output");
     GeoConvHelper::addProjectionOptions(oc);
-    oc.addOptionSubTopic("Processing");
-    oc.addOptionSubTopic("Building Defaults");
     oc.addOptionSubTopic("TLS Building");
     oc.addOptionSubTopic("Ramp Guessing");
     oc.addOptionSubTopic("Edge Removal");
     oc.addOptionSubTopic("Unregulated Nodes");
-    oc.addOptionSubTopic("Junctions");
-    oc.addOptionSubTopic("Pedestrian");
-    oc.addOptionSubTopic("Railway");
-    oc.addOptionSubTopic("Formats");
+    oc.addOptionSubTopic("Processing");
+    oc.addOptionSubTopic("Building Defaults");
     SystemFrame::addReportOptions(oc); // this subtopic is filled here, too
 
     NIFrame::fillOptions();
@@ -97,8 +100,8 @@ int
 main(int argc, char** argv) {
     OptionsCont& oc = OptionsCont::getOptions();
     // give some application descriptions
-    oc.setApplicationDescription("Network importer / builder for the microscopic, multi-modal traffic simulation SUMO.");
-    oc.setApplicationName("netconvert", "Eclipse SUMO netconvert Version " VERSION_STRING);
+    oc.setApplicationDescription("Road network importer / builder for the road traffic simulation SUMO.");
+    oc.setApplicationName("netconvert", "SUMO netconvert Version " VERSION_STRING);
     int ret = 0;
     try {
         XMLSubSys::init();
@@ -127,12 +130,12 @@ main(int argc, char** argv) {
         if (oc.getBool("ignore-errors")) {
             MsgHandler::getErrorInstance()->clear();
         }
-        // check whether any errors occurred
+        // check whether any errors occured
         if (MsgHandler::getErrorInstance()->wasInformed()) {
             throw ProcessError();
         }
         nb.compute(oc);
-        // check whether any errors occurred
+        // check whether any errors occured
         if (MsgHandler::getErrorInstance()->wasInformed()) {
             throw ProcessError();
         }

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIParameterTableWindow.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Laura Bieker
@@ -17,12 +9,27 @@
 ///
 // The window that holds the table of an object's parameter
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <fx.h>
@@ -53,14 +60,14 @@ FXIMPLEMENT(GUIParameterTableWindow, FXMainWindow, GUIParameterTableWindowMap, A
 // ===========================================================================
 // static value definitions
 // ===========================================================================
-FXMutex GUIParameterTableWindow::myGlobalContainerLock;
+MFXMutex GUIParameterTableWindow::myGlobalContainerLock;
 std::vector<GUIParameterTableWindow*> GUIParameterTableWindow::myContainer;
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
 GUIParameterTableWindow::GUIParameterTableWindow(GUIMainWindow& app, GUIGlObject& o, int noRows) :
-    FXMainWindow(app.getApp(), (o.getFullName() + " Parameter").c_str(), nullptr, nullptr, DECOR_ALL, 20, 20, 500, (FXint)((noRows + numParams(&o))  * 20 + 60)),
+    FXMainWindow(app.getApp(), (o.getFullName() + " Parameter").c_str(), NULL, NULL, DECOR_ALL, 20, 20, 500, (FXint)((noRows + numParams(&o))  * 20 + 60)),
     myObject(&o),
     myApplication(&app),
     myCurrentPos(0) {
@@ -85,10 +92,8 @@ GUIParameterTableWindow::GUIParameterTableWindow(GUIMainWindow& app, GUIGlObject
     myLock.lock();
     myObject->addParameterTable(this);
     myLock.unlock();
-    FXMutexLock locker(myGlobalContainerLock);
+    AbstractMutex::ScopedLocker locker(myGlobalContainerLock);
     myContainer.push_back(this);
-    // Table cannot be editable
-    myTable->setEditable(FALSE);
 }
 
 
@@ -96,13 +101,13 @@ GUIParameterTableWindow::~GUIParameterTableWindow() {
     myApplication->removeChild(this);
     myLock.lock();
     for (std::vector<GUIParameterTableItemInterface*>::iterator i = myItems.begin(); i != myItems.end(); ++i) {
-        delete (*i);
+        delete(*i);
     }
-    if (myObject != nullptr) {
+    if (myObject != 0) {
         myObject->removeParameterTable(this);
     }
     myLock.unlock();
-    FXMutexLock locker(myGlobalContainerLock);
+    AbstractMutex::ScopedLocker locker(myGlobalContainerLock);
     std::vector<GUIParameterTableWindow*>::iterator i = std::find(myContainer.begin(), myContainer.end(), this);
     if (i != myContainer.end()) {
         myContainer.erase(i);
@@ -112,8 +117,8 @@ GUIParameterTableWindow::~GUIParameterTableWindow() {
 
 void
 GUIParameterTableWindow::removeObject(GUIGlObject* /*i*/) {
-    FXMutexLock locker(myLock);
-    myObject = nullptr;
+    AbstractMutex::ScopedLocker locker(myLock);
+    myObject = 0;
 }
 
 
@@ -139,9 +144,11 @@ GUIParameterTableWindow::onTableDeselected(FXObject*, FXSelector, void*) {
 
 
 long
-GUIParameterTableWindow::onRightButtonPress(FXObject* sender, FXSelector sel, void* eventData) {
+GUIParameterTableWindow::onRightButtonPress(FXObject* sender,
+        FXSelector sel,
+        void* data) {
     // check which value entry was pressed
-    myTable->onLeftBtnPress(sender, sel, eventData);
+    myTable->onLeftBtnPress(sender, sel, data);
     int row = myTable->getCurrentRow();
     if (row == -1 || row >= (int)(myItems.size())) {
         return 1;
@@ -150,15 +157,15 @@ GUIParameterTableWindow::onRightButtonPress(FXObject* sender, FXSelector sel, vo
     if (!i->dynamic()) {
         return 1;
     }
-    if (myObject == nullptr) {
+    if (myObject == 0) {
         return 1;
     }
 
     GUIParam_PopupMenuInterface* p = new GUIParam_PopupMenuInterface(*myApplication, *this, *myObject, i->getName(), i->getdoubleSourceCopy());
-    new FXMenuCommand(p, "Open in new Tracker", nullptr, p, MID_OPENTRACKER);
+    new FXMenuCommand(p, "Open in new Tracker", 0, p, MID_OPENTRACKER);
     // set geometry
-    p->setX(static_cast<FXEvent*>(eventData)->root_x);
-    p->setY(static_cast<FXEvent*>(eventData)->root_y);
+    p->setX(static_cast<FXEvent*>(data)->root_x);
+    p->setY(static_cast<FXEvent*>(data)->root_y);
     p->create();
     // show
     p->show();
@@ -166,8 +173,34 @@ GUIParameterTableWindow::onRightButtonPress(FXObject* sender, FXSelector sel, vo
 }
 
 
+
 void
-GUIParameterTableWindow::mkItem(const char* name, bool dynamic, std::string value) {
+GUIParameterTableWindow::mkItem(const char* name, bool dynamic,
+                                ValueSource<unsigned>* src) {
+    GUIParameterTableItemInterface* i = new GUIParameterTableItem<unsigned>(myTable, myCurrentPos++, name, dynamic, src);
+    myItems.push_back(i);
+}
+
+
+void
+GUIParameterTableWindow::mkItem(const char* name, bool dynamic,
+                                ValueSource<int>* src) {
+    GUIParameterTableItemInterface* i = new GUIParameterTableItem<int>(myTable, myCurrentPos++, name, dynamic, src);
+    myItems.push_back(i);
+}
+
+
+void
+GUIParameterTableWindow::mkItem(const char* name, bool dynamic,
+                                ValueSource<double>* src) {
+    GUIParameterTableItemInterface* i = new GUIParameterTableItem<double>(myTable, myCurrentPos++, name, dynamic, src);
+    myItems.push_back(i);
+}
+
+
+void
+GUIParameterTableWindow::mkItem(const char* name, bool dynamic,
+                                std::string value) {
     // T = double is only a dummy type here
     GUIParameterTableItemInterface* i = new GUIParameterTableItem<double>(myTable, myCurrentPos++, name, dynamic, value);
     myItems.push_back(i);
@@ -175,28 +208,32 @@ GUIParameterTableWindow::mkItem(const char* name, bool dynamic, std::string valu
 
 
 void
-GUIParameterTableWindow::mkItem(const char* name, bool dynamic, double value) {
+GUIParameterTableWindow::mkItem(const char* name, bool dynamic,
+                                double value) {
     GUIParameterTableItemInterface* i = new GUIParameterTableItem<double>(myTable, myCurrentPos++, name, dynamic, value);
     myItems.push_back(i);
 }
 
 
 void
-GUIParameterTableWindow::mkItem(const char* name, bool dynamic, unsigned value) {
+GUIParameterTableWindow::mkItem(const char* name, bool dynamic,
+                                unsigned value) {
     GUIParameterTableItemInterface* i = new GUIParameterTableItem<unsigned>(myTable, myCurrentPos++, name, dynamic, value);
     myItems.push_back(i);
 }
 
 
 void
-GUIParameterTableWindow::mkItem(const char* name, bool dynamic, int value) {
+GUIParameterTableWindow::mkItem(const char* name, bool dynamic,
+                                int value) {
     GUIParameterTableItemInterface* i = new GUIParameterTableItem<int>(myTable, myCurrentPos++, name, dynamic, value);
     myItems.push_back(i);
 }
 
 
 void
-GUIParameterTableWindow::mkItem(const char* name, bool dynamic, long long int value) {
+GUIParameterTableWindow::mkItem(const char* name, bool dynamic,
+                                long long int value) {
     GUIParameterTableItemInterface* i = new GUIParameterTableItem<long long int>(myTable, myCurrentPos++, name, dynamic, value);
     myItems.push_back(i);
 }
@@ -204,8 +241,8 @@ GUIParameterTableWindow::mkItem(const char* name, bool dynamic, long long int va
 
 void
 GUIParameterTableWindow::updateTable() {
-    FXMutexLock locker(myLock);
-    if (myObject == nullptr) {
+    AbstractMutex::ScopedLocker locker(myLock);
+    if (myObject == 0) {
         return;
     }
     for (std::vector<GUIParameterTableItemInterface*>::iterator i = myItems.begin(); i != myItems.end(); i++) {
@@ -217,25 +254,24 @@ GUIParameterTableWindow::updateTable() {
 void
 GUIParameterTableWindow::closeBuilding(const Parameterised* p) {
     // add generic paramters if available
-    if (p == nullptr) {
+    if (p == 0) {
         p = dynamic_cast<const Parameterised*>(myObject);
     }
-    if (p != nullptr) {
-        const std::map<std::string, std::string>& map = p->getParametersMap();
+    if (p != 0) {
+        const std::map<std::string, std::string>& map = p->getMap();
         for (std::map<std::string, std::string>::const_iterator it = map.begin(); it != map.end(); ++it) {
             mkItem(("param:" + it->first).c_str(), false, it->second);
         }
     }
-    myApplication->addChild(this);
+    myApplication->addChild(this, true);
     create();
     show();
 }
 
-
 int
 GUIParameterTableWindow::numParams(const GUIGlObject* obj) {
     const Parameterised* p = dynamic_cast<const Parameterised*>(obj);
-    return p != nullptr ? (int)p->getParametersMap().size() : 0;
+    return p != 0 ? (int)p->getMap().size() : 0;
 }
 
 

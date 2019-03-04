@@ -1,24 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    duaIterate.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @author  Yun-Pang Floetteroed
-# @date    2008-02-13
-# @version $Id$
-
 """
+@file    duaIterate.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@author  Yun-Pang Floetteroed
+@date    2008-02-13
+@version $Id$
+
 Run duarouter and sumo alternating to perform a dynamic user assignment.
 Based on the Perl script dua_iterate.pl.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -33,7 +34,7 @@ from costMemory import CostMemory
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import sumolib  # noqa
-from sumolib.options import get_long_option_names  # noqa
+from sumolib.options import get_long_option_names
 
 
 def addGenericOptions(argParser):
@@ -64,8 +65,7 @@ def addGenericOptions(argParser):
     argParser.add_argument("-q", "--meso-multiqueue", dest="mesomultiqueue", action="store_true",
                            default=False, help="Enable multiple queues at edge ends")
     argParser.add_argument("--meso-recheck", dest="mesorecheck", type=int, default=0,
-                           help="Delay before checking whether a jam is gone. (higher values can lead to a big speed " +
-                                "increase)")
+                           help="Delay before checking whether a jam is gone. (higher values can lead to a big speed increase)")
     argParser.add_argument("-Q", "--eco-measure", dest="ecomeasure",
                            choices=[
                                'CO', 'CO2', 'PMx', 'HC', 'NOx', 'fuel', 'noise'],
@@ -86,9 +86,8 @@ def addGenericOptions(argParser):
 def initOptions():
     argParser = argparse.ArgumentParser(
         description=""" Any options of the form sumo--long-option-name will be passed to sumo.
-        These must be given after all the other options
-        example: sumo--step-length 0.5 will add the option --step-length 0.5 to sumo.""",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+These must be given after all the other options
+example: sumo--step-length 0.5 will add the option --step-length 0.5 to sumo.""", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     addGenericOptions(argParser)
 
     argParser.add_argument("-C", "--continue-on-unbuild", action="store_true", dest="continueOnUnbuild",
@@ -113,8 +112,8 @@ def initOptions():
                            type=float, default=0, help="Start for incrementing scale")
     argParser.add_argument("--inc-max", dest="incMax",
                            type=float, default=1, help="Maximum for incrementing scale")
-    argParser.add_argument("--inc-base", dest="incBase", type=int, default=-1,
-                           help="Give the incrementation base. Negative values disable incremental scaling")
+    argParser.add_argument("--inc-base", dest="incBase",
+                           type=int, default=-1, help="Give the incrementation base. Negative values disable incremental scaling")
     argParser.add_argument("--incrementation", dest="incValue",
                            type=int, default=1, help="Give the incrementation")
     argParser.add_argument("--time-inc", dest="timeInc",
@@ -127,7 +126,8 @@ def initOptions():
                            type=int, default=10, help="Number of iterations to use for convergence calculation")
     argParser.add_argument("--max-convergence-deviation", dest="convDev",
                            type=float, help="Maximum relative standard deviation in travel times")
-    argParser.add_argument("-D", "--districts", help="use districts as sources and targets", metavar="FILE")
+    argParser.add_argument(
+        "-D", "--districts", help="use districts as sources and targets", metavar="FILE")
     argParser.add_argument("-x", "--vehroute-file",  dest="routefile",
                            choices=['None', 'routesonly', 'detailed'],
                            default='None', help="choose the format of the route file")
@@ -135,8 +135,10 @@ def initOptions():
                            default=False, help="output the last routes")
     argParser.add_argument("-K", "--keep-allroutes", action="store_true", dest="allroutes",
                            default=False, help="save routes with near zero probability")
-    argParser.add_argument("--routing-algorithm", default="dijkstra", help="select the routing algorithm")
-    argParser.add_argument("--max-alternatives", default=5, help="prune the number of alternatives to INT")
+    argParser.add_argument(
+        "--routing-algorithm", default="dijkstra", help="select the routing algorithm")
+    argParser.add_argument(
+        "--max-alternatives", default=5, help="prune the number of alternatives to INT")
     argParser.add_argument("--skip-first-routing", action="store_true", dest="skipFirstRouting",
                            default=False, help="run simulation with demands before first routing")
     argParser.add_argument("--logit", action="store_true", dest="logit",
@@ -154,12 +156,11 @@ def initOptions():
     argParser.add_argument("-M", "--external-gawron", action="store_true", dest="externalgawron",
                            default=False, help="use the external gawron calculation")
     argParser.add_argument("-N", "--calculate-oldprob", action="store_true", dest="caloldprob",
-                           default=False, help="calculate the old route probabilities with the free-flow " +
-                                               "travel times when using the external gawron calculation")
+                           default=False, help="calculate the old route probabilities with the free-flow travel times when using the external gawron calculation")
     argParser.add_argument("--weight-memory", action="store_true", default=False, dest="weightmemory",
                            help="smooth edge weights across iterations")
-    argParser.add_argument("--pessimism", default=1, type=float,
-                           help="give traffic jams a higher weight when using option --weight-memory")
+    argParser.add_argument(
+        "--pessimism", default=1, type=float, help="give traffic jams a higher weight when using option --weight-memory")
     argParser.add_argument("--clean-alt", action="store_true", dest="clean_alt",
                            default=False, help="Whether old rou.alt.xml files shall be removed")
     argParser.add_argument("--binary", action="store_true",
@@ -175,7 +176,7 @@ def call(command, log):
     log.flush()
     retCode = subprocess.call(command, stdout=log, stderr=log)
     if retCode != 0:
-        print(("Execution of %s failed. Look into %s for details.") %
+        print("Execution of %s failed. Look into %s for details." %
               (command, log.name), file=sys.stderr)
         sys.exit(retCode)
 
@@ -353,8 +354,7 @@ def writeSUMOConf(sumoBinary, step, options, additional_args, route_files):
             print('    <edgeData id="dump%s" freq="%s" file="%s" excludeEmpty="true" minSamples="1"/>' % (
                 suffix, options.aggregation, get_dumpfilename(options, step, "dump")), file=fd)
         if options.ecomeasure:
-            print(('    <edgeData id="eco%s" type="hbefa" freq="%s" file="dump%s.xml" ' +
-                   'excludeEmpty="true" minSamples="1"/>') %
+            print('    <edgeData id="eco%s" type="hbefa" freq="%s" file="dump%s.xml" excludeEmpty="true" minSamples="1"/>' %
                   (suffix, options.aggregation, suffix), file=fd)
         print("</a>", file=fd)
 
@@ -425,6 +425,7 @@ def assign_remaining_args(application, prefix, args):
             else:
                 sys.exit('"%s" is not a valid option for "%s"' %
                          (option, application))
+                unassigned += item
 
     return assigned
 
@@ -460,14 +461,12 @@ def main(args=None):
         subprocess.call(duaBinary, stdout=subprocess.PIPE)
     except OSError:
         sys.exit(
-            ("Error: Could not locate duarouter (%s).\nMake sure its on the search path or set environment " +
-             "variable DUAROUTER_BINARY\n") % duaBinary)
+            "Error: Could not locate duarouter (%s).\nMake sure its on the search path or set environment variable DUAROUTER_BINARY\n" % duaBinary)
     try:
         subprocess.call(sumoBinary, stdout=subprocess.PIPE)
     except OSError:
         sys.exit(
-            ("Error: Could not locate sumo (%s).\nMake sure its on the search path or set environment " +
-             "variable SUMO_BINARY\n") % sumoBinary)
+            "Error: Could not locate sumo (%s).\nMake sure its on the search path or set environment variable SUMO_BINARY\n" % sumoBinary)
 
     sumo_args = assign_remaining_args(
         sumoBinary, 'sumo', options.remaining_args)
@@ -482,7 +481,7 @@ def main(args=None):
                 "Error: Please use either --zip or --clean-alt but not both.")
         try:
             subprocess.call("7z", stdout=open(os.devnull, 'wb'))
-        except Exception:
+        except:
             sys.exit(
                 "Error: Could not locate 7z, please make sure its on the search path.")
         zipProcesses = {}
@@ -557,18 +556,13 @@ def main(args=None):
                 print("<<")
                 # use the external gawron
                 if options.externalgawron:
-                    basename = get_basename(router_input)
-                    if ((step > 0 and not options.skipFirstRouting) or step > 1):
-                        basename = basename[:-4]
-                    print('basename', basename)
                     ecomeasure = None
                     if options.ecomeasure:
                         ecomeasure = options.ecomeasure
                     if step == options.firstStep + 1 and options.skipFirstRouting:
                         if options.caloldprob:
                             calFirstRouteProbs("dump_000_%s.xml" % (
-                                options.aggregation), basename + "_001.rou.alt.xml", options.addweights,
-                                ecomeasure)
+                                options.aggregation), basename + "_001.rou.alt.xml", options.addweights, ecomeasure)
                         else:
                             shutil.copy(
                                 basename + "_001.rou.alt.xml", basename + "_001.rou.galt.xml")
@@ -586,8 +580,7 @@ def main(args=None):
                             step - 1, options.aggregation)
                         if (not options.skipFirstRouting) or (options.skipFirstRouting and step > 1):
                             output, edgesMap = getRouteChoices(
-                                edgesMap, dumpfile, basename + "_%03i.rou.alt.xml" % step, options.net,
-                                options.addweights, options.gA, options.gBeta, step, ecomeasure)
+                                edgesMap, dumpfile, basename + "_%03i.rou.alt.xml" % step, options.net, options.addweights, options.gA, options.gBeta, step, ecomeasure)
 
         # simulation
         print(">> Running simulation")
@@ -626,18 +619,17 @@ def main(args=None):
             # this is a little hackish since we zip and remove all files by glob, which may have undesired side effects
             # also note that the 7z file does not have an "_" before the
             # iteration number in order to be not picked up by the remove
-            for s in list(zipProcesses.keys()):
+            for s in zipProcesses.keys():
                 if zipProcesses[s].poll() is not None:
                     for f in glob.glob("*_%03i*" % s):
                         try:
                             os.remove(f)
-                        except Exception:
+                        except:
                             print("Could not remove %s" % f, file=zipLog)
                     del zipProcesses[s]
             zipStep = step - 2
             zipProcesses[zipStep] = subprocess.Popen(
-                ["7z", "a", "iteration%03i.7z" % zipStep] + glob.glob("*_%03i*" % zipStep), stdout=zipLog,
-                stderr=zipLog)
+                ["7z", "a", "iteration%03i.7z" % zipStep] + glob.glob("*_%03i*" % zipStep), stdout=zipLog, stderr=zipLog)
 
         converged = False
         if options.convDev:
@@ -667,13 +659,12 @@ def main(args=None):
             for f in glob.glob("*_%03i*" % s):
                 try:
                     os.remove(f)
-                except Exception:
+                except:
                     print("Could not remove %s" % f, file=zipLog)
         zipLog.close()
     print("dua-iterate ended (duration: %s)" % (datetime.now() - starttime))
 
     log.close()
-
 
 if __name__ == "__main__":
     main()

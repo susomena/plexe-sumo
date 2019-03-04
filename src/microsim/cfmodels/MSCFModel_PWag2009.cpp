@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_PWag2009.cpp
 /// @author  Peter Wagner
 /// @author  Daniel Krajzewicz
@@ -17,12 +9,27 @@
 ///
 // Scalable model based on Krauss by Peter Wagner
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <microsim/MSVehicle.h>
 #include <microsim/MSLane.h>
@@ -33,13 +40,14 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-MSCFModel_PWag2009::MSCFModel_PWag2009(const MSVehicleType* vtype) :
-    MSCFModel(vtype),
-    myDawdle(vtype->getParameter().getCFParam(SUMO_ATTR_SIGMA, SUMOVTypeParameter::getDefaultImperfection(vtype->getParameter().vehicleClass))),
-    myTauDecel(myDecel * myHeadwayTime),
-    myDecelDivTau(myDecel / myHeadwayTime),
-    myTauLastDecel(myDecel * vtype->getParameter().getCFParam(SUMO_ATTR_CF_PWAGNER2009_TAULAST, 0.3)),
-    myActionPointProbability(vtype->getParameter().getCFParam(SUMO_ATTR_CF_PWAGNER2009_APPROB, 0.5)) {
+MSCFModel_PWag2009::MSCFModel_PWag2009(const MSVehicleType* vtype,  double accel,
+                                       double decel, double emergencyDecel, double apparentDecel,
+                                       double dawdle, double headwayTime, double tauLast, double apProb) :
+    MSCFModel(vtype, accel, decel, emergencyDecel, apparentDecel, headwayTime), myDawdle(dawdle),
+    myTauDecel(decel * headwayTime),
+    myDecelDivTau(decel / headwayTime),
+    myTauLastDecel(decel * tauLast),
+    myActionPointProbability(apProb) {
 }
 
 
@@ -47,8 +55,8 @@ MSCFModel_PWag2009::~MSCFModel_PWag2009() {}
 
 
 double
-MSCFModel_PWag2009::finalizeSpeed(MSVehicle* const veh, double vPos) const {
-    const double vNext = MSCFModel::finalizeSpeed(veh, vPos);
+MSCFModel_PWag2009::moveHelper(MSVehicle* const veh, double vPos) const {
+    const double vNext = MSCFModel::moveHelper(veh, vPos);
     VehicleVariables* vars = (VehicleVariables*)veh->getCarFollowVariables();
     double apref = SPEED2ACCEL(vNext - veh->getSpeed());
     vars->aOld = apref;
@@ -61,7 +69,7 @@ MSCFModel_PWag2009::finalizeSpeed(MSVehicle* const veh, double vPos) const {
 // seen so far in data ...
 
 double
-MSCFModel_PWag2009::followSpeed(const MSVehicle* const veh, double speed, double gap, double predSpeed, double /*predMaxDecel*/, const MSVehicle* const /*pred*/) const {
+MSCFModel_PWag2009::followSpeed(const MSVehicle* const veh, double speed, double gap, double predSpeed, double /*predMaxDecel*/) const {
     if (predSpeed == 0 && gap < 0.01) {
         return 0;
     }
@@ -69,11 +77,11 @@ MSCFModel_PWag2009::followSpeed(const MSVehicle* const veh, double speed, double
     const double asafe = SPEED2ACCEL(vsafe - speed);
     VehicleVariables* vars = (VehicleVariables*)veh->getCarFollowVariables();
     double apref = vars->aOld;
-    if (apref <= asafe && RandHelper::rand(veh->getRNG()) <= myActionPointProbability * TS) {
+    if (apref <= asafe && RandHelper::rand() <= myActionPointProbability * TS) {
         apref = myDecelDivTau * (gap + (predSpeed - speed) * myHeadwayTime - speed * myHeadwayTime) / (speed + myTauDecel);
         apref = MIN2(apref, myAccel);
         apref = MAX2(apref, -myDecel);
-        apref += myDawdle * RandHelper::rand((double) - 1., (double)1., veh->getRNG());
+        apref += myDawdle * RandHelper::rand((double) - 1., (double)1.);
     }
     if (apref > asafe) {
         apref = asafe;
@@ -133,5 +141,6 @@ MSCFModel_PWag2009::dawdle(double speed) const {
 
 MSCFModel*
 MSCFModel_PWag2009::duplicate(const MSVehicleType* vtype) const {
-    return new MSCFModel_PWag2009(vtype);
+    return new MSCFModel_PWag2009(vtype, myAccel, myDecel, myEmergencyDecel, myApparentDecel,
+                                  myDawdle, myHeadwayTime, myTauLastDecel / myDecel, myActionPointProbability);
 }

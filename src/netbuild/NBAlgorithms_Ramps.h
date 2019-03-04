@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBAlgorithms_Ramps.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -15,6 +7,17 @@
 ///
 // Algorithms for highway on-/off-ramps computation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBAlgorithms_Ramps_h
 #define NBAlgorithms_Ramps_h
 
@@ -22,7 +25,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 
@@ -89,7 +96,7 @@ private:
      * @param[in] dontSplit Whether no edges shall be split
      * @param[in, filled] incremented The list of edges which lane number was already incremented
      */
-    static void buildOnRamp(NBNode* cur, NBNodeCont& nc, NBEdgeCont& ec, NBDistrictCont& dc, double rampLength, bool dontSplit, bool addLanes);
+    static void buildOnRamp(NBNode* cur, NBNodeCont& nc, NBEdgeCont& ec, NBDistrictCont& dc, double rampLength, bool dontSplit);
 
 
     /** @brief Builds an off-ramp ending at the given node
@@ -134,9 +141,6 @@ private:
 
     /// @brief whether the edge has a mode that does not indicate a ramp edge
     static bool hasWrongMode(NBEdge* edge);
-
-    /// @brief shift ramp geometry to merge smoothly with the motorway
-    static void patchRampGeometry(NBEdge* potRamp, NBEdge* first, NBEdge* potHighway, bool onRamp);
 };
 
 

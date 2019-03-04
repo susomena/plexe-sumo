@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2003-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIMessageWindow.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,20 +8,33 @@
 ///
 // A logging window for the gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2003-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <utils/common/MsgHandler.h>
 #include <utils/gui/globjects/GUIGlObjectStorage.h>
 #include <utils/gui/windows/GUIGlChildWindow.h>
 #include <utils/gui/windows/GUIMainWindow.h>
-#include <utils/gui/div/GUIGlobalSelection.h>
-#include <fxkeys.h>
 #include "GUIMessageWindow.h"
 
 
@@ -43,19 +48,18 @@ bool GUIMessageWindow::myLocateLinks = true;
 // method definitions
 // ===========================================================================
 GUIMessageWindow::GUIMessageWindow(FXComposite* parent) :
-    FXText(parent, nullptr, 0, 0, 0, 0, 0, 50),
-    myStyles(new FXHiliteStyle[8]),
-    myErrorRetriever(nullptr),
-    myMessageRetriever(nullptr),
-    myWarningRetriever(nullptr) {
+    FXText(parent, 0, 0, 0, 0, 0, 0, 50),
+    myStyles(new FXHiliteStyle[7]),
+    myErrorRetriever(0),
+    myMessageRetriever(0),
+    myWarningRetriever(0) {
     setStyled(true);
     setEditable(false);
-    const FXColor white   = FXRGB(0xff, 0xff, 0xff);
-    const FXColor blue    = FXRGB(0x00, 0x00, 0x88);
-    const FXColor green   = FXRGB(0x00, 0x88, 0x00);
-    const FXColor red     = FXRGB(0x88, 0x00, 0x00);
-    const FXColor yellow  = FXRGB(0xe6, 0x98, 0x00);
-    const FXColor fuchsia = FXRGB(0x88, 0x00, 0x88);
+    const FXColor white = FXRGB(0xff, 0xff, 0xff);
+    const FXColor blue  = FXRGB(0x00, 0x00, 0x88);
+    const FXColor green = FXRGB(0x00, 0x88, 0x00);
+    const FXColor red   = FXRGB(0x88, 0x00, 0x00);
+    const FXColor yellow = FXRGB(0xe6, 0x98, 0x00);
     // set separator style
     myStyles[0].normalForeColor = blue;
     myStyles[0].normalBackColor = white;
@@ -86,11 +90,6 @@ GUIMessageWindow::GUIMessageWindow(FXComposite* parent) :
     myStyles[3].hiliteForeColor = yellow;
     myStyles[6] = myStyles[3];
     myStyles[6].style = STYLE_UNDERLINE;
-    // set GLDebug text style
-    myStyles[7] = myStyles[0];
-    myStyles[7].normalForeColor = fuchsia;
-    myStyles[7].selectBackColor = fuchsia;
-    myStyles[7].hiliteForeColor = fuchsia;
     //
     setHiliteStyles(myStyles);
 }
@@ -114,20 +113,12 @@ GUIMessageWindow::getActiveStringObject(const FXString& text, const FXint pos, c
             std::string type(text.mid(typeS + 1, idS - typeS - 1).lower().text());
             if (type == "tllogic") {
                 type = "tlLogic"; // see GUIGlObject.cpp
-            } else if (type == "busstop") {
-                type = "busStop";
-            } else if (type == "containerstop") {
-                type = "containerStop";
-            } else if (type == "chargingstation") {
-                type = "chargingStation";
-            } else if (type == "parkingarea") {
-                type = "parkingArea";
             }
             const std::string id(text.mid(idS + 2, idE - idS - 2).text());
             return GUIGlObjectStorage::gIDStorage.getObjectBlocking(type + ":" + id);
         }
     }
-    return nullptr;
+    return 0;
 }
 
 
@@ -140,15 +131,12 @@ GUIMessageWindow::setCursorPos(FXint pos, FXbool notify) {
         if (viewIDs.empty()) {
             return;
         }
-        GUIGlChildWindow* const child = main->getViewByID(viewIDs[0]);
+        GUIGlChildWindow* const child = dynamic_cast<GUIGlChildWindow*>(main->getViewByID(viewIDs[0]));
         const FXString text = getText();
         const GUIGlObject* const glObj = getActiveStringObject(text, pos, lineStart(pos), lineEnd(pos));
-        if (glObj != nullptr) {
+        if (glObj != 0) {
             child->setView(glObj->getGlID());
             GUIGlObjectStorage::gIDStorage.unblockObject(glObj->getGlID());
-            if (getApp()->getKeyState(KEY_Control_L)) {
-                gSelected.toggleSelection(glObj->getGlID());
-            }
         }
     }
 }
@@ -162,23 +150,15 @@ GUIMessageWindow::appendMsg(GUIEventType eType, const std::string& msg) {
     // build the styled message
     FXint style = 1;
     switch (eType) {
-        case EVENT_DEBUG_OCCURRED:
-            // color: blue
-            style = 0;
-            break;
-        case EVENT_GLDEBUG_OCCURRED:
-            // color: fuchsia
-            style = 7;
-            break;
-        case EVENT_ERROR_OCCURRED:
+        case EVENT_ERROR_OCCURED:
             // color: red
             style = 2;
             break;
-        case EVENT_WARNING_OCCURRED:
+        case EVENT_WARNING_OCCURED:
             // color: yellow
             style = 3;
             break;
-        case EVENT_MESSAGE_OCCURRED:
+        case EVENT_MESSAGE_OCCURED:
             // color: green
             style = 1;
             break;
@@ -190,7 +170,7 @@ GUIMessageWindow::appendMsg(GUIEventType eType, const std::string& msg) {
         FXint pos = text.find("'");
         while (pos >= 0) {
             const GUIGlObject* const glObj = getActiveStringObject(text, pos + 1, 0, text.length());
-            if (glObj != nullptr) {
+            if (glObj != 0) {
                 GUIGlObjectStorage::gIDStorage.unblockObject(glObj->getGlID());
                 FXString insText = text.left(pos + 1);
                 FXText::appendStyledText(insText, style + 1);
@@ -242,17 +222,13 @@ GUIMessageWindow::clear() {
 
 void
 GUIMessageWindow::registerMsgHandlers() {
-    if (myMessageRetriever == nullptr) {
+    if (myMessageRetriever == 0) {
         // initialize only if registration is requested
-        myMessageRetriever = new MsgOutputDevice(this, EVENT_MESSAGE_OCCURRED);
-        myErrorRetriever = new MsgOutputDevice(this, EVENT_ERROR_OCCURRED);
-        myDebugRetriever = new MsgOutputDevice(this, EVENT_DEBUG_OCCURRED);
-        myGLDebugRetriever = new MsgOutputDevice(this, EVENT_GLDEBUG_OCCURRED);
-        myWarningRetriever = new MsgOutputDevice(this, EVENT_WARNING_OCCURRED);
+        myMessageRetriever = new MsgOutputDevice(this, EVENT_MESSAGE_OCCURED);
+        myErrorRetriever = new MsgOutputDevice(this, EVENT_ERROR_OCCURED);
+        myWarningRetriever = new MsgOutputDevice(this, EVENT_WARNING_OCCURED);
     }
     MsgHandler::getMessageInstance()->addRetriever(myMessageRetriever);
-    MsgHandler::getDebugInstance()->addRetriever(myDebugRetriever);
-    MsgHandler::getGLDebugInstance()->addRetriever(myGLDebugRetriever);
     MsgHandler::getErrorInstance()->addRetriever(myErrorRetriever);
     MsgHandler::getWarningInstance()->addRetriever(myWarningRetriever);
 }
@@ -261,8 +237,6 @@ GUIMessageWindow::registerMsgHandlers() {
 void
 GUIMessageWindow::unregisterMsgHandlers() {
     MsgHandler::getMessageInstance()->removeRetriever(myMessageRetriever);
-    MsgHandler::getDebugInstance()->removeRetriever(myDebugRetriever);
-    MsgHandler::getGLDebugInstance()->removeRetriever(myGLDebugRetriever);
     MsgHandler::getErrorInstance()->removeRetriever(myErrorRetriever);
     MsgHandler::getWarningInstance()->removeRetriever(myWarningRetriever);
 }

@@ -29,9 +29,8 @@ MSVehicleControl.cpp MSVehicleControl.h \
 MSVehicleTransfer.cpp MSVehicleTransfer.h \
 MSVehicleType.cpp MSVehicleType.h \
 MSStateHandler.h MSStateHandler.cpp \
-MSDriverState.h MSDriverState.cpp \
 MSTransportable.h MSTransportable.cpp \
 MSTransportableControl.h MSTransportableControl.cpp
 
-SUBDIRS = actions cfmodels devices engine lcmodels logging output pedestrians \
+SUBDIRS = actions cfmodels devices lcmodels logging output pedestrians \
 traffic_lights trigger

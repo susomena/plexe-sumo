@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RORouteDef.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,17 +8,32 @@
 ///
 // Base class for a vehicle's route definition
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <iterator>
 #include <algorithm>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/ToString.h>
 #include <utils/common/Named.h>
 #include <utils/common/StringUtils.h>
@@ -36,8 +43,8 @@
 #include <utils/options/OptionsCont.h>
 #include "ROEdge.h"
 #include "RORoute.h"
-#include <utils/router/SUMOAbstractRouter.h>
-#include <utils/router/RouteCostCalculator.h>
+#include <utils/vehicle/SUMOAbstractRouter.h>
+#include <utils/vehicle/RouteCostCalculator.h>
 #include "RORouteDef.h"
 #include "ROVehicle.h"
 
@@ -52,7 +59,7 @@ bool RORouteDef::myUsingJTRR(false);
 RORouteDef::RORouteDef(const std::string& id, const int lastUsed,
                        const bool tryRepair, const bool mayBeDisconnected) :
     Named(StringUtils::convertUmlaute(id)),
-    myPrecomputed(nullptr), myLastUsed(lastUsed), myTryRepair(tryRepair), myMayBeDisconnected(mayBeDisconnected) {
+    myPrecomputed(0), myLastUsed(lastUsed), myTryRepair(tryRepair), myMayBeDisconnected(mayBeDisconnected) {
 }
 
 
@@ -83,7 +90,7 @@ RORouteDef::addAlternativeDef(const RORouteDef* alt) {
 RORoute*
 RORouteDef::buildCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
                               SUMOTime begin, const ROVehicle& veh) const {
-    if (myPrecomputed == nullptr) {
+    if (myPrecomputed == 0) {
         preComputeCurrentRoute(router, begin, veh);
     }
     return myPrecomputed;
@@ -113,9 +120,7 @@ RORouteDef::preComputeCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router
                    myAlternatives[0]->getLast()->getID() + "'.");
         return;
     }
-    const bool skipTripRouting = (oc.exists("write-trips") && oc.getBool("write-trips") 
-            && RouteCostCalculator<RORoute, ROEdge, ROVehicle>::getCalculator().skipRouteCalculation());
-    if ((myTryRepair && !skipTripRouting) || myUsingJTRR) {
+    if (myTryRepair) {
         ConstROEdgeVector newEdges;
         if (repairCurrentRoute(router, begin, veh, myAlternatives[0]->getEdgeVector(), newEdges)) {
             if (myAlternatives[0]->getEdgeVector() != newEdges) {
@@ -123,7 +128,7 @@ RORouteDef::preComputeCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router
                     WRITE_WARNING("Repaired route of vehicle '" + veh.getID() + "'.");
                 }
                 myNewRoute = true;
-                RGBColor* col = myAlternatives[0]->getColor() != nullptr ? new RGBColor(*myAlternatives[0]->getColor()) : nullptr;
+                RGBColor* col = myAlternatives[0]->getColor() != 0 ? new RGBColor(*myAlternatives[0]->getColor()) : 0;
                 myPrecomputed = new RORoute(myID, 0, myAlternatives[0]->getProbability(), newEdges, col, myAlternatives[0]->getStops());
             } else {
                 myPrecomputed = myAlternatives[0];
@@ -152,7 +157,7 @@ RORouteDef::preComputeCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router
         if (cheapest >= 0) {
             myPrecomputed = myAlternatives[cheapest];
         } else {
-            RGBColor* col = myAlternatives[0]->getColor() != nullptr ? new RGBColor(*myAlternatives[0]->getColor()) : nullptr;
+            RGBColor* col = myAlternatives[0]->getColor() != 0 ? new RGBColor(*myAlternatives[0]->getColor()) : 0;
             myPrecomputed = new RORoute(myID, 0, 1, edges, col, myAlternatives[0]->getStops());
             myNewRoute = true;
         }
@@ -166,20 +171,22 @@ RORouteDef::repairCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
                                ConstROEdgeVector oldEdges, ConstROEdgeVector& newEdges) const {
     MsgHandler* mh = (OptionsCont::getOptions().getBool("ignore-errors") ?
                       MsgHandler::getWarningInstance() : MsgHandler::getErrorInstance());
+    ConstROEdgeVector mandatory;
     const int initialSize = (int)oldEdges.size();
     if (initialSize == 1) {
         if (myUsingJTRR) {
             /// only ROJTRRouter is supposed to handle this type of input
-            router.compute(oldEdges.front(), nullptr, &veh, begin, newEdges);
+            router.compute(oldEdges.front(), 0, &veh, begin, newEdges);
         } else {
             newEdges = oldEdges;
         }
     } else {
+        // prepare mandatory edges
         if (oldEdges.front()->prohibits(&veh)) {
             // option repair.from is in effect
             const std::string& frontID = oldEdges.front()->getID();
             for (ConstROEdgeVector::iterator i = oldEdges.begin(); i != oldEdges.end();) {
-                if ((*i)->prohibits(&veh) || (*i)->isInternal()) {
+                if ((*i)->prohibits(&veh)) {
                     i = oldEdges.erase(i);
                 } else {
                     WRITE_MESSAGE("Changing invalid starting edge '" + frontID
@@ -192,21 +199,40 @@ RORouteDef::repairCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
             mh->inform("Could not find new starting edge for vehicle '" + veh.getID() + "'.");
             return false;
         }
+        mandatory.push_back(oldEdges.front());
+        ConstROEdgeVector stops = veh.getStopEdges();
+        for (ConstROEdgeVector::const_iterator i = stops.begin(); i != stops.end(); ++i) {
+            if ((*i)->isInternal()) {
+                // the edges before and after the internal edge are mandatory
+                const ROEdge* before = (*i)->getNormalBefore();
+                const ROEdge* after = (*i)->getNormalAfter();
+                if (after != mandatory.back()) {
+                    mandatory.push_back(before);
+                    mandatory.push_back(after);
+                }
+            } else {
+                if (*i != mandatory.back()) {
+                    mandatory.push_back(*i);
+                }
+            }
+        }
         if (oldEdges.back()->prohibits(&veh)) {
             // option repair.to is in effect
             const std::string& backID = oldEdges.back()->getID();
             // oldEdges cannot get empty here, otherwise we would have left the stage when checking "from"
-            while (oldEdges.back()->prohibits(&veh) || oldEdges.back()->isInternal()) {
+            while (oldEdges.back()->prohibits(&veh)) {
                 oldEdges.pop_back();
             }
             WRITE_MESSAGE("Changing invalid destination edge '" + backID
                           + "' to edge '" + oldEdges.back()->getID() + "' for vehicle '" + veh.getID() + "'.");
         }
-        ConstROEdgeVector mandatory = veh.getMandatoryEdges(oldEdges.front(), oldEdges.back());
+        if (mandatory.size() < 2 || oldEdges.back() != mandatory.back()) {
+            mandatory.push_back(oldEdges.back());
+        }
         assert(mandatory.size() >= 2);
         // removed prohibited
         for (ConstROEdgeVector::iterator i = oldEdges.begin(); i != oldEdges.end();) {
-            if ((*i)->prohibits(&veh) || (*i)->isInternal()) {
+            if ((*i)->prohibits(&veh)) {
                 // no need to check the mandatories here, this was done before
                 i = oldEdges.erase(i);
             } else {
@@ -263,7 +289,7 @@ RORouteDef::repairCurrentRoute(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
 void
 RORouteDef::addAlternative(SUMOAbstractRouter<ROEdge, ROVehicle>& router,
                            const ROVehicle* const veh, RORoute* current, SUMOTime begin) {
-    if (myTryRepair || myUsingJTRR) {
+    if (myTryRepair) {
         if (myNewRoute) {
             delete myAlternatives[0];
             myAlternatives[0] = current;
@@ -373,7 +399,7 @@ RORouteDef*
 RORouteDef::copyOrigDest(const std::string& id) const {
     RORouteDef* result = new RORouteDef(id, 0, true, true);
     RORoute* route = myAlternatives[0];
-    RGBColor* col = route->getColor() != nullptr ? new RGBColor(*route->getColor()) : nullptr;
+    RGBColor* col = route->getColor() != 0 ? new RGBColor(*route->getColor()) : 0;
     ConstROEdgeVector edges;
     edges.push_back(route->getFirst());
     edges.push_back(route->getLast());
@@ -387,7 +413,7 @@ RORouteDef::copy(const std::string& id, const SUMOTime stopOffset) const {
     RORouteDef* result = new RORouteDef(id, 0, myTryRepair, myMayBeDisconnected);
     for (std::vector<RORoute*>::const_iterator i = myAlternatives.begin(); i != myAlternatives.end(); i++) {
         RORoute* route = *i;
-        RGBColor* col = route->getColor() != nullptr ? new RGBColor(*route->getColor()) : nullptr;
+        RGBColor* col = route->getColor() != 0 ? new RGBColor(*route->getColor()) : 0;
         RORoute* newRoute = new RORoute(id, 0, 1, route->getEdgeVector(), col, route->getStops());
         newRoute->addStopOffset(stopOffset);
         result->addLoadedAlternative(newRoute);

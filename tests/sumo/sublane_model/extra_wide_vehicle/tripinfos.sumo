@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Wed Jan 30 10:04:09 2019 by Eclipse SUMO Version v1_0_1+0645-93703db
-This data file and the accompanying materials
-are made available under the terms of the Eclipse Public License v2.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v20.html
-SPDX-License-Identifier: EPL-2.0
+<!-- generated on Wed Jun 21 18:41:01 2017 by SUMO Version dev-SVN-r24506
+<?xml version="1.0" encoding="UTF-8"?>
+
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
@@ -14,13 +11,11 @@ SPDX-License-Identifier: EPL-2.0
     </input>
 
     <output>
-        <write-license value="true"/>
         <tripinfo-output value="tripinfos.xml"/>
     </output>
 
     <processing>
         <lateral-resolution value="0.8"/>
-        <default.speeddev value="0"/>
     </processing>
 
     <report>
@@ -32,6 +27,6 @@ SPDX-License-Identifier: EPL-2.0
 -->
 
 <tripinfos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tripinfo_file.xsd">
-    <tripinfo id="car" depart="0.00" departLane="beg_0" departPos="0.00" departPosLat="0.00" departSpeed="0.00" departDelay="0.00" arrival="51.00" arrivalLane="beg_0" arrivalPos="500.00" arrivalPosLat="0.00" arrivalSpeed="12.96" duration="51.00" routeLength="500.00" waitingTime="0.00" waitingCount="0" stopTime="6.00" timeLoss="8.82" rerouteNo="0" devices="tripinfo_car" vType="car" speedFactor="1.00" vaporized=""/>
-    <tripinfo id="wide" depart="3.00" departLane="beg_1" departPos="0.00" departPosLat="-0.40" departSpeed="0.00" departDelay="1.00" arrival="53.00" arrivalLane="beg_1" arrivalPos="500.00" arrivalPosLat="-0.40" arrivalSpeed="17.17" duration="50.00" routeLength="500.00" waitingTime="3.00" waitingCount="1" stopTime="0.00" timeLoss="25.44" rerouteNo="0" devices="tripinfo_wide" vType="wide_car" speedFactor="1.50" vaporized=""/>
+    <tripinfo id="car" depart="0.00" departLane="beg_0" departPos="0.00" departPosLat="0.00" departSpeed="0.00" departDelay="0.00" arrival="51.00" arrivalLane="beg_0" arrivalPos="500.00" arrivalPosLat="0.00" arrivalSpeed="13.25" duration="51.00" routeLength="500.00" waitSteps="0" timeLoss="8.95" rerouteNo="0" devices="tripinfo_car" vType="car" speedFactor="1.00" vaporized=""/>
+    <tripinfo id="wide" depart="3.00" departLane="beg_1" departPos="0.00" departPosLat="-0.40" departSpeed="0.00" departDelay="1.00" arrival="53.00" arrivalLane="beg_1" arrivalPos="500.00" arrivalPosLat="-0.40" arrivalSpeed="16.46" duration="50.00" routeLength="500.00" waitSteps="3" timeLoss="25.61" rerouteNo="0" devices="tripinfo_wide" vType="wide_car" speedFactor="1.50" vaporized=""/>
 </tripinfos>

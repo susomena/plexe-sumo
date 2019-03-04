@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSTransportableControl.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // Stores all persons or containers in the net and handles their waiting for cars.
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSTransportableControl_h
 #define MSTransportableControl_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <map>
@@ -67,7 +74,7 @@ public:
     virtual ~MSTransportableControl();
 
 
-    /** @brief Adds a single transportable, returns false if an id clash occurred
+    /** @brief Adds a single transportable, returns false if an id clash occured
      * @param[in] transportable The transportable to add
      * @return Whether the transportable could be added (none with the same id existed before)
      */
@@ -100,7 +107,7 @@ public:
      * @param[in] the stop at which the vehicle is stopping
      * @return Whether any transportables have been boarded
      */
-    bool boardAnyWaiting(MSEdge* edge, SUMOVehicle* vehicle, const SUMOVehicleParameter::Stop& stop, SUMOTime& timeToBoardNextPerson, SUMOTime& stopDuration);
+    bool boardAnyWaiting(MSEdge* edge, MSVehicle* vehicle, MSVehicle::Stop* stop);
 
     /** @brief load any applicable containers
     * Loads any container that is waiting on that edge for the given vehicle and removes them from myWaiting
@@ -108,16 +115,13 @@ public:
     * @param[in] the vehicle which is taking on containers
     * @return Whether any containers have been loaded
     */
-    bool loadAnyWaiting(MSEdge* edge, SUMOVehicle* vehicle, const SUMOVehicleParameter::Stop& stop, SUMOTime& timeToLoadNextContainer, SUMOTime& stopDuration);
+    bool loadAnyWaiting(MSEdge* edge, MSVehicle* vehicle, MSVehicle::Stop* stop);
 
     /// checks whether any transportable waits to finish her plan
     bool hasTransportables() const;
 
     /// checks whether any transportable is still engaged in walking / stopping
     bool hasNonWaiting() const;
-
-    /// @brief return the number of active transportable objects
-    int getActiveCount();
 
     /// aborts the plan for any transportable that is still waiting for a ride
     void abortWaitingForVehicle();
@@ -129,10 +133,8 @@ public:
      * @param[in] pars The parameter
      * @param[in] vtype The type (reusing vehicle type container here)
      * @param[in] plan This person's plan
-     * @param[in] rng The RNG to compute the optional speed deviation
      */
-    virtual MSTransportable* buildPerson(const SUMOVehicleParameter* pars, MSVehicleType* vtype, MSTransportable::MSTransportablePlan* plan,
-                                         std::mt19937* rng) const;
+    virtual MSTransportable* buildPerson(const SUMOVehicleParameter* pars, MSVehicleType* vtype, MSTransportable::MSTransportablePlan* plan) const;
 
     /** @brief Builds a new container
     * @param[in] pars The parameter

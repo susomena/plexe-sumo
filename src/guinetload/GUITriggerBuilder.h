@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUITriggerBuilder.h
 /// @author  Daniel Krajzewicz
 /// @author  Sascha Krieg
@@ -17,6 +9,17 @@
 ///
 // Builds trigger objects for guisim
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUITriggerBuilder_h
 #define GUITriggerBuilder_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <netload/NLTriggerBuilder.h>
@@ -92,9 +99,7 @@ protected:
      */
     virtual MSTriggeredRerouter* buildRerouter(MSNet& net,
             const std::string& id, MSEdgeVector& edges,
-            double prob, const std::string& file, bool off,
-            SUMOTime timeThreshold,
-            const std::string& vTypes);
+            double prob, const std::string& file, bool off);
 
 
     /** @brief Builds a bus stop
@@ -134,13 +139,12 @@ protected:
                                   const std::vector<std::string>& lines, MSLane* lane,
                                   double frompos, double topos,
                                   unsigned int capacity,
-                                  double width, double length, double angle, const std::string& name,
-                                  bool onRoad);
+                                  double width, double length, double angle);
 
 
     /** @brief Builds a charging station
      *
-     * Simply calls the GUIChargingStation constructor.
+     * Simply calls the ChrgSTN constructor.
      *
      * @param[in] net The net the charging station belongs to
      * @param[in] id The id of the charging station
@@ -154,9 +158,8 @@ protected:
      * @exception InvalidArgument If the charging station can not be added to the net (is duplicate)
      */
     virtual void buildChargingStation(MSNet& net, const std::string& id, MSLane* lane,
-                                      double frompos, double topos, const std::string& name,
-                                      double chargingPower, double efficiency,
-                                      bool chargeInTransit, double chargeDelay);
+                                      double frompos, double topos, double chargingPower, double efficiency,
+                                      bool chargeInTransit, int chargeDelay);
 
     /** @brief builds a microscopic calibrator
      *
@@ -180,12 +183,6 @@ protected:
      * (it must be added to the SUMORTree after all parking spaces are loaded
      */
     virtual void endParkingArea();
-
-    /** @brief End a stopping place
-     *
-     * @exception InvalidArgument If the current stopping place is 0
-     */
-    virtual void endStoppingPlace();
 };
 
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PCLoaderVisum.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,12 +9,27 @@
 ///
 // A reader of pois and polygons stored in VISUM-format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -31,7 +38,7 @@
 #include <utils/common/UtilExceptions.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/StringUtils.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/ToString.h>
 #include <utils/common/FileHelpers.h>
 #include <utils/options/OptionsCont.h>
@@ -91,9 +98,9 @@ PCLoaderVisum::load(const std::string& file, OptionsCont& oc, PCPolyContainer& t
         // read items
         if (what == "$PUNKT") {
             lineParser.parseLine(line);
-            long long int id = StringUtils::toLong(lineParser.get("ID"));
-            double x = StringUtils::toDouble(lineParser.get("XKOORD"));
-            double y = StringUtils::toDouble(lineParser.get("YKOORD"));
+            long long int id = TplConvert::_2long(lineParser.get("ID").c_str());
+            double x = TplConvert::_2double(lineParser.get("XKOORD").c_str());
+            double y = TplConvert::_2double(lineParser.get("YKOORD").c_str());
             Position pos(x, y);
             if (!geoConvHelper.x2cartesian(pos)) {
                 WRITE_WARNING("Unable to project coordinates for point '" + toString(id) + "'.");
@@ -102,9 +109,9 @@ PCLoaderVisum::load(const std::string& file, OptionsCont& oc, PCPolyContainer& t
             continue;
         } else if (what == "$KANTE") {
             lineParser.parseLine(line);
-            long long int id = StringUtils::toLong(lineParser.get("ID"));
-            long long int fromID = StringUtils::toLong(lineParser.get("VONPUNKTID"));
-            long long int toID = StringUtils::toLong(lineParser.get("NACHPUNKTID"));
+            long long int id = TplConvert::_2long(lineParser.get("ID").c_str());
+            long long int fromID = TplConvert::_2long(lineParser.get("VONPUNKTID").c_str());
+            long long int toID = TplConvert::_2long(lineParser.get("NACHPUNKTID").c_str());
             PositionVector vec;
             vec.push_back(punkte[fromID]);
             vec.push_back(punkte[toID]);
@@ -112,10 +119,10 @@ PCLoaderVisum::load(const std::string& file, OptionsCont& oc, PCPolyContainer& t
             continue;
         } else if (what == "$ZWISCHENPUNKT") {
             lineParser.parseLine(line);
-            long long int id = StringUtils::toLong(lineParser.get("KANTEID"));
-            int index = StringUtils::toInt(lineParser.get("INDEX"));
-            double x = StringUtils::toDouble(lineParser.get("XKOORD"));
-            double y = StringUtils::toDouble(lineParser.get("YKOORD"));
+            long long int id = TplConvert::_2long(lineParser.get("KANTEID").c_str());
+            int index = TplConvert::_2int(lineParser.get("INDEX").c_str());
+            double x = TplConvert::_2double(lineParser.get("XKOORD").c_str());
+            double y = TplConvert::_2double(lineParser.get("YKOORD").c_str());
             Position pos(x, y);
             if (!geoConvHelper.x2cartesian(pos)) {
                 WRITE_WARNING("Unable to project coordinates for edge '" + toString(id) + "'.");
@@ -124,11 +131,11 @@ PCLoaderVisum::load(const std::string& file, OptionsCont& oc, PCPolyContainer& t
             continue;
         } else if (what == "$TEILFLAECHENELEMENT") {
             lineParser.parseLine(line);
-            long long int id = StringUtils::toLong(lineParser.get("TFLAECHEID"));
-            //int index = StringUtils::toInt(lineParser.get("INDEX"));
+            long long int id = TplConvert::_2long(lineParser.get("TFLAECHEID").c_str());
+            //int index = TplConvert::_2int(lineParser.get("INDEX").c_str());
             //index = 0; /// hmmmm - assume it's sorted...
-            long long int kid = StringUtils::toLong(lineParser.get("KANTEID"));
-            int dir = StringUtils::toInt(lineParser.get("RICHTUNG"));
+            long long int kid = TplConvert::_2long(lineParser.get("KANTEID").c_str());
+            int dir = TplConvert::_2int(lineParser.get("RICHTUNG").c_str());
             if (teilflaechen.find(id) == teilflaechen.end()) {
                 teilflaechen[id] = PositionVector();
             }
@@ -144,8 +151,8 @@ PCLoaderVisum::load(const std::string& file, OptionsCont& oc, PCPolyContainer& t
             continue;
         } else if (what == "$FLAECHENELEMENT") {
             lineParser.parseLine(line);
-            long long int id = StringUtils::toLong(lineParser.get("FLAECHEID"));
-            long long int tid = StringUtils::toLong(lineParser.get("TFLAECHEID"));
+            long long int id = TplConvert::_2long(lineParser.get("FLAECHEID").c_str());
+            long long int tid = TplConvert::_2long(lineParser.get("TFLAECHEID").c_str());
             flaechenelemente[id] = tid;
             continue;
         }
@@ -210,12 +217,12 @@ PCLoaderVisum::load(const std::string& file, OptionsCont& oc, PCPolyContainer& t
             // parse the poi
             // $POI:Nr;CATID;CODE;NAME;Kommentar;XKoord;YKoord;
             lineParser.parseLine(line);
-            long long int idL = StringUtils::toLong(lineParser.get("Nr"));
+            long long int idL = TplConvert::_2long(lineParser.get("Nr").c_str());
             std::string id = toString(idL);
             std::string catid = lineParser.get("CATID");
             // process read values
-            double x = StringUtils::toDouble(lineParser.get("XKoord"));
-            double y = StringUtils::toDouble(lineParser.get("YKoord"));
+            double x = TplConvert::_2double(lineParser.get("XKoord").c_str());
+            double y = TplConvert::_2double(lineParser.get("YKoord").c_str());
             Position pos(x, y);
             if (!geoConvHelper.x2cartesian(pos)) {
                 WRITE_WARNING("Unable to project coordinates for POI '" + id + "'.");
@@ -238,7 +245,7 @@ PCLoaderVisum::load(const std::string& file, OptionsCont& oc, PCPolyContainer& t
                 color = c;
             }
             if (!discard) {
-                PointOfInterest* poi = new PointOfInterest(id, type, color, pos, false, "", 0, 0, layer);
+                PointOfInterest* poi = new PointOfInterest(id, type, color, pos, layer);
                 toFill.add(poi);
             }
         }
@@ -266,7 +273,7 @@ PCLoaderVisum::load(const std::string& file, OptionsCont& oc, PCPolyContainer& t
                     color = c;
                 }
                 if (!discard) {
-                    SUMOPolygon* poly = new SUMOPolygon(id, type, color, vec, false, false, 1, layer);
+                    SUMOPolygon* poly = new SUMOPolygon(id, type, color, vec, false, layer);
                     toFill.add(poly);
                 }
                 vec.clear();
@@ -288,11 +295,11 @@ PCLoaderVisum::load(const std::string& file, OptionsCont& oc, PCPolyContainer& t
         if (parsingDistrictsDirectly) {
             //$BEZIRK:NR	CODE	NAME	TYPNR	XKOORD	YKOORD	FLAECHEID	BEZART	IVANTEIL_Q	IVANTEIL_Z	OEVANTEIL	METHODEANBANTEILE	ZWERT1	ZWERT2	ZWERT3	ISTINAUSWAHL	OBEZNR	NOM_COM	COD_COM
             lineParser.parseLine(line);
-            long long int idL = StringUtils::toLong(lineParser.get("NR"));
+            long long int idL = TplConvert::_2long(lineParser.get("NR").c_str());
             std::string id = toString(idL);
-            long long int area = StringUtils::toLong(lineParser.get("FLAECHEID"));
-            double x = StringUtils::toDouble(lineParser.get("XKOORD"));
-            double y = StringUtils::toDouble(lineParser.get("YKOORD"));
+            long long int area = TplConvert::_2long(lineParser.get("FLAECHEID").c_str());
+            double x = TplConvert::_2double(lineParser.get("XKOORD").c_str());
+            double y = TplConvert::_2double(lineParser.get("YKOORD").c_str());
             // patch the values
             std::string type = "district";
             bool discard = oc.getBool("discard");
@@ -312,14 +319,14 @@ PCLoaderVisum::load(const std::string& file, OptionsCont& oc, PCPolyContainer& t
             }
             if (!discard) {
                 if (teilflaechen[flaechenelemente[area]].size() > 0) {
-                    SUMOPolygon* poly = new SUMOPolygon(id, type, color, teilflaechen[flaechenelemente[area]], false, false, 1, layer);
+                    SUMOPolygon* poly = new SUMOPolygon(id, type, color, teilflaechen[flaechenelemente[area]], false, layer);
                     toFill.add(poly);
                 } else {
                     Position pos(x, y);
                     if (!geoConvHelper.x2cartesian(pos)) {
                         WRITE_WARNING("Unable to project coordinates for POI '" + id + "'.");
                     }
-                    PointOfInterest* poi = new PointOfInterest(id, type, color, pos, "", nullptr, 0, layer);
+                    PointOfInterest* poi = new PointOfInterest(id, type, color, pos, layer);
                     toFill.add(poi);
                 }
             }

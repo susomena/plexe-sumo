@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOVTypeParameter.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Structure representing possible vehicle parameter
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef SUMOVTypeParameter_h
 #define SUMOVTypeParameter_h
 
@@ -23,7 +26,13 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
+
 #include <config.h>
+
+#endif
 
 #include <string>
 #include <map>
@@ -66,12 +75,7 @@ const int VTYPEPARS_CAR_FOLLOW_MODEL = 1 << 19;
 const int VTYPEPARS_MAXSPEED_LAT_SET = 1 << 20;
 const int VTYPEPARS_LATALIGNMENT_SET = 1 << 21;
 const int VTYPEPARS_MINGAP_LAT_SET = 1 << 22;
-const int VTYPEPARS_ACTIONSTEPLENGTH_SET = 1 << 23;
-const int VTYPEPARS_HASDRIVERSTATE_SET = 1 << 24;
 
-
-const int VTYPEPARS_DEFAULT_EMERGENCYDECEL_DEFAULT = -1;
-const int VTYPEPARS_DEFAULT_EMERGENCYDECEL_DECEL = -2;
 
 // ===========================================================================
 // struct definitions
@@ -94,7 +98,7 @@ public:
      * @return Whether the given parameter was set
      */
     bool wasSet(int what) const {
-        return (parametersSet & what) != 0;
+        return (setParameter & what) != 0;
     }
 
 
@@ -131,12 +135,6 @@ public:
      */
     double getLCParam(const SumoXMLAttr attr, const double defaultValue) const;
 
-    /// @brief sub-model parameters
-    typedef std::map<SumoXMLAttr, std::string> SubParams;
-
-    /// @brief Returns the LC parameter
-    const SubParams& getLCParams() const;
-
     /** @brief Returns the named value from the map, or the default if it is not contained there
      * @param[in] attr The corresponding xml attribute
      * @param[in] defaultValue The value to return if the given map does not contain the named variable
@@ -154,9 +152,6 @@ public:
     double minGap;
     /// @brief The vehicle type's maximum speed [m/s]
     double maxSpeed;
-    /// @brief The vehicle type's default actionStepLength [ms], i.e. the interval between two control actions.
-    ///        The default value of 0ms. induces the value to be traced from MSGlobals::gActionStepLength
-    SUMOTime actionStepLength;
     /// @brief The probability when being added to a distribution without an explicit probability
     double defaultProbability;
     /// @brief The factor by which the maximum speed may deviate from the allowed max speed on the street
@@ -201,9 +196,8 @@ public:
     /// @brief The enum-representation of the car-following model to use
     SumoXMLTag cfModel;
 
-    /// @brief Whether vehicles of this type are equipped with a driver (i.e. MSDriverState))
-    bool hasDriverState;
-
+    /// @brief sub-model parameters
+    typedef std::map<SumoXMLAttr, std::string> SubParams;
     /// @brief Car-following parameter
     SubParams cfParameter;
     /// @brief Lane-changing parameter
@@ -221,20 +215,15 @@ public:
     /// @brief The vehicle type's minimum lateral gap [m]
     double minGapLat;
 
-    /// @brief the length of train carriages and locomotive
-    double carriageLength;
-    double locomotiveLength;
-    double carriageGap;
-
     /// @brief Information for the router which parameter were set
-    int parametersSet;
+    int setParameter;
 
 
     /// @brief Information whether this type was already saved (needed by routers)
     mutable bool saved;
 
     /// @brief Information whether this is a type-stub, being only referenced but not defined (needed by routers)
-    bool onlyReferenced;
+    mutable bool onlyReferenced;
 
     /** @brief Returns the default acceleration for the given vehicle class
      * This needs to be a function because the actual value is stored in the car following model
@@ -253,10 +242,9 @@ public:
     /** @brief Returns the default emergency deceleration for the given vehicle class
      * This needs to be a function because the actual value is stored in the car following model
      * @param[in] vc the vehicle class
-     * @param[in] decel the deceleration of the vehicle type
-     * @return the emergency deceleration in m/s^2
+     * @return the deceleration in m/s^2
      */
-    static double getDefaultEmergencyDecel(const SUMOVehicleClass vc, double decel, double defaultOption);
+    static double getDefaultEmergencyDecel(const SUMOVehicleClass vc = SVC_IGNORING);
 
     /** @brief Returns the default driver's imperfection (sigma or epsilon in Krauss' model) for the given vehicle class
      * This needs to be a function because the actual value is stored in the car following model

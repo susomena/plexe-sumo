@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    OptionsCont.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,12 +9,27 @@
 ///
 // A storage for options (typed value containers)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef OptionsCont_h
 #define OptionsCont_h
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include <string>
@@ -176,11 +183,11 @@ public:
      * @param[in] filled Whether only set (and not default) options shall be written
      * @param[in] complete Whether all options shall be written
      * @param[in] addComments Whether comments (option descriptions) shall be written
-     * @param[in] inComment Whether -- in input shall be converted to &#45;&#45; (semantically equivalent but allowed in XML comments)
+     * @param[in] maskDoubleHyphen Whether -- in input shall be converted to &#45;&#45; (semantically equivalent but allowed in XML comments)
      */
     void writeConfiguration(std::ostream& os, const bool filled,
                             const bool complete, const bool addComments,
-                            const bool inComment = false) const;
+                            const bool maskDoubleHyphen = false) const;
 
 
     /** @brief Writes the xml schema for the configuration
@@ -189,8 +196,9 @@ public:
      *  allowing to validate the configuration against.
      *
      * @param[in] os The stream to write the schema into
+     * @param[in] addComments Whether comments (option descriptions) shall be written
      */
-    void writeSchema(std::ostream& os);
+    void writeSchema(std::ostream& os, bool addComments);
 
 
     /** @brief Writes a standard XML header, including the configuration
@@ -201,7 +209,7 @@ public:
      *
      * @param[in] os The stream to write the header into
      */
-    void writeXMLHeader(std::ostream& os, const bool includeConfig = true) const;
+    void writeXMLHeader(std::ostream& os);
     /// @}
 
 
@@ -393,14 +401,6 @@ public:
      **/
     std::vector<std::string> getSynonymes(const std::string& name) const;
 
-    /** @brief Returns the option description
-     *
-     * @param[in] name The name of the option to return the description of
-     * @return description
-     * @exception InvalidArgument If the named option does not exist
-     **/
-    const std::string& getDescription(const std::string& name) const;
-
 
     /** @brief Returns the information whether the named option may be set
      *
@@ -485,18 +485,6 @@ public:
      * @exception InvalidArgument If the option does not exist or is not a int-vector-option
      */
     const IntVector& getIntVector(const std::string& name) const;
-
-    /** @brief Returns the list of double-value of the named option (only for Option_FloatVector)
-     *
-     * This method returns the float-vector-value of an existing float-vector-option.
-     * If the named option does not exist or is not a float-vector-option, an
-     *  InvalidArgument is thrown.
-     *
-     * @param[in] name The name of the option to return the float-vector-value of
-     * @return The float-vector-value of the named, existing float-vector-option
-     * @exception InvalidArgument If the option does not exist or is not a float-vector-option
-     */
-    const FloatVector& getFloatVector(const std::string& name) const;
 
 
     /** @brief Returns the list of string-vector-value of the named option (only for Option_String)
@@ -753,9 +741,6 @@ private:
 
     /// Information whether a warning a deprecated divider
     mutable bool myHaveInformedAboutDeprecatedDivider;
-
-    /// Information whether we should always include license information in file headers
-    bool myWriteLicense;
 
 
 private:

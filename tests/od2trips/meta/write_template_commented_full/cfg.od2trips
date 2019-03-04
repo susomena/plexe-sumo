@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Wed Aug 15 14:29:15 2018 by Eclipse SUMO od2trips Version 7cc56db
--->
-
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/od2tripsConfiguration.xsd">
 
     <configuration>
@@ -10,7 +7,7 @@
         <configuration-file value="" synonymes="c configuration" type="FILE"/>
 
         <!-- Saves current configuration into FILE -->
-        <save-configuration value="" synonymes="C save-config" type="FILE"/>
+        <save-configuration value="" synonymes="save-config" type="FILE"/>
 
         <!-- Saves a configuration template (empty) into FILE -->
         <save-template value="" type="FILE"/>
@@ -36,9 +33,6 @@
     </input>
 
     <output>
-        <!-- Include license info into every output file -->
-        <write-license value="false" type="BOOL"/>
-
         <!-- Prefix which is applied to all output files. The special string &apos;TIME&apos; is replaced by the current time. -->
         <output-prefix value="" type="STR"/>
 
@@ -47,9 +41,6 @@
 
         <!-- Defines the number of digits after the comma for lon,lat output -->
         <precision.geo value="6" type="INT"/>
-
-        <!-- Write time values as hour:minute:second or day:hour:minute:second rathern than seconds -->
-        <human-readable-time value="false" synonymes="H" type="BOOL"/>
 
         <!-- Writes trip definitions into FILE -->
         <output-file value="" synonymes="o output" type="FILE"/>
@@ -101,6 +92,9 @@
 
         <!-- Uses STR as a 24h-timeline definition -->
         <timeline.day-in-hours value="false" type="BOOL"/>
+
+        <!-- Continue on broken input -->
+        <ignore-errors value="false" synonymes="dismiss-loading-errors" type="BOOL"/>
 
         <!-- Disable console output of current time step -->
         <no-step-log value="false" type="BOOL"/>
@@ -158,9 +152,6 @@
 
         <!-- Writes all warnings and errors to FILE -->
         <error-log value="" type="FILE"/>
-
-        <!-- Continue on broken input -->
-        <ignore-errors value="false" synonymes="dismiss-loading-errors" type="BOOL"/>
 
     </report>
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIGlObject_AbstractAdd.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,33 +8,48 @@
 ///
 // Base class for additional objects (detectors etc.)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "GUIGlObject_AbstractAdd.h"
 #include <cassert>
 #include <iostream>
 #include <algorithm>
 #include <utils/gui/div/GLHelper.h>
+#include <foreign/polyfonts/polyfonts.h>
 
 
 // ===========================================================================
 // static member definitions
 // ===========================================================================
-
 std::map<std::string, GUIGlObject_AbstractAdd*> GUIGlObject_AbstractAdd::myObjects;
 std::vector<GUIGlObject_AbstractAdd*> GUIGlObject_AbstractAdd::myObjectList;
+
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
-
-GUIGlObject_AbstractAdd::GUIGlObject_AbstractAdd(GUIGlObjectType type, const std::string& id) :
-    GUIGlObject(type, id) {
+GUIGlObject_AbstractAdd::GUIGlObject_AbstractAdd(const std::string& prefix, GUIGlObjectType type, const std::string& id) :
+    GUIGlObject(prefix, type, id) {
     myObjects[getFullName()] = this;
     myObjectList.push_back(this);
 }
@@ -64,12 +71,11 @@ GUIGlObject_AbstractAdd::clearDictionary() {
 
 GUIGlObject_AbstractAdd*
 GUIGlObject_AbstractAdd::get(const std::string& name) {
-    auto i = myObjects.find(name);
+    std::map<std::string, GUIGlObject_AbstractAdd*>::iterator i = myObjects.find(name);
     if (i == myObjects.end()) {
-        return nullptr;
-    } else {
-        return i->second;
+        return 0;
     }
+    return (*i).second;
 }
 
 
@@ -87,43 +93,11 @@ GUIGlObject_AbstractAdd::getObjectList() {
 
 
 std::vector<GUIGlID>
-GUIGlObject_AbstractAdd::getIDList(GUIGlObjectType typeFilter) {
+GUIGlObject_AbstractAdd::getIDList(int typeFilter) {
     std::vector<GUIGlID> ret;
-    if (typeFilter == GLO_NETWORK) {
-        return ret;
-    } else if (typeFilter == GLO_NETELEMENT) {
-        // obtain all netElements
-        for (auto i : myObjectList) {
-            if ((i->getType() > GLO_NETELEMENT) && (i->getType() < GLO_ADDITIONAL)) {
-                ret.push_back(i->getGlID());
-            }
-        }
-    } else if (typeFilter == GLO_ADDITIONAL) {
-        // obtain all additionals
-        for (auto i : myObjectList) {
-            if ((i->getType() > GLO_ADDITIONAL) && (i->getType() < GLO_SHAPE)) {
-                ret.push_back(i->getGlID());
-            }
-        }
-    } else if (typeFilter == GLO_SHAPE) {
-        // obtain all Shapes
-        for (auto i : myObjectList) {
-            if ((i->getType() > GLO_SHAPE) && (i->getType() < GLO_ROUTEELEMENT)) {
-                ret.push_back(i->getGlID());
-            }
-        }
-    } else if (typeFilter == GLO_ROUTEELEMENT) {
-        // obtain all Shapes
-        for (auto i : myObjectList) {
-            if ((i->getType() > GLO_ROUTEELEMENT) && (i->getType() < GLO_MAX)) {
-                ret.push_back(i->getGlID());
-            }
-        }
-    } else {
-        for (auto i : myObjectList) {
-            if ((i->getType() & typeFilter) != 0) {
-                ret.push_back(i->getGlID());
-            }
+    for (std::vector<GUIGlObject_AbstractAdd*>::iterator i = myObjectList.begin(); i != myObjectList.end(); ++i) {
+        if (((*i)->getType() & typeFilter) != 0) {
+            ret.push_back((*i)->getGlID());
         }
     }
     return ret;

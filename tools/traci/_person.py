@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    person.py
+@author  Jakob Erdmann
+@date    2015-02-06
+@version $Id$
 
-# @file    _person.py
-# @author  Jakob Erdmann
-# @date    2015-02-06
-# @version $Id$
+Python implementation of the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import struct
 from .domain import Domain
@@ -19,13 +23,11 @@ from .storage import Storage
 from . import constants as tc
 
 
-_RETURN_VALUE_FUNC = {tc.TRACI_ID_LIST: Storage.readStringList,
+_RETURN_VALUE_FUNC = {tc.ID_LIST: Storage.readStringList,
                       tc.ID_COUNT: Storage.readInt,
                       tc.VAR_SPEED: Storage.readDouble,
                       tc.VAR_POSITION: lambda result: result.read("!dd"),
-                      tc.VAR_POSITION3D: lambda result: result.read("!ddd"),
                       tc.VAR_ANGLE: Storage.readDouble,
-                      tc.VAR_SLOPE: Storage.readDouble,
                       tc.VAR_ROAD_ID: Storage.readString,
                       tc.VAR_TYPE: Storage.readString,
                       tc.VAR_ROUTE_ID: Storage.readString,
@@ -44,6 +46,8 @@ _RETURN_VALUE_FUNC = {tc.TRACI_ID_LIST: Storage.readStringList,
 
 
 class PersonDomain(Domain):
+    DEPART_NOW = -3
+
     def __init__(self):
         Domain.__init__(self, "person", tc.CMD_GET_PERSON_VARIABLE, tc.CMD_SET_PERSON_VARIABLE,
                         tc.CMD_SUBSCRIBE_PERSON_VARIABLE, tc.RESPONSE_SUBSCRIBE_PERSON_VARIABLE,
@@ -77,13 +81,6 @@ class PersonDomain(Domain):
         Returns the angle in degrees of the named person within the last step.
         """
         return self._getUniversal(tc.VAR_ANGLE, personID)
-
-    def getSlope(self, personID):
-        """getSlope(string) -> double
-
-        Returns the slope at the current position of the person in degrees
-        """
-        return self._getUniversal(tc.VAR_SLOPE, personID)
 
     def getRoadID(self, personID):
         """getRoadID(string) -> string
@@ -209,23 +206,25 @@ class PersonDomain(Domain):
             self.removeStage(personID, 1)
         self.removeStage(personID, 0)
 
-    def add(self, personID, edgeID, pos, depart=tc.DEPARTFLAG_NOW, typeID="DEFAULT_PEDTYPE"):
-        """add(string, string, double, double, string)
+    def add(self, personID, edgeID, pos, depart=DEPART_NOW, typeID="DEFAULT_PEDTYPE"):
+        """add(string, string, double, int, string)
         Inserts a new person to the simulation at the given edge, position and
         time (in s). This function should be followed by appending Stages or the person
-        will immediately vanish on departure.
+        will immediatly vanish on departure.
         """
+        if depart > 0:
+            depart *= 1000
         self._connection._beginMessage(tc.CMD_SET_PERSON_VARIABLE, tc.ADD, personID,
-                                       1 + 4 + 1 + 4 + len(typeID) + 1 + 4 + len(edgeID) + 1 + 8 + 1 + 8)
+                                       1 + 4 + 1 + 4 + len(typeID) + 1 + 4 + len(edgeID) + 1 + 4 + 1 + 8)
         self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 4)
         self._connection._packString(typeID)
         self._connection._packString(edgeID)
-        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, depart)
+        self._connection._string += struct.pack("!Bi", tc.TYPE_INTEGER, depart)
         self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, pos)
         self._connection._sendExact()
 
     def appendWaitingStage(self, personID, duration, description="waiting", stopID=""):
-        """appendWaitingStage(string, float, string, string)
+        """appendWaitingStage(string, int, string, string)
         Appends a waiting stage with duration in s to the plan of the given person
         """
         duration *= 1000
@@ -247,14 +246,13 @@ class PersonDomain(Domain):
     def appendWalkingStage(self, personID, edges, arrivalPos, duration=-1, speed=-1, stopID=""):
         """appendWalkingStage(string, stringList, double, int, double, string)
         Appends a walking stage to the plan of the given person
-        The walking speed can either be specified, computed from the duration parameter (in s) or taken from the
-        type of the person
+        The walking speed can either be specified, computed from the duration parameter (in s) or taken from the type of the person
         """
         if duration is not None:
             duration *= 1000
 
         if isinstance(edges, str):
-            edges = [edges]
+            edges = [edgeList]
         self._connection._beginMessage(tc.CMD_SET_PERSON_VARIABLE, tc.APPEND_STAGE, personID,
                                        1 + 4 +  # compound
                                        1 + 4 +  # stageType
@@ -316,27 +314,6 @@ class PersonDomain(Domain):
         self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 0)
         self._connection._sendExact()
 
-    def moveToXY(self, personID, edgeID, x, y, angle=tc.INVALID_DOUBLE_VALUE, keepRoute=1):
-        '''Place person at the given x,y coordinates and force it's angle to
-        the given value (for drawing).
-        If the angle is set to INVALID_DOUBLE_VALUE, the vehicle assumes the
-        natural angle of the edge on which it is driving.
-        If keepRoute is set to 1, the closest position
-        within the existing route is taken. If keepRoute is set to 0, the vehicle may move to
-        any edge in the network but it's route then only consists of that edge.
-        If keepRoute is set to 2 the person has all the freedom of keepRoute=0
-        but in addition to that may even move outside the road network.
-        edgeID is an optional placement hint to resolve ambiguities'''
-        self._connection._beginMessage(tc.CMD_SET_PERSON_VARIABLE, tc.MOVE_TO_XY,
-                                       personID, 1 + 4 + 1 + 4 + len(edgeID) + 1 + 8 + 1 + 8 + 1 + 8 + 1 + 1)
-        self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 5)
-        self._connection._packString(edgeID)
-        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, x)
-        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, y)
-        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, angle)
-        self._connection._string += struct.pack("!BB", tc.TYPE_BYTE, keepRoute)
-        self._connection._sendExact()
-
     def setSpeed(self, personID, speed):
         """setSpeed(string, double) -> None
 
@@ -387,14 +364,14 @@ class PersonDomain(Domain):
 
     def setColor(self, personID, color):
         """setColor(string, (integer, integer, integer, integer))
-
-        Sets the color for the vehicle with the given ID, i.e. (255,0,0) for the color red.
-        The fourth component (alpha) is optional.
+        sets color for person with the given ID.
+        i.e. (255,0,0,0) for the color red.
+        The fourth integer (alpha) is only used when drawing persons with raster images
         """
         self._connection._beginMessage(
             tc.CMD_SET_PERSON_VARIABLE, tc.VAR_COLOR, personID, 1 + 1 + 1 + 1 + 1)
-        self._connection._string += struct.pack("!BBBBB", tc.TYPE_COLOR, int(color[0]), int(color[1]), int(color[2]),
-                                                int(color[3]) if len(color) > 3 else 255)
+        self._connection._string += struct.pack("!BBBBB", tc.TYPE_COLOR, int(
+            color[0]), int(color[1]), int(color[2]), int(color[3]))
         self._connection._sendExact()
 
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSStoppingPlace.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,6 +7,17 @@
 ///
 // A lane area vehicles can halt at
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2005-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSStoppingPlace_h
 #define MSStoppingPlace_h
 
@@ -22,14 +25,17 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <algorithm>
 #include <map>
 #include <string>
 #include <utils/common/Named.h>
-#include <utils/common/Parameterised.h>
 
 
 // ===========================================================================
@@ -57,7 +63,7 @@ class Position;
  * Please note that using the last free space disallows vehicles to enter a
  *  free space in between other vehicles.
  */
-class MSStoppingPlace : public Named, public Parameterised {
+class MSStoppingPlace : public Named {
 public:
     /** @brief Constructor
      *
@@ -130,22 +136,12 @@ public:
      */
     double getLastFreePos(const SUMOVehicle& forVehicle) const;
 
-    /// @brief return whether the given vehicle fits at the given position
-    bool fits(double pos, const SUMOVehicle& veh) const;
 
     /** @brief Returns the next free waiting place for pedestrians / containers
      *
      * @return The next free waiting place for pedestrians / containers
      */
     Position getWaitPosition() const;
-
-    /** @brief Returns the lane position corresponding to getWaitPosition()
-     *
-     * @return The waiting position along the stop lane
-     */
-    double getWaitingPositionOnLane() const {
-        return myWaitingPos;
-    }
 
 
     /** @brief For vehicles at the stop this gives the the actual stopping
@@ -160,16 +156,6 @@ public:
         return (int)myWaitingTransportables.size();
     }
 
-    /** @brief Returns the number of stopped vehicles waiting on this stop
-    */
-    int getStoppedVehicleNumber() const {
-        return (int)myEndPositions.size();
-    }
-
-    double getLastFreePos() const {
-        return myLastFreePos;
-    }
-
     /// @brief adds a transportable to this stop
     void addTransportable(MSTransportable* p);
 
@@ -177,18 +163,12 @@ public:
     void removeTransportable(MSTransportable* p);
 
     /// @brief adds an access point to this stop
-    virtual bool addAccess(MSLane* lane, const double pos, const double length);
-
-    /// @brief lanes and positions connected to this stop
-    const std::vector<std::tuple<MSLane*, double, double> >& getAllAccessPos() const {
-        return myAccessPos;
+    virtual void addAccess(MSLane* lane, const double pos) {
+        myAccessPos.insert(std::make_pair(lane, pos));
     }
 
-    /// @brief the position on the given edge which is connected to this stop, -1 on failure
-    double getAccessPos(const MSEdge* edge) const;
-
-    /// @brief the distance from the access on the given edge to the stop, -1 on failure
-    double getAccessDistance(const MSEdge* edge) const;
+    /// @brief checks whether this stop provides access to the given edge
+    bool hasAccess(const MSEdge* edge) const;
 
 protected:
     /** @brief Computes the last free position on this stop
@@ -232,7 +212,7 @@ protected:
     std::vector<MSTransportable*> myWaitingTransportables;
 
     /// @brief lanes and positions connected to this stop
-    std::vector<std::tuple<MSLane*, double, double> > myAccessPos;
+    std::multimap<MSLane*, double> myAccessPos;
 
 private:
     /// @brief Invalidated copy constructor.

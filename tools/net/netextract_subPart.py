@@ -1,19 +1,11 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    netextract_subPart.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2007-02-21
-# @version $Id$
-
 """
+@file    netextract_subPart.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2007-02-21
+@version $Id$
+
 
 This script reads in the network given as first parameter.
 It extracts nodes given on the command line as well as the edges
@@ -21,6 +13,15 @@ It extracts nodes given on the command line as well as the edges
  start/end at. Write the so obtained nodes and edges
  into "<prefix>_nodes.nod.xml" and "<prefix>_edges.edg.xml"
  for their reuse in NETCONVERT
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -30,7 +31,7 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import sumolib.net  # noqa
+import sumolib.net
 
 
 def writeNodes(net, file):

@@ -1,39 +1,44 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOVehicleClass.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
 /// @author  Walter Bamberger
-/// @author  Laura Bieker-Walz
 /// @date    2006-01-24
 /// @version $Id$
 ///
 // Definitions of SUMO vehicle classes and helper functions
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
 #include "SUMOVehicleClass.h"
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/ToString.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/StringTokenizer.h>
 #include <utils/iodevices/OutputDevice.h>
-#include <utils/xml/SUMOSAXAttributes.h>
 
 
 // ===========================================================================
@@ -73,7 +78,7 @@ StringBijection<SUMOVehicleClass>::Entry sumoVehicleClassStringInitializer[] = {
     {"bicycle",           SVC_BICYCLE},
     {"pedestrian",        SVC_PEDESTRIAN},
     {"evehicle",          SVC_E_VEHICLE},
-    //{"automated",         SVC_AUTOMATED},
+    {"automated",         SVC_AUTOMATED},
     {"ship",              SVC_SHIP},
     {"custom1",           SVC_CUSTOM1},
     {"custom2",           SVC_CUSTOM2}
@@ -122,7 +127,6 @@ StringBijection<SUMOVehicleShape>::Entry sumoVehicleShapeStringInitializer[] = {
     {"emergency",             SVS_EMERGENCY},
     {"firebrigade",           SVS_FIREBRIGADE},
     {"police",                SVS_POLICE},
-    {"rickshaw",              SVS_RICKSHAW },
     {"",                      SVS_UNKNOWN}
 };
 
@@ -201,7 +205,7 @@ parseVehicleClasses(const std::string& allowedS) {
     while (sta.hasNext()) {
         const std::string s = sta.next();
         if (!SumoVehicleClassStrings.hasString(s)) {
-            WRITE_ERROR("Unknown vehicle class '" + s + "' encountered.");
+            WRITE_ERROR("Unknown vehicle class '" + s + "' encountered. It will be ignored.");
         } else {
             const SUMOVehicleClass vc = getVehicleClassID(s);
             const std::string& realName = SumoVehicleClassStrings.getString(vc);
@@ -251,9 +255,6 @@ invertPermissions(SVCPermissions permissions) {
 SVCPermissions
 parseVehicleClasses(const std::vector<std::string>& allowedS) {
     SVCPermissions result = 0;
-    if (std::find(allowedS.begin(), allowedS.end(), "all") != allowedS.end()) {
-        return SVCAll;
-    }
     for (std::vector<std::string>::const_iterator i = allowedS.begin(); i != allowedS.end(); ++i) {
         const SUMOVehicleClass vc = getVehicleClassID(*i);
         const std::string& realName = SumoVehicleClassStrings.getString(vc);
@@ -321,7 +322,7 @@ getVehicleShapeName(SUMOVehicleShape id) {
 
 
 bool isRailway(SVCPermissions permissions) {
-    return (permissions & SVC_RAIL_CLASSES) > 0 && (permissions & SVC_PASSENGER) == 0;
+    return (permissions & (SVC_RAIL_ELECTRIC | SVC_RAIL | SVC_RAIL_URBAN | SVC_TRAM)) > 0 && (permissions & SVC_PASSENGER) == 0;
 }
 
 
@@ -334,43 +335,9 @@ bool isForbidden(SVCPermissions permissions) {
     return (permissions & SVCAll) == 0;
 }
 
-bool isSidewalk(SVCPermissions permissions) {
-    return (permissions & SVCAll) == SVC_PEDESTRIAN;
-}
-
-bool noVehicles(SVCPermissions permissions) {
-    return isForbidden(permissions) || isSidewalk(permissions);
-}
-
-std::map<SVCPermissions, double> parseStopOffsets(const SUMOSAXAttributes& attrs, bool& ok) {
-    const std::string vClasses = attrs.getOpt<std::string>(SUMO_ATTR_VCLASSES, nullptr, ok, "");
-    const std::string exceptions = attrs.getOpt<std::string>(SUMO_ATTR_EXCEPTIONS, nullptr, ok, "");
-    if (attrs.hasAttribute(SUMO_ATTR_VCLASSES) && attrs.hasAttribute(SUMO_ATTR_EXCEPTIONS)) {
-        WRITE_ERROR("Simultaneous specification of vClasses and exceptions is not allowed!");
-        ok = false;
-        return std::map<SVCPermissions, double>();
-    }
-    const double value = attrs.get<double>(SUMO_ATTR_VALUE, nullptr, ok);
-
-    int vClassBitset;
-    if (attrs.hasAttribute(SUMO_ATTR_VCLASSES)) {
-        vClassBitset = parseVehicleClasses(vClasses);
-    } else if (attrs.hasAttribute(SUMO_ATTR_EXCEPTIONS)) {
-        vClassBitset = ~parseVehicleClasses(exceptions);
-    } else {
-        // no vClasses specified, thus apply to all
-        vClassBitset = parseVehicleClasses("all");
-    }
-
-    std::map<SVCPermissions, double> offsets;
-    offsets[vClassBitset] = value;
-    return offsets;
-}
-
 
 const std::string DEFAULT_VTYPE_ID("DEFAULT_VEHTYPE");
 const std::string DEFAULT_PEDTYPE_ID("DEFAULT_PEDTYPE");
-const std::string DEFAULT_BIKETYPE_ID("DEFAULT_BIKETYPE");
 
 const double DEFAULT_VEH_PROB(1.);
 

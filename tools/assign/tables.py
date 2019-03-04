@@ -1,24 +1,25 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    tables.py
-# @author  Yun-Pang Floetteroed
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2008-03-18
-# @version $Id$
-
 """
+@file    tables.py
+@author  Yun-Pang Floetteroed
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2008-03-18
+@version $Id: calStatistics.py 2008-03-18$
+
 This file defines global tables used to:
 
 - define the parameters in link cost functions
 - define link cost functions
 - conduct significance tests
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 crCurveTable = {"CR2": (1., 2., 2.),
                 "CR3": (1., 2., 1.),
@@ -50,24 +51,14 @@ def updateCurveTable(filename):
         for entry in elements[1:]:
             crCurveTable[elements[0]].append(float(entry))
 
-
-laneTypeTable = {1: [[5, 200.0, "CR7"], [7, 412.5, "CR7"], [9, 600.0, "CR6"], [11, 800.0, "CR5"],
-                     [13, 1125.0, "CR5"], [16, 1583.33, "CR4"], [18, 1100.0, "CR3"], [22, 1200.0, "CR3"],
-                     [26, 1300.0, "CR3"], [30, 1400.0, "CR3"], [999., 1400.0, "CR3"]],
-                 2: [[11, 800.0, "CR5"], [13, 875.0, "CR5"], [16, 1500.0, "CR4"], [30, 1800.0, "CR13"],
-                     [999., 1800.0, "CR13"]],
+laneTypeTable = {1: [[5, 200.0, "CR7"], [7, 412.5, "CR7"], [9, 600.0, "CR6"], [11, 800.0, "CR5"], [13, 1125.0, "CR5"], [16, 1583.33, "CR4"], [18, 1100.0, "CR3"], [22, 1200.0, "CR3"], [26, 1300.0, "CR3"], [30, 1400.0, "CR3"], [999., 1400.0, "CR3"]],
+                 2: [[11, 800.0, "CR5"], [13, 875.0, "CR5"], [16, 1500.0, "CR4"], [30, 1800.0, "CR13"], [999., 1800.0, "CR13"]],
                  3: [[11, 1333.33, "CR5"], [16, 1500.0, "CR3"], [30, 2000.0, "CR13"], [999., 2000.0, "CR13"]],
                  4: [[30, 2000.0, "CR13"], [999., 2000.0, "CR13"]]}
 
-# laneTypeTable = {1:[[7., 200., "CR6"], [9., 800., "CR3"], [12., 800., "CR4"], [13., 800., "CR2"], [18., 1200., "CR2"],
-#                    [19., 1300., "CR4"], [22., 1200., "CR2"], [25., 1300., "CR2"], [30., 1350., "CR1"],
-#                    [33., 1400., "CR1"], [999., 1500., "CR1"]],
-#                 2:[[7., 200., "CR6"], [9., 800., "CR3"], [13., 1000., "CR3"], [15., 1050., "CR2"],
-#                    [16., 1100., "CR2"], [25., 1300., "CR2"], [27., 1400., "CR1"], [29., 1400., "CR3"],
-#                    [30., 1500., "CR2"], [34., 1400., "CR2"], [999., 1500., "CR1"]],
-#                 3:[[7., 200., "CR6"], [9., 800., "CR3"], [13., 1000, "CR3"], [16., 1100., "CR2"], [19., 1300., "CR2"],
-#                    [25., 1400., "CR2"], [27., 1400., "CR1"], [30., 1500., "CR2"], [33., 1400., "CR1"],
-#                    [999., 1500., "CR1"]],
+# laneTypeTable = {1:[[7., 200., "CR6"], [9., 800., "CR3"], [12., 800., "CR4"], [13., 800., "CR2"], [18., 1200., "CR2"], [19., 1300., "CR4"], [22., 1200., "CR2"], [25., 1300., "CR2"], [30., 1350., "CR1"], [33., 1400., "CR1"], [999., 1500., "CR1"]],
+#                 2:[[7., 200., "CR6"], [9., 800., "CR3"], [13., 1000., "CR3"], [15., 1050., "CR2"], [16., 1100., "CR2"], [25., 1300., "CR2"], [27., 1400., "CR1"], [29., 1400., "CR3"], [30., 1500., "CR2"], [34., 1400., "CR2"], [999., 1500., "CR1"]],
+#                 3:[[7., 200., "CR6"], [9., 800., "CR3"], [13., 1000, "CR3"], [16., 1100., "CR2"], [19., 1300., "CR2"], [25., 1400., "CR2"], [27., 1400., "CR1"], [30., 1500., "CR2"], [33., 1400., "CR1"], [999., 1500., "CR1"]],
 # 4:[[7., 200., "CR6"], [9., 800., "CR3"], [13., 1000., "CR3"], [17,
 # 1100., "CR2"], [19., 1300., "CR1"], [25., 1400., "CR2"], [27., 1400.,
 # "CR2"], [29., 1400., "CR3"], [30., 1500., "CR2"], [33., 1400., "CR1"],

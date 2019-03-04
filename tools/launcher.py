@@ -1,24 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    launcher.py
+@author  Jakob Erdmann
+@date    2015-01-18
+@version $Id$
 
-# @file    launcher.py
-# @author  Jakob Erdmann
-# @date    2015-01-18
-# @version $Id$
+This script acts as a GUI-wrapper around the sumo command-line applications
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import os
 import re
 import subprocess
-from Tkinter import Canvas, Menu, StringVar, Tk, LEFT
-from ttk import Button, Frame, Menubutton, Label, Scrollbar, Entry
+from Tkinter import *
+from ttk import *
 import tkFileDialog
 from sumolib.options import Option, readOptions
 
@@ -187,7 +191,6 @@ def parse_help(app):
     options = []
     optName = None
     optHelp = ""
-    optType = ""
     for line in helpstring.split(os.linesep):
         if '--' in line:
             if optName is not None:
@@ -214,7 +217,6 @@ def main():
     root = Tk()
     app = Launcher(root, app, appOptions)
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()

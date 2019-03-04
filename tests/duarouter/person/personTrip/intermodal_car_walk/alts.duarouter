@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Tue Dec  5 10:50:25 2017 by SUMO duarouter Version v0_31_0+1455-5cdbcac
-This data file and the accompanying materials
-are made available under the terms of the Eclipse Public License v2.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v20.html
-SPDX-License-Identifier: EPL-2.0
+<!-- generated on 11/11/15 14:52:41 by SUMO duarouter Version dev-SVN-r19321
+<?xml version="1.0" encoding="UTF-8"?>
+
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/duarouterConfiguration.xsd">
 
     <input>
@@ -16,7 +13,6 @@ SPDX-License-Identifier: EPL-2.0
 
     <output>
         <output-file value="routes.rou.xml"/>
-        <alternatives-output value="routes.rou.alt.xml"/>
     </output>
 
     <report>
@@ -35,10 +31,10 @@ SPDX-License-Identifier: EPL-2.0
         </routeDistribution>
     </vehicle>
     <person id="p0" depart="0.00">
-        <ride cost="54.40" from="beg" to="middle" lines="p0_0"/>
-        <walk cost="481.34" edges="middle end"/>
+        <ride from="beg" to="middle" lines="p0_0"/>
+        <walk edges="middle end"/>
     </person>
     <person id="p1" depart="0.00">
-        <walk cost="1451.71" edges="end middle beg"/>
+        <walk edges="end middle beg"/>
     </person>
 </routes>

@@ -1,5 +1,3 @@
 add_subdirectory(common)
+add_subdirectory(foxtools)
 add_subdirectory(geom)
-if (FOX_FOUND)
-    add_subdirectory(foxtools)
-endif ()

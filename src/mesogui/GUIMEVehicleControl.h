@@ -1,18 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIMEVehicleControl.h
 /// @author  Jakob Erdmann
 /// @date    Okt 2012
 /// @version $Id$
 ///
 // The class responsible for building and deletion of meso vehicles (gui-version)
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef GUIMEVehicleControl_h
 #define GUIMEVehicleControl_h
@@ -21,13 +24,21 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
-#include <fx.h>
+#include <utils/foxtools/MFXMutex.h>
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <mesosim/MEVehicleControl.h>
 
+
+// ===========================================================================
+// class declarations
+// ===========================================================================
 
 // ===========================================================================
 // class definitions
@@ -101,7 +112,7 @@ public:
 
 private:
     /// The mutex used to avoid concurrent updates of the vehicle buffer
-    mutable FXMutex myLock;
+    mutable MFXMutex myLock;
 
 
 private:

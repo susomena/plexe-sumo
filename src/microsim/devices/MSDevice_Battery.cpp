@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDevice_Battery.cpp
 /// @author  Tamas Kurczveil
 /// @author  Pablo Alvarez Lopez
@@ -15,13 +7,28 @@
 ///
 // The Battery parameters for the vehicle
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/iodevices/OutputDevice.h>
 #include <utils/common/SUMOTime.h>
@@ -51,9 +58,9 @@ MSDevice_Battery::insertOptions(OptionsCont& oc) {
 
 
 void
-MSDevice_Battery::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into) {
+MSDevice_Battery::buildVehicleDevices(SUMOVehicle& v, std::vector<MSDevice*>& into) {
     // Check if vehicle should get a battery
-    if (equippedByDefaultAssignmentOptions(OptionsCont::getOptions(), "battery", v, false)) {
+    if (equippedByDefaultAssignmentOptions(OptionsCont::getOptions(), "battery", v)) {
         const HelpersEnergy& e = PollutantsInterface::getEnergyHelper();
         const SUMOVTypeParameter& typeParams = v.getVehicleType().getParameter();
         std::map<int, double> param;
@@ -65,7 +72,7 @@ MSDevice_Battery::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevic
         if (v.getParameter().getParameter(toString(SUMO_ATTR_ACTUALBATTERYCAPACITY), "-") == "-") {
             actualBatteryCapacity = maximumBatteryCapacity * DEFAULT_CHARGE_RATIO;
         } else {
-            actualBatteryCapacity = StringUtils::toDouble(v.getParameter().getParameter(toString(SUMO_ATTR_ACTUALBATTERYCAPACITY), "0"));
+            actualBatteryCapacity = TplConvert::_2double(v.getParameter().getParameter(toString(SUMO_ATTR_ACTUALBATTERYCAPACITY), "0").c_str());
         }
 
         const double powerMax = typeParams.getDouble(toString(SUMO_ATTR_MAXIMUMPOWER), 100.);
@@ -122,13 +129,12 @@ bool MSDevice_Battery::notifyMove(SUMOVehicle& veh, double /* oldPos */, double 
     }
 
     // Check if vehicle has under their position one charge Station
-    const std::string chargingStationID = MSNet::getInstance()->getStoppingPlaceID(veh.getLane(), veh.getPositionOnLane(), SUMO_TAG_CHARGING_STATION);
+    const std::string chargingStationID = MSNet::getInstance()->getChargingStationID(veh.getLane(), veh.getPositionOnLane());
 
     // If vehicle is over a charging station
     if (chargingStationID != "") {
         // if the vehicle is almost stopped, or charge in transit is enabled, then charge vehicle
-        MSChargingStation* const cs = static_cast<MSChargingStation*>(MSNet::getInstance()->getStoppingPlace(chargingStationID, SUMO_TAG_CHARGING_STATION));
-        if ((veh.getSpeed() < myStoppingTreshold) || cs->getChargeInTransit()) {
+        if ((veh.getSpeed() < myStoppingTreshold) || (MSNet::getInstance()->getChargingStation(chargingStationID)->getChargeInTransit() == 1)) {
             // Set Flags Stopped/intransit to
             if (veh.getSpeed() < myStoppingTreshold) {
                 // vehicle ist almost stopped, then is charging stopped
@@ -145,7 +151,7 @@ bool MSDevice_Battery::notifyMove(SUMOVehicle& veh, double /* oldPos */, double 
             }
 
             // get pointer to charging station
-            myActChargingStation = cs;
+            myActChargingStation = MSNet::getInstance()->getChargingStation(chargingStationID);
 
             // Only update charging start time if vehicle allow charge in transit, or in other case
             // if the vehicle not allow charge in transit but it's stopped.
@@ -183,12 +189,12 @@ bool MSDevice_Battery::notifyMove(SUMOVehicle& veh, double /* oldPos */, double 
         myChargingStopped = false;
 
         // Disable charging vehicle
-        if (myActChargingStation != nullptr) {
+        if (myActChargingStation != NULL) {
             myActChargingStation->setChargingVehicle(false);
         }
 
         // Set charging station pointer to NULL
-        myActChargingStation = nullptr;
+        myActChargingStation = NULL;
 
         // Set energy charged to 0
         myEnergyCharged = 0.00;
@@ -207,7 +213,7 @@ bool MSDevice_Battery::notifyMove(SUMOVehicle& veh, double /* oldPos */, double 
 // ---------------------------------------------------------------------------
 MSDevice_Battery::MSDevice_Battery(SUMOVehicle& holder, const std::string& id, const double actualBatteryCapacity, const double maximumBatteryCapacity,
                                    const double powerMax, const double stoppingTreshold, const std::map<int, double>& param) :
-    MSVehicleDevice(holder, id),
+    MSDevice(holder, id),
     myActualBatteryCapacity(0),         // [actualBatteryCapacity <= maximumBatteryCapacity]
     myMaximumBatteryCapacity(0),        // [maximumBatteryCapacity >= 0]
     myPowerMax(0),                      // [maximumPower >= 0]
@@ -217,7 +223,7 @@ MSDevice_Battery::MSDevice_Battery(SUMOVehicle& holder, const std::string& id, c
     myChargingStopped(false),           // Initially vehicle don't charge stopped
     myChargingInTransit(false),         // Initially vehicle don't charge in transit
     myConsum(0),                        // Initially the vehicle is stopped and therefore the consum is zero.
-    myActChargingStation(nullptr),         // Initially the vehicle isn't over a Charging Station
+    myActChargingStation(NULL),         // Initially the vehicle isn't over a Charging Station
     myEnergyCharged(0),                 // Initially the energy charged is zero
     myVehicleStopped(0) {               // Initially the vehicle is stopped and the corresponding variable is 0
 
@@ -321,7 +327,7 @@ MSDevice_Battery::resetChargingStartTime() {
 
 void
 MSDevice_Battery::increaseChargingStartTime() {
-    myChargingStartTime += TS;
+    myChargingStartTime++;
 }
 
 
@@ -381,7 +387,7 @@ MSDevice_Battery::getChargingStartTime() const {
 
 std::string
 MSDevice_Battery::getChargingStationID() const {
-    if (myActChargingStation != nullptr) {
+    if (myActChargingStation != NULL) {
         return myActChargingStation->getID();
     } else {
         return "NULL";
@@ -418,8 +424,6 @@ MSDevice_Battery::getParameter(const std::string& key) const {
         return toString(getMaximumBatteryCapacity());
     } else if (key == toString(SUMO_ATTR_CHARGINGSTATIONID)) {
         return getChargingStationID();
-    } else if (key == toString(SUMO_ATTR_VEHICLEMASS)) {
-        return toString(myParam.find(SUMO_ATTR_VEHICLEMASS)->second);
     }
     throw InvalidArgument("Parameter '" + key + "' is not supported for device of type '" + deviceName() + "'");
 }
@@ -429,16 +433,14 @@ void
 MSDevice_Battery::setParameter(const std::string& key, const std::string& value) {
     double doubleValue;
     try {
-        doubleValue = StringUtils::toDouble(value);
-    } catch (NumberFormatException&) {
+        doubleValue = TplConvert::_2double(value.c_str());
+    } catch (NumberFormatException) {
         throw InvalidArgument("Setting parameter '" + key + "' requires a number for device of type '" + deviceName() + "'");
     }
     if (key == toString(SUMO_ATTR_ACTUALBATTERYCAPACITY)) {
         setActualBatteryCapacity(doubleValue);
     } else if (key == toString(SUMO_ATTR_MAXIMUMBATTERYCAPACITY)) {
         setMaximumBatteryCapacity(doubleValue);
-    } else if (key == toString(SUMO_ATTR_VEHICLEMASS)) {
-        myParam[SUMO_ATTR_VEHICLEMASS] = doubleValue;
     } else {
         throw InvalidArgument("Setting parameter '" + key + "' is not supported for device of type '" + deviceName() + "'");
     }

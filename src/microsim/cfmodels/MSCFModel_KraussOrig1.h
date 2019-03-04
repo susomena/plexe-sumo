@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_KraussOrig1.h
 /// @author  Tobias Mayer
 /// @author  Daniel Krajzewicz
@@ -17,13 +9,28 @@
 ///
 // The original Krauss (1998) car-following model and parameter
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSCFModel_KraussOrig1_h
 #define MSCFModel_KraussOrig1_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSCFModel.h"
 #include <utils/xml/SUMOXMLDefinitions.h>
@@ -39,9 +46,15 @@
 class MSCFModel_KraussOrig1 : public MSCFModel {
 public:
     /** @brief Constructor
-     *  @param[in] vtype the type for which this model is built and also the parameter object to configure this model
+     * @param[in] accel The maximum acceleration
+     * @param[in] decel The maximum deceleration
+     * @param[in] emergencyDecel The maximum emergency deceleration
+     * @param[in] apparentDecel The deceleration as expected by others (always equal to decel for the original model)
+     * @param[in] dawdle The driver imperfection
+     * @param[in] tau The driver's desired headway
      */
-    MSCFModel_KraussOrig1(const MSVehicleType* vtype);
+    MSCFModel_KraussOrig1(const MSVehicleType* vtype, double accel, double decel,
+                          double emergencyDecel, double apparentDecel, double dawdle, double headwayTime);
 
 
     /// @brief Destructor
@@ -50,8 +63,14 @@ public:
 
     /// @name Implementations of the MSCFModel interface
     /// @{
-    /// @brief apply dawdling
-    double patchSpeedBeforeLC(const MSVehicle* veh, double vMin, double vMax) const;
+
+    /** @brief Applies interaction with stops and lane changing model influences
+     * @param[in] veh The ego vehicle
+     * @param[in] vPos The possible velocity
+     * @return The velocity after applying interactions with stops and lane change model influences
+     */
+    double moveHelper(MSVehicle* const veh, double vPos) const;
+
 
     /** @brief Computes the vehicle's safe speed (no dawdling)
      * @param[in] veh The vehicle (EGO)
@@ -61,7 +80,7 @@ public:
      * @return EGO's safe speed
      * @see MSCFModel::ffeV
      */
-    double followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel, const MSVehicle* const pred = 0) const;
+    double followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel) const;
 
 
     /** @brief Computes the vehicle's safe speed for approaching a non-moving obstacle (no dawdling)
@@ -72,6 +91,21 @@ public:
      * @todo generic Interface, models can call for the values they need
      */
     virtual double stopSpeed(const MSVehicle* const veh, const double speed, double gap2pred) const;
+
+
+    /** @brief Computes the vehicle's safe speed (no dawdling)
+     * This method is used during the insertion stage. Whereas the method
+     * followSpeed returns the desired speed which may be lower than the safe
+     * speed, this method only considers safety constraints
+     *
+     * Returns the velocity of the vehicle in dependence to the vehicle's and its leader's values and the distance between them.
+     * @param[in] veh The vehicle (EGO)
+     * @param[in] speed The vehicle's speed
+     * @param[in] gap2pred The (netto) distance to the LEADER
+     * @param[in] predSpeed The speed of LEADER
+     * @return EGO's safe speed
+     */
+    double insertionFollowSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel) const;
 
 
     /** @brief Returns the model's name
@@ -142,7 +176,7 @@ protected:
      * @param[in] speed The speed with no dawdling
      * @return The speed after dawdling
      */
-    virtual double dawdle(double speed, std::mt19937* rng) const;
+    virtual double dawdle(double speed) const;
 
 protected:
     /// @brief The vehicle's dawdle-parameter. 0 for no dawdling, 1 for max.

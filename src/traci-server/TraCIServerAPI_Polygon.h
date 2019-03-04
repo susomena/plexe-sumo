@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    TraCIServerAPI_Polygon.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,6 +7,17 @@
 ///
 // APIs for getting/setting polygon values via TraCI
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef TraCIServerAPI_Polygon_h
 #define TraCIServerAPI_Polygon_h
 
@@ -22,8 +25,15 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
+#ifndef NO_TRACI
+
+#include "TraCIDefs.h"
 #include "TraCIServer.h"
 #include <foreign/tcpip/storage.h>
 
@@ -57,6 +67,29 @@ public:
                            tcpip::Storage& outputStorage);
 
 
+    /** @brief Returns the named polygons's shape
+     *
+     * @param[in] id The id of the searched polygon
+     * @param[out] shape The shape, if the polygon is known
+     * @return Whether the polygon is known
+     */
+    static bool getShape(const std::string& id, PositionVector& shape);
+
+
+    /** @brief Returns a tree filled with polygon instances
+     * @return The rtree of polygons
+     */
+    static NamedRTree* getTree();
+
+
+private:
+    /** @brief Returns the named polygon
+     * @param[in] id The id of the searched polygon
+     * @return The named polygon, or 0 if it is not known
+     */
+    static SUMOPolygon* getPolygon(const std::string& id);
+
+
 private:
     /// @brief invalidated copy constructor
     TraCIServerAPI_Polygon(const TraCIServerAPI_Polygon& s);
@@ -67,6 +100,8 @@ private:
 
 };
 
+
+#endif
 
 #endif
 

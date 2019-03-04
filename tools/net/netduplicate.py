@@ -1,21 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    netduplicate.py
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2013-04-01
-# @version $Id$
-
 """
+@file    netduplicate.py
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2013-04-01
+@version $Id$
+
 Reads a sumo network and duplication descriptors (prefix:x-offset:y-offset)
 and creates a disconnected network of duplicates.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -66,8 +67,6 @@ def main():
             netconvert, options.net, os.path.join(tmpDir, d[0]), d[1], d[2])
         out = open(os.path.join(tmpDir, "%s_.nod.xml" % d[0]), 'w')
         for line in open(os.path.join(tmpDir, "%s.nod.xml" % d[0])):
-            if 'location' in line:
-                continue
             line = line.replace('id="', 'id="%s_' % d[0])
             line = line.replace('tl="', 'tl="%s_' % d[0])
             out.write(line)
@@ -110,7 +109,6 @@ def main():
         print("Something went wrong, check '%s'!" % tmpDir, file=sys.stderr)
     else:
         shutil.rmtree(tmpDir)
-
 
 if __name__ == "__main__":
     main()

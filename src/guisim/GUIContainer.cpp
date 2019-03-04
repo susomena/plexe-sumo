@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIContainer.cpp
 /// @author  Melanie Weber
 /// @author  Andreas Kendziorra
@@ -15,16 +7,32 @@
 ///
 // A MSContainer extended by some values for usage within the gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cmath>
 #include <vector>
 #include <string>
+#include <foreign/polyfonts/polyfonts.h>
 #include <microsim/MSContainer.h>
 #include <microsim/MSCModel_NonInteracting.h>
 #include <microsim/logging/CastingFunctionBinding.h>
@@ -34,6 +42,7 @@
 #include <microsim/devices/MSDevice_Vehroutes.h>
 #include <utils/common/StringUtils.h>
 #include <utils/vehicle/SUMOVehicleParameter.h>
+#include <utils/common/AbstractMutex.h>
 #include <utils/geom/GeomHelper.h>
 #include <utils/gui/images/GUITexturesHelper.h>
 #include <utils/gui/windows/GUISUMOAbstractView.h>
@@ -124,39 +133,19 @@ GUIParameterTableWindow*
 GUIContainer::getParameterWindow(GUIMainWindow& app,
                                  GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 12 + (int)getParameter().getParametersMap().size());
+        new GUIParameterTableWindow(app, *this, 8);
     // add items
+    //ret->mkItem("type [NAME]", false, myType->getID());
     ret->mkItem("stage", false, getCurrentStageDescription());
     ret->mkItem("start edge [id]", false, getFromEdge()->getID());
-    ret->mkItem("dest edge [id]", false, getDestination()->getID());
+    ret->mkItem("dest edge [id]", false, getDestination().getID());
     ret->mkItem("edge [id]", false, getEdge()->getID());
     ret->mkItem("position [m]", true, new FunctionBinding<GUIContainer, double>(this, &GUIContainer::getEdgePos));
     ret->mkItem("speed [m/s]", true, new FunctionBinding<GUIContainer, double>(this, &GUIContainer::getSpeed));
-    ret->mkItem("speed factor", false, getSpeedFactor());
     ret->mkItem("angle [degree]", true, new FunctionBinding<GUIContainer, double>(this, &GUIContainer::getAngle));
     ret->mkItem("waiting time [s]", true, new FunctionBinding<GUIContainer, double>(this, &GUIContainer::getWaitingSeconds));
-    ret->mkItem("desired depart [s]", false, time2string(getParameter().depart));
     // close building
-    ret->closeBuilding(&getParameter());
-    return ret;
-}
-
-
-GUIParameterTableWindow*
-GUIContainer::getTypeParameterWindow(GUIMainWindow& app,
-                                     GUISUMOAbstractView&) {
-    GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 8 + (int)myVType->getParameter().getParametersMap().size());
-    // add items
-    ret->mkItem("Type Information:", false, "");
-    ret->mkItem("type [id]", false, myVType->getID());
-    ret->mkItem("length", false, myVType->getLength());
-    ret->mkItem("width", false, myVType->getWidth());
-    ret->mkItem("height", false, myVType->getHeight());
-    ret->mkItem("minGap", false, myVType->getMinGap());
-    ret->mkItem("maximum speed [m/s]", false, myVType->getMaxSpeed());
-    // close building
-    ret->closeBuilding(&(myVType->getParameter()));
+    ret->closeBuilding();
     return ret;
 }
 
@@ -185,7 +174,7 @@ GUIContainer::drawGL(const GUIVisualizationSettings& s) const {
     // set container color
     setColor(s);
     // scale
-    const double upscale = s.containerSize.getExaggeration(s, this);
+    const double upscale = s.containerSize.getExaggeration(s);
     glScaled(upscale, upscale, 1);
     switch (s.containerQuality) {
         case 0:
@@ -200,7 +189,7 @@ GUIContainer::drawGL(const GUIVisualizationSettings& s) const {
     }
     glPopMatrix();
 
-    drawName(p1, s.scale, s.containerName, s.angle);
+    drawName(p1, s.scale, s.containerName);
     glPopName();
 }
 
@@ -314,7 +303,7 @@ GUIContainer::getColorValue(int activeScheme) const {
             return getSpeed();
         case 5:
             if (isWaiting4Vehicle()) {
-                return 5;
+                return 3;
             } else {
                 return (double)getCurrentStageType();
             }
@@ -329,14 +318,14 @@ GUIContainer::getColorValue(int activeScheme) const {
 
 double
 GUIContainer::getEdgePos() const {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     return MSContainer::getEdgePos();
 }
 
 
 Position
 GUIContainer::getPosition() const {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     if (getCurrentStageType() == WAITING && getEdge()->getPermissions() == SVC_SHIP) {
         MSLane* lane = getEdge()->getLanes().front();   //the most right lane of the water way
         PositionVector laneShape = lane->getShape();
@@ -348,21 +337,21 @@ GUIContainer::getPosition() const {
 
 double
 GUIContainer::getAngle() const {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     return MSContainer::getAngle();
 }
 
 
 double
 GUIContainer::getWaitingSeconds() const {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     return MSContainer::getWaitingSeconds();
 }
 
 
 double
 GUIContainer::getSpeed() const {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     return MSContainer::getSpeed();
 }
 
@@ -399,7 +388,7 @@ GUIContainer::drawAction_drawAsImage(const GUIVisualizationSettings& s) const {
         //}
         int textureID = GUITexturesHelper::getTextureID(file);
         if (textureID > 0) {
-            const double exaggeration = s.personSize.getExaggeration(s, this);
+            const double exaggeration = s.personSize.getExaggeration(s);
             const double halfLength = getVehicleType().getLength() / 2.0 * exaggeration;
             const double halfWidth = getVehicleType().getWidth() / 2.0 * exaggeration;
             GUITexturesHelper::drawTexturedBox(textureID, -halfWidth, -halfLength, halfWidth, halfLength);

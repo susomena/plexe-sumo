@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSLaneChanger.h
 /// @author  Christian Roessel
 /// @author  Daniel Krajzewicz
@@ -17,6 +9,17 @@
 ///
 // Performs lane changing of vehicles
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSLaneChanger_h
 #define MSLaneChanger_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSLane.h"
 #include "MSEdge.h"
@@ -65,37 +72,23 @@ public:
 
         ChangeElem(MSLane* _lane);
 
-        /// @brief Register that vehicle belongs to Changer Item to after LC decisions
-        void registerHop(MSVehicle* vehicle);
-
-        ///@brief the leader vehicle for the current change candidate
+        /// the vehicle in front of the current vehicle
         MSVehicle*                lead;
-        ///@brief the lane corresponding to this ChangeElem (the current change candidate is on this lane)
+        /// the lane the vehicle is on
         MSLane*                   lane;
-        ///@brief last vehicle that changed into this lane
+        /// last vehicle that changed into this lane
         MSVehicle*                hoppedVeh;
-        /// @brief the next vehicle downstream of the ego vehicle that is blocked from changing to this lane
+        /// the vehicle that really wants to change to this lane
         MSVehicle*                lastBlocked;
-        /// @brief the farthest downstream vehicle on this edge that is blocked from changing to this lane
+        /// the first vehicle on this edge that wants to change to this lane
         MSVehicle*                firstBlocked;
 
         double dens;
 
-        /// @brief whether changing is possible to either direction
-        bool mayChangeRight;
-        bool mayChangeLeft;
-
-        /// relative indices of internal lanes with the same origin lane (siblings)
-        /// only used for changes on internal edges
-        std::vector<int>          siblings;
-
         /// @name Members which are used only by MSLaneChangerSublane
         /// @{
-        // the vehicles in from of the current vehicle (only on the current edge, continously updated during change() )
+        // the vehicles in from of the current vehicle
         MSLeaderInfo ahead;
-
-        // the vehicles in from of the current vehicle (including those on the next edge, contiously update during change() ))
-        MSLeaderDistanceInfo aheadNext;
         ///@}
 
     };
@@ -150,15 +143,6 @@ protected:
     /** Update changer for vehicles that did not change */
     void registerUnchanged(MSVehicle* vehicle);
 
-    /// @brief Take into account traci LC-commands.
-    /// @note This is currently only used within non-actionsteps.
-    void checkTraCICommands(MSVehicle* vehicle);
-
-    /// @brief Execute TraCI LC-commands.
-    /// @note This is currently only used within non-actionsteps for the non-sublane model.
-    /// @return whether lane was changed
-    bool applyTraCICommands(MSVehicle* vehicle);
-
     /** After the possible change, update the changer. */
     virtual void updateChanger(bool vehHasChanged);
 
@@ -188,11 +172,10 @@ protected:
         const std::pair<MSVehicle* const, double>& neighFollow,
         const std::vector<MSVehicle::LaneQ>& preb) const;
 
-    /*  @brief start the lane change maneuver (and finish it instantly if gLaneChangeDuration == 0)
-     *  @return False when aborting the change due to being remote controlled*/
-    bool startChange(MSVehicle* vehicle, ChangerIt& from, int direction);
+    ///  @brief start the lane change maneuver (and finish it instantly if gLaneChangeDuration == 0)
+    void startChange(MSVehicle* vehicle, ChangerIt& from, int direction);
 
-    ///  @brief continue a lane change maneuver and return whether the vehicle has completely moved onto the new lane (used if gLaneChangeDuration > 0)
+    ///  @brief continue a lane change maneuver and return whether the midpoint was passed in this step (used if gLaneChangeDuration > 0)
     bool continueChange(MSVehicle* vehicle, ChangerIt& from);
 
     std::pair<MSVehicle* const, double> getRealFollower(const ChangerIt& target) const;
@@ -213,12 +196,6 @@ protected:
      * @param[out] spaceToOvertake The space for overtaking
      */
     static void computeOvertakingTime(const MSVehicle* vehicle, const MSVehicle* leader, double gap, double& timeToOvertake, double& spaceToOvertake);
-
-    // @brief return leader vehicle that is to be overtaken
-    static std::pair<MSVehicle*, double> getColumnleader(MSVehicle* vehicle, std::pair<MSVehicle*, double> leader, double maxLookAhead = std::numeric_limits<double>::max());
-
-    /// @brief return the next lane in conts beyond lane or nullptr
-    static MSLane* getLaneAfter(MSLane* lane, const std::vector<MSLane*>& conts);
 
 protected:
     /// Container for ChangeElemements, one for every lane in the edge.

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    HelpersHarmonoise.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Noise data collector for edges/lanes
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "PollutantsInterface.h"
 #include "HelpersHarmonoise.h"
@@ -79,7 +86,7 @@ double
 HelpersHarmonoise::myAOctaveBandCorrection[27] = { -44.7, -39.4, -34.6, -30.2, -26.2, -22.5, -19.1, -16.1, -13.4,
                                                    -10.9, -8.6, -6.6, -4.8, -3.2, -1.9, -0.8, 0.0, +0.6,
                                                    +1.0, +1.2, +1.3, +1.2, +1.0, +0.5, -0.1, -1.1, -2.5
-                                                   };
+                                                 };
 
 
 
@@ -87,7 +94,7 @@ double
 mySurfaceCorrection[27] = { 0.7, 0.2, 3.6, -1.0, -1.8, -0.1, -0.9, -0.7, -1.1, -0.5, -1.5,
                             -2.4, -3.0, -4.6, -5.8, -6.5, -7.9, -7.8, -7.2, -6.3, -5.6,
                             -5.5, -4.8, -4.3
-                            };
+                          };
 
 
 // ===========================================================================

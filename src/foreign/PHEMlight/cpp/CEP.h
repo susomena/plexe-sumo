@@ -1,20 +1,23 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2016-2019 German Aerospace Center (DLR) and others.
-// PHEMlight module
-// Copyright (C) 2016-2017 Technische Universitaet Graz, https://www.tugraz.at/
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    CEP.h
 /// @author  Martin Dippold
 /// @author  Michael Behrisch
 /// @date    July 2016
 /// @version $Id$
 ///
+//
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2016-2017 DLR (http://www.dlr.de/) and contributors
+// PHEMlight module
+// Copyright 2016 Technische Universitaet Graz, https://www.tugraz.at/
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
 //
 /****************************************************************************/
 
@@ -150,12 +153,6 @@ namespace PHEMlightdll {
         void FindLowerUpperInPattern(int& lowerIndex, int& upperIndex, std::vector<double>& pattern, double value);
 
         double Interpolate(double px, double p1, double p2, double e1, double e2);
-
-    public:
-        double GetMaxAccel(double speed, double gradient);
-
-    private:
-        double GetPMaxNorm(double speed);
 
         //--------------------------------------------------------------------------------------------------
         // Operators for fleetmix

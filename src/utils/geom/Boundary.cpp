@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    Boundary.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // A class that stores the 2D geometrical boundary
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 #include <utility>
 
 #include "GeomHelper.h"
@@ -213,12 +220,6 @@ Boundary::crosses(const Position& p1, const Position& p2) const {
 }
 
 
-bool
-Boundary::isInitialised() const {
-    return myWasInitialised;
-}
-
-
 double
 Boundary::distanceTo2D(const Position& p) const {
     const double leftDist = myXmin - p.x();
@@ -334,25 +335,6 @@ std::ostream&
 operator<<(std::ostream& os, const Boundary& b) {
     os << b.myXmin << "," << b.myYmin << "," << b.myXmax << "," << b.myYmax;
     return os;
-}
-
-
-bool
-Boundary::operator==(const Boundary& b) const {
-    return (
-               myXmin == b.myXmin &&
-               myXmax == b.myXmax &&
-               myYmin == b.myYmin &&
-               myYmax == b.myYmax &&
-               myZmin == b.myZmin &&
-               myZmax == b.myZmax &&
-               myWasInitialised == b.myWasInitialised);
-}
-
-
-bool
-Boundary::operator!=(const Boundary& b) const {
-    return !(*this == b);
 }
 
 

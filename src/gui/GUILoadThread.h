@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUILoadThread.h
 /// @author  Daniel Krajzewicz
 /// @author  Sascha Krieg
@@ -17,6 +9,17 @@
 ///
 // Class describing the thread that performs the loading of a simulation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUILoadThread_h
 #define GUILoadThread_h
 
@@ -24,13 +27,17 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/common/SUMOTime.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/foxtools/FXSingleEventThread.h>
 #include <utils/foxtools/FXThreadEvent.h>
-#include <utils/foxtools/FXSynchQue.h>
+#include <utils/foxtools/MFXEventQue.h>
 
 
 // ===========================================================================
@@ -50,7 +57,7 @@ class GUIEvent;
 class GUILoadThread : public FXSingleEventThread {
 public:
     /// constructor
-    GUILoadThread(FXApp* app, GUIApplicationWindow* mw, FXSynchQue<GUIEvent*>& eq,
+    GUILoadThread(FXApp* app, GUIApplicationWindow* mw, MFXEventQue<GUIEvent*>& eq,
                   FXEX::FXThreadEvent& ev);
 
     /// destructor
@@ -76,8 +83,7 @@ protected:
      * application is informed about the loading */
     void submitEndAndCleanup(GUINet* net, const SUMOTime simStartTime, const SUMOTime simEndTime,
                              const std::vector<std::string>& guiSettingsFiles = std::vector<std::string>(),
-                             const bool osgView = false,
-                             const bool viewportFromRegistry = false);
+                             const bool osgView = false);
 
 protected:
     /// the parent window to inform about the loading
@@ -93,7 +99,7 @@ protected:
         Needed to be deleted from the handler later on */
     OutputDevice* myErrorRetriever, *myMessageRetriever, *myWarningRetriever;
 
-    FXSynchQue<GUIEvent*>& myEventQue;
+    MFXEventQue<GUIEvent*>& myEventQue;
 
     FXEX::FXThreadEvent& myEventThrow;
 

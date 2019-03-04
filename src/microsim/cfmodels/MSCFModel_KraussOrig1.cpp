@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_KraussOrig1.cpp
 /// @author  Tobias Mayer
 /// @author  Daniel Krajzewicz
@@ -18,12 +10,27 @@
 ///
 // The original Krauss (1998) car-following model and parameter
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <microsim/MSVehicle.h>
 #include <microsim/MSLane.h>
@@ -32,37 +39,83 @@
 #include <utils/common/RandHelper.h>
 #include <microsim/MSGlobals.h>
 
-// ===========================================================================
-// DEBUG constants
-// ===========================================================================
-//#define DEBUG_COND (veh->getID()=="disabled")
+//#define DEBUG_MOVE_HELPER
+#define DEBUG_COND (veh->getID()=="disabled")
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
-MSCFModel_KraussOrig1::MSCFModel_KraussOrig1(const MSVehicleType* vtype) :
-    MSCFModel(vtype),
-    myDawdle(vtype->getParameter().getCFParam(SUMO_ATTR_SIGMA, SUMOVTypeParameter::getDefaultImperfection(vtype->getParameter().vehicleClass))),
-    myTauDecel(myDecel * myHeadwayTime) {
-}
+MSCFModel_KraussOrig1::MSCFModel_KraussOrig1(const MSVehicleType* vtype,  double accel, double decel,
+        double emergencyDecel, double apparentDecel,
+        double dawdle, double headwayTime) :
+    MSCFModel(vtype, accel, decel, emergencyDecel, apparentDecel, headwayTime), myDawdle(dawdle),
+    myTauDecel(decel * headwayTime) {}
 
 
 MSCFModel_KraussOrig1::~MSCFModel_KraussOrig1() {}
 
+
 double
-MSCFModel_KraussOrig1::patchSpeedBeforeLC(const MSVehicle* veh, double vMin, double vMax) const {
-    UNUSED_PARAMETER(veh);
-    const double vDawdle = MAX2(vMin, dawdle(vMax, veh->getRNG()));
-    return vDawdle;
+MSCFModel_KraussOrig1::moveHelper(MSVehicle* const veh, double vPos) const {
+    const double oldV = veh->getSpeed(); // save old v for optional acceleration computation
+    const double vSafe = MIN2(vPos, veh->processNextStop(vPos)); // process stops
+    // we need the acceleration for emission computation;
+    //  in this case, we neglect dawdling, nonetheless, using
+    //  vSafe does not incorporate speed reduction due to interaction
+    //  on lane changing
+    const double vMin = minNextSpeed(oldV, veh);
+    // do not exceed max decel even if it is unsafe
+    double vMax = MAX2(vMin,
+                       MIN3(veh->getLane()->getVehicleMaxSpeed(veh), maxNextSpeed(oldV, veh), vSafe));
+#ifdef _DEBUG
+    //if (vMin > vMax) {
+    //    WRITE_WARNING("Maximum speed of vehicle '" + veh->getID() + "' is lower than the minimum speed (min: " + toString(vMin) + ", max: " + toString(vMax) + ").");
+    //}
+#endif
+
+    const double vDawdle = MAX2(vMin, dawdle(vMax));
+
+    double vNext = veh->getLaneChangeModel().patchSpeed(vMin, vDawdle, vMax, *this);
+
+#ifdef DEBUG_MOVE_HELPER
+    if DEBUG_COND {
+    std::cout << "\nMOVE_HELPER\n"
+    << "veh '" << veh->getID() << "' vMin=" << vMin
+        << " vMax=" << vMax << " vDawdle=" << vDawdle
+        << " vSafe" << vSafe << " vNext=" << vNext << " vPos=" << vPos << " veh->getSpeed()=" << oldV
+        << "\n";
+    }
+#endif
+
+    // (Leo) At this point vNext may also be negative indicating a stop within next step.
+    // This would have resulted from a call to maximumSafeStopSpeed(), which does not
+    // consider deceleration bounds. Therefore, we cap vNext here.
+    if (!MSGlobals::gSemiImplicitEulerUpdate) {
+//        vNext = MAX2(vNext, veh->getSpeed() - ACCEL2SPEED(getMaxDecel()));
+        vNext = MAX2(vNext, minNextSpeed(veh->getSpeed(), veh));
+    }
+
+    return vNext;
 }
 
 
 double
-MSCFModel_KraussOrig1::followSpeed(const MSVehicle* const veh, double speed, double gap, double predSpeed, double predMaxDecel, const MSVehicle* const /*pred*/) const {
+MSCFModel_KraussOrig1::followSpeed(const MSVehicle* const veh, double speed, double gap, double predSpeed, double predMaxDecel) const {
     if (MSGlobals::gSemiImplicitEulerUpdate) {
         return MIN2(vsafe(gap, predSpeed, predMaxDecel), maxNextSpeed(speed, veh)); // XXX: and why not cap with minNextSpeed!? (Leo)
     } else {
         return MAX2(MIN2(maximumSafeFollowSpeed(gap, speed, predSpeed, predMaxDecel), maxNextSpeed(speed, veh)), minNextSpeed(speed));
+    }
+}
+
+
+double
+MSCFModel_KraussOrig1::insertionFollowSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel) const {
+    if (MSGlobals::gSemiImplicitEulerUpdate) {
+        return followSpeed(veh, speed, gap2pred, predSpeed, predMaxDecel);
+    } else {
+        // ballistic update
+        return maximumSafeFollowSpeed(gap2pred, 0., predSpeed, predMaxDecel, true);
     }
 }
 
@@ -80,7 +133,7 @@ MSCFModel_KraussOrig1::stopSpeed(const MSVehicle* const veh, const double speed,
 
 
 double
-MSCFModel_KraussOrig1::dawdle(double speed, std::mt19937* rng) const {
+MSCFModel_KraussOrig1::dawdle(double speed) const {
     if (!MSGlobals::gSemiImplicitEulerUpdate) {
         // in case of the ballistic update, negative speeds indicate
         // a desired stop before the completion of the next timestep.
@@ -89,7 +142,7 @@ MSCFModel_KraussOrig1::dawdle(double speed, std::mt19937* rng) const {
             return speed;
         }
     }
-    return MAX2(0., speed - ACCEL2SPEED(myDawdle * myAccel * RandHelper::rand(rng)));
+    return MAX2(0., speed - ACCEL2SPEED(myDawdle * myAccel * RandHelper::rand()));
 }
 
 
@@ -114,7 +167,7 @@ double MSCFModel_KraussOrig1::vsafe(double gap, double predSpeed, double /* pred
 
 MSCFModel*
 MSCFModel_KraussOrig1::duplicate(const MSVehicleType* vtype) const {
-    return new MSCFModel_KraussOrig1(vtype);
+    return new MSCFModel_KraussOrig1(vtype, myAccel, myDecel, myEmergencyDecel, myApparentDecel, myDawdle, myHeadwayTime);
 }
 
 

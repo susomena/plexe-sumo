@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ROJTREdge.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,12 +9,27 @@
 ///
 // An edge the jtr-router may route through
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <algorithm>
 #include <cassert>
@@ -41,14 +48,14 @@ ROJTREdge::ROJTREdge(const std::string& id, RONode* from, RONode* to, int index,
 
 ROJTREdge::~ROJTREdge() {
     for (FollowerUsageCont::iterator i = myFollowingDefs.begin(); i != myFollowingDefs.end(); ++i) {
-        delete (*i).second;
+        delete(*i).second;
     }
 }
 
 
 void
-ROJTREdge::addSuccessor(ROEdge* s, ROEdge* via, std::string dir) {
-    ROEdge::addSuccessor(s, via, dir);
+ROJTREdge::addSuccessor(ROEdge* s, std::string) {
+    ROEdge::addSuccessor(s);
     ROJTREdge* js = static_cast<ROJTREdge*>(s);
     if (myFollowingDefs.find(js) == myFollowingDefs.end()) {
         myFollowingDefs[js] = new ValueTimeLine<double>();
@@ -72,15 +79,15 @@ ROJTREdge*
 ROJTREdge::chooseNext(const ROVehicle* const veh, double time, const std::set<const ROEdge*>& avoid) const {
     // if no usable follower exist, return 0
     //  their probabilities are not yet regarded
-    if (myFollowingEdges.size() == 0 || (veh != nullptr && allFollowersProhibit(veh))) {
-        return nullptr;
+    if (myFollowingEdges.size() == 0 || (veh != 0 && allFollowersProhibit(veh))) {
+        return 0;
     }
     // gather information about the probabilities at this time
     RandomDistributor<ROJTREdge*> dist;
     // use the loaded definitions, first
     for (FollowerUsageCont::const_iterator i = myFollowingDefs.begin(); i != myFollowingDefs.end(); ++i) {
         if (avoid.count(i->first) == 0) {
-            if ((veh == nullptr || !(*i).first->prohibits(veh)) && (*i).second->describesTime(time)) {
+            if ((veh == 0 || !(*i).first->prohibits(veh)) && (*i).second->describesTime(time)) {
                 dist.add((*i).first, (*i).second->getValue(time));
             }
         }
@@ -89,7 +96,7 @@ ROJTREdge::chooseNext(const ROVehicle* const veh, double time, const std::set<co
     if (dist.getOverallProb() == 0) {
         for (int i = 0; i < (int)myParsedTurnings.size(); ++i) {
             if (avoid.count(myFollowingEdges[i]) == 0) {
-                if (veh == nullptr || !myFollowingEdges[i]->prohibits(veh)) {
+                if (veh == 0 || !myFollowingEdges[i]->prohibits(veh)) {
                     dist.add(static_cast<ROJTREdge*>(myFollowingEdges[i]), myParsedTurnings[i]);
                 }
             }
@@ -97,7 +104,7 @@ ROJTREdge::chooseNext(const ROVehicle* const veh, double time, const std::set<co
     }
     // if still no valid follower exists, return null
     if (dist.getOverallProb() == 0) {
-        return nullptr;
+        return 0;
     }
     // return one of the possible followers
     return dist.get();

@@ -1,33 +1,39 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@date    2011-03-04
+@version $Id$
 
-# @file    runner.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @date    2011-03-04
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 import os
+import subprocess
 import sys
-
-SUMO_HOME = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..")
-sys.path.append(os.path.join(os.environ.get("SUMO_HOME", SUMO_HOME), "tools"))
-if len(sys.argv) > 1:
-    import libsumo as traci  # noqa
-else:
-    import traci  # noqa
+import random
+sys.path.append(os.path.join(
+    os.path.dirname(sys.argv[0]), "..", "..", "..", "..", "..", "tools"))
+import traci
 import sumolib  # noqa
 
-traci.start([sumolib.checkBinary('sumo'), "-c", "sumo.sumocfg"])
+sumoBinary = sumolib.checkBinary('sumo')
+
+PORT = sumolib.miscutils.getFreeSocketPort()
+sumoProcess = subprocess.Popen(
+    "%s -c sumo.sumocfg --remote-port %s" % (sumoBinary, PORT), shell=True, stdout=sys.stdout)
+traci.init(PORT)
 for step in range(3):
     print("step", step)
     traci.simulationStep()
@@ -42,8 +48,7 @@ print("allowed", traci.lane.getAllowed(laneID))
 print("disallowed", traci.lane.getDisallowed(laneID))
 print("linkNum", traci.lane.getLinkNumber(laneID))
 print("links", traci.lane.getLinks(laneID))
-if not traci.isLibsumo():
-    print("linksExtended", traci.lane.getLinks(laneID, extended=True))
+print("linksExtended", traci.lane.getLinks(laneID, extended=True))
 print("shape", traci.lane.getShape(laneID))
 print("edge", traci.lane.getEdgeID(laneID))
 print("CO2", traci.lane.getCO2Emission(laneID))
@@ -74,8 +79,6 @@ print("after setMaxSpeed", traci.lane.getMaxSpeed(laneID))
 traci.lane.setLength(laneID, 123.)
 print("after setLength", traci.lane.getLength(laneID))
 
-print("foes", traci.lane.getFoes("1si_0", "3o_0"))
-
 traci.lane.subscribe(laneID)
 print(traci.lane.getSubscriptionResults(laneID))
 for step in range(3, 6):
@@ -83,3 +86,4 @@ for step in range(3, 6):
     traci.simulationStep()
     print(traci.lane.getSubscriptionResults(laneID))
 traci.close()
+sumoProcess.wait()

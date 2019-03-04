@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_Kerner.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Laura Bieker
@@ -16,12 +8,27 @@
 ///
 // car-following model by B. Kerner
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <microsim/MSVehicle.h>
 #include <microsim/MSLane.h>
@@ -32,11 +39,12 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-MSCFModel_Kerner::MSCFModel_Kerner(const MSVehicleType* vtype) :
-    MSCFModel(vtype),
-    myK(vtype->getParameter().getCFParam(SUMO_ATTR_K, 0.5)),
-    myPhi(vtype->getParameter().getCFParam(SUMO_ATTR_CF_KERNER_PHI, 5.0)),
-    myTauDecel(myDecel * myHeadwayTime) {
+MSCFModel_Kerner::MSCFModel_Kerner(const MSVehicleType* vtype, double accel,
+                                   double decel, double emergencyDecel, double apparentDecel,
+                                   double headwayTime, double k, double phi) :
+    MSCFModel(vtype, accel, decel, emergencyDecel, apparentDecel, headwayTime),
+    myK(k), myPhi(phi),
+    myTauDecel(decel * headwayTime) {
 }
 
 
@@ -44,16 +52,16 @@ MSCFModel_Kerner::~MSCFModel_Kerner() {}
 
 
 double
-MSCFModel_Kerner::finalizeSpeed(MSVehicle* const veh, double vPos) const {
-    const double vNext = MSCFModel::finalizeSpeed(veh, vPos);
+MSCFModel_Kerner::moveHelper(MSVehicle* const veh, double vPos) const {
+    const double vNext = MSCFModel::moveHelper(veh, vPos);
     VehicleVariables* vars = (VehicleVariables*)veh->getCarFollowVariables();
-    vars->rand = RandHelper::rand(veh->getRNG());
+    vars->rand = RandHelper::rand();
     return vNext;
 }
 
 
 double
-MSCFModel_Kerner::followSpeed(const MSVehicle* const veh, double speed, double gap, double predSpeed, double /*predMaxDecel*/, const MSVehicle* const /*pred*/) const {
+MSCFModel_Kerner::followSpeed(const MSVehicle* const veh, double speed, double gap, double predSpeed, double /*predMaxDecel*/) const {
     return MIN2(_v(veh, speed, maxNextSpeed(speed, veh), gap, predSpeed), maxNextSpeed(speed, veh));
 }
 
@@ -67,7 +75,6 @@ MSCFModel_Kerner::stopSpeed(const MSVehicle* const veh, const double speed, doub
 MSCFModel::VehicleVariables*
 MSCFModel_Kerner::createVehicleVariables() const {
     VehicleVariables* ret = new VehicleVariables();
-    /// XXX should use egoVehicle->getRNG()
     ret->rand = RandHelper::rand();
     return ret;
 }
@@ -84,7 +91,6 @@ MSCFModel_Kerner::_v(const MSVehicle* const veh, double speed, double vfree, dou
     double vsafe = (double)(-1. * myTauDecel + sqrt(myTauDecel * myTauDecel + (predSpeed * predSpeed) + (2. * myDecel * gap)));
     VehicleVariables* vars = (VehicleVariables*)veh->getCarFollowVariables();
     double va = MAX2((double) 0, MIN3(vfree, vsafe, vcond)) + vars->rand;
-    //std::cout << SIMTIME << " veh=" << veh->getID() << " speed=" << speed << " gap=" << gap << " G=" << G << " predSpeed=" << predSpeed << " vfree=" << vfree << " vsafe=" << vsafe << " vcond=" << vcond << " rand=" << vars->rand << "\n";
     double v = MAX2((double) 0, MIN4(vfree, va, speed + ACCEL2SPEED(myAccel), vsafe));
     return v;
 }
@@ -92,5 +98,5 @@ MSCFModel_Kerner::_v(const MSVehicle* const veh, double speed, double vfree, dou
 
 MSCFModel*
 MSCFModel_Kerner::duplicate(const MSVehicleType* vtype) const {
-    return new MSCFModel_Kerner(vtype);
+    return new MSCFModel_Kerner(vtype, myAccel, myDecel, myEmergencyDecel, myApparentDecel, myHeadwayTime, myK, myPhi);
 }

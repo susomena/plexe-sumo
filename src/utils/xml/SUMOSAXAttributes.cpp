@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOSAXAttributes.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Encapsulated SAX-Attributes
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2007-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <iostream>
@@ -37,6 +44,7 @@
 // ===========================================================================
 // static members
 // ===========================================================================
+bool SUMOSAXAttributes::myHaveInformedAboutDeprecatedDivider = false;
 const std::string SUMOSAXAttributes::ENCODING = " encoding=\"UTF-8\"";
 
 
@@ -45,18 +53,6 @@ const std::string SUMOSAXAttributes::ENCODING = " encoding=\"UTF-8\"";
 // ===========================================================================
 SUMOSAXAttributes::SUMOSAXAttributes(const std::string& objectType):
     myObjectType(objectType) {}
-
-
-const std::string invalid_return<std::string>::value = "";
-const std::string invalid_return<std::string>::type = "string";
-template<>
-std::string SUMOSAXAttributes::getInternal(const int attr) const {
-    const std::string ret = getString(attr);
-    if (ret == "") {
-        throw EmptyData();
-    }
-    return ret;
-}
 
 
 SUMOTime
@@ -70,15 +66,14 @@ SUMOSAXAttributes::getSUMOTimeReporting(int attr, const char* objectid,
         return -1;
     }
     try {
-        const std::string val = getInternal<std::string>(attr);
-        return string2time(val);
+        return TIME2STEPS(getFloat(attr));
+    } catch (NumberFormatException&) {
+        if (report) {
+            emitFormatError(getName(attr), "a time value", objectid);
+        }
     } catch (EmptyData&) {
         if (report) {
             emitEmptyError(getName(attr), objectid);
-        }
-    } catch (ProcessError&) {
-        if (report) {
-            emitFormatError(getName(attr), "a time value", objectid);
         }
     }
     ok = false;
@@ -93,15 +88,14 @@ SUMOSAXAttributes::getOptSUMOTimeReporting(int attr, const char* objectid,
         return defaultValue;
     }
     try {
-        const std::string val = getInternal<std::string>(attr);
-        return string2time(val);
+        return (SUMOTime)(getFloat(attr) * 1000.);
+    } catch (NumberFormatException&) {
+        if (report) {
+            emitFormatError(getName(attr), "a real number", objectid);
+        }
     } catch (EmptyData&) {
         if (report) {
             emitEmptyError(getName(attr), objectid);
-        }
-    } catch (ProcessError&) {
-        if (report) {
-            emitFormatError(getName(attr), "a real number", objectid);
         }
     }
     ok = false;
@@ -109,27 +103,14 @@ SUMOSAXAttributes::getOptSUMOTimeReporting(int attr, const char* objectid,
 }
 
 
-const std::vector<std::string>
-SUMOSAXAttributes::getStringVector(int attr) const {
-    const std::vector<std::string>& ret = StringTokenizer(getString(attr)).getVector();
-    if (ret.empty()) {
-        throw EmptyData();
-    }
-    return ret;
-}
 
-
-const std::vector<std::string>
-SUMOSAXAttributes::getOptStringVector(int attr, const char* objectid, bool& ok, bool report) const {
-    return getOpt<std::vector<std::string> >(attr, objectid, ok, std::vector<std::string>(), report);
-}
 
 
 void
 SUMOSAXAttributes::emitUngivenError(const std::string& attrname, const char* objectid) const {
     std::ostringstream oss;
     oss << "Attribute '" << attrname << "' is missing in definition of ";
-    if (objectid == nullptr || objectid[0] == 0) {
+    if (objectid == 0 || objectid[0] == 0) {
         oss << "a " << myObjectType;
     } else {
         oss << myObjectType << " '" << objectid << "'";
@@ -143,7 +124,7 @@ void
 SUMOSAXAttributes::emitEmptyError(const std::string& attrname, const char* objectid) const {
     std::ostringstream oss;
     oss << "Attribute '" << attrname << "' in definition of ";
-    if (objectid == nullptr || objectid[0] == 0) {
+    if (objectid == 0 || objectid[0] == 0) {
         oss << "a " << myObjectType;
     } else {
         oss << myObjectType << " '" << objectid << "'";
@@ -157,7 +138,7 @@ void
 SUMOSAXAttributes::emitFormatError(const std::string& attrname, const std::string& type, const char* objectid) const {
     std::ostringstream oss;
     oss << "Attribute '" << attrname << "' in definition of ";
-    if (objectid == nullptr || objectid[0] == 0) {
+    if (objectid == 0 || objectid[0] == 0) {
         oss << "a " << myObjectType;
     } else {
         oss << myObjectType << " '" << objectid << "'";
@@ -167,68 +148,103 @@ SUMOSAXAttributes::emitFormatError(const std::string& attrname, const std::strin
 }
 
 
-const int invalid_return<int>::value = -1;
-const std::string invalid_return<int>::type = "int";
+void
+SUMOSAXAttributes::parseStringVector(const std::string& def, std::vector<std::string>& into) {
+    if (def.find(';') != std::string::npos || def.find(',') != std::string::npos) {
+        if (!myHaveInformedAboutDeprecatedDivider) {
+            WRITE_WARNING("Please note that using ';' and ',' as XML list separators is deprecated.\n From 1.0 onwards, only ' ' will be accepted.");
+            myHaveInformedAboutDeprecatedDivider = true;
+        }
+    }
+    StringTokenizer st(def, ";, ", true);
+    while (st.hasNext()) {
+        into.push_back(st.next());
+    }
+}
+
+
+void
+SUMOSAXAttributes::parseStringSet(const std::string& def, std::set<std::string>& into) {
+    if (def.find(';') != std::string::npos || def.find(',') != std::string::npos) {
+        if (!myHaveInformedAboutDeprecatedDivider) {
+            WRITE_WARNING("Please note that using ';' and ',' as XML list separators is deprecated.\n From 1.0 onwards, only ' ' will be accepted.");
+            myHaveInformedAboutDeprecatedDivider = true;
+        }
+    }
+    StringTokenizer st(def, ";, ", true);
+    while (st.hasNext()) {
+        into.insert(st.next());
+    }
+}
+
+
+template<> const int invalid_return<int>::value = -1;
+template<> const std::string invalid_return<int>::type = "int";
 template<>
 int SUMOSAXAttributes::getInternal(const int attr) const {
     return getInt(attr);
 }
 
 
-const long long int invalid_return<long long int>::value = -1;
-const std::string invalid_return<long long int>::type = "long";
+template<> const long long int invalid_return<long long int>::value = -1;
+template<> const std::string invalid_return<long long int>::type = "long";
 template<>
 long long int SUMOSAXAttributes::getInternal(const int attr) const {
     return getLong(attr);
 }
 
 
-const double invalid_return<double>::value = -1;
-const std::string invalid_return<double>::type = "float";
+template<> const double invalid_return<double>::value = -1;
+template<> const std::string invalid_return<double>::type = "float";
 template<>
 double SUMOSAXAttributes::getInternal(const int attr) const {
     return getFloat(attr);
 }
 
 
-const bool invalid_return<bool>::value = false;
-const std::string invalid_return<bool>::type = "bool";
+template<> const bool invalid_return<bool>::value = false;
+template<> const std::string invalid_return<bool>::type = "bool";
 template<>
 bool SUMOSAXAttributes::getInternal(const int attr) const {
     return getBool(attr);
 }
 
 
-const RGBColor invalid_return<RGBColor>::value = RGBColor();
-const std::string invalid_return<RGBColor>::type = "color";
+template<> const std::string invalid_return<std::string>::value = "";
+template<> const std::string invalid_return<std::string>::type = "string";
+template<>
+std::string SUMOSAXAttributes::getInternal(const int attr) const {
+    const std::string ret = getString(attr);
+    if (ret == "") {
+        throw EmptyData();
+    }
+    return ret;
+}
+
+
+template<> const RGBColor invalid_return<RGBColor>::value = RGBColor();
+template<> const std::string invalid_return<RGBColor>::type = "color";
 template<>
 RGBColor SUMOSAXAttributes::getInternal(const int /* attr */) const {
     return getColor();
 }
 
 
-const PositionVector invalid_return<PositionVector>::value = PositionVector();
-const std::string invalid_return<PositionVector>::type = "PositionVector";
+template<> const PositionVector invalid_return<PositionVector>::value = PositionVector();
+template<> const std::string invalid_return<PositionVector>::type = "PositionVector";
 template<>
 PositionVector SUMOSAXAttributes::getInternal(const int attr) const {
     return getShape(attr);
 }
 
 
-const Boundary invalid_return<Boundary>::value = Boundary();
-const std::string invalid_return<Boundary>::type = "Boundary";
+template<> const Boundary invalid_return<Boundary>::value = Boundary();
+template<> const std::string invalid_return<Boundary>::type = "Boundary";
 template<>
 Boundary SUMOSAXAttributes::getInternal(const int attr) const {
     return getBoundary(attr);
 }
 
 
-const std::vector<std::string> invalid_return<std::vector<std::string> >::value = std::vector<std::string>();
-const std::string invalid_return<std::vector<std::string> >::type = "StringVector";
-template<>
-std::vector<std::string> SUMOSAXAttributes::getInternal(const int attr) const {
-    return getStringVector(attr);
-}
-
-
 /****************************************************************************/
+

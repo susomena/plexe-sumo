@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIPropertyScheme.h
 /// @author  Michael Behrisch
 /// @author  Daniel Krajzewicz
@@ -16,6 +8,17 @@
 ///
 //
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIPropertyScheme_h
 #define GUIPropertyScheme_h
 
@@ -23,13 +26,16 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <vector>
 #include <utils/common/RGBColor.h>
 #include <utils/iodevices/OutputDevice.h>
-#include <utils/gui/images/GUIIcons.h>
 
 
 // ===========================================================================
@@ -47,14 +53,10 @@ class GUIPropertyScheme {
 public:
     /// Constructor
     GUIPropertyScheme(const std::string& name, const T& baseColor,
-                      const std::string& colName = "", const bool isFixed = false, double baseValue = 0,
-                      RGBColor bgColor = RGBColor::INVISIBLE,
-                      GUIIcon icon = ICON_EMPTY) :
+                      const std::string& colName = "", const bool isFixed = false, double baseValue = 0) :
         myName(name), myIsInterpolated(!isFixed),
         myIsFixed(isFixed),
-        myAllowNegativeValues(false),
-        myIcon(icon),
-        myBgColor(bgColor) {
+        myAllowNegativeValues(false) {
         addColor(baseColor, baseValue, colName);
     }
 
@@ -167,14 +169,6 @@ public:
         myAllowNegativeValues = value;
     }
 
-    GUIIcon getIcon() const {
-        return myIcon;
-    }
-
-    const RGBColor& getBackgroundColor() const {
-        return myBgColor;
-    }
-
     void save(OutputDevice& dev) const {
         const std::string tag = getTagName(myColors);
 
@@ -236,8 +230,6 @@ private:
     std::vector<std::string> myNames;
     bool myIsFixed;
     bool myAllowNegativeValues;
-    GUIIcon myIcon;
-    RGBColor myBgColor;
 
 };
 

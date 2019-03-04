@@ -16,12 +16,3 @@ ticket2841
 # (also affects other pedestrian models)
 ticket3260
 ticket3347
-
-# pedestrian on looped route should not block itself
-ticket3888
-
-# pedestrian with internal edge id in route runs in a loop
-ticket4314
-
-# walking speed via internal (road) lanes
-ticket4362

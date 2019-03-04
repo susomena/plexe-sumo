@@ -1,6 +1,3 @@
-# testing meta processing
-meta
-
 # some basic tests for importing files
 import
 
@@ -12,6 +9,9 @@ pedestrians
 
 # test exporting persontrips
 persontrips
+
+# testing meta processing
+meta
 
 # tests for what happens if an error occures
 errors

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIVissimSingleTypeParser_Verbindungsdefinition.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,16 +7,31 @@
 ///
 //
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <utils/geom/PositionVector.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include "../NIImporter_Vissim.h"
 #include "../tempstructs/NIVissimConnection.h"
 #include "NIVissimSingleTypeParser_Verbindungsdefinition.h"
@@ -63,12 +70,12 @@ NIVissimSingleTypeParser_Verbindungsdefinition::parse(std::istream& from) {
         if (y != "nach") {
             geom.push_back_noDoublePos(
                 Position(
-                    StringUtils::toDouble(x),
-                    StringUtils::toDouble(y)
+                    TplConvert::_2double(x.c_str()),
+                    TplConvert::_2double(y.c_str())
                 ));
             tag = myRead(from);
             try {
-                StringUtils::toDouble(tag);
+                TplConvert::_2double(tag.c_str());
                 tag = myRead(from);
             } catch (NumberFormatException&) {}
         } else {
@@ -115,7 +122,7 @@ NIVissimSingleTypeParser_Verbindungsdefinition::parse(std::istream& from) {
     if (tag == "fahrzeugklassen") {
         tag = readEndSecure(from);
         while (tag != "DATAEND" && tag != "sperrung" && tag != "auswertung") {
-            int classes = StringUtils::toInt(tag);
+            int classes = TplConvert::_2int(tag.c_str());
             assignedVehicles.push_back(classes);
             tag = readEndSecure(from, "auswertung");
         }
@@ -142,7 +149,7 @@ NIVissimSingleTypeParser_Verbindungsdefinition::parse(std::istream& from) {
                     tag = myRead(from);
                 }
                 while (tag != "DATAEND" && tag != "spur" && tag != "keinspurwechsel") {
-                    int classes = StringUtils::toInt(tag);
+                    int classes = TplConvert::_2int(tag.c_str());
                     assignedVehicles.push_back(classes);
                     tag = readEndSecure(from);
                 }

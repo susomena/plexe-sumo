@@ -1,21 +1,23 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NLEdgeControlBuilder.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
-/// @author  Leonhard Luecken
 /// @date    Mon, 9 Jul 2001
 /// @version $Id$
 ///
 // Interface for building edges
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef NLEdgeControlBuilder_h
 #define NLEdgeControlBuilder_h
@@ -24,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -79,9 +85,7 @@ public:
      * @exception InvalidArgument If an edge with the same name was already built
      */
     void beginEdgeParsing(const std::string& id, const SumoXMLEdgeFunc function,
-                          const std::string& streetName, const std::string& edgeType,
-                          int priority,
-                          const std::string& bidi);
+                          const std::string& streetName, const std::string& edgeType, int priority);
 
 
     /** @brief Adds a lane to the current edge
@@ -99,17 +103,7 @@ public:
      */
     virtual MSLane* addLane(const std::string& id, double maxSpeed,
                             double length, const PositionVector& shape,
-                            double width,
-                            SVCPermissions permissions, int index, bool isRampAccel);
-
-    /** @brief process a stopOffset element (originates either from the active edge or lane).
-     */
-    void addStopOffsets(const std::map<SVCPermissions, double>& stopOffsets);
-
-
-    /** @brief Return info about currently processed edge or lane
-     */
-    std::string reportCurrentEdgeOrLane() const;
+                            double width, SVCPermissions permissions, int index, bool isRampAccel);
 
 
     /** @brief Adds a neighbor to the current lane
@@ -124,12 +118,8 @@ public:
         The edge is completely described by now and may not be opened again */
     virtual MSEdge* closeEdge();
 
-    /** @brief Closes the building of a lane;
-        The edge is completely described by now and may not be opened again */
-    void closeLane();
-
     /// builds the MSEdgeControl-class which holds all edges
-    MSEdgeControl* build(double networkVersion);
+    MSEdgeControl* build();
 
 
     /** @brief Builds an edge instance (MSEdge in this case)
@@ -163,30 +153,8 @@ protected:
     /// @brief pointer to the currently chosen edge
     MSEdge* myActiveEdge;
 
-    /// @brief The default stop offset for all lanes belonging to the active edge (this is set if the edge was given a stopOffset child)
-    std::map<SVCPermissions, double> myCurrentDefaultStopOffsets;
-
-    /// @brief The index of the currently active lane (-1 if none is active)
-    int myCurrentLaneIndex;
-
     /// @brief pointer to a temporary lane storage
     std::vector<MSLane*>* myLaneStorage;
-
-    /// @brief temporary storage for bidi attributes (to be resolved after loading all edges)
-    std::map<MSEdge*, std::string> myBidiEdges;
-
-
-    /** @brief set the stopOffset for the last added lane.
-     */
-    void updateCurrentLaneStopOffsets(const std::map<SVCPermissions, double>& stopOffsets);
-
-    /** @brief set the stopOffset for the last added lane.
-     */
-    void setDefaultStopOffsets(std::map<SVCPermissions, double> stopOffsets);
-
-    /** @brief
-     */
-    void applyDefaultStopOffsetsToLanes();
 
 private:
     /// @brief invalidated copy constructor

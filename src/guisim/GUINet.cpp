@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUINet.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,10 +9,25 @@
 ///
 // A MSNet extended by some values for usage within the gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utility>
 #include <set>
@@ -31,14 +38,11 @@
 #include <utils/gui/globjects/GUIPointOfInterest.h>
 #include <utils/gui/globjects/GUIGLObjectPopupMenu.h>
 #include <utils/gui/div/GUIParameterTableWindow.h>
-#include <utils/gui/div/GUIGlobalSelection.h>
 #include <utils/gui/globjects/GUIShapeContainer.h>
-#include <utils/xml/XMLSubSys.h>
 #include <utils/common/StringUtils.h>
 #include <utils/common/RGBColor.h>
 #include <utils/gui/div/GLObjectValuePassConnector.h>
 #include <microsim/MSNet.h>
-#include <microsim/MSEdgeWeightsStorage.h>
 #include <microsim/MSJunction.h>
 #include <microsim/output/MSDetectorControl.h>
 #include <microsim/MSEdge.h>
@@ -65,18 +69,17 @@
 // definition of static variables used for visualisation of objects' values
 // ===========================================================================
 template std::vector< GLObjectValuePassConnector<double>* > GLObjectValuePassConnector<double>::myContainer;
-template FXMutex GLObjectValuePassConnector<double>::myLock;
+template MFXMutex GLObjectValuePassConnector<double>::myLock;
 
 template std::vector< GLObjectValuePassConnector<std::pair<int, class MSPhaseDefinition> >* > GLObjectValuePassConnector<std::pair<int, class MSPhaseDefinition> >::myContainer;
-template FXMutex GLObjectValuePassConnector<std::pair<int, class MSPhaseDefinition> >::myLock;
+template MFXMutex GLObjectValuePassConnector<std::pair<int, class MSPhaseDefinition> >::myLock;
 
 
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 GUINet::GUINet(MSVehicleControl* vc, MSEventControl* beginOfTimestepEvents,
-               MSEventControl* endOfTimestepEvents,
-               MSEventControl* insertionEvents) :
+               MSEventControl* endOfTimestepEvents, MSEventControl* insertionEvents) :
     MSNet(vc, beginOfTimestepEvents, endOfTimestepEvents, insertionEvents, new GUIShapeContainer(myGrid)),
     GUIGlObject(GLO_NETWORK, ""),
     myLastSimDuration(0), /*myLastVisDuration(0),*/ myLastIdleDuration(0),
@@ -92,20 +95,17 @@ GUINet::~GUINet() {
     // delete allocated wrappers
     //  of junctions
     for (std::vector<GUIJunctionWrapper*>::iterator i1 = myJunctionWrapper.begin(); i1 != myJunctionWrapper.end(); i1++) {
-        delete (*i1);
+        delete(*i1);
     }
     //  of additional structures
     GUIGlObject_AbstractAdd::clearDictionary();
     //  of tl-logics
     for (Logics2WrapperMap::iterator i3 = myLogics2Wrapper.begin(); i3 != myLogics2Wrapper.end(); i3++) {
-        delete (*i3).second;
+        delete(*i3).second;
     }
     //  of detectors
     for (std::vector<GUIDetectorWrapper*>::iterator i = myDetectorWrapper.begin(); i != myDetectorWrapper.end(); ++i) {
         delete *i;
-    }
-    for (auto& item : myLoadedEdgeData) {
-        delete item.second;
     }
 }
 
@@ -118,7 +118,7 @@ GUINet::getBoundary() const {
 
 MSTransportableControl&
 GUINet::getPersonControl() {
-    if (myPersonControl == nullptr) {
+    if (myPersonControl == 0) {
         myPersonControl = new GUITransportableControl();
     }
     return *myPersonControl;
@@ -127,7 +127,7 @@ GUINet::getPersonControl() {
 
 MSTransportableControl&
 GUINet::getContainerControl() {
-    if (myContainerControl == nullptr) {
+    if (myContainerControl == 0) {
         myContainerControl = new GUITransportableControl();
     }
     return *myContainerControl;
@@ -138,6 +138,8 @@ void
 GUINet::initTLMap() {
     // get the list of loaded tl-logics
     const std::vector<MSTrafficLightLogic*>& logics = getTLSControl().getAllLogics();
+    // allocate storage for the wrappers
+    myTLLogicWrapper.reserve(logics.size());
     // go through the logics
     for (std::vector<MSTrafficLightLogic*>::const_iterator i = logics.begin(); i != logics.end(); ++i) {
         createTLWrapper(*i);
@@ -145,15 +147,15 @@ GUINet::initTLMap() {
 }
 
 
-void
+GUIGlID
 GUINet::createTLWrapper(MSTrafficLightLogic* tll) {
     if (myLogics2Wrapper.count(tll) > 0) {
-        return;
+        return myLogics2Wrapper[tll]->getGlID();
     }
     // get the links
     const MSTrafficLightLogic::LinkVectorVector& links = tll->getLinks();
     if (links.size() == 0) { // @legacy this should never happen in 0.13.0+ networks
-        return;
+        return 0;
     }
     // build the wrapper
     GUITrafficLightLogicWrapper* tllw =
@@ -168,7 +170,7 @@ GUINet::createTLWrapper(MSTrafficLightLogic* tll) {
     }
     myGrid.addAdditionalGLObject(tllw);
     myLogics2Wrapper[tll] = tllw;
-    return;
+    return tllw->getGlID();
 }
 
 
@@ -181,7 +183,7 @@ GUINet::getJunctionPosition(const std::string& name) const {
 
 bool
 GUINet::vehicleExists(const std::string& name) const {
-    return myVehicleControl->getVehicle(name) != nullptr;
+    return myVehicleControl->getVehicle(name) != 0;
 }
 
 
@@ -222,7 +224,7 @@ GUINet::guiSimulationStep() {
 
 void
 GUINet::simulationStep() {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     MSNet::simulationStep();
 }
 
@@ -259,9 +261,10 @@ GUINet::initGUIStructures() {
     // initialise detector storage for gui
     const std::vector<SumoXMLTag> types = myDetectorControl->getAvailableTypes();
     for (std::vector<SumoXMLTag>::const_iterator i = types.begin(); i != types.end(); ++i) {
-        for (const auto& j : myDetectorControl->getTypedDetectors(*i)) {
-            GUIDetectorWrapper* wrapper = j.second->buildDetectorGUIRepresentation();
-            if (wrapper != nullptr) {
+        const std::map<std::string, MSDetectorFileOutput*>& dets = myDetectorControl->getTypedDetectors(*i).getMyMap();
+        for (std::map<std::string, MSDetectorFileOutput*>::const_iterator j = dets.begin(); j != dets.end(); ++j) {
+            GUIDetectorWrapper* wrapper = (*j).second->buildDetectorGUIRepresentation();
+            if (wrapper != 0) {
                 myDetectorWrapper.push_back(wrapper);
                 myGrid.addAdditionalGLObject(wrapper);
             }
@@ -281,16 +284,9 @@ GUINet::initGUIStructures() {
     // initialise junction storage for gui
     int size = myJunctions->size();
     myJunctionWrapper.reserve(size);
-    std::map<MSJunction*, std::string> junction2TLL;
-    for (const auto tls : getTLSControl().getAllLogics()) {
-        for (const auto& links : tls->getLinks()) {
-            for (const MSLink* l : links) {
-                junction2TLL[l->getJunction()] = l->getTLLogic()->getID();
-            }
-        }
-    }
-    for (const auto& i : *myJunctions) {
-        myJunctionWrapper.push_back(new GUIJunctionWrapper(*i.second, junction2TLL[i.second]));
+    const std::map<std::string, MSJunction*>& junctions = myJunctions->getMyMap();
+    for (std::map<std::string, MSJunction*>::const_iterator i = junctions.begin(); i != junctions.end(); ++i) {
+        myJunctionWrapper.push_back(new GUIJunctionWrapper(*(*i).second));
     }
     // build the visualization tree
     for (std::vector<GUIEdge*>::iterator i = myEdgeWrapper.begin(); i != myEdgeWrapper.end(); ++i) {
@@ -348,7 +344,7 @@ GUINet::getRTFactor() const {
     if (myLastSimDuration == 0) {
         return -1;
     }
-    return (double)DELTA_T / (double)myLastSimDuration;
+    return (double) 1000. / (double) myLastSimDuration;
 }
 
 
@@ -423,7 +419,7 @@ GUIParameterTableWindow*
 GUINet::getParameterWindow(GUIMainWindow& app,
                            GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 35);
+        new GUIParameterTableWindow(app, *this, 32);
     // add items
     ret->mkItem("loaded vehicles [#]", true,
                 new FunctionBinding<MSVehicleControl, int>(&getVehicleControl(), &MSVehicleControl::getLoadedVehicleNo));
@@ -434,20 +430,18 @@ GUINet::getParameterWindow(GUIMainWindow& app,
     ret->mkItem("running vehicles [#]", true,
                 new FunctionBinding<MSVehicleControl, int>(&getVehicleControl(), &MSVehicleControl::getRunningVehicleNo));
     ret->mkItem("arrived vehicles [#]", true,
-                new FunctionBinding<MSVehicleControl, int>(&getVehicleControl(), &MSVehicleControl::getArrivedVehicleNo));
-    ret->mkItem("discarded vehicles [#]", true,
-                new FunctionBinding<MSVehicleControl, int>(&getVehicleControl(), &MSVehicleControl::getDiscardedVehicleNo));
+                new FunctionBinding<MSVehicleControl, int>(&getVehicleControl(), &MSVehicleControl::getEndedVehicleNo));
     ret->mkItem("collisions [#]", true,
                 new FunctionBinding<MSVehicleControl, int>(&getVehicleControl(), &MSVehicleControl::getCollisionCount));
     ret->mkItem("teleports [#]", true,
                 new FunctionBinding<MSVehicleControl, int>(&getVehicleControl(), &MSVehicleControl::getTeleportCount));
     ret->mkItem("halting [#]", true,
-                new FunctionBinding<MSVehicleControl, int>(&getVehicleControl(), &MSVehicleControl::getHaltingVehicleNo));
-    ret->mkItem("avg. speed [m/s]", true,
-                new FunctionBinding<MSVehicleControl, double>(&getVehicleControl(), &MSVehicleControl::getVehicleMeanSpeed));
-    ret->mkItem("avg. relative speed", true,
-                new FunctionBinding<MSVehicleControl, double>(&getVehicleControl(), &MSVehicleControl::getVehicleMeanSpeedRelative));
-    if (myPersonControl != nullptr) {
+                new FunctionBinding<MSNet, int>(this, &GUINet::getHaltingVehicleNumber));
+    ret->mkItem("mean speed [m/s]", true,
+                new FunctionBinding<MSNet, double>(this, &GUINet::getVehicleMeanSpeed));
+    ret->mkItem("mean speed relative", true,
+                new FunctionBinding<MSNet, double>(this, &GUINet::getVehicleMeanSpeedRelative));
+    if (myPersonControl != 0) {
         ret->mkItem("loaded persons [#]", true,
                     new FunctionBinding<MSTransportableControl, int>(&getPersonControl(), &MSTransportableControl::getLoadedNumber));
         ret->mkItem("running persons [#]", true,
@@ -467,14 +461,14 @@ GUINet::getParameterWindow(GUIMainWindow& app,
                 &(getNet()), &GUINet::getVisDuration));
         */
         ret->mkItem("idle duration [ms]", true, new FunctionBinding<GUINet, int>(this, &GUINet::getIdleDuration));
-        ret->mkItem("duration factor", true, new FunctionBinding<GUINet, double>(this, &GUINet::getRTFactor));
+        ret->mkItem("duration factor []", true, new FunctionBinding<GUINet, double>(this, &GUINet::getRTFactor));
         /*
         ret->mkItem("mean duration factor []", true,
             new FuncBinding_IntParam<GUINet, double>(
                 &(getNet()), &GUINet::getMeanRTFactor), 1);
                 */
-        ret->mkItem("updates per second", true, new FunctionBinding<GUINet, double>(this, &GUINet::getUPS));
-        ret->mkItem("avg. updates per second", true, new FunctionBinding<GUINet, double>(this, &GUINet::getMeanUPS));
+        ret->mkItem("ups [#]", true, new FunctionBinding<GUINet, double>(this, &GUINet::getUPS));
+        ret->mkItem("mean ups [#]", true, new FunctionBinding<GUINet, double>(this, &GUINet::getMeanUPS));
         if (OptionsCont::getOptions().getBool("duration-log.statistics")) {
             ret->mkItem("avg. trip length [m]", true, new FunctionBinding<GUINet, double>(this, &GUINet::getAvgRouteLength));
             ret->mkItem("avg. trip duration [s]", true, new FunctionBinding<GUINet, double>(this, &GUINet::getAvgDuration));
@@ -482,11 +476,6 @@ GUINet::getParameterWindow(GUIMainWindow& app,
             ret->mkItem("avg. trip time loss [s]", true, new FunctionBinding<GUINet, double>(this, &GUINet::getAvgTimeLoss));
             ret->mkItem("avg. trip depart delay [s]", true, new FunctionBinding<GUINet, double>(this, &GUINet::getAvgDepartDelay));
             ret->mkItem("avg. trip speed [m/s]", true, new FunctionBinding<GUINet, double>(this, &GUINet::getAvgTripSpeed));
-            if (myPersonControl != nullptr) {
-                ret->mkItem("avg. walk length [m]", true, new FunctionBinding<GUINet, double>(this, &GUINet::getAvgWalkRouteLength));
-                ret->mkItem("avg. walk duration [s]", true, new FunctionBinding<GUINet, double>(this, &GUINet::getAvgWalkDuration));
-                ret->mkItem("avg. walk time loss [s]", true, new FunctionBinding<GUINet, double>(this, &GUINet::getAvgWalkTimeLoss));
-            }
         }
     }
     ret->mkItem("nodes [#]", false, (int)getJunctionIDs(false).size());
@@ -514,7 +503,7 @@ GUINet::getCenteringBoundary() const {
 GUINet*
 GUINet::getGUIInstance() {
     GUINet* net = dynamic_cast<GUINet*>(MSNet::getInstance());
-    if (net != nullptr) {
+    if (net != 0) {
         return net;
     }
     throw ProcessError("A gui-network was not yet constructed.");
@@ -543,92 +532,6 @@ GUINet::getGUIMEVehicleControl() {
     return dynamic_cast<GUIMEVehicleControl*>(myVehicleControl);
 }
 
-
-double
-GUINet::getEdgeData(const MSEdge* edge, const std::string& attr) {
-    auto it = myLoadedEdgeData.find(attr);
-    if (it != myLoadedEdgeData.end()) {
-        double value;
-        bool found = it->second->retrieveExistingEffort(edge, STEPS2TIME(getCurrentTimeStep()), value);
-        if (found) {
-            return value;
-        } else {
-            return -1;
-        }
-    } else {
-        return -2;
-    }
-}
-
-
-void
-GUINet::DiscoverAttributes::myStartElement(int element, const SUMOSAXAttributes& attrs) {
-    if (element == SUMO_TAG_EDGE || element == SUMO_TAG_LANE) {
-        std::vector<std::string> tmp = attrs.getAttributeNames();
-        edgeAttrs.insert(tmp.begin(), tmp.end());
-    } else if (element == SUMO_TAG_INTERVAL) {
-        bool ok;
-        lastIntervalEnd = MAX2(lastIntervalEnd, attrs.getSUMOTimeReporting(SUMO_ATTR_END, nullptr, ok));
-    }
-}
-
-std::vector<std::string>
-GUINet::DiscoverAttributes::getEdgeAttrs() {
-    edgeAttrs.erase(toString(SUMO_ATTR_ID));
-    return std::vector<std::string>(edgeAttrs.begin(), edgeAttrs.end());
-}
-
-void
-GUINet::EdgeFloatTimeLineRetriever_GUI::addEdgeWeight(const std::string& id,
-        double value, double begTime, double endTime) const {
-    MSEdge* edge = MSEdge::dictionary(id);
-    if (edge != nullptr) {
-        myWeightStorage->addEffort(edge, begTime, endTime, value);
-    } else {
-        WRITE_ERROR("Trying to set the effort for the unknown edge '" + id + "'.");
-    }
-}
-
-
-bool
-GUINet::loadEdgeData(const std::string& file) {
-    // discover edge attributes
-    DiscoverAttributes discoveryHandler(file);
-    XMLSubSys::runParser(discoveryHandler, file);
-    std::vector<std::string> attrs = discoveryHandler.getEdgeAttrs();
-    WRITE_MESSAGE("Loading edgedata from '" + file
-                  + "' Found " + toString(attrs.size())
-                  + " attributes: " + toString(attrs));
-    myEdgeDataEndTime = MAX2(myEdgeDataEndTime, discoveryHandler.lastIntervalEnd);
-    // create a retriever for each attribute
-    std::vector<EdgeFloatTimeLineRetriever_GUI> retrieverDefsInternal;
-    retrieverDefsInternal.reserve(attrs.size());
-    std::vector<SAXWeightsHandler::ToRetrieveDefinition*> retrieverDefs;
-    for (const std::string& attr : attrs) {
-        MSEdgeWeightsStorage* ws = new MSEdgeWeightsStorage();
-        myLoadedEdgeData[attr] = ws;
-        retrieverDefsInternal.push_back(EdgeFloatTimeLineRetriever_GUI(ws));
-        retrieverDefs.push_back(new SAXWeightsHandler::ToRetrieveDefinition(attr, true, retrieverDefsInternal.back()));
-    }
-    SAXWeightsHandler handler(retrieverDefs, "");
-    return XMLSubSys::runParser(handler, file);
-}
-
-
-std::vector<std::string>
-GUINet::getEdgeDataAttrs() const {
-    std::vector<std::string> result;
-    for (const auto& item : myLoadedEdgeData) {
-        result.push_back(item.first);
-    }
-    return result;
-}
-
-bool
-GUINet::isSelected(const MSTrafficLightLogic* tll) const {
-    const auto it = myLogics2Wrapper.find(const_cast<MSTrafficLightLogic*>(tll));
-    return it != myLogics2Wrapper.end() && gSelected.isSelected(GLO_TLLOGIC, it->second->getGlID());
-}
 
 #ifdef HAVE_OSG
 void

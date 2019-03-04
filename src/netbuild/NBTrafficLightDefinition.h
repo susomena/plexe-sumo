@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBTrafficLightDefinition.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // The base class for traffic light logic definitions
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBTrafficLightDefinition_h
 #define NBTrafficLightDefinition_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <string>
@@ -279,10 +286,9 @@ public:
                                 NBEdge* by, int byLane) = 0;
 
     /// @brief patches (loaded) signal plans by modifying lane indices
-    virtual void shiftTLConnectionLaneIndex(NBEdge* edge, int offset, int threshold = -1) {
+    virtual void shiftTLConnectionLaneIndex(NBEdge* edge, int offset) {
         UNUSED_PARAMETER(edge);
         UNUSED_PARAMETER(offset);
-        UNUSED_PARAMETER(threshold);
     }
 
     /** @brief Returns the list of incoming edges (must be build first)
@@ -342,37 +348,13 @@ public:
      */
     bool needsCont(const NBEdge* fromE, const NBEdge* toE, const NBEdge* otherFromE, const NBEdge* otherToE) const;
 
-    /// @brief whether the given index must yield to the foeIndex while turning right on a red light
+    /// @brief whether the given index must yield to the foeIndex while turing right on a red light
     virtual bool rightOnRedConflict(int index, int foeIndex) const;
 
     /* initialize myNeedsContRelation and set myNeedsContRelationReady to true
      * This information is a byproduct of NBOwnTLDef::myCompute. All other
      * subclasses instantiate a private instance of NBOwnTLDef to answer this query */
     virtual void initNeedsContRelation() const;
-
-    ///@brief Returns the maximum index controlled by this traffic light and assigned to a connection
-    virtual int getMaxIndex() = 0;
-
-    ///@brief Returns the maximum index controlled by this traffic light
-    virtual int getMaxValidIndex() {
-        return getMaxIndex();
-    }
-
-    /** @brief Computes the time vehicles may need to brake
-     *
-     * This time depends on the maximum speed allowed on incoming junctions.
-     * It is computed as max_speed_allowed / minimum_vehicle_decleration
-     */
-    int computeBrakingTime(double minDecel) const;
-
-    /// @brief whether this definition uses signal group (multiple connections with the same link index)
-    virtual bool usingSignalGroups() const {
-        return false;
-    };
-
-    /// @brief get ID and programID together (for convenient debugging)
-    std::string getDescription() const;
-
 
 protected:
     /// @brief id for temporary definitions
@@ -394,6 +376,14 @@ protected:
     /** @brief Build the list of participating edges
      */
     virtual void collectEdges();
+
+
+    /** @brief Computes the time vehicles may need to brake
+     *
+     * This time depends on the maximum speed allowed on incoming junctions.
+     * It is computed as max_speed_allowed / minimum_vehicle_decleration
+     */
+    int computeBrakingTime(double minDecel) const;
 
 
     // @return whether this traffic light is invalid and should be computed

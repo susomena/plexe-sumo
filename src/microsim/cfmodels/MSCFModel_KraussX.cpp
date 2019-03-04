@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_KraussX.cpp
 /// @author  Tobias Mayer
 /// @author  Daniel Krajzewicz
@@ -18,12 +10,27 @@
 ///
 // Krauss car-following model, changing accel and speed by slope
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <microsim/lcmodels/MSAbstractLaneChangeModel.h>
 #include <microsim/MSVehicle.h>
@@ -36,10 +43,13 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-MSCFModel_KraussX::MSCFModel_KraussX(const MSVehicleType* vtype):
-    MSCFModel_Krauss(vtype),
-    myTmp1(vtype->getParameter().getCFParam(SUMO_ATTR_TMP1, 0.0)),
-    myTmp2(vtype->getParameter().getCFParam(SUMO_ATTR_TMP2, 0.0)) {
+MSCFModel_KraussX::MSCFModel_KraussX(const MSVehicleType* vtype, double accel, double decel,
+                                     double emergencyDecel, double apparentDecel,
+                                     double dawdle, double headwayTime,
+                                     double tmp1, double tmp2):
+    MSCFModel_Krauss(vtype, accel, decel, emergencyDecel, apparentDecel, dawdle, headwayTime),
+    myTmp1(tmp1),
+    myTmp2(tmp2) {
 }
 
 
@@ -48,18 +58,48 @@ MSCFModel_KraussX::~MSCFModel_KraussX() {}
 
 MSCFModel*
 MSCFModel_KraussX::duplicate(const MSVehicleType* vtype) const {
-    return new MSCFModel_KraussX(vtype);
+    return new MSCFModel_KraussX(vtype, myAccel, myDecel, myEmergencyDecel, myApparentDecel, myDawdle, myHeadwayTime, myTmp1, myTmp2);
 }
 
 
 double
-MSCFModel_KraussX::patchSpeedBeforeLC(const MSVehicle* veh, double vMin, double vMax) const {
-    return dawdleX(veh->getSpeed(), vMin, vMax, veh->getRNG());
+MSCFModel_KraussX::moveHelper(MSVehicle* const veh, double vPos) const {
+    const double oldV = veh->getSpeed(); // save old v for optional acceleration computation
+    const double vSafe = MIN2(vPos, veh->processNextStop(vPos)); // process stops
+    // we need the acceleration for emission computation;
+    //  in this case, we neglect dawdling, nonetheless, using
+    //  vSafe does not incorporate speed reduction due to interaction
+    //  on lane changing
+    double vMin, vNext;
+    const double vMax = MIN3(veh->getMaxSpeedOnLane(), maxNextSpeed(oldV, veh), vSafe);
+    if (MSGlobals::gSemiImplicitEulerUpdate) {
+        // we do not rely on never braking harder than maxDecel because TraCI or strange cf models may decide to do so
+        vMin = MIN2(getSpeedAfterMaxDecel(oldV), vMax);
+        const double vDawdle = dawdleX(oldV, vMin, vMax);
+        vNext = veh->getLaneChangeModel().patchSpeed(vMin, vDawdle, vMax, *this);
+        //std::cout << SIMTIME << " veh=" << veh->getID()
+        //    << " vOld=" << oldV << " vPos=" << vPos << " vSafe=" << vSafe
+        //    << " vMax=" << vMax << " vMin=" << vMin << " vDawdle=" << vDawdle << " vNext=" << vNext
+        //    << "\n";
+    } else {
+        // for ballistic update, negative vnext must be allowed to
+        // indicate a stop within the coming timestep (i.e., to attain negative values)
+        vMin =  MIN2(minNextSpeed(oldV, veh), vMax);
+        const double vDawdle = dawdleX(oldV, vMin, vMax);
+        vNext = veh->getLaneChangeModel().patchSpeed(vMin, vDawdle, vMax, *this);
+        // (Leo) moveHelper() is responsible for assuring that the next
+        // velocity is chosen in accordance with maximal decelerations.
+        // At this point vNext may also be negative indicating a stop within next step.
+        // Moreover, because maximumSafeStopSpeed() does not consider deceleration bounds
+        // vNext can be a large negative value at this point. We cap vNext here.
+        vNext = MAX2(vNext, vMin);
+    }
+    return vNext;
 }
 
 
 double
-MSCFModel_KraussX::dawdleX(double vOld, double vMin, double vMax, std::mt19937* rng) const {
+MSCFModel_KraussX::dawdleX(double vOld, double vMin, double vMax) const {
     double speed = vMax;
     if (!MSGlobals::gSemiImplicitEulerUpdate) {
         // in case of the ballistic update, negative speeds indicate
@@ -73,8 +113,9 @@ MSCFModel_KraussX::dawdleX(double vOld, double vMin, double vMax, std::mt19937* 
     if (vOld < myAccel) {
         speed -= ACCEL2SPEED(myTmp1 * myAccel);
     }
-    const double random = RandHelper::rand(rng);
+    const double random = RandHelper::rand();
     speed -= ACCEL2SPEED(myDawdle * myAccel * random);
+    speed = MAX2(vMin, speed);
     // overbraking
     if (vOld > vMax) {
         speed -= ACCEL2SPEED(myTmp2 * myAccel * random);
@@ -83,7 +124,6 @@ MSCFModel_KraussX::dawdleX(double vOld, double vMin, double vMax, std::mt19937* 
             speed = MAX2(0.0, speed);
         }
     }
-    speed = MAX2(vMin, speed);
     return speed;
 }
 

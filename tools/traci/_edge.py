@@ -1,24 +1,33 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    edge.py
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2011-03-17
+@version $Id$
 
-# @file    _edge.py
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2011-03-17
-# @version $Id$
+Python implementation of the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import struct
 from . import constants as tc
 from .domain import Domain
 from .storage import Storage
-from .exceptions import TraCIException
+from .exceptions import *
+
+
+def _TIME2STEPS(time):
+    """Conversion from (float) time in seconds to milliseconds as int"""
+    return int(time * 1000)
 
 
 _RETURN_VALUE_FUNC = {tc.VAR_EDGE_TRAVELTIME: Storage.readDouble,
@@ -35,8 +44,6 @@ _RETURN_VALUE_FUNC = {tc.VAR_EDGE_TRAVELTIME: Storage.readDouble,
                       tc.LAST_STEP_MEAN_SPEED: Storage.readDouble,
                       tc.LAST_STEP_OCCUPANCY: Storage.readDouble,
                       tc.LAST_STEP_LENGTH: Storage.readDouble,
-                      tc.VAR_LANE_INDEX: Storage.readInt,
-                      tc.VAR_NAME: Storage.readString,
                       tc.VAR_CURRENT_TRAVELTIME: Storage.readDouble,
                       tc.LAST_STEP_VEHICLE_NUMBER: Storage.readInt,
                       tc.LAST_STEP_VEHICLE_HALTING_NUMBER: Storage.readInt,
@@ -60,9 +67,9 @@ class EdgeDomain(Domain):
         which is valid on the edge at the given time.
         """
         self._connection._beginMessage(tc.CMD_GET_EDGE_VARIABLE, tc.VAR_EDGE_TRAVELTIME,
-                                       edgeID, 1 + 8)
+                                       edgeID, 1 + 4)
         self._connection._string += struct.pack(
-            "!Bd", tc.TYPE_DOUBLE, time)
+            "!Bi", tc.TYPE_INTEGER, time)
         return self._connection._checkResult(tc.CMD_GET_EDGE_VARIABLE,
                                              tc.VAR_EDGE_TRAVELTIME, edgeID).readDouble()
 
@@ -80,9 +87,9 @@ class EdgeDomain(Domain):
         which is valid on the edge at the given time.
         """
         self._connection._beginMessage(tc.CMD_GET_EDGE_VARIABLE, tc.VAR_EDGE_EFFORT,
-                                       edgeID, 1 + 8)
+                                       edgeID, 1 + 4)
         self._connection._string += struct.pack(
-            "!Bd", tc.TYPE_DOUBLE, time)
+            "!Bi", tc.TYPE_INTEGER, time)
         return self._connection._checkResult(tc.CMD_GET_EDGE_VARIABLE,
                                              tc.VAR_EDGE_EFFORT, edgeID).readDouble()
 
@@ -152,7 +159,7 @@ class EdgeDomain(Domain):
     def getLastStepOccupancy(self, edgeID):
         """getLastStepOccupancy(string) -> double
 
-        Returns the net occupancy (excluding inter-vehicle gaps) in % for the last time step on the given edge.
+        Returns the occupancy in % for the last time step on the given edge.
         """
         return self._getUniversal(tc.LAST_STEP_OCCUPANCY, edgeID)
 
@@ -162,20 +169,6 @@ class EdgeDomain(Domain):
         Returns the mean vehicle length in m for the last time step on the given edge.
         """
         return self._getUniversal(tc.LAST_STEP_LENGTH, edgeID)
-
-    def getLaneNumber(self, edgeID):
-        """getLaneNumber(string) -> int
-
-        Returns the number of lanes of this edge
-        """
-        return self._getUniversal(tc.VAR_LANE_INDEX, edgeID)
-
-    def getStreetName(self, edgeID):
-        """getStreetName(string) -> string
-
-        Returns the street name of this edge
-        """
-        return self._getUniversal(tc.VAR_NAME, edgeID)
 
     def getTraveltime(self, edgeID):
         """getTraveltime(string) -> double
@@ -214,12 +207,12 @@ class EdgeDomain(Domain):
         return self._getUniversal(tc.LAST_STEP_PERSON_ID_LIST, edgeID)
 
     def adaptTraveltime(self, edgeID, time, begin=None, end=None):
-        """adaptTraveltime(string, double, double, double) -> None
+        """adaptTraveltime(string, double) -> None
 
         Adapt the travel time value (in s) used for (re-)routing for the given edge.
 
         When setting begin time and end time (in seconds), the changes only
-        apply to that time range. Otherwise they apply all the time
+        apply to that time range
         """
         if begin is None and end is None:
             self._connection._beginMessage(
@@ -229,23 +222,24 @@ class EdgeDomain(Domain):
             self._connection._sendExact()
         elif begin is not None and end is not None:
             self._connection._beginMessage(
-                tc.CMD_SET_EDGE_VARIABLE, tc.VAR_EDGE_TRAVELTIME, edgeID, 1 + 4 + 1 + 8 + 1 + 8 + 1 + 8)
-            self._connection._string += struct.pack("!BiBdBdBd",
+                tc.CMD_SET_EDGE_VARIABLE, tc.VAR_EDGE_TRAVELTIME, edgeID, 1 + 4 + 1 + 4 + 1 + 4 + 1 + 8)
+            self._connection._string += struct.pack("!BiBiBiBd",
                                                     tc.TYPE_COMPOUND, 3,
-                                                    tc.TYPE_DOUBLE, begin,
-                                                    tc.TYPE_DOUBLE, end,
+                                                    tc.TYPE_INTEGER, begin,
+                                                    tc.TYPE_INTEGER, end,
                                                     tc.TYPE_DOUBLE, time)
             self._connection._sendExact()
         else:
-            raise TraCIException("Both, begin time and end time must be specified")
+            raise TraCIException(
+                "Both, begin time and end time must be specified")
 
     def setEffort(self, edgeID, effort, begin=None, end=None):
-        """setEffort(string, double, double, double) -> None
+        """setEffort(string, double) -> None
 
         Adapt the effort value used for (re-)routing for the given edge.
 
         When setting begin time and end time (in seconds), the changes only
-        apply to that time range. Otherwise they apply all the time.
+        apply to that time range
         """
         if begin is None and end is None:
             self._connection._beginMessage(
@@ -255,15 +249,16 @@ class EdgeDomain(Domain):
             self._connection._sendExact()
         elif begin is not None and end is not None:
             self._connection._beginMessage(
-                tc.CMD_SET_EDGE_VARIABLE, tc.VAR_EDGE_EFFORT, edgeID, 1 + 4 + 1 + 8 + 1 + 8 + 1 + 8)
-            self._connection._string += struct.pack("!BiBdBdBd",
+                tc.CMD_SET_EDGE_VARIABLE, tc.VAR_EDGE_EFFORT, edgeID, 1 + 4 + 1 + 4 + 1 + 4 + 1 + 8)
+            self._connection._string += struct.pack("!BiBiBiBd",
                                                     tc.TYPE_COMPOUND, 3,
-                                                    tc.TYPE_DOUBLE, begin,
-                                                    tc.TYPE_DOUBLE, end,
+                                                    tc.TYPE_INTEGER, begin,
+                                                    tc.TYPE_INTEGER, end,
                                                     tc.TYPE_DOUBLE, effort)
             self._connection._sendExact()
         else:
-            raise TraCIException("Both, begin time and end time must be specified")
+            raise TraCIException(
+                "Both, begin time and end time must be specified")
 
     def setMaxSpeed(self, edgeID, speed):
         """setMaxSpeed(string, double) -> None

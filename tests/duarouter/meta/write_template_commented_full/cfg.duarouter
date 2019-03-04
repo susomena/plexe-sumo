@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Thu Feb  7 12:44:41 2019 by Eclipse SUMO duarouter Version v1_0_1+0645-93703db
--->
-
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/duarouterConfiguration.xsd">
 
     <configuration>
@@ -10,7 +7,7 @@
         <configuration-file value="" synonymes="c configuration" type="FILE"/>
 
         <!-- Saves current configuration into FILE -->
-        <save-configuration value="" synonymes="C save-config" type="FILE"/>
+        <save-configuration value="" synonymes="save-config" type="FILE"/>
 
         <!-- Saves a configuration template (empty) into FILE -->
         <save-template value="" type="FILE"/>
@@ -48,9 +45,6 @@
     </input>
 
     <output>
-        <!-- Include license info into every output file -->
-        <write-license value="false" type="BOOL"/>
-
         <!-- Prefix which is applied to all output files. The special string &apos;TIME&apos; is replaced by the current time. -->
         <output-prefix value="" type="STR"/>
 
@@ -59,9 +53,6 @@
 
         <!-- Defines the number of digits after the comma for lon,lat output -->
         <precision.geo value="6" type="INT"/>
-
-        <!-- Write time values as hour:minute:second or day:hour:minute:second rathern than seconds -->
-        <human-readable-time value="false" synonymes="H" type="BOOL"/>
 
         <!-- Write generated routes to FILE -->
         <output-file value="" synonymes="o output" type="FILE"/>
@@ -72,35 +63,20 @@
         <!-- Keep vTypeDistribution ids when writing vehicles and their types -->
         <keep-vtype-distributions value="false" type="BOOL"/>
 
-        <!-- Write generated route alternatives to FILE -->
-        <alternatives-output value="" synonymes="alternatives" type="FILE"/>
-
-        <!-- Write edge splits and connectivity to FILE -->
-        <intermodal-network-output value="" type="FILE"/>
-
-        <!-- Write intermodal edges with lengths and travel times to FILE -->
-        <intermodal-weight-output value="" type="FILE"/>
-
-        <!-- Write trips instead of vehicles (for validating trip input) -->
-        <write-trips value="false" type="BOOL"/>
-
-        <!-- Write trips with geo-coordinates -->
-        <write-trips.geo value="false" type="BOOL"/>
-
         <!-- Write exit times (weights) for each edge -->
         <exit-times value="false" type="BOOL"/>
 
     </output>
 
     <processing>
+        <!-- Continue if a route could not be build -->
+        <ignore-errors value="false" synonymes="continue-on-unbuild" type="BOOL"/>
+
         <!-- Assume input is unsorted -->
         <unsorted-input value="false" synonymes="unsorted" type="BOOL"/>
 
         <!-- Load routes for the next number of seconds ahead -->
         <route-steps value="200" synonymes="s" type="TIME"/>
-
-        <!-- Disable (junction) internal links -->
-        <no-internal-links value="false" type="BOOL"/>
 
         <!-- generate random departure times for flow input -->
         <randomize-flows value="false" type="BOOL"/>
@@ -122,9 +98,6 @@
 
         <!-- Interpolate edge weights at interval boundaries -->
         <weights.interpolate value="false" synonymes="interpolate" type="BOOL"/>
-
-        <!-- Apply the given time penalty when computing routing costs for minor-link internal lanes -->
-        <weights.minor-penalty value="1.5" type="FLOAT"/>
 
         <!-- Use origin and destination zones (districts) for in- and output -->
         <with-taz value="false" type="BOOL"/>
@@ -165,9 +138,6 @@
         <!-- Only reuse routes from input, do not calculate new ones -->
         <skip-new-routes value="false" type="BOOL"/>
 
-        <!-- Route all public transport input -->
-        <ptline-routing value="false" type="BOOL"/>
-
         <!-- Use c-logit model (deprecated in favor of --route-choice-method logit) -->
         <logit value="false" type="BOOL"/>
 
@@ -184,10 +154,7 @@
         <logit.theta value="-1" synonymes="lTheta" type="FLOAT"/>
 
         <!-- Use FLOAT as a factor on pedestrian maximum speed during intermodal routing -->
-        <persontrip.walkfactor value="0.75" type="FLOAT"/>
-
-        <!-- Where are mode changes from car to walking allowed (possible values: &apos;parkingAreas&apos;, &apos;ptStops&apos;, &apos;allJunctions&apos; and combinations) -->
-        <persontrip.transfer.car-walk value="parkingAreas" type="STR"/>
+        <persontrip.walkfactor value="0.9" type="FLOAT"/>
 
     </processing>
 
@@ -254,9 +221,6 @@
 
         <!-- Writes all warnings and errors to FILE -->
         <error-log value="" type="FILE"/>
-
-        <!-- Continue if a route could not be build -->
-        <ignore-errors value="false" synonymes="continue-on-unbuild" type="BOOL"/>
 
         <!-- Defines how often statistics shall be printed -->
         <stats-period value="-1" type="INT"/>

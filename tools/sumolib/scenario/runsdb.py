@@ -1,16 +1,19 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runsdb.py
+@author  Daniel Krajzewicz
+@date    2014-07-21
+@version $Id$
 
-# @file    runsdb.py
-# @author  Daniel Krajzewicz
-# @date    2014-07-21
-# @version $Id$
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
 
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+@date    2014-09-01
+"""
 
 from __future__ import absolute_import
 import sqlite3
@@ -141,6 +144,7 @@ class RunsDB:
                 if row[1] not in ret[r]:
                     ret[r][row[1]] = {}
                 if row[2] in ret[r][row[1]]:
+                    pass
                     raise RuntimeError("set twice!!")
                 ret[r][row[1]][row[2]] = row[3]
         return ret

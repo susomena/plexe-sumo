@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSSOTLE2Sensors.cpp
 /// @author  Gianfilippo Slager
 /// @author  Alessio Bonfietti
@@ -16,8 +8,19 @@
 ///
 // The class for SOTL sensors of "E2" type
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <microsim/output/MSDetectorControl.h>
 #include <microsim/MSEdge.h>
 #include <microsim/MSVehicleType.h>
@@ -44,7 +47,7 @@ void MSSOTLE2Sensors::buildSensors(
     MSTrafficLightLogic::LaneVectorVector controlledLanes,
     NLDetectorBuilder& nb, double sensorLength) {
     //for each lane build an appropriate sensor on it
-    MSLane* currentLane = nullptr;
+    MSLane* currentLane = NULL;
 
     //input and ouput lanes
     for (MSTrafficLightLogic::LaneVectorVector::const_iterator laneVector =
@@ -65,7 +68,7 @@ void MSSOTLE2Sensors::buildCountSensors(
     MSTrafficLightLogic::LaneVectorVector controlledLanes,
     NLDetectorBuilder& nb) {
     //for each lane build an appropriate sensor on it
-    MSLane* currentLane = nullptr;
+    MSLane* currentLane = NULL;
     //input and ouput lanes
     for (MSTrafficLightLogic::LaneVectorVector::const_iterator laneVector =
                 controlledLanes.begin(); laneVector != controlledLanes.end();
@@ -82,7 +85,7 @@ void MSSOTLE2Sensors::buildCountOutSensors(
     MSTrafficLightLogic::LaneVectorVector controlledLanes,
     NLDetectorBuilder& nb) {
     //for each lane build an appropriate sensor on it
-    MSLane* currentLane = nullptr;
+    MSLane* currentLane = NULL;
 
     //input and ouput lanes
     for (MSTrafficLightLogic::LaneVectorVector::const_iterator laneVector =
@@ -105,7 +108,7 @@ void MSSOTLE2Sensors::buildOutSensors(
     MSTrafficLightLogic::LaneVectorVector controlledLanes,
     NLDetectorBuilder& nb, double sensorLength) {
     //for each lane build an appropriate sensor on it
-    MSLane* currentLane = nullptr;
+    MSLane* currentLane = NULL;
 
     //input and ouput lanes
     for (MSTrafficLightLogic::LaneVectorVector::const_iterator laneVector =
@@ -122,7 +125,7 @@ void MSSOTLE2Sensors::buildOutSensors(
 void MSSOTLE2Sensors::buildCountSensorForLane(MSLane* lane, NLDetectorBuilder& nb) {
     double sensorPos;
     double lensorLength;
-    MSE2Collector* newSensor = nullptr;
+    MSE2Collector* newSensor = NULL;
     //Check not to have more than a sensor for lane
     if (m_sensorMap.find(lane->getID()) == m_sensorMap.end()) {
 
@@ -164,7 +167,7 @@ void MSSOTLE2Sensors::buildCountSensorForLane(MSLane* lane, NLDetectorBuilder& n
 void MSSOTLE2Sensors::buildCountSensorForOutLane(MSLane* lane, NLDetectorBuilder& nb) {
     double sensorPos;
     double lensorLength;
-    MSE2Collector* newSensor = nullptr;
+    MSE2Collector* newSensor = NULL;
     //Check not to have more than a sensor for lane
     if (m_sensorMap.find(lane->getID()) == m_sensorMap.end()) {
 
@@ -250,7 +253,7 @@ void MSSOTLE2Sensors::buildSensorForLane(MSLane* lane, NLDetectorBuilder& nb, do
     }
     double sensorPos;
     double lensorLength;
-    MSE2Collector* newSensor = nullptr;
+    MSE2Collector* newSensor = NULL;
     //Check not to have more than a sensor for lane
     if (m_sensorMap.find(lane->getID()) == m_sensorMap.end()) {
 
@@ -331,7 +334,7 @@ void MSSOTLE2Sensors::buildSensorForOutLane(MSLane* lane,
         NLDetectorBuilder& nb, double sensorLength) {
     double sensorPos;
     double lensorLength;
-    MSE2Collector* newSensor = nullptr;
+    MSE2Collector* newSensor = NULL;
     //Check not to have more than a sensor for lane
     if (m_sensorMap.find(lane->getID()) == m_sensorMap.end()) {
 
@@ -507,7 +510,7 @@ void MSSOTLE2Sensors::setVehicleWeigths(const std::string& weightString) {
         split(*typesIt, '=', typeWeight);
         if (typeWeight.size() == 2) {
             std::string type = trim(typeWeight[0]);
-            int value = StringUtils::toInt(typeWeight[1]);
+            int value = TplConvert::_2int(typeWeight[1].c_str());
             logstr << type << "=" << value << " ";
             m_typeWeightMap[type] = value;
         }

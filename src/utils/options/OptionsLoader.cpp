@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    OptionsLoader.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // A SAX-Handler for loading options
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <algorithm>
 #include <string>
@@ -30,7 +37,7 @@
 #include <xercesc/sax/AttributeList.hpp>
 #include <xercesc/sax/SAXParseException.hpp>
 #include <xercesc/sax/SAXException.hpp>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/StringTokenizer.h>
 #include "OptionsLoader.h"
 #include "OptionsCont.h"
@@ -52,11 +59,11 @@ OptionsLoader::~OptionsLoader() {}
 
 void OptionsLoader::startElement(const XMLCh* const name,
                                  XERCES_CPP_NAMESPACE::AttributeList& attributes) {
-    myItem = StringUtils::transcode(name);
+    myItem = TplConvert::_2str(name);
     if (!myRootOnly) {
         for (int i = 0; i < (int)attributes.getLength(); i++) {
-            std::string key = StringUtils::transcode(attributes.getName(i));
-            std::string value = StringUtils::transcode(attributes.getValue(i));
+            std::string key = TplConvert::_2str(attributes.getName(i));
+            std::string value = TplConvert::_2str(attributes.getValue(i));
             if (key == "value" || key == "v") {
                 setValue(myItem, value);
             }
@@ -85,7 +92,7 @@ void OptionsLoader::setValue(const std::string& key,
 
 void OptionsLoader::characters(const XMLCh* const chars,
                                const XERCES3_SIZE_t length) {
-    myValue = myValue + StringUtils::transcode(chars, (int) length);
+    myValue = myValue + TplConvert::_2str(chars, (int) length);
 }
 
 
@@ -116,7 +123,7 @@ OptionsLoader::endElement(const XMLCh* const /*name*/) {
 
 void
 OptionsLoader::warning(const XERCES_CPP_NAMESPACE::SAXParseException& exception) {
-    WRITE_WARNING(StringUtils::transcode(exception.getMessage()));
+    WRITE_WARNING(TplConvert::_2str(exception.getMessage()));
     WRITE_WARNING(" (At line/column " \
                   + toString(exception.getLineNumber() + 1) + '/' \
                   + toString(exception.getColumnNumber()) + ").");
@@ -127,7 +134,7 @@ OptionsLoader::warning(const XERCES_CPP_NAMESPACE::SAXParseException& exception)
 void
 OptionsLoader::error(const XERCES_CPP_NAMESPACE::SAXParseException& exception) {
     WRITE_ERROR(
-        StringUtils::transcode(exception.getMessage()));
+        TplConvert::_2str(exception.getMessage()));
     WRITE_ERROR(
         " (At line/column "
         + toString(exception.getLineNumber() + 1) + '/'
@@ -139,7 +146,7 @@ OptionsLoader::error(const XERCES_CPP_NAMESPACE::SAXParseException& exception) {
 void
 OptionsLoader::fatalError(const XERCES_CPP_NAMESPACE::SAXParseException& exception) {
     WRITE_ERROR(
-        StringUtils::transcode(exception.getMessage()));
+        TplConvert::_2str(exception.getMessage()));
     WRITE_ERROR(
         " (At line/column "
         + toString(exception.getLineNumber() + 1) + '/'
@@ -149,7 +156,7 @@ OptionsLoader::fatalError(const XERCES_CPP_NAMESPACE::SAXParseException& excepti
 
 
 bool
-OptionsLoader::errorOccurred() const {
+OptionsLoader::errorOccured() const {
     return myError;
 }
 

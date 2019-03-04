@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GNEUndoList.cpp
 /// @author  Jakob Erdmann
 /// @date    Mar 2011
@@ -20,16 +12,36 @@
 // GNEUndoList inherits from FXUndoList and patches some methods. these are
 // prefixed with p_
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
-#include <netedit/changes/GNEChange_Attribute.h>
-#include <utils/common/MsgHandler.h>
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
+#include <config.h>
+#endif
 
-#include "GNEApplicationWindow.h"
+#include <iostream>
+#include <utils/common/UtilExceptions.h>
+#include <utils/common/MsgHandler.h>
+#include <utils/options/OptionsCont.h>
+
 #include "GNEUndoList.h"
+#include "GNEChange_Attribute.h"
+#include "GNEApplicationWindow.h"
 
 
 // ===========================================================================
@@ -101,19 +113,11 @@ GNEUndoList::p_abort() {
 
 
 void
-GNEUndoList::p_abortLastCommandGroup() {
-    if (myCommandGroups.size() > 0) {
-        myCommandGroups.top()->undo();
-        myCommandGroups.pop();
-        abort();
-    }
-}
-
-
-void
 GNEUndoList::undo() {
     //std::cout << undoName().text() << "\n";
-    WRITE_DEBUG("Keys Ctrl + Z (Undo) pressed");
+    if (OptionsCont::getOptions().getBool("gui-testing-debug")) {
+        WRITE_WARNING("Keys Ctrl + Z (Undo) pressed");
+    }
     FXUndoList::undo();
     myParent->updateControls();
 }
@@ -123,7 +127,9 @@ void
 GNEUndoList::redo() {
     //std::cout << redoName().text() << "\n";
     //std::cout << undoName().text() << "\n";
-    WRITE_DEBUG("Keys Ctrl + Y (Redo) pressed");
+    if (OptionsCont::getOptions().getBool("gui-testing-debug")) {
+        WRITE_WARNING("Keys Ctrl + Y (Redo) pressed");
+    }
     FXUndoList::redo();
     myParent->updateControls();
 }
@@ -138,21 +144,10 @@ GNEUndoList::p_add(GNEChange_Attribute* cmd) {
     }
 }
 
-
-int
-GNEUndoList::currentCommandGroupSize() const {
-    if (myCommandGroups.size() > 0) {
-        return myCommandGroups.top()->size();
-    } else {
-        return 0;
-    }
-}
-
-
 long
 GNEUndoList::p_onUpdUndo(FXObject* sender, FXSelector, void*) {
     bool enable = canUndo() && !hasCommandGroup();
-    sender->handle(this, enable ? FXSEL(SEL_COMMAND, FXWindow::ID_ENABLE) : FXSEL(SEL_COMMAND, FXWindow::ID_DISABLE), nullptr);
+    sender->handle(this, enable ? FXSEL(SEL_COMMAND, FXWindow::ID_ENABLE) : FXSEL(SEL_COMMAND, FXWindow::ID_DISABLE), 0);
     FXString caption = undoName();
     if (hasCommandGroup()) {
         caption = ("Cannot Undo in the middle of " + myCommandGroups.top()->getDescription()).c_str();
@@ -170,7 +165,7 @@ GNEUndoList::p_onUpdUndo(FXObject* sender, FXSelector, void*) {
 long
 GNEUndoList::p_onUpdRedo(FXObject* sender, FXSelector, void*) {
     bool enable = canRedo() && !hasCommandGroup();
-    sender->handle(this, enable ? FXSEL(SEL_COMMAND, FXWindow::ID_ENABLE) : FXSEL(SEL_COMMAND, FXWindow::ID_DISABLE), nullptr);
+    sender->handle(this, enable ? FXSEL(SEL_COMMAND, FXWindow::ID_ENABLE) : FXSEL(SEL_COMMAND, FXWindow::ID_DISABLE), 0);
     FXString caption = redoName();
     if (hasCommandGroup()) {
         caption = ("Cannot Redo in the middle of " + myCommandGroups.top()->getDescription()).c_str();

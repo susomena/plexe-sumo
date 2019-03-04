@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSPerson.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // The class for modelling person-movements
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSPerson_h
 #define MSPerson_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -49,7 +56,6 @@ class SUMOVehicle;
 class MSVehicleType;
 class MSPModel;
 class PedestrianState;
-class DummyState;
 
 typedef std::vector<const MSEdge*> ConstMSEdgeVector;
 
@@ -69,9 +75,12 @@ public:
      * Only the duration is needed
      */
     class MSPersonStage_Walking : public MSTransportable::Stage {
+        friend class MSPModel;
+        friend class GUIPerson; // debugging
+
     public:
         /// constructor
-        MSPersonStage_Walking(const std::string& personID, const ConstMSEdgeVector& route, MSStoppingPlace* toStop, SUMOTime walkingTime,
+        MSPersonStage_Walking(const ConstMSEdgeVector& route, MSStoppingPlace* toStop, SUMOTime walkingTime,
                               double speed, double departPos, double arrivalPos, double departPosLat);
 
         /// destructor
@@ -106,20 +115,18 @@ public:
         std::string getStageDescription() const {
             return "walking";
         }
-        std::string getStageSummary() const;
 
         /** @brief Called on writing tripinfo output
          * @param[in] os The stream to write the information into
          * @exception IOError not yet implemented
          */
-        virtual void tripInfoOutput(OutputDevice& os, const MSTransportable* const transportable) const;
+        virtual void tripInfoOutput(OutputDevice& os) const;
 
         /** @brief Called on writing vehroute output
          * @param[in] os The stream to write the information into
-         * @param[in] withRouteLength whether route length shall be written
          * @exception IOError not yet implemented
          */
-        virtual void routeOutput(OutputDevice& os, const bool withRouteLength) const;
+        virtual void routeOutput(OutputDevice& os) const;
 
         /** @brief Called for writing the events output
          * @param[in] os The stream to write the information into
@@ -134,15 +141,14 @@ public:
         virtual void endEventOutput(const MSTransportable& p, SUMOTime t, OutputDevice& os) const;
 
         /// @brief move forward and return whether the person arrived
-        bool moveToNextEdge(MSPerson* person, SUMOTime currentTime, MSEdge* nextInternal = nullptr);
+        bool moveToNextEdge(MSPerson* person, SUMOTime currentTime, MSEdge* nextInternal = 0);
 
-        /// @brief place person on a previously passed edge
-        void setRouteIndex(MSPerson* person, int routeOffset);
 
         /// @brief accessors to be used by MSPModel
         //@{
-        double getMaxSpeed(const MSTransportable* const person) const;
-
+        inline double getMaxSpeed() const {
+            return mySpeed;
+        }
         inline double getDepartPos() const {
             return myDepartPos;
         }
@@ -153,10 +159,6 @@ public:
 
         inline double getArrivalPos() const {
             return myArrivalPos;
-        }
-
-        inline const std::vector<const MSEdge*>::iterator getRouteStep() const {
-            return myRouteStep;
         }
 
         inline const MSEdge* getRouteEdge() const {
@@ -230,15 +232,14 @@ public:
     };
 
     /**
-    * A "real" stage performing the travelling by a transport system
-    * The given route will be chosen. The travel time is computed by the simulation
-    */
+     * A "real" stage performing the travelling by a transport system
+     * The given route will be chosen. The travel time is computed by the simulation
+     */
     class MSPersonStage_Driving : public MSTransportable::Stage_Driving {
     public:
         /// constructor
-        MSPersonStage_Driving(const MSEdge* destination, MSStoppingPlace* toStop,
-                              const double arrivalPos, const std::vector<std::string>& lines,
-                              const std::string& intendedVeh = "", SUMOTime intendedDepart = -1);
+        MSPersonStage_Driving(const MSEdge& destination, MSStoppingPlace* toStop,
+                              const double arrivalPos, const std::vector<std::string>& lines);
 
         /// destructor
         ~MSPersonStage_Driving();
@@ -248,90 +249,25 @@ public:
 
         /// @brief returns the stage description as a string
         std::string getStageDescription() const;
-        std::string getStageSummary() const;
 
         /** @brief Called on writing tripinfo output
-        *
-        * @param[in] os The stream to write the information into
-        * @param[in] transportable The person to write information about
-        * @exception IOError not yet implemented
-        */
-        virtual void tripInfoOutput(OutputDevice& os, const MSTransportable* const transportable) const;
+         *
+         * @param[in] os The stream to write the information into
+         * @exception IOError not yet implemented
+         */
+        virtual void tripInfoOutput(OutputDevice& os) const;
 
         /** @brief Called on writing vehroute output
          *
          * @param[in] os The stream to write the information into
-         * @param[in] withRouteLength whether route length shall be written
          * @exception IOError not yet implemented
          */
-        virtual void routeOutput(OutputDevice& os, const bool withRouteLength) const;
-    };
-
-    /**
-     * An intermediate stage performing the access from or to public transport as given
-     * by the access elements of the public transport stop. The travel time is computed by the simulation
-     */
-    class MSPersonStage_Access : public MSTransportable::Stage {
-    public:
-        /// constructor
-        MSPersonStage_Access(const MSEdge* destination, MSStoppingPlace* toStop,
-                             const double arrivalPos, const double dist, const bool isExit);
-
-        /// destructor
-        ~MSPersonStage_Access();
-
-        /// proceeds to the next step
-        virtual void proceed(MSNet* net, MSTransportable* person, SUMOTime now, Stage* previous);
-
-        /// @brief returns the stage description as a string
-        std::string getStageDescription() const;
-        std::string getStageSummary() const;
-
-        Position getPosition(SUMOTime now) const;
-
-        double getAngle(SUMOTime now) const;
-
-        /** @brief Called on writing tripinfo output
-        *
-        * @param[in] os The stream to write the information into
-        * @param[in] transportable The person to write information about
-        * @exception IOError not yet implemented
-        */
-        void tripInfoOutput(OutputDevice& os, const MSTransportable* const transportable) const;
-
-        /// @brief Called on writing vehroute output. Currently does nothing.
-        void routeOutput(OutputDevice&, const bool) const {};
-
-        /// @brief Called on writing events output (begin of an action). Currently does nothing.
-        void beginEventOutput(const MSTransportable&, SUMOTime, OutputDevice&) const {};
-
-        /// @brief Called on writing events output (end of an action). Currently does nothing.
-        void endEventOutput(const MSTransportable&, SUMOTime, OutputDevice&) const {};
-
-    private:
-        class ProceedCmd : public Command {
-        public:
-            ProceedCmd(MSTransportable* person, MSEdge* edge) : myPerson(person), myStopEdge(edge) {}
-            ~ProceedCmd() {}
-            SUMOTime execute(SUMOTime currentTime);
-        private:
-            MSTransportable* const myPerson;
-            MSEdge* myStopEdge;
-        private:
-            /// @brief Invalidated assignment operator.
-            ProceedCmd& operator=(const ProceedCmd&);
-        };
-
-    private:
-        const double myDist;
-        const bool myAmExit;
-        SUMOTime myEstimatedArrival;
-        PositionVector myPath;
+        virtual void routeOutput(OutputDevice& os) const;
     };
 
 public:
     /// constructor
-    MSPerson(const SUMOVehicleParameter* pars, MSVehicleType* vtype, MSTransportable::MSTransportablePlan* plan, const double speedFactor);
+    MSPerson(const SUMOVehicleParameter* pars, MSVehicleType* vtype, MSTransportable::MSTransportablePlan* plan);
 
     /// destructor
     virtual ~MSPerson();
@@ -358,83 +294,15 @@ public:
     * @param[in] os The stream to write the information into
     * @exception IOError not yet implemented
     */
-    virtual void routeOutput(OutputDevice& os, const bool withRouteLength) const;
+    virtual void routeOutput(OutputDevice& os) const;
 
     /// @brief whether this person is selected in the GUI
     virtual bool isSelected() const {
         return false;
     }
 
-    inline double getSpeedFactor() const {
-        return myChosenSpeedFactor;
-    }
+    double getSpeedFactor() const;
 
-    /// @brief set new walk and replace the stages with relative indices in the interval [firstIndex, nextIndex[
-    void reroute(ConstMSEdgeVector& newEdges, double departPos, int firstIndex, int nextIndex);
-
-
-    /** @class Influencer
-     * @brief Changes the wished person speed and position
-     *
-     * The class is used for passing velocities or positions obtained via TraCI to the person.
-     */
-    class Influencer {
-    public:
-        /// @brief Constructor
-        Influencer();
-
-
-        /// @brief Destructor
-        ~Influencer();
-
-
-        void setRemoteControlled(Position xyPos, MSLane* l, double pos, double posLat, double angle, int edgeOffset, const ConstMSEdgeVector& route, SUMOTime t);
-
-        SUMOTime getLastAccessTimeStep() const {
-            return myLastRemoteAccess;
-        }
-
-        void postProcessRemoteControl(MSPerson* p);
-
-        bool isRemoteControlled() const;
-
-        bool isRemoteAffected(SUMOTime t) const;
-
-    private:
-        Position myRemoteXYPos;
-        MSLane* myRemoteLane;
-        double myRemotePos;
-        double myRemotePosLat;
-        double myRemoteAngle;
-        int myRemoteEdgeOffset;
-        ConstMSEdgeVector myRemoteRoute;
-        SUMOTime myLastRemoteAccess;
-    };
-
-
-    /** @brief Returns the velocity/lane influencer
-     *
-     * If no influencer was existing before, one is built, first
-     * @return Reference to this vehicle's speed influencer
-     */
-    Influencer& getInfluencer();
-
-    const Influencer* getInfluencer() const;
-
-    bool hasInfluencer() const {
-        return myInfluencer != 0;
-    }
-
-    /// @brief sets position outside the road network
-    void setRemoteState(Position xyPos);
-
-private:
-    /// @brief An instance of a speed/position influencing instance; built in "getInfluencer"
-    Influencer* myInfluencer;
-
-    const double myChosenSpeedFactor;
-
-    static DummyState myDummyState;
 
 private:
     /// @brief Invalidated copy constructor.

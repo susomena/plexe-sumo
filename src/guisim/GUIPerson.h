@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIPerson.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // A MSVehicle extended by some values for usage within the gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIPerson_h
 #define GUIPerson_h
 
@@ -24,16 +27,20 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <set>
 #include <string>
-#include <fx.h>
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/common/RGBColor.h>
 #include <microsim/pedestrians/MSPerson.h>
 #include <utils/gui/globjects/GUIGLObjectPopupMenu.h>
+#include <utils/foxtools/MFXMutex.h>
 #include <utils/gui/settings/GUIPropertySchemeStorage.h>
 
 
@@ -55,7 +62,7 @@ class GUIPerson : public MSPerson, public GUIGlObject {
 public:
     /** @brief Constructor
      */
-    GUIPerson(const SUMOVehicleParameter* pars, MSVehicleType* vtype, MSTransportable::MSTransportablePlan* plan, const double speedFactor);
+    GUIPerson(const SUMOVehicleParameter* pars, MSVehicleType* vtype, MSTransportable::MSTransportablePlan* plan);
 
 
     /// @brief destructor
@@ -130,9 +137,6 @@ public:
     // @note overrides the base method and returns myPositionInVehicle while in driving stage
     Position getPosition() const;
 
-    /// @brief return the Network coordinate of the person (only for drawing centering and tracking)
-    Position getGUIPosition() const;
-
     /// @brief return the current angle of the person
     double getNaviDegree() const;
 
@@ -176,8 +180,6 @@ public:
         long onCmdShowWalkingareaPath(FXObject*, FXSelector, void*);
         /// @brief Called if the walkingarea path of the person shall be hidden
         long onCmdHideWalkingareaPath(FXObject*, FXSelector, void*);
-        /// @brief Called if the plan shall be shown
-        long onCmdShowPlan(FXObject*, FXSelector, void*);
         /// @brief Called if the person shall be tracked
         long onCmdStartTrack(FXObject*, FXSelector, void*);
         /// @brief Called if the person shall not be tracked any longer
@@ -242,7 +244,7 @@ public:
 
 private:
     /// The mutex used to avoid concurrent updates of the vehicle buffer
-    mutable FXMutex myLock;
+    mutable MFXMutex myLock;
 
     /// The position of a person while riding a vehicle
     Position myPositionInVehicle;

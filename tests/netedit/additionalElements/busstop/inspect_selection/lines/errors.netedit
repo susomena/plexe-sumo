@@ -1,4 +1,0 @@
-  File "test.py", line 38
-    netedit.leftClick(referencePosition, 150, 265)z
-                                                  ^
-SyntaxError: invalid syntax

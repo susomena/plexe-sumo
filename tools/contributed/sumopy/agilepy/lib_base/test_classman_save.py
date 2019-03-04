@@ -1,18 +1,3 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2016-2019 German Aerospace Center (DLR) and others.
-# SUMOPy module
-# Copyright (C) 2012-2017 University of Bologna - DICAM
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    test_classman_save.py
-# @author  Joerg Schweizer
-# @date
-# @version $Id$
-
 #from classman import *
 
 from test_classman_classes import *
@@ -27,7 +12,8 @@ if 0 | is_all:
 
         def __init__(self, ident,  parent=None, xmltag=('lines', 'line', 'ids_sumo'), **kwargs):
 
-            self._init_objman(ident, parent=parent, is_plugin=True, xmltag=xmltag, **kwargs)
+            self._init_objman(ident, parent=parent,
+                              is_plugin=True, xmltag=xmltag, **kwargs)
 
             self.add(AttrConf('offset', 0.0,
                               groupnames=['state'],
@@ -88,7 +74,8 @@ if 0 | is_all:
         [[0.5, 0.0, 0.1], [1.9, 0.0, 0.0]],  # 2
     ]
     polygons = [
-        np.array([[0.0, 0.0, 0.0], [0.2, 0.0, 0.0], [0.2, 0.0, 0.1], [0.3, 0.3, 0.3]]),  # 0
+        np.array([[0.0, 0.0, 0.0], [0.2, 0.0, 0.0], [
+                 0.2, 0.0, 0.1], [0.3, 0.3, 0.3]]),  # 0
         np.array([[0.3, 0.0, 0.0], [0.9, 0.0, 0.0]]),  # 1
         np.array([[0.5, 0.0, 0.1], [1.9, 0.0, 0.0], [0.2, 0.2, 0.2]]),  # 2
     ]
@@ -102,7 +89,7 @@ if 0 | is_all:
     # save/load
     save_obj(lines, 'test_lines.obj')
     del lines
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     lines = load_obj('test_lines.obj')
     lines.print_attrs()
 
@@ -156,7 +143,8 @@ if 0 | is_all:
         [[0.5, 0.0, 0.1], [1.9, 0.0, 0.0]],  # 2
     ]
     polygons = [
-        np.array([[0.0, 0.0, 0.0], [0.2, 0.0, 0.0], [0.2, 0.0, 0.1], [0.3, 0.3, 0.3]]),  # 0
+        np.array([[0.0, 0.0, 0.0], [0.2, 0.0, 0.0], [
+                 0.2, 0.0, 0.1], [0.3, 0.3, 0.3]]),  # 0
         np.array([[0.3, 0.0, 0.0], [0.9, 0.0, 0.0]]),  # 1
         np.array([[0.5, 0.0, 0.1], [1.9, 0.0, 0.0], [0.2, 0.2, 0.2]]),  # 2
     ]
@@ -169,7 +157,7 @@ if 0 | is_all:
     # save/load
     save_obj(lines, 'test_lines.obj')
     del lines
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     lines = load_obj('test_lines.obj')
 
     # print
@@ -183,7 +171,8 @@ if 0 | is_all:
         [[0.5, 0.0, 0.1], [1.9, 0.0, 0.0]],  # 2
     ]
     polygons2 = [
-        np.array([[0.0, 0.0, 0.0], [0.2, 0.0, 0.0], [0.2, 0.0, 0.1], [0.3, 0.3, 0.3]]),  # 0
+        np.array([[0.0, 0.0, 0.0], [0.2, 0.0, 0.0], [
+                 0.2, 0.0, 0.1], [0.3, 0.3, 0.3]]),  # 0
         np.array([[0.3, 0.0, 0.0], [0.9, 0.0, 0.0]]),  # 1
         np.array([[0.5, 0.0, 0.1], [1.9, 0.0, 0.0], [0.2, 0.2, 0.2]]),  # 2
     ]
@@ -192,8 +181,10 @@ if 0 | is_all:
 
 if 0 | is_all:
     class ZonesTab(ArrayObjman):
+
         def __init__(self, ident,  parent=None, **kwargs):
-            self._init_objman(ident, parent=parent, xmltag=('taz', 'district', 'zonenames'), **kwargs)
+            self._init_objman(ident, parent=parent, xmltag=(
+                'taz', 'district', 'zonenames'), **kwargs)
 
             self.add_col(ArrayConf('zonenames', None,
                                    dtype='object',
@@ -214,8 +205,10 @@ if 0 | is_all:
                                  ))
 
     class OdTripsTab(ArrayObjman):
+
         def __init__(self, ident,  parent, zones, **kwargs):
-            self._init_objman(ident, parent=parent, xmltag=('odtrips', 'odtrip', None), **kwargs)
+            self._init_objman(ident, parent=parent, xmltag=(
+                'odtrips', 'odtrip', None), **kwargs)
 
             self.add_col(IdsConf('ids_orig', zones, is_child=False,
                                  groupnames=['state'],
@@ -243,8 +236,10 @@ if 0 | is_all:
                                  ))
 
     class OdModesTab(ArrayObjman):
+
         def __init__(self, ident,  parent=None, **kwargs):
-            self._init_objman(ident, parent=parent, xmltag=('odmodes', 'odmode', 'modes'), **kwargs)
+            self._init_objman(ident, parent=parent, xmltag=(
+                'odmodes', 'odmode', 'modes'), **kwargs)
 
             self.add_col(ArrayConf('modes', None,
                                    dtype='object',
@@ -262,8 +257,10 @@ if 0 | is_all:
                                   ))
 
     class OdIntervalsTab(ArrayObjman):
+
         def __init__(self, ident,  parent=None, **kwargs):
-            self._init_objman(ident, parent=parent, xmltag=('odintervals', 'odinteval', None), **kwargs)
+            self._init_objman(ident, parent=parent, xmltag=(
+                'odintervals', 'odinteval', None), **kwargs)
 
             self.add_col(ColConf('t_start', 0.0,
                                  groupnames=['state'],
@@ -303,19 +300,24 @@ if 0 | is_all:
               [(10.0, 20.0), (20.0, 20.0), (20.0, 10.0)],
               [(20.0, 30.0), (30.0, 20.0), (30.0, 20.0)],
               ]
-    zones.add_rows(3, shapes=shapes, zonenames=['center', 'periphery', 'residential'])
+    zones.add_rows(3, shapes=shapes, zonenames=[
+                   'center', 'periphery', 'residential'])
 
-    odintervals = OdIntervalsTab('odintervals', parent=demand, info='OD data for different time intervals')
+    odintervals = OdIntervalsTab(
+        'odintervals', parent=demand, info='OD data for different time intervals')
     demand.odintervals = demand.get_attrsman().add(ObjConf(odintervals))
     odintervals.add_rows(2, t_start=[0, 3601], t_end=[3600, 7200])
     for id_odmodes in odintervals.get_ids():
-        odmodes = OdModesTab((odintervals.odmodes.attrname, id_odmodes), parent=odintervals)
+        odmodes = OdModesTab(
+            (odintervals.odmodes.attrname, id_odmodes), parent=odintervals)
         odintervals.odmodes[id_odmodes] = odmodes
 
         odmodes.add_rows(2, modes=['bus', 'train'])
         for id_odtrips in odmodes.get_ids():
-            odtrips = OdTripsTab((odmodes.odtrips.attrname, id_odtrips), odmodes, zones)
-            odtrips.add_rows(3, ids_orig=[3, 2, 1], ids_dest=[3, 3, 3], tripnumbers=[10, 200, 555])
+            odtrips = OdTripsTab(
+                (odmodes.odtrips.attrname, id_odtrips), odmodes, zones)
+            odtrips.add_rows(3, ids_orig=[3, 2, 1], ids_dest=[
+                             3, 3, 3], tripnumbers=[10, 200, 555])
             odmodes.odtrips[id_odtrips] = odtrips
 
     # print
@@ -332,7 +334,7 @@ if 0 | is_all:
     # save/load
     save_obj(demand, 'test_demand_array.obj')
     del demand
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     demand = load_obj('test_demand_array.obj')
 
     # print
@@ -347,6 +349,7 @@ if 0 | is_all:
 
 if 0 | is_all:  # OLD BROKEN??!!
     class ZonesTab(TableObjman):
+
         def __init__(self, ident,  parent=None, **kwargs):
             self._init_objman(ident, parent=parent, **kwargs)
 
@@ -359,6 +362,7 @@ if 0 | is_all:  # OLD BROKEN??!!
                                  ))
 
     class OdTripsTab(TableObjman):
+
         def __init__(self, ident,  parent, zones, **kwargs):
             self._init_objman(ident, parent=parent, **kwargs)
 
@@ -385,6 +389,7 @@ if 0 | is_all:  # OLD BROKEN??!!
                                  ))
 
     class OdModesTab(TableObjman):
+
         def __init__(self, ident,  parent=None, **kwargs):
             self._init_objman(ident, parent=parent, **kwargs)
 
@@ -396,6 +401,7 @@ if 0 | is_all:  # OLD BROKEN??!!
                                   ))
 
     class OdIntervalsTab(TableObjman):
+
         def __init__(self, ident,  parent=None, **kwargs):
             self._init_objman(ident, parent=parent, **kwargs)
 
@@ -437,17 +443,22 @@ if 0 | is_all:  # OLD BROKEN??!!
               ]
     zones.add_rows(3, shapes=shapes)
 
-    odintervals = OdIntervalsTab('odintervals', parent=demand, info='OD data for different time intervals')
-    demand.odintervals = demand.get_attrsman().add(ObjConf(odintervals, is_child=True))
+    odintervals = OdIntervalsTab(
+        'odintervals', parent=demand, info='OD data for different time intervals')
+    demand.odintervals = demand.get_attrsman().add(
+        ObjConf(odintervals, is_child=True))
     odintervals.add_rows(2, t_start=[0, 3600], t_end=[3600, 7200])
     for id_odmodes in odintervals.get_ids():
-        odmodes = OdModesTab((odintervals.odmodes.attrname, id_odmodes), parent=odintervals)
+        odmodes = OdModesTab(
+            (odintervals.odmodes.attrname, id_odmodes), parent=odintervals)
         odintervals.odmodes[id_odmodes] = odmodes
 
         odmodes.add_rows(2)
         for id_odtrips in odmodes.get_ids():
-            odtrips = OdTripsTab((odmodes.odtrips.attrname, id_odtrips), odmodes, zones)
-            odtrips.add_rows(3, ids_orig=[3, 2, 1], ids_dest=[3, 3, 3], tripnumbers=[10, 200, 555])
+            odtrips = OdTripsTab(
+                (odmodes.odtrips.attrname, id_odtrips), odmodes, zones)
+            odtrips.add_rows(3, ids_orig=[3, 2, 1], ids_dest=[
+                             3, 3, 3], tripnumbers=[10, 200, 555])
             odmodes.odtrips[id_odtrips] = odtrips
 
     # print
@@ -463,7 +474,7 @@ if 0 | is_all:  # OLD BROKEN??!!
     # save/load
     save_obj(demand, 'test_demand.obj')
     del demand
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     demand = load_obj('test_demand.obj')
 
     # print
@@ -531,7 +542,7 @@ if 0 | is_all:  # OK
     net.nodes.print_attrs()
     save_obj(net, 'test_net.obj')
     del net
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     net_new = load_obj('test_net.obj')
     net_new.get_attrsman().print_attrs()
     net_new.edges.print_attrs()
@@ -567,7 +578,7 @@ if 0 | is_all:
 
     save_obj(tab1, 'test_tab.obj')
     del tab1
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     tab1_new = load_obj('test_tab.obj')
     tab1_new.print_attrs()
     print 'direct access: tab1_new.surname.value', tab1_new.surname.value
@@ -617,7 +628,7 @@ if 0 | is_all:
 
     save_obj(tab1, 'test_tab.obj')
     del tab1
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     tab1_new = load_obj('test_tab.obj')
 
     tab1_new.print_attrs()
@@ -634,7 +645,7 @@ if False | is_all:  # False:#True:
     obj.attrsman.print_attrs()
     save_obj(obj, 'test_obj.obj')
     del obj
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     obj_new = load_obj('test_obj.obj')
     obj_new.attrsman.print_attrs()
     # streetname
@@ -642,20 +653,21 @@ if False | is_all:  # False:#True:
     # print 'This is the configuration instance of the attribute x',obj.attrsman.x
     #
 
-if 0 | is_all:  # False:#True:  ###!!!!!!!!!!!!!!!!check this : failed to reload!!
+# False:#True:  ###!!!!!!!!!!!!!!!!check this : failed to reload!!
+if 0 | is_all:
     obj = TestTableObjMan()
 
     print 'obj.ident', obj.ident
 
-    obj.x.set(1.0/3)
+    obj.x.set(1.0 / 3)
     # obj.is_pos_ok.set(True)
 
     obj.print_attrs()
     save_obj(obj, 'test_obj.obj')
     del obj
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     obj_new = load_obj('test_obj.obj')
-    obj_new.x.set(2.0/3)
+    obj_new.x.set(2.0 / 3)
     obj_new.print_attrs()
 
     # streetname
@@ -669,7 +681,7 @@ if 0 | is_all:
     obj.get_attrsman().print_attrs()
     xm.write_obj_to_xml(obj, 'test_obj.xml')
     del obj
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     obj_new = load_obj('test_obj.obj')
     obj_new.get_attrsman().print_attrs()
     # sys.exit()
@@ -686,7 +698,7 @@ if 0 | is_all:
     save_obj(obj2, 'test_obj2.obj')
     xm.write_obj_to_xml(obj2, 'test_obj2.xml')
     del obj2
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     obj2_new = load_obj('test_obj2.obj')
     obj2_new.get_attrsman().print_attrs()
 
@@ -699,7 +711,8 @@ if 0 | is_all:  # False:#True:
     print 'obj.ident', obj.ident
 
     print 'This is the value of the attribute: obj.x=', obj.x
-    # print 'This is the configuration instance of the attribute x',obj.attrsman.x
+    # print 'This is the configuration instance of the attribute
+    # x',obj.attrsman.x
     obj.get_attrsman().print_attrs()
     # obj.get_attrsman().x.plugin.add_event(EVTSET,on_event_setattr)
     # obj.get_attrsman().x.add_event(EVTGET,on_event_getattr)
@@ -718,7 +731,7 @@ if 0 | is_all:  # False:#True:
     save_obj(obj, 'test_obj.obj')
     xm.write_obj_to_xml(obj, 'test_obj.xml')
     del obj
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     obj_new = load_obj('test_obj.obj')
     obj_new.get_attrsman().print_attrs()
     # print 'obj.get_attrsman().x.get_formatted()=',obj.get_attrsman().x.get_formatted()
@@ -726,7 +739,7 @@ if 0 | is_all:  # False:#True:
 
 if 1 | is_all:
     save_obj(drawing, 'test_drawing.obj')
-    print '\nreload'+60*'.'
+    print '\nreload' + 60 * '.'
     obj_new = load_obj('test_drawing.obj')
     obj_new.get_attrsman().print_attrs()
 

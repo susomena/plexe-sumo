@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    StringUtils.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Some static methods for string processing
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef StringUtils_h
 #define StringUtils_h
 
@@ -23,11 +26,13 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
-#include <xercesc/util/XMLString.hpp>
-#include <utils/common/UtilExceptions.h>
 
 
 // ===========================================================================
@@ -87,57 +92,6 @@ public:
     static std::string charToHex(unsigned char c);
     static unsigned char hexToChar(const std::string& str);
 
-    /**@brief converts a string into the integer value described by it by calling the char-type converter, which
-     * @throw an EmptyData - exception if the given string is empty
-     * @throw NumberFormatException - exception when the string does not contain an integer
-     */
-    static int toInt(const std::string& sData);
-
-    /// @brief converts a string into the integer value described by it
-    /// @return the default value if the data is empty
-    static int toIntSecure(const std::string& sData, int def);
-
-    /**@brief converts a string into the long value described by it by calling the char-type converter, which
-     * @throw an EmptyData - exception if the given string is empty
-     * @throw NumberFormatException - exception when the string does not contain a long integer
-     */
-    static long long int toLong(const std::string& sData);
-
-    /**@brief converts a string with a hex value into the integer value described by it by calling the char-type converter
-     * @throw an EmptyData - exception if the given string is empty
-     * @throw a NumberFormatException - exception when the string does not contain an integer
-     */
-    static int hexToInt(const std::string& sData);
-
-    /**@brief converts a string into the double value described by it by calling the char-type converter
-     * @throw an EmptyData - exception if the given string is empty
-     * @throw a NumberFormatException - exception when the string does not contain a double
-     */
-    static double toDouble(const std::string& sData);
-
-    /// @brief converts a string into the integer value described by it
-    /// @return the default value if the data is empty
-    static double toDoubleSecure(const std::string& sData, const double def);
-
-    /**@brief converts a string into the bool value described by it by calling the char-type converter
-     * @return true if the data* is one of the following (case insensitive): '1', 'x', 'true', 'yes', 'on', 't'
-     * @return false if the data* is one of the following (case insensitive): '0', '-', 'false', 'no', 'off', 'f'
-     * @throw EmptyData - exception if the given string is empty or 0 pointer
-     * @throw BoolFormatException in any other case
-     */
-    static bool toBool(const std::string& sData);
-
-    /**@brief converts a 0-terminated XMLCh* array (usually UTF-16, stemming from Xerces) into std::string in UTF-8
-     * @throw an EmptyData - exception if the given pointer is 0
-     */
-    static inline std::string transcode(const XMLCh* const data) {
-        return transcode(data, (int)XERCES_CPP_NAMESPACE::XMLString::stringLen(data));
-    }
-
-    /**@brief converts a 0-terminated XMLCh* array (usually UTF-16, stemming from Xerces) into std::string in UTF-8 considering the given length
-     * @throw EmptyData if the given pointer is 0
-     */
-    static std::string transcode(const XMLCh* const data, int length);
 };
 
 

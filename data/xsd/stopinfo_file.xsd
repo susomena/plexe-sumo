@@ -15,13 +15,11 @@
         <xsd:complexType>
             <xsd:attribute name="id" use="required" type="xsd:string"/>
             <xsd:attribute name="type" use="required" type="xsd:string"/>
-            <xsd:attribute name="lane" use="optional" type="xsd:string"/>
-            <xsd:attribute name="edge" use="optional" type="xsd:string"/>
+            <xsd:attribute name="lane" use="required" type="xsd:string"/>
             <xsd:attribute name="pos" use="required" type="xsd:string"/>
             <xsd:attribute name="parking" use="required" type="boolType"/>
             <xsd:attribute name="started" use="required" type="xsd:float"/>
             <xsd:attribute name="ended" use="required" type="nonNegativeFloatType"/>
-            <xsd:attribute name="delay" use="required" type="xsd:float"/>
             <xsd:attribute name="initialPersons" use="required" type="nonNegativeIntType"/>
             <xsd:attribute name="loadedPersons" use="required" type="nonNegativeIntType"/>
             <xsd:attribute name="unloadedPersons" use="required" type="nonNegativeIntType"/>

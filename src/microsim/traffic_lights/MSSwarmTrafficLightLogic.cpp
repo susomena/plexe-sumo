@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSSwarmTrafficLightLogic.cpp
 /// @author  Gianfilippo Slager
 /// @author  Federico Caselli
@@ -14,6 +6,17 @@
 /// @version $Id$
 ///
 // The class for Swarm-based logics
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 
 #include "MSSwarmTrafficLightLogic.h"
@@ -26,9 +29,9 @@
 #endif
 
 MSSwarmTrafficLightLogic::MSSwarmTrafficLightLogic(MSTLLogicControl& tlcontrol, const std::string& id,
-        const std::string& programID, const Phases& phases, int step, SUMOTime delay,
+        const std::string& subid, const Phases& phases, int step, SUMOTime delay,
         const std::map<std::string, std::string>& parameters) :
-    MSSOTLHiLevelTrafficLightLogic(tlcontrol, id, programID, TLTYPE_SWARM_BASED, phases, step, delay, parameters) {
+    MSSOTLHiLevelTrafficLightLogic(tlcontrol, id, subid, phases, step, delay, parameters) {
 
     std::string pols = getPoliciesParam();
     std::transform(pols.begin(), pols.end(), pols.begin(), ::tolower);
@@ -112,22 +115,22 @@ bool MSSwarmTrafficLightLogic::allowLine(MSLane* lane) {
     return true;
 }
 
-void MSSwarmTrafficLightLogic::init(NLDetectorBuilder& nb) {
+void MSSwarmTrafficLightLogic::init(NLDetectorBuilder& nb) throw(ProcessError) {
     MSSOTLHiLevelTrafficLightLogic::init(nb);
     //Setting the startup policy
     choosePolicy(0, 0, 0, 0);
     //Initializing the random number generator to a time-dependent seed
-    srand((int) time(nullptr));
+    srand((int) time(NULL));
     //Initializing pheromone maps according to input lanes
     //For each lane insert a pair into maps
-    MSLane* currentLane = nullptr;
+    MSLane* currentLane = NULL;
 
 //	Derivative
-    const int derivativeHistorySize = StringUtils::toInt(getParameter("PHERO_DERIVATIVE_HISTORY_SIZE", "3"));
-    const int meanSpeedHistorySize = StringUtils::toInt(getParameter("PHERO_MEAN_SPEED_HISTORY_SIZE", "3"));
-    m_derivativeAlpha = StringUtils::toDouble(getParameter("PHERO_DERIVATIVE_ALPHA", "1"));
+    const int derivativeHistorySize = TplConvert::_2int(getParameter("PHERO_DERIVATIVE_HISTORY_SIZE", "3").c_str());
+    const int meanSpeedHistorySize = TplConvert::_2int(getParameter("PHERO_MEAN_SPEED_HISTORY_SIZE", "3").c_str());
+    m_derivativeAlpha = TplConvert::_2double(getParameter("PHERO_DERIVATIVE_ALPHA", "1").c_str());
     m_losCounter = 0;
-    m_losMaxLimit = StringUtils::toInt(getParameter("LOSS_OF_SIGNAL_LIMIT", "10"));
+    m_losMaxLimit = TplConvert::_2int(getParameter("LOSS_OF_SIGNAL_LIMIT", "10").c_str());
 
     int index = 0;
     for (MSTrafficLightLogic::LaneVectorVector::const_iterator laneVector = myLanes.begin();
@@ -679,7 +682,7 @@ double MSSwarmTrafficLightLogic::calculatePhi(int factor) {
 
 double MSSwarmTrafficLightLogic::calculateEtaDiff() {
 
-    MSLane* currentLane = nullptr;
+    MSLane* currentLane = NULL;
     int count = 0, minIn = 0, minOut = 0, toSub, tmp;
     bool inInit = true, outInit = true;
     double eta, normalized, diff, phi, delta;
@@ -868,7 +871,7 @@ double MSSwarmTrafficLightLogic::calculateEtaDiff() {
 }
 
 double MSSwarmTrafficLightLogic::calculateEtaRatio() {
-    MSLane* currentLane = nullptr;
+    MSLane* currentLane = NULL;
     int count = 0, minIn = 0, minOut = 0, toSub, tmp;
     bool inInit = true, outInit = true;
     double eta, ratio, phi, normalized, delta;
@@ -1062,7 +1065,7 @@ double MSSwarmTrafficLightLogic::calculateEtaRatio() {
 
 void MSSwarmTrafficLightLogic::resetLaneCheck() {
 
-    MSLane* currentLane = nullptr;
+    MSLane* currentLane = NULL;
 
     // reset both the input and the output lanes.
     for (MSTrafficLightLogic::LaneVectorVector::const_iterator laneVector = myLanes.begin();

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIParameterTracker.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,28 +8,42 @@
 ///
 // A window which displays the time line of one (or more) value(s)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <fstream>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/foxtools/MFXUtils.h>
 #include <utils/iodevices/OutputDevice.h>
 #include <utils/common/ToString.h>
 #include <utils/common/StringUtils.h>
 #include <utils/common/SUMOTime.h>
-#include <utils/gui/div/GLHelper.h>
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/gui/div/GUIIOGlobals.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 #include <utils/gui/windows/GUIMainWindow.h>
 #include <utils/gui/images/GUIIconSubSys.h>
-#include <foreign/fontstash/fontstash.h>
 #include "GUIParameterTracker.h"
 #include <utils/gui/globjects/GLIncludes.h>
 
@@ -63,10 +69,10 @@ FXIMPLEMENT(GUIParameterTracker, FXMainWindow, GUIParameterTrackerMap, ARRAYNUMB
 // ===========================================================================
 GUIParameterTracker::GUIParameterTracker(GUIMainWindow& app,
         const std::string& name)
-    : FXMainWindow(app.getApp(), "Tracker", nullptr, nullptr, DECOR_ALL, 20, 20, 300, 200),
+    : FXMainWindow(app.getApp(), "Tracker", NULL, NULL, DECOR_ALL, 20, 20, 300, 200),
       myApplication(&app) {
     buildToolBar();
-    app.addChild(this);
+    app.addChild(this, true);
     FXVerticalFrame* glcanvasFrame = new FXVerticalFrame(this, FRAME_SUNKEN | LAYOUT_SIDE_TOP | LAYOUT_FILL_X | LAYOUT_FILL_Y, 0, 0, 0, 0, 0, 0, 0, 0);
     myPanel = new GUIParameterTrackerPanel(glcanvasFrame, *myApplication, *this);
     setTitle(name.c_str());
@@ -77,11 +83,11 @@ GUIParameterTracker::GUIParameterTracker(GUIMainWindow& app,
 GUIParameterTracker::~GUIParameterTracker() {
     myApplication->removeChild(this);
     for (std::vector<TrackerValueDesc*>::iterator i1 = myTracked.begin(); i1 != myTracked.end(); i1++) {
-        delete (*i1);
+        delete(*i1);
     }
     // deleted by GUINet
     for (std::vector<GLObjectValuePassConnector<double>*>::iterator i2 = myValuePassers.begin(); i2 != myValuePassers.end(); i2++) {
-        delete (*i2);
+        delete(*i2);
     }
     delete myToolBarDrag;
     delete myToolBar;
@@ -97,7 +103,7 @@ GUIParameterTracker::create() {
 
 void
 GUIParameterTracker::buildToolBar() {
-    myToolBarDrag = new FXToolBarShell(this, GUIDesignToolBar);
+    myToolBarDrag = new FXToolBarShell(this, GUIDesignToolBarShell3);
     myToolBar = new FXToolBar(this, myToolBarDrag, LAYOUT_SIDE_TOP | LAYOUT_FILL_X | FRAME_RAISED);
     new FXToolBarGrip(myToolBar, myToolBar, FXToolBar::ID_TOOLBARGRIP, GUIDesignToolBarGrip);
     // save button
@@ -247,7 +253,7 @@ FXIMPLEMENT(GUIParameterTracker::GUIParameterTrackerPanel, FXGLCanvas, GUIParame
 GUIParameterTracker::GUIParameterTrackerPanel::GUIParameterTrackerPanel(
     FXComposite* c, GUIMainWindow& app,
     GUIParameterTracker& parent)
-    : FXGLCanvas(c, app.getGLVisual(), app.getBuildGLCanvas(), (FXObject*) nullptr, (FXSelector) 0, LAYOUT_SIDE_TOP | LAYOUT_FILL_X | LAYOUT_FILL_Y, 0, 0, 300, 200),
+    : FXGLCanvas(c, app.getGLVisual(), app.getBuildGLCanvas(), (FXObject*) 0, (FXSelector) 0, LAYOUT_SIDE_TOP | LAYOUT_FILL_X | LAYOUT_FILL_Y, 0, 0, 300, 200),
       myParent(&parent), myApplication(&app) {}
 
 
@@ -256,6 +262,9 @@ GUIParameterTracker::GUIParameterTrackerPanel::~GUIParameterTrackerPanel() {}
 
 void
 GUIParameterTracker::GUIParameterTrackerPanel::drawValues() {
+    pfSetScale((double) 0.1);
+    pfSetScaleXY((double)(.1 * 300. / myWidthInPixels), (double)(.1 * 300. / (double) myHeightInPixels));
+    //
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glMatrixMode(GL_MODELVIEW);
@@ -274,9 +283,6 @@ GUIParameterTracker::GUIParameterTrackerPanel::drawValues() {
 void
 GUIParameterTracker::GUIParameterTrackerPanel::drawValue(TrackerValueDesc& desc,
         double /*namePos*/) {
-    const double fontWidth = 0.1 * 300. / myWidthInPixels;
-    const double fontHeight = 0.1 * 300. /  myHeightInPixels;
-    //
     // apply scaling
     glPushMatrix();
 
@@ -344,38 +350,55 @@ GUIParameterTracker::GUIParameterTrackerPanel::drawValue(TrackerValueDesc& desc,
     // draw min time
     SUMOTime beginStep = desc.getRecordingBegin();
     std::string begStr = time2string(beginStep);
-    double w = 50 / myWidthInPixels;
-    glTranslated(-0.8 - w / 2., -0.88, 0);
-    GLHelper::drawText(begStr, Position(0, 0), 1, fontHeight, RGBColor::BLACK, 0, FONS_ALIGN_LEFT | FONS_ALIGN_MIDDLE, fontWidth);
-    glTranslated(0.8 + w / 2., 0.88, 0);
+    double w = pfdkGetStringWidth(begStr.c_str());
+    glRotated(180, 1, 0, 0);
+    pfSetPosition(0, 0);
+    glTranslated(-0.8 - w / 2., 0.88, 0);
+    pfDrawString(begStr.c_str());
+    glTranslated(0.8 + w / 2., -0.88, 0);
+    glRotated(-180, 1, 0, 0);
 
     // draw max time
-    glTranslated(0.75, -0.88, 0);
-    GLHelper::drawText(time2string(beginStep + static_cast<SUMOTime>(values.size() * desc.getAggregationSpan())),
-                       Position(0, 0), 1, fontHeight, RGBColor::BLACK, 0, FONS_ALIGN_LEFT | FONS_ALIGN_MIDDLE, fontWidth);
-    glTranslated(-0.75, 0.88, 0);
+    glRotated(180, 1, 0, 0);
+    pfSetPosition(0, 0);
+    glTranslated(0.75, 0.88, 0);
+    pfDrawString(time2string(beginStep + static_cast<SUMOTime>(values.size() * desc.getAggregationSpan())).c_str());
+    glTranslated(-0.75, -0.88, 0);
+    glRotated(-180, 1, 0, 0);
 
     // draw min value
-    glTranslated(-0.98, -0.82, 0);
-    GLHelper::drawText(toString(desc.getMin()), Position(0, 0), 1, fontHeight, RGBColor::BLACK, 0, FONS_ALIGN_LEFT | FONS_ALIGN_MIDDLE, fontWidth);
-    glTranslated(0.98, 0.82, 0);
+    glRotated(180, 1, 0, 0);
+    pfSetPosition(0, 0);
+    glTranslated(-0.98, 0.82, 0);
+    pfDrawString(toString(desc.getMin()).c_str());
+    glTranslated(0.98, -0.82, 0);
+    glRotated(-180, 1, 0, 0);
 
     // draw max value
-    glTranslated(-0.98, 0.78, 0);
-    GLHelper::drawText(toString(desc.getMax()), Position(0, 0), 1, fontHeight, RGBColor::BLACK, 0, FONS_ALIGN_LEFT | FONS_ALIGN_MIDDLE, fontWidth);
-    glTranslated(0.98, -0.78, 0);
+    glRotated(180, 1, 0, 0);
+    pfSetPosition(0, 0);
+    glTranslated(-0.98, -0.78, 0);
+    pfDrawString(toString(desc.getMax()).c_str());
+    glTranslated(0.98, 0.78, 0);
+    glRotated(-180, 1, 0, 0);
 
     // draw current value
+    glRotated(180, 1, 0, 0);
+    pfSetPosition(0, 0);
     double p = (double) 0.8 -
                ((double) 1.6 / (desc.getMax() - desc.getMin()) * (latest - desc.getMin()));
-    glTranslated(-0.98, -(p + .02), 0);
-    GLHelper::drawText(toString(latest), Position(0, 0), 1, fontHeight, RGBColor::BLACK, 0, FONS_ALIGN_LEFT | FONS_ALIGN_MIDDLE, fontWidth);
-    glTranslated(0.98, p + .02, 0);
+    glTranslated(-0.98, p + .02, 0);
+    pfDrawString(toString(latest).c_str());
+    glTranslated(0.98, -(p + .02), 0);
+    glRotated(-180, 1, 0, 0);
 
     // draw name
-    glTranslated(-0.98, .92, 0);
-    GLHelper::drawText(desc.getName(), Position(0, 0), 1, fontHeight, RGBColor::BLACK, 0, FONS_ALIGN_LEFT | FONS_ALIGN_MIDDLE, fontWidth);
-    glTranslated(0.98, -.92, 0);
+    glRotated(180, 1, 0, 0);
+    pfSetPosition(0, 0);
+    glTranslated(-0.98, -.92, 0);
+    pfDrawString(desc.getName().c_str());
+    glTranslated(0.98, .92, 0);
+    glRotated(-180, 1, 0, 0);
 }
 
 

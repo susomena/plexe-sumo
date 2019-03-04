@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUILane.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Representation of a lane in the micro simulation (gui-version)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUILane_h
 #define GUILane_h
 
@@ -23,13 +26,18 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <fx.h>
 #include <string>
 #include <utility>
 #include <microsim/MSLane.h>
 #include <microsim/MSEdge.h>
+#include <utils/foxtools/MFXMutex.h>
 #include <utils/geom/Position.h>
 #include <utils/geom/PositionVector.h>
 #include <utils/gui/globjects/GUIGlObject.h>
@@ -87,7 +95,7 @@ public:
      * @note Inherited from GUIGlObject
      * @return This object's parent id
      */
-    std::string getParentName() const {
+    const std::string& getParentName() const {
         return getEdge().getID();
     }
 
@@ -126,15 +134,11 @@ public:
 
     /** the same as in MSLane, but locks the access for the visualisation
         first; the access will be granted at the end of this method */
-    void setJunctionApproaches(const SUMOTime t);
+    bool executeMovements(SUMOTime t, std::vector<MSLane*>& into);
 
     /** the same as in MSLane, but locks the access for the visualisation
         first; the access will be granted at the end of this method */
-    void executeMovements(const SUMOTime t);
-
-    /** the same as in MSLane, but locks the access for the visualisation
-        first; the access will be granted at the end of this method */
-    void integrateNewVehicles();
+    bool integrateNewVehicle(SUMOTime t);
     ///@}
 
 
@@ -219,8 +223,11 @@ public:
     /// @brief bike lane markings on top of an intersection
     void drawBikeMarkings() const;
 
+    /// @brief draw crossties for railroads or pedestrian crossings
+    void drawCrossties(double length, double spacing, double halfWidth) const;
+
     /// @brief direction indicators for lanes
-    void drawDirectionIndicators(double exaggeration, bool spreadSuperposed) const;
+    void drawDirectionIndicators() const;
 
     /// @brief draw intersection positions of foe internal lanes with this one
     void debugDrawFoeIntersections() const;
@@ -252,19 +259,10 @@ public:
     }
 
     /// @brief gets the color value according to the current scheme index
-    double getColorValue(const GUIVisualizationSettings& s, int activeScheme) const;
+    double getColorValue(int activeScheme) const;
 
     /// @brief whether this lane is selected in the GUI
     bool isSelected() const;
-
-    /* @brief sets the color according to the current scheme index and some lane function
-     * @param[in] id override active scheme when calling from meso gui
-     */
-    bool setFunctionalColor(const GUIColorer& c, RGBColor& col, int activeScheme = -1) const;
-
-    /// @brief whether to draw this lane as a railway
-    bool drawAsRailway(const GUIVisualizationSettings& s) const;
-
 
 protected:
     /// moves myTmpVehicles int myVehicles after a lane change procedure
@@ -293,31 +291,31 @@ private:
     void drawLinkRules(const GUIVisualizationSettings& s, const GUINet& net) const;
     void drawLinkRule(const GUIVisualizationSettings& s, const GUINet& net, MSLink* link, const PositionVector& shape, double x1, double x2) const;
     void drawArrows() const;
-    void drawLane2LaneConnections(double exaggeration) const;
+    void drawLane2LaneConnections() const;
 
 
     /// @brief add intermediate points at segment borders
     PositionVector splitAtSegments(const PositionVector& shape);
-
-    /// @brief get number of vehicles waiting for departure on this lane
-    double getPendingEmits() const;
 
 private:
 
     /// @brief gets the scaling value according to the current scheme index
     double getScaleValue(int activeScheme) const;
 
+    /// @brief sets the color according to the current scheme index and some lane function
+    bool setFunctionalColor(int activeScheme) const;
+
     /// @brief sets multiple colors according to the current scheme index and some lane function
-    bool setMultiColor(const GUIVisualizationSettings& s, const GUIColorer& c, RGBColor& col) const;
+    bool setMultiColor(const GUIColorer& c) const;
 
     /// @brief sets the color according to the currente settings
-    RGBColor setColor(const GUIVisualizationSettings& s) const;
+    void setColor(const GUIVisualizationSettings& s) const;
+
+    /// @brief whether to draw this lane as a railway
+    bool drawAsRailway(const GUIVisualizationSettings& s) const;
 
     /// @brief whether to draw this lane as a waterway
     bool drawAsWaterway(const GUIVisualizationSettings& s) const;
-
-    /// @brief whether this lane or its parent edge is selected in the GUI
-    bool isLaneOrEdgeSelected() const;
 
     /// The rotations of the shape parts
     std::vector<double> myShapeRotations;
@@ -346,10 +344,7 @@ private:
 
 private:
     /// The mutex used to avoid concurrent updates of the vehicle buffer
-    mutable FXMutex myLock;
-
-    /// @brief special color to signify alternative coloring scheme
-    static const RGBColor MESO_USE_LANE_COLOR;
+    mutable MFXMutex myLock;
 
 
 };

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RONetHandler.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // The handler that parses a SUMO-network for its usage in a router
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef RONetHandler_h
 #define RONetHandler_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/xml/SUMOSAXHandler.h>
@@ -57,7 +64,7 @@ public:
      * @param[in] net The network instance to fill
      * @param[in] eb The abstract edge builder to use
      */
-    RONetHandler(RONet& net, ROAbstractEdgeBuilder& eb, const bool ignoreInternal, const double minorPenalty);
+    RONetHandler(RONet& net, ROAbstractEdgeBuilder& eb);
 
 
     /// @brief Destructor
@@ -175,18 +182,10 @@ protected:
 
     //@}
 
-    /// Parses network location description
-    void setLocation(const SUMOSAXAttributes& attrs);
 
 protected:
     /// @brief The net to store the information into
     RONet& myNet;
-
-    /// @brief The object used to build of edges of the desired type
-    ROAbstractEdgeBuilder& myEdgeBuilder;
-
-    /// @brief whether to ignore junction internal edges
-    const bool myIgnoreInternal;
 
     /// @brief The name of the edge/node that is currently processed
     std::string myCurrentName;
@@ -200,11 +199,12 @@ protected:
     /// @brief The currently built stopping place
     SUMOVehicleParameter::Stop* myCurrentStoppingPlace;
 
+    /// @brief The object used to build of edges of the desired type
+    ROAbstractEdgeBuilder& myEdgeBuilder;
+
     /// @brief temporary data for checking node initialisation after network parsing is finished
     std::set<std::string> myUnseenNodeIDs;
 
-    /// @brief time penalty for passing a minor link
-    const double myMinorPenalty;
 
 private:
     /// @brief Invalidated copy constructor

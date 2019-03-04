@@ -1,22 +1,23 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    netdiff.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2011-10-04
-# @version $Id$
-
 """
+@file    netdiff.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2011-10-04
+@version $Id$
+
 Reads two networks (source, dest) and tries to produce the minimal plain-xml input
 which can be loaded with netconvert alongside source to create dest
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -36,7 +37,7 @@ from collections import defaultdict
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import sumolib  # noqa
-from OrderedMultiSet import OrderedMultiSet  # noqa
+from OrderedMultiSet import OrderedMultiSet
 
 INDENT = 4
 
@@ -55,8 +56,7 @@ PLAIN_TYPES = [
 # traffic lights have some peculiarities
 # CAVEAT1 - ids are not unique (only in combination with programID)
 # CAVEAT2 - the order of their children (phases) is important.
-#     this makes partial diffs unfeasible. The easiest solution is to forgo diffs and always
-#     export the whole new traffic light
+#     this makes partial diffs unfeasible. The easiest solution is to forgo diffs and always export the whole new traffic light
 # CAVEAT3 - deletes need not be written because they are also signaled by a changed node type
 #     (and they complicate the handling of deleted tl-connections)
 # CAVEAT4 - deleted connections must be written with their tlID and tlIndex, otherwise
@@ -361,8 +361,7 @@ def create_plain(netfile, netconvert):
     prefix = netfile[:-8]
     call([netconvert,
           "--sumo-net-file", netfile,
-          "--plain-output-prefix", prefix,
-          "--roundabouts.guess", "false"])
+          "--plain-output-prefix", prefix])
     return prefix
 
 
@@ -454,7 +453,6 @@ def main():
                     options.outprefix + type,
                     type,
                     copy_tags)
-
 
 if __name__ == "__main__":
     main()

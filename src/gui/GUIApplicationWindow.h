@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIApplicationWindow.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // The main window of the SUMO-gui.
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIApplicationWindow_h
 #define GUIApplicationWindow_h
 
@@ -24,15 +27,20 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
 #include <iostream>
 #include <fx.h>
-#include <utils/foxtools/FXSynchQue.h>
+#include <utils/foxtools/MFXEventQue.h>
 #include <utils/foxtools/FXThreadEvent.h>
 #include <utils/foxtools/MFXInterThreadEventClient.h>
+#include <utils/foxtools/FXRealSpinDial.h>
 #include <utils/foxtools/FXLCDLabel.h>
 #include <utils/gui/windows/GUIMainWindow.h>
 #include <utils/common/ValueRetriever.h>
@@ -111,11 +119,12 @@ public:
     /// @name Inter-thread event handling
     /// @{
 
-    virtual void eventOccurred();
+    virtual void eventOccured();
     void handleEvent_SimulationLoaded(GUIEvent* e);
     void handleEvent_SimulationStep(GUIEvent* e);
     void handleEvent_Message(GUIEvent* e);
     void handleEvent_SimulationEnded(GUIEvent* e);
+    void handleEvent_Screenshot(GUIEvent* e);
     /// @}
 
 
@@ -131,9 +140,6 @@ public:
 
     /// @brief Called on menu File->Load Shapes
     long onCmdOpenShapes(FXObject*, FXSelector, void*);
-
-    /// @brief Called on menu File->Load EdgeData
-    long onCmdOpenEdgeData(FXObject*, FXSelector, void*);
 
     /// @brief Called on reload
     long onCmdReload(FXObject*, FXSelector, void*);
@@ -154,12 +160,6 @@ public:
 
     /// @brief Called on menu Edit->Edit Breakpoints
     long onCmdEditBreakpoints(FXObject*, FXSelector, void*);
-
-    /// @brief Called on menu Edit->Visualization
-    long onCmdEditViewScheme(FXObject*, FXSelector, void*);
-
-    /// @brief Called on menu Edit->Viewport
-    long onCmdEditViewport(FXObject*, FXSelector, void*);
 
     /// @brief called if the user selects help->Documentation
     long onCmdHelp(FXObject* sender, FXSelector sel, void* ptr);
@@ -197,17 +197,11 @@ public:
     /// @brief Called on "step"
     long onCmdStep(FXObject*, FXSelector, void*);
 
-    /// @brief Called on "save state"
-    long onCmdSaveState(FXObject*, FXSelector, void*);
-
     /// @brief Called on "time toggle"
     long onCmdTimeToggle(FXObject*, FXSelector, void*);
 
     /// @brief Called on "delay toggle"
     long onCmdDelayToggle(FXObject*, FXSelector, void*);
-
-    /// @brief Called on "demand scale"
-    long onCmdDemandScale(FXObject*, FXSelector, void*);
 
     /// @brief Called if a new view shall be opened (2D view)
     long onCmdNewView(FXObject*, FXSelector, void*);
@@ -241,9 +235,6 @@ public:
     /// @brief Determines whether some buttons which require an active simulation may be shown
     long onUpdNeedsSimulation(FXObject*, FXSelector, void*);
 
-    /// @brief Determines whether traci is active
-    long onUpdTraCIStatus(FXObject*, FXSelector, void*);
-
     /// @brief Called if the message window shall be cleared
     long onCmdClearMsgWindow(FXObject*, FXSelector, void*);
 
@@ -272,26 +263,19 @@ public:
      * @return delay in milliseconds
      */
     virtual double getDelay() const {
-        return mySimDelay;
+        return mySimDelayTarget->getValue();
     }
 
     /** @brief Sets the delay of the parent application
-     * @param delay the new delay in milliseconds
      */
     virtual void setDelay(double delay) {
-        mySimDelay = delay;
+        mySimDelayTarget->setValue(delay);
     }
-
-    /** @brief Sets the breakpoints of the parent application
-     */
-    virtual void setBreakpoints(const std::vector<SUMOTime>& breakpoints);
 
     /** @brief Sends an event from the application thread to the GUI and waits until it is handled
      * @param event the event to send
      */
     virtual void sendBlockingEvent(GUIEvent* event);
-
-    const std::vector<SUMOTime> retrieveBreakpoints() const;
 
 protected:
     virtual void addToWindowsMenu(FXMenuPane*) { }
@@ -324,92 +308,85 @@ protected:
     virtual void buildToolBars();
 
 protected:
-    /// @brief  the name of the simulation
+    /** the name of the simulation */
     std::string myName;
 
-    /// @brief  the thread that loads simulations
+    /** the thread that loads simulations */
     GUILoadThread* myLoadThread;
 
-    /// @brief  the thread that runs simulations
+    /** the thread that runs simulations */
     GUIRunThread* myRunThread;
 
-    /// @brief  the information whether the simulation was started before
+    /** the information whether the simulation was started before */
     bool myWasStarted;
 
-    /// @brief The current view number
+    /// The current view number
     int myViewNumber;
 
-    /// @brief information whether the gui is currently loading and the load-options shall be greyed out
+    /// information whether the gui is currently loading and the load-options shall be greyed out
     bool myAmLoading;
 
-    /// @brief the submenus
+    /// the submenus
     FXMenuPane* myFileMenu, *myEditMenu, *mySelectByPermissions, *mySettingsMenu,
                 *myLocatorMenu, *myControlMenu,
                 *myWindowsMenu, *myHelpMenu;
 
-    /// @brief the menu cascades
-    FXMenuCascade* mySelectLanesMenuCascade;
-
-    /// @brief Buttons showing and running values and triggering statistic windows
+    /// Buttons showing and running values and triggering statistic windows
     std::vector<FXButton*> myStatButtons;
 
-    /// @brief A window to display messages, warnings and error in
+    /// A window to display messages, warnings and error in
     GUIMessageWindow* myMessageWindow;
 
-    /// @brief The splitter that divides the main window into vies and the log window
+    /// The splitter that divides the main window into vies and the log window
     FXSplitter* myMainSplitter;
 
-    /// @brief for some menu detaching fun
+    /// for some menu detaching fun
     FXToolBarShell* myToolBarDrag1, *myToolBarDrag2, *myToolBarDrag3,
-                    *myToolBarDrag4, *myToolBarDrag5, *myMenuBarDrag,
-                    *myToolBarDrag8;
+                    *myToolBarDrag4, *myToolBarDrag5, *myMenuBarDrag;
 
-    /// @brief the simulation delay in milliseconds
-    double mySimDelay;
-    FXDataTarget* mySimDelayTarget;
-    FXRealSpinner* mySimDelaySpinner;
-    FXSlider* mySimDelaySlider;
+    ///
+    FXRealSpinDial* mySimDelayTarget;
 
-    /// @brief the demand scale
-    FXRealSpinner* myDemandScaleSpinner;
+    /// The alternate simulation delay for toggling
+    SUMOTime myAlternateSimDelay;
 
-    /// @brief The alternate simulation delay in milliseconds for toggling
-    double myAlternateSimDelay;
+    /// List of got requests
+    MFXEventQue<GUIEvent*> myEvents;
 
-    /// @brief List of got requests
-    FXSynchQue<GUIEvent*> myEvents;
-
-    /// @brief The menu used for the MDI-windows
+    /// The menu used for the MDI-windows
     FXMDIMenu* myMDIMenu;
 
-    /// @brief The application menu bar
+    /// The application menu bar
     FXMenuBar* myMenuBar;
 
-    /// @brief The application tool bar
-    FXToolBar* myToolBar1, *myToolBar2, *myToolBar3, *myToolBar4, *myToolBar5, *myToolBar8;
+    /// The application tool bar
+    FXToolBar* myToolBar1, *myToolBar2, *myToolBar3, *myToolBar4, *myToolBar5;
 
-    /// @brief the simulation step display
+    /// the simulation step display
     FXEX::FXLCDLabel* myLCDLabel;
 
-    /// @brief io-event with the load-thread
+    /// io-event with the load-thread
     FXEX::FXThreadEvent myLoadThreadEvent;
 
-    /// @brief io-event with the run-thread
+    /// io-event with the run-thread
     FXEX::FXThreadEvent myRunThreadEvent;
 
-    /// @brief List of recent config files
+    /// List of recent config files
     FXRecentFiles myRecentConfigs;
 
-    /// @brief List of recent nets
+    /// List of recent nets
     FXRecentFiles myRecentNets;
 
-    /// @brief Input file pattern
+    /// Input file pattern
     std::string myConfigPattern;
 
     bool hadDependentBuild;
 
     /// @brief whether to show time as hour:minute:second
     bool myShowTimeAsHMS;
+
+    /// @brief whether to show the window in full screen mode
+    bool myAmFullScreen;
 
     /// @brief whether the simulation end was already announced
     bool myHaveNotifiedAboutSimEnd;
@@ -430,7 +407,7 @@ protected:
     static std::mt19937 myGamingRNG;
     int myPreviousCollisionNumber;
 
-    /// @brief performance indicators
+    /// performance indicators
     FXEX::FXLCDLabel* myWaitingTimeLabel;
     FXEX::FXLCDLabel* myTimeLossLabel;
     SUMOTime myWaitingTime;

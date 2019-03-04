@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    XMLSubSys.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,6 +7,17 @@
 ///
 // Utility methods for initialising, closing and using the XML-subsystem
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef XMLSubSys_h
 #define XMLSubSys_h
 
@@ -22,9 +25,12 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <string>
 #include <vector>
 #include <xercesc/sax2/SAX2XMLReader.hpp>
 
@@ -78,22 +84,14 @@ public:
 
 
     /**
-    * @brief Enables or disables validation.
-    *
-    * The setting is only valid for parsers created after the call. Existing parsers are not adapted.
-    *
-    * @param[in] validationScheme Whether validation of XML-documents against schemata shall be enabled
-    * @param[in] netValidationScheme Whether validation of SUMO networks against schemata shall be enabled
-    */
+     * @brief Enables or disables validation.
+     *
+     * The setting is only valid for parsers created after the call. Existing parsers are not adapted.
+     *
+     * @param[in] validationScheme Whether validation of XML-documents against schemata shall be enabled
+     * @param[in] netValidationScheme Whether validation of SUMO networks against schemata shall be enabled
+     */
     static void setValidation(const std::string& validationScheme, const std::string& netValidationScheme);
-
-
-    /**
-    * @brief Returns whether validation is enabled.
-    *
-    * @param[in] net Whether validation of SUMO networks is reported
-    */
-    static bool isValidating(const bool net = false);
 
 
     /**

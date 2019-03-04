@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIVissimDistrictConnection.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // -------------------
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include <string>
@@ -109,7 +116,7 @@ NIVissimDistrictConnection*
 NIVissimDistrictConnection::dictionary(int id) {
     DictType::iterator i = myDict.find(id);
     if (i == myDict.end()) {
-        return nullptr;
+        return 0;
     }
     return (*i).second;
 }
@@ -200,16 +207,16 @@ NIVissimDistrictConnection::dict_BuildDistricts(NBDistrictCont& dc,
             NIVissimDistrictConnection* c = dictionary(*l);
             // get the edge to connect the parking place to
             NBEdge* e = ec.retrieve(toString<int>(c->myEdgeID));
-            if (e == nullptr) {
+            if (e == 0) {
                 e = ec.retrievePossiblySplit(toString<int>(c->myEdgeID), c->myPosition);
             }
-            if (e == nullptr) {
+            if (e == 0) {
                 WRITE_WARNING("Could not build district '" + toString<int>((*k).first) + "' - edge '" + toString<int>(c->myEdgeID) + "' is missing.");
                 continue;
             }
             std::string id = "ParkingPlace" + toString<int>(*l);
             NBNode* parkingPlace = nc.retrieve(id);
-            if (parkingPlace == nullptr) {
+            if (parkingPlace == 0) {
                 double pos = c->getPosition();
                 if (pos < e->getLength() - pos) {
                     parkingPlace = e->getFromNode();
@@ -342,14 +349,14 @@ NIVissimDistrictConnection::dict_findForEdge(int edgeid) {
             return (*i).second;
         }
     }
-    return nullptr;
+    return 0;
 }
 
 
 void
 NIVissimDistrictConnection::clearDict() {
     for (DictType::iterator i = myDict.begin(); i != myDict.end(); i++) {
-        delete (*i).second;
+        delete(*i).second;
     }
     myDict.clear();
 }
@@ -375,7 +382,7 @@ double
 NIVissimDistrictConnection::getRealSpeed(int distNo) const {
     std::string id = toString<int>(distNo);
     Distribution* dist = DistributionCont::dictionary("speed", id);
-    if (dist == nullptr) {
+    if (dist == 0) {
         WRITE_WARNING("The referenced speed distribution '" + id + "' is not known.");
         WRITE_WARNING(". Using default.");
         return OptionsCont::getOptions().getFloat("vissim.default-speed");

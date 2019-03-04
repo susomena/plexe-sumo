@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBCapacity2Lanes.h
 /// @author  Daniel Krajzewicz
 /// @author  Sascha Krieg
@@ -15,6 +7,17 @@
 ///
 // A helper class which computes the lane number from given capacity
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBCapacity2Lanes_h
 #define NBCapacity2Lanes_h
 
@@ -22,7 +25,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 
 // ===========================================================================
@@ -52,7 +59,7 @@ public:
 
     /** @brief Returns the number of lanes computed from the given capacity
      *
-     * Returns the estimated number of lanes by returning the given capacity
+     * Returns the esimtaed number of lanes by returning the given capacity
      *  divided by the norming divider given in the constructor.
      *
      * @param[in] capacity The capacity to convert

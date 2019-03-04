@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ODDistrictHandler.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // An XML-Handler for districts
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utility>
@@ -41,7 +48,7 @@
 // ===========================================================================
 ODDistrictHandler::ODDistrictHandler(ODDistrictCont& cont,
                                      const std::string& file)
-    : SUMOSAXHandler(file), myContainer(cont), myCurrentDistrict(nullptr) {}
+    : SUMOSAXHandler(file), myContainer(cont), myCurrentDistrict(0) {}
 
 
 ODDistrictHandler::~ODDistrictHandler() {}
@@ -76,10 +83,10 @@ ODDistrictHandler::myEndElement(int element) {
 
 void
 ODDistrictHandler::openDistrict(const SUMOSAXAttributes& attrs) {
-    myCurrentDistrict = nullptr;
+    myCurrentDistrict = 0;
     // get the id, report an error if not given or empty...
     bool ok = true;
-    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
     if (!ok) {
         return;
     }
@@ -116,12 +123,12 @@ ODDistrictHandler::addSink(const SUMOSAXAttributes& attrs) {
 std::pair<std::string, double>
 ODDistrictHandler::parseTAZ(const SUMOSAXAttributes& attrs) {
     // check the current district first
-    if (myCurrentDistrict == nullptr) {
+    if (myCurrentDistrict == 0) {
         return std::pair<std::string, double>("", -1);
     }
     // get the id, report an error if not given or empty...
     bool ok = true;
-    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
     if (!ok) {
         return std::pair<std::string, double>("", -1);
     }
@@ -140,7 +147,7 @@ ODDistrictHandler::parseTAZ(const SUMOSAXAttributes& attrs) {
 
 void
 ODDistrictHandler::closeDistrict() {
-    if (myCurrentDistrict != nullptr) {
+    if (myCurrentDistrict != 0) {
         myContainer.add(myCurrentDistrict->getID(), myCurrentDistrict);
     }
 }

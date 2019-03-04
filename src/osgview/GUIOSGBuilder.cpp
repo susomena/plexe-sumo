@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIOSGBuilder.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,12 +7,27 @@
 ///
 // Builds OSG nodes from microsim objects
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_OSG
 
@@ -70,8 +77,6 @@
 #include "GUIOSGBuilder.h"
 
 
-//#define DEBUG_TESSEL
-
 // ===========================================================================
 // static member variables
 // ===========================================================================
@@ -87,9 +92,10 @@ GUIOSGBuilder::buildOSGScene(osg::Node* const tlg, osg::Node* const tly, osg::No
     osg::Group* root = new osg::Group();
     GUINet* net = static_cast<GUINet*>(MSNet::getInstance());
     // build edges
-    for (const MSEdge* e : net->getEdgeControl().getEdges()) {
-        if (!e->isInternal()) {
-            buildOSGEdgeGeometry(*e, *root, tesselator);
+    const MSEdgeVector& edges = net->getEdgeControl().getEdges();
+    for (MSEdgeVector::const_iterator i = edges.begin(); i != edges.end(); ++i) {
+        if (!(*i)->isInternal()) {
+            buildOSGEdgeGeometry(**i, *root, tesselator);
         }
     }
     // build junctions
@@ -105,9 +111,6 @@ GUIOSGBuilder::buildOSGScene(osg::Node* const tlg, osg::Node* const tly, osg::No
         const MSLane* lastLane = 0;
         int idx = 0;
         for (MSTrafficLightLogic::LaneVectorVector::const_iterator j = lanes.begin(); j != lanes.end(); ++j, ++idx) {
-            if ((*j).size() == 0) {
-                continue;
-            }
             const MSLane* const lane = (*j)[0];
             const Position pos = lane->getShape().back();
             const double angle =  osg::DegreesToRadians(lane->getShape().rotationDegreeAtOffset(-1.) + 90.);
@@ -169,27 +172,18 @@ GUIOSGBuilder::buildOSGEdgeGeometry(const MSEdge& edge,
         osg::Geometry* geom = new osg::Geometry();
         geode->addDrawable(geom);
         addTo.addChild(geode);
-        const int shapeSize = (int)(edge.isWalkingArea() ? shape.size() : shape.size() * 2);
-        const float zOffset = edge.isWalkingArea() || edge.isCrossing() ? 0.01f : 0.f;
-        osg::Vec3Array* osg_coords = new osg::Vec3Array(shapeSize);
+        osg::Vec3dArray* osg_coords = new osg::Vec3dArray((int)shape.size() * 2);
         geom->setVertexArray(osg_coords);
-        if (edge.isWalkingArea()) {
-            int index = 0;
-            for (int k = 0; k < (int)shape.size(); ++k, ++index) {
-                (*osg_coords)[index].set((float)shape[k].x(), (float)shape[k].y(), (float)shape[k].z() + zOffset);
-            }
-        } else {
-            PositionVector rshape = shape;
-            rshape.move2side(l->getWidth() / 2);
-            int index = 0;
-            for (int k = 0; k < (int)rshape.size(); ++k, ++index) {
-                (*osg_coords)[index].set((float)rshape[k].x(), (float)rshape[k].y(), (float)rshape[k].z() + zOffset);
-            }
-            PositionVector lshape = shape;
-            lshape.move2side(-l->getWidth() / 2);
-            for (int k = (int) lshape.size() - 1; k >= 0; --k, ++index) {
-                (*osg_coords)[index].set((float)lshape[k].x(), (float)lshape[k].y(), (float)lshape[k].z() + zOffset);
-            }
+        PositionVector rshape = shape;
+        rshape.move2side(SUMO_const_halfLaneWidth);
+        int index = 0;
+        for (int k = 0; k < (int)rshape.size(); ++k, ++index) {
+            (*osg_coords)[index].set(rshape[k].x(), rshape[k].y(), rshape[k].z());
+        }
+        PositionVector lshape = shape;
+        lshape.move2side(-SUMO_const_halfLaneWidth);
+        for (int k = (int) lshape.size() - 1; k >= 0; --k, ++index) {
+            (*osg_coords)[index].set(lshape[k].x(), lshape[k].y(), lshape[k].z());
         }
         osg::Vec3Array* osg_normals = new osg::Vec3Array(1);
         (*osg_normals)[0] = osg::Vec3(0, 0, 1);
@@ -207,7 +201,7 @@ GUIOSGBuilder::buildOSGEdgeGeometry(const MSEdge& edge,
         geom->setColorArray(osg_colors);
         geom->setColorBinding(osg::Geometry::BIND_OVERALL);
 #endif
-        geom->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POLYGON, 0, shapeSize));
+        geom->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POLYGON, 0, (int)shape.size() * 2));
 
         osg::ref_ptr<osg::StateSet> ss = geode->getOrCreateStateSet();
         ss->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
@@ -215,14 +209,6 @@ GUIOSGBuilder::buildOSGEdgeGeometry(const MSEdge& edge,
 
         if (shape.size() > 2) {
             tessellator.retessellatePolygons(*geom);
-#ifdef DEBUG_TESSEL
-            std::cout << "l=" << l->getID() << " origPoints=" << shape.size() << " geomSize=" << geom->getVertexArray()->getNumElements() << " points=";
-            for (int i = 0; i < (int)geom->getVertexArray()->getNumElements(); i++) {
-                const osg::Vec3& p = (*((osg::Vec3Array*)geom->getVertexArray()))[i];
-                std::cout << p.x() << "," << p.y() << "," << p.z() << " ";
-            }
-            std::cout << "\n";
-#endif
         }
         static_cast<GUILane*>(l)->setGeometry(geom);
     }
@@ -238,12 +224,12 @@ GUIOSGBuilder::buildOSGJunctionGeometry(GUIJunctionWrapper& junction,
     osg::Geometry* geom = new osg::Geometry();
     geode->addDrawable(geom);
     addTo.addChild(geode);
-    osg::Vec3Array* osg_coords = new osg::Vec3Array((int)shape.size());
+    osg::Vec3dArray* osg_coords = new osg::Vec3dArray((int)shape.size());
     geom->setVertexArray(osg_coords);
     for (int k = 0; k < (int)shape.size(); ++k) {
-        (*osg_coords)[k].set((float)shape[k].x(), (float)shape[k].y(), (float)shape[k].z());
+        (*osg_coords)[k].set(shape[k].x(), shape[k].y(), shape[k].z());
     }
-    osg::Vec3Array* osg_normals = new osg::Vec3Array(1);
+    osg::Vec3dArray* osg_normals = new osg::Vec3dArray(1);
     (*osg_normals)[0] = osg::Vec3(0, 0, 1);
 #if OSG_MIN_VERSION_REQUIRED(3,2,0)
     geom->setNormalArray(osg_normals, osg::Array::BIND_PER_PRIMITIVE_SET);
@@ -419,7 +405,6 @@ GUIOSGBuilder::buildMovable(const MSVehicleType& type) {
     ellipse->setPosition(center);
     ellipse->setScale(osg::Vec3d(type.getWidth() + enlarge, type.getLength() + enlarge, type.getHeight() + enlarge));
     m.pos->addChild(ellipse);
-    m.active = true;
     return m;
 }
 

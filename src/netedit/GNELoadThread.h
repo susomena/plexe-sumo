@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GNELoadThread.h
 /// @author  Jakob Erdmann
 /// @date    Feb 2011
@@ -15,6 +7,17 @@
 // The thread that performs the loading of a Netedit-net (adapted from
 // GUILoadThread)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GNELoadThread_h
 #define GNELoadThread_h
 
@@ -22,17 +25,23 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <utils/common/MsgHandler.h>
+#include <utils/common/SUMOTime.h>
 #include <utils/foxtools/FXSingleEventThread.h>
-#include <utils/foxtools/FXSynchQue.h>
-#include <utils/foxtools/MFXInterThreadEventClient.h>
+#include <utils/foxtools/FXThreadEvent.h>
+#include <utils/foxtools/MFXEventQue.h>
+#include <utils/common/MsgHandler.h>
 
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
+class MFXInterThreadEventClient;
 class GNENet;
 class GUIEvent;
 
@@ -46,7 +55,7 @@ class GUIEvent;
 class GNELoadThread : public FXSingleEventThread {
 public:
     /// @brief constructor
-    GNELoadThread(FXApp* app, MFXInterThreadEventClient* mw, FXSynchQue<GUIEvent*>& eq,
+    GNELoadThread(FXApp* app, MFXInterThreadEventClient* mw, MFXEventQue<GUIEvent*>& eq,
                   FXEX::FXThreadEvent& ev);
 
     /// @brief destructor
@@ -86,14 +95,14 @@ protected:
     /// @brief the parent window to inform about the loading
     MFXInterThreadEventClient* myParent;
 
-    /// @brief the path to load the network from
+    /// @brief the path to load the simulation from
     std::string myFile;
 
     /// @brief @brief The instances of message retriever encapsulations Needed to be deleted from the handler later on
-    OutputDevice* myErrorRetriever, *myMessageRetriever, *myWarningRetriever, *myDebugRetriever, *myGLDebugRetriever;
+    OutputDevice* myErrorRetriever, *myMessageRetriever, *myWarningRetriever;
 
     /// @brief event Queue
-    FXSynchQue<GUIEvent*>& myEventQue;
+    MFXEventQue<GUIEvent*>& myEventQue;
 
     /// @brief event throw
     FXEX::FXThreadEvent& myEventThrow;

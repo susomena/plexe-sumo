@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ShapeContainer.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Sascha Krieg
@@ -17,12 +9,27 @@
 ///
 // Storage for geometrical objects, sorted by the layers they are in
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <fstream>
 #include <stdlib.h>
@@ -48,17 +55,17 @@ ShapeContainer::~ShapeContainer() {}
 bool
 ShapeContainer::addPolygon(const std::string& id, const std::string& type,
                            const RGBColor& color, double layer,
-                           double angle, const std::string& imgFile, bool relativePath,
-                           const PositionVector& shape, bool geo, bool fill, double lineWidth, bool ignorePruning) {
-    return add(new SUMOPolygon(id, type, color, shape, geo, fill, lineWidth, layer, angle, imgFile, relativePath), ignorePruning);
+                           double angle, const std::string& imgFile,
+                           const PositionVector& shape, bool fill, bool ignorePruning) {
+    return add(new SUMOPolygon(id, type, color, shape, fill, layer, angle, imgFile), ignorePruning);
 }
 
 
 bool
-ShapeContainer::addPOI(const std::string& id, const std::string& type, const RGBColor& color, const Position& pos, bool geo,
-                       const std::string& lane, double posOverLane, double posLat, double layer, double angle,
-                       const std::string& imgFile, bool relativePath, double width, double height, bool ignorePruning) {
-    return add(new PointOfInterest(id, type, color, pos, geo, lane, posOverLane, posLat, layer, angle, imgFile, relativePath, width, height), ignorePruning);
+ShapeContainer::addPOI(const std::string& id, const std::string& type,
+                       const RGBColor& color, double layer, double angle, const std::string& imgFile,
+                       const Position& pos, double width, double height, bool ignorePruning) {
+    return add(new PointOfInterest(id, type, color, pos, layer, angle, imgFile, width, height), ignorePruning);
 }
 
 
@@ -77,7 +84,7 @@ ShapeContainer::removePOI(const std::string& id) {
 void
 ShapeContainer::movePOI(const std::string& id, const Position& pos) {
     PointOfInterest* p = myPOIs.get(id);
-    if (p != nullptr) {
+    if (p != 0) {
         static_cast<Position*>(p)->set(pos);
     }
 }
@@ -86,7 +93,7 @@ ShapeContainer::movePOI(const std::string& id, const Position& pos) {
 void
 ShapeContainer::reshapePolygon(const std::string& id, const PositionVector& shape) {
     SUMOPolygon* p = myPolygons.get(id);
-    if (p != nullptr) {
+    if (p != 0) {
         p->setShape(shape);
     }
 }

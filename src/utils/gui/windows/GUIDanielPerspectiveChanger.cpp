@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIDanielPerspectiveChanger.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,17 +8,31 @@
 ///
 // A class that allows to steer the visual output in dependence to
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <fxkeys.h>
 #include <utils/geom/Boundary.h>
 #include <utils/geom/Position.h>
-#include <utils/geom/GeomHelper.h>
 #include <utils/gui/settings/GUICompleteSchemeStorage.h>
 #include "GUIPerspectiveChanger.h"
 #include "GUIDanielPerspectiveChanger.h"
@@ -153,7 +159,7 @@ GUIDanielPerspectiveChanger::onLeftBtnPress(void* data) {
 
 bool
 GUIDanielPerspectiveChanger::onLeftBtnRelease(void* data) {
-    myMouseButtonState &= ~MOUSEBTN_LEFT;
+    myMouseButtonState &= !MOUSEBTN_LEFT;
     FXEvent* e = (FXEvent*) data;
     myMouseXPosition = e->win_x;
     myMouseYPosition = e->win_y;
@@ -175,8 +181,8 @@ GUIDanielPerspectiveChanger::onRightBtnPress(void* data) {
 
 bool
 GUIDanielPerspectiveChanger::onRightBtnRelease(void* data) {
-    myMouseButtonState &= ~MOUSEBTN_RIGHT;
-    if (data != nullptr) {
+    myMouseButtonState &= !MOUSEBTN_RIGHT;
+    if (data != 0) {
         FXEvent* e = (FXEvent*) data;
         myMouseXPosition = e->win_x;
         myMouseYPosition = e->win_y;
@@ -223,13 +229,7 @@ GUIDanielPerspectiveChanger::onMouseMove(void* data) {
     switch (myMouseButtonState) {
         case MOUSEBTN_LEFT:
             if (pastDelay) {
-                if (myRotation != 0) {
-                    Position diffRot = Position(xdiff, ydiff).rotateAround2D(
-                                           DEG2RAD(myRotation), Position(0, 0));
-                    move((int)diffRot.x(), (int)diffRot.y());
-                } else {
-                    move(xdiff, ydiff);
-                }
+                move(xdiff, ydiff);
                 if (moved) {
                     myMoveOnClick = true;
                 }
@@ -274,11 +274,6 @@ GUIDanielPerspectiveChanger::setViewportFrom(double xPos, double yPos, double zP
 
 
 void
-GUIDanielPerspectiveChanger::setRotation(double rotation) {
-    myRotation = rotation;
-}
-
-void
 GUIDanielPerspectiveChanger::changeCanvasSizeLeft(int change) {
     myViewPort = Boundary(
                      myViewPort.xmin() - myCallback.p2m(change),
@@ -300,7 +295,9 @@ GUIDanielPerspectiveChanger::onKeyPress(void* data) {
     double moveY = 0;
     double moveFactor = 1;
     bool pageVertical = true;
+    bool ctrl = false;
     if (e->state & CONTROLMASK) {
+        ctrl = true;
         zoomDiff /= 2;
         moveFactor /= 10;
     } else if (e->state & SHIFTMASK) {
@@ -356,6 +353,13 @@ GUIDanielPerspectiveChanger::onKeyPress(void* data) {
             myCallback.recenterView();
             myCallback.update();
             return 1;
+        case FX::KEY_v:
+            // from an architecture standpoint this isn't the best place to put
+            // this. But its simple
+            if (ctrl) {
+                myCallback.showViewschemeEditor();
+                return 1;
+            }
         default:
             return 0;
     }

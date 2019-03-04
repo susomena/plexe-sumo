@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSSOTLPolicy5DStimulus.h
 /// @author  Riccardo Belletti
 /// @author  Simone Bacchilega
@@ -15,6 +7,17 @@
 ///
 // The class the low-level policy stimulus
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 #ifndef MSSOTLPOLICY5DSTIMULUS_H_
 #define MSSOTLPOLICY5DSTIMULUS_H_
@@ -22,7 +25,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 //#define SWARM_DEBUG
 #include <utils/common/SwarmDebug.h>
@@ -53,21 +60,21 @@ public:
 
     double getStimCox() {
         std::string key = getKeyPrefix() + "_STIM_COX";
-        return getDouble(key, stimCoxDVal);
+        return readParameter(key, stimCoxDVal);
     }
     void setStimCoxDefVal(double defVal) {
         stimCoxDVal = defVal;
     }
     double getStimOffsetIn() {
         std::string key = getKeyPrefix() + "_STIM_OFFSET_IN";
-        return getDouble(key, stimOffsetInDVal);
+        return readParameter(key, stimOffsetInDVal);
     }
     void setStimOffsetInDefVal(double defVal) {
         stimOffsetInDVal = defVal;
     }
     double getStimOffsetOut() {
         std::string key = getKeyPrefix() + "_STIM_OFFSET_OUT";
-        return getDouble(key, stimOffsetOutDVal);
+        return readParameter(key, stimOffsetOutDVal);
     }
 
     void setStimOffsetOutDefVal(double defVal) {
@@ -76,21 +83,21 @@ public:
 
     double getStimOffsetDispersionIn() {
         std::string key = getKeyPrefix() + "_STIM_OFFSET_DISPERSION_IN";
-        return getDouble(key, stimOffsetDispersionInDVal);
+        return readParameter(key, stimOffsetDispersionInDVal);
     }
     void setStimOffsetDispersionInDefVal(double defVal) {
         stimOffsetDispersionInDVal = defVal;
     }
     double getStimOffsetDispersionOut() {
         std::string key = getKeyPrefix() + "_STIM_OFFSET_DISPERSION_OUT";
-        return getDouble(key, stimOffsetDispersionOutDVal);
+        return readParameter(key, stimOffsetDispersionOutDVal);
     }
     void setStimOffsetDispersionOutDefVal(double defVal) {
         stimOffsetDispersionOutDVal = defVal;
     }
     double getStimDivisorIn() {
         std::string key = getKeyPrefix() + "_STIM_DIVISOR_IN";
-        return getDouble(key, stimDivInDVal);
+        return readParameter(key, stimDivInDVal);
     }
 
     void setStimDivisorInDefVal(double defVal) {
@@ -99,7 +106,7 @@ public:
 
     double getStimDivisorOut() {
         std::string key = getKeyPrefix() + "_STIM_DIVISOR_OUT";
-        return getDouble(key, stimDivOutDVal);
+        return readParameter(key, stimDivOutDVal);
     }
 
     void setStimDivisorOutDefVal(double defVal) {
@@ -108,7 +115,7 @@ public:
 
     double getStimDivisorDispersionIn() {
         std::string key = getKeyPrefix() + "_STIM_DIVISOR_DISPERSION_IN";
-        return getDouble(key, stimDivDispersionInDVal);
+        return readParameter(key, stimDivDispersionInDVal);
     }
 
     void setStimDivisorDispersionInDefVal(double defVal) {
@@ -116,7 +123,7 @@ public:
     }
     double getStimDivisorDispersionOut() {
         std::string key = getKeyPrefix() + "_STIM_DIVISOR_DISPERSION_OUT";
-        return getDouble(key, stimDivDispersionOutDVal);
+        return readParameter(key, stimDivDispersionOutDVal);
     }
 
     void setStimDivisorDispersionOutDefVal(double defVal) {
@@ -124,14 +131,14 @@ public:
     }
     double getStimCoxExpIn() {
         std::string key = getKeyPrefix() + "_STIM_COX_EXP_IN";
-        return getDouble(key, stimCoxExpInDVal);
+        return readParameter(key, stimCoxExpInDVal);
     }
     void setStimCoxExpInDefVal(double defVal) {
         stimCoxExpInDVal = defVal;
     }
     double getStimCoxExpOut() {
         std::string key = getKeyPrefix() + "_STIM_COX_EXP_OUT";
-        return getDouble(key, stimCoxExpOutDVal);
+        return readParameter(key, stimCoxExpOutDVal);
     }
     void setStimCoxExpOutDefVal(double defVal) {
         stimCoxExpOutDVal = defVal;
@@ -139,14 +146,14 @@ public:
 
     double getStimCoxExpDispersionIn() {
         std::string key = getKeyPrefix() + "_STIM_COX_EXP_DISPERSION_IN";
-        return getDouble(key, stimCoxExpDispersionInDVal);
+        return readParameter(key, stimCoxExpDispersionInDVal);
     }
     void setStimCoxExpDispersionInDefVal(double defVal) {
         stimCoxExpDispersionInDVal = defVal;
     }
     double getStimCoxExpDispersionOut() {
         std::string key = getKeyPrefix() + "_STIM_COX_EXP_DISPERSION_OUT";
-        return getDouble(key, stimCoxExpDispersionOutDVal);
+        return readParameter(key, stimCoxExpDispersionOutDVal);
     }
     void setStimCoxExpDispersionOutDefVal(double defVal) {
         stimCoxExpDispersionOutDVal = defVal;

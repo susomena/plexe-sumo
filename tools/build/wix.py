@@ -1,18 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    wix.py
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2011
+@version $Id$
 
-# @file    wix.py
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2011
-# @version $Id$
+Builds the installer based on the nightly zip.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import optparse
 import subprocess
@@ -66,18 +70,18 @@ def buildMSI(sourceZip=INPUT_DEFAULT, outFile=OUTPUT_DEFAULT,
     fragments = [buildFragment(wixBin, os.path.join(
         sumoRoot, d), "INSTALLDIR", tmpDir, log) for d in ["bin", "data", "tools"]]
     for d in ["userdoc", "pydoc", "javadoc", "tutorial", "examples"]:
-        docDir = os.path.join(sumoRoot, "docs", d)
-        if os.path.exists(docDir):
-            fragments.append(buildFragment(wixBin, docDir, "DOCDIR", tmpDir, log))
+        fragments.append(
+            buildFragment(wixBin, os.path.join(sumoRoot, "docs", d), "DOCDIR", tmpDir, log))
     for wxs in glob.glob(wxsPattern):
         with open(wxs) as wxsIn:
             with open(os.path.join(tmpDir, os.path.basename(wxs)), "w") as wxsOut:
-                for line in wxsIn:
-                    line = line.replace("License.rtf", license)
+                for l in wxsIn:
+                    l = l.replace("License.rtf", license)
                     dataDir = os.path.dirname(license)
                     for data in ["bannrbmp.bmp", "dlgbmp.bmp"]:
-                        line = line.replace(data, os.path.join(dataDir, data))
-                    wxsOut.write(line.replace(r"O:\Daten\Sumo\Nightly", os.path.join(sumoRoot, "bin")))
+                        l = l.replace(data, os.path.join(dataDir, data))
+                    wxsOut.write(
+                        l.replace(r"O:\Daten\Sumo\Nightly", os.path.join(sumoRoot, "bin")))
         fragments.append(wxsOut.name)
     subprocess.call([os.path.join(wixBin, "candle.exe"),
                      "-o", tmpDir + "\\"] + fragments,
@@ -87,7 +91,6 @@ def buildMSI(sourceZip=INPUT_DEFAULT, outFile=OUTPUT_DEFAULT,
                      "-ext", "WixUIExtension", "-o", outFile] + wixObj,
                     stdout=log, stderr=log)
     shutil.rmtree(tmpDir, True)  # comment this out when debugging
-
 
 if __name__ == "__main__":
     optParser = optparse.OptionParser()

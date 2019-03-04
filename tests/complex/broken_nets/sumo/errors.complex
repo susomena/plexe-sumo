@@ -35,26 +35,27 @@ Quitting (on error).
 ------------------ net/edge[0]@function:a
 Error: value 'a' not in enumeration
  In file 'mod.net.xml'
- At line/column 24/60.
+ At line/column 26/60.
 
 Quitting (on error).
 ------------------ net/edge[1]@function:a
 Error: value 'a' not in enumeration
  In file 'mod.net.xml'
- At line/column 28/60.
+ At line/column 30/60.
 
 Quitting (on error).
 ------------------ net/edge[0]@id:
-Error: value '' does not match regular expression facet '[^ \t\n\r|\\;,']+'
- In file 'mod.net.xml'
- At line/column 24/46.
-
+Error: Attribute 'id' in definition of a edge is empty.
+Error: An unknown lane ('1_0') was tried to be set as incoming to junction '2'.
+Error: Unknown from-edge '1' in connection.
+Error: Unknown from-edge '1' in connection.
+Error: Unknown from-node '2' for edge '2'.
 Quitting (on error).
 ------------------ net/edge[1]@id:
-Error: value '' does not match regular expression facet '[^ \t\n\r|\\;,']+'
- In file 'mod.net.xml'
- At line/column 28/46.
-
+Error: Attribute 'id' in definition of a edge is empty.
+Error: An unknown lane ('2_0') was tried to be set as incoming to junction '3'.
+Error: Unknown to-edge '2' in connection.
+Error: Unknown to-edge '2' in connection.
 Quitting (on error).
 ------------------ net/edge[0]@id:a
 Error: Unknown from-edge '1' in connection.
@@ -67,13 +68,13 @@ Quitting (on error).
 ------------------ net/edge[0]@id:<remove>
 Error: missing required attribute 'id'
  In file 'mod.net.xml'
- At line/column 24/40.
+ At line/column 26/40.
 
 Quitting (on error).
 ------------------ net/edge[1]@id:<remove>
 Error: missing required attribute 'id'
  In file 'mod.net.xml'
- At line/column 28/40.
+ At line/column 30/40.
 
 Quitting (on error).
 ------------------ net/edge[0]@to:
@@ -130,74 +131,78 @@ Quitting (on error).
 ------------------ net/edge[0]/lane[0]@index:
 Error: value '' does not match regular expression facet '[+\-]?[0-9]+'
  In file 'mod.net.xml'
- At line/column 25/96.
+ At line/column 27/96.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@index:
 Error: value '' does not match regular expression facet '[+\-]?[0-9]+'
  In file 'mod.net.xml'
- At line/column 26/96.
+ At line/column 28/96.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@index:
 Error: value '' does not match regular expression facet '[+\-]?[0-9]+'
  In file 'mod.net.xml'
- At line/column 29/98.
+ At line/column 31/98.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@index:
 Error: value '' does not match regular expression facet '[+\-]?[0-9]+'
  In file 'mod.net.xml'
- At line/column 30/98.
+ At line/column 32/98.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@index:a
 Error: value 'a' does not match regular expression facet '[+\-]?[0-9]+'
  In file 'mod.net.xml'
- At line/column 25/97.
+ At line/column 27/97.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@index:a
 Error: value 'a' does not match regular expression facet '[+\-]?[0-9]+'
  In file 'mod.net.xml'
- At line/column 26/97.
+ At line/column 28/97.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@index:a
 Error: value 'a' does not match regular expression facet '[+\-]?[0-9]+'
  In file 'mod.net.xml'
- At line/column 29/99.
+ At line/column 31/99.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@index:a
 Error: value 'a' does not match regular expression facet '[+\-]?[0-9]+'
  In file 'mod.net.xml'
- At line/column 30/99.
+ At line/column 32/99.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@id:
-Error: value '' does not match regular expression facet '[^ \t\n\r|\\;,']+'
- In file 'mod.net.xml'
- At line/column 25/94.
-
+Error: Attribute 'id' in definition of a lane is empty.
+Error: An unknown lane ('1_0') was tried to be set as incoming to junction '2'.
+Error: Unknown from-edge '1' in connection.
+Error: Unknown from-edge '1' in connection.
+Error: Unknown to-node '2' for edge '1'.
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@id:
-Error: value '' does not match regular expression facet '[^ \t\n\r|\\;,']+'
- In file 'mod.net.xml'
- At line/column 26/94.
-
+Error: Attribute 'id' in definition of a lane is empty.
+Error: An unknown lane ('1_1') was tried to be set as incoming to junction '2'.
+Error: Unknown from-edge '1' in connection.
+Error: Unknown from-edge '1' in connection.
+Error: Unknown to-node '2' for edge '1'.
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@id:
-Error: value '' does not match regular expression facet '[^ \t\n\r|\\;,']+'
- In file 'mod.net.xml'
- At line/column 29/96.
-
+Error: Attribute 'id' in definition of a lane is empty.
+Error: An unknown lane ('2_0') was tried to be set as incoming to junction '3'.
+Error: Unknown to-edge '2' in connection.
+Error: Unknown to-edge '2' in connection.
+Error: Unknown to-node '3' for edge '2'.
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@id:
-Error: value '' does not match regular expression facet '[^ \t\n\r|\\;,']+'
- In file 'mod.net.xml'
- At line/column 30/96.
-
+Error: Attribute 'id' in definition of a lane is empty.
+Error: An unknown lane ('2_1') was tried to be set as incoming to junction '3'.
+Error: Unknown to-edge '2' in connection.
+Error: Unknown to-edge '2' in connection.
+Error: Unknown to-node '3' for edge '2'.
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@id:a_0
 Error: An unknown lane ('1_0') was tried to be set as incoming to junction '2'.
@@ -218,289 +223,289 @@ Quitting (on error).
 ------------------ net/edge[0]/lane[0]@id:<remove>
 Error: missing required attribute 'id'
  In file 'mod.net.xml'
- At line/column 25/88.
+ At line/column 27/88.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@id:<remove>
 Error: missing required attribute 'id'
  In file 'mod.net.xml'
- At line/column 26/88.
+ At line/column 28/88.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@id:<remove>
 Error: missing required attribute 'id'
  In file 'mod.net.xml'
- At line/column 29/90.
+ At line/column 31/90.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@id:<remove>
 Error: missing required attribute 'id'
  In file 'mod.net.xml'
- At line/column 30/90.
+ At line/column 32/90.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@length:
 Error: empty string encountered
  In file 'mod.net.xml'
- At line/column 25/91.
+ At line/column 27/91.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@length:
 Error: empty string encountered
  In file 'mod.net.xml'
- At line/column 26/91.
+ At line/column 28/91.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@length:
 Error: empty string encountered
  In file 'mod.net.xml'
- At line/column 29/93.
+ At line/column 31/93.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@length:
 Error: empty string encountered
  In file 'mod.net.xml'
- At line/column 30/93.
+ At line/column 32/93.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@length:a
 Error: invalid character encountered
  In file 'mod.net.xml'
- At line/column 25/92.
+ At line/column 27/92.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@length:a
 Error: invalid character encountered
  In file 'mod.net.xml'
- At line/column 26/92.
+ At line/column 28/92.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@length:a
 Error: invalid character encountered
  In file 'mod.net.xml'
- At line/column 29/94.
+ At line/column 31/94.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@length:a
 Error: invalid character encountered
  In file 'mod.net.xml'
- At line/column 30/94.
+ At line/column 32/94.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@length:<remove>
 Error: missing required attribute 'length'
  In file 'mod.net.xml'
- At line/column 25/81.
+ At line/column 27/81.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@length:<remove>
 Error: missing required attribute 'length'
  In file 'mod.net.xml'
- At line/column 26/81.
+ At line/column 28/81.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@length:<remove>
 Error: missing required attribute 'length'
  In file 'mod.net.xml'
- At line/column 29/83.
+ At line/column 31/83.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@length:<remove>
 Error: missing required attribute 'length'
  In file 'mod.net.xml'
- At line/column 30/83.
+ At line/column 32/83.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@shape:
 Error: value '' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 25/74.
+ At line/column 27/74.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@shape:
 Error: value '' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 26/74.
+ At line/column 28/74.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@shape:
 Error: value '' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 29/74.
+ At line/column 31/74.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@shape:
 Error: value '' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 30/74.
+ At line/column 32/74.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@shape:a
 Error: value 'a' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 25/75.
+ At line/column 27/75.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@shape:a
 Error: value 'a' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 26/75.
+ At line/column 28/75.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@shape:a
 Error: value 'a' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 29/75.
+ At line/column 31/75.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@shape:a
 Error: value 'a' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 30/75.
+ At line/column 32/75.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@shape:<remove>
 Error: missing required attribute 'shape'
  In file 'mod.net.xml'
- At line/column 25/65.
+ At line/column 27/65.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@shape:<remove>
 Error: missing required attribute 'shape'
  In file 'mod.net.xml'
- At line/column 26/65.
+ At line/column 28/65.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@shape:<remove>
 Error: missing required attribute 'shape'
  In file 'mod.net.xml'
- At line/column 29/65.
+ At line/column 31/65.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@shape:<remove>
 Error: missing required attribute 'shape'
  In file 'mod.net.xml'
- At line/column 30/65.
+ At line/column 32/65.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@shape:a,-4.95 100.00,-4.95
 Error: value 'a,-4.95 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 25/94.
+ At line/column 27/94.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@shape:a,-4.95 100.00,-4.95
 Error: value 'a,-4.95 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 26/94.
+ At line/column 28/94.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@shape:a,-4.95 100.00,-4.95
 Error: value 'a,-4.95 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 29/94.
+ At line/column 31/94.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@shape:a,-4.95 100.00,-4.95
 Error: value 'a,-4.95 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 30/94.
+ At line/column 32/94.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@shape:0.00,a 100.00,-4.95
 Error: value '0.00,a 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 25/93.
+ At line/column 27/93.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@shape:0.00,a 100.00,-4.95
 Error: value '0.00,a 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 26/93.
+ At line/column 28/93.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@shape:0.00,a 100.00,-4.95
 Error: value '0.00,a 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 29/93.
+ At line/column 31/93.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@shape:0.00,a 100.00,-4.95
 Error: value '0.00,a 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 30/93.
+ At line/column 32/93.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@shape:0.00,-4.95 a,-4.95
 Error: value '0.00,-4.95 a,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 25/92.
+ At line/column 27/92.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@shape:0.00,-4.95 a,-4.95
 Error: value '0.00,-4.95 a,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 26/92.
+ At line/column 28/92.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@shape:0.00,-4.95 a,-4.95
 Error: value '0.00,-4.95 a,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 29/92.
+ At line/column 31/92.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@shape:0.00,-4.95 a,-4.95
 Error: value '0.00,-4.95 a,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 30/92.
+ At line/column 32/92.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@shape:0.00,-4.95 a 100.00,-4.95
 Error: value '0.00,-4.95 a 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 25/99.
+ At line/column 27/99.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@shape:0.00,-4.95 a 100.00,-4.95
 Error: value '0.00,-4.95 a 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 26/99.
+ At line/column 28/99.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@shape:0.00,-4.95 a 100.00,-4.95
 Error: value '0.00,-4.95 a 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 29/99.
+ At line/column 31/99.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@shape:0.00,-4.95 a 100.00,-4.95
 Error: value '0.00,-4.95 a 100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 30/99.
+ At line/column 32/99.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]@shape:100.00,-4.95
 Error: value '100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 25/86.
+ At line/column 27/86.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[1]@shape:0100.00,-4.95
 Error: value '0100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 26/87.
+ At line/column 28/87.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[0]@shape:100.00,-4.95
 Error: value '100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 29/86.
+ At line/column 31/86.
 
 Quitting (on error).
 ------------------ net/edge[1]/lane[1]@shape:100.00,-4.95
 Error: value '100.00,-4.95' does not match regular expression facet '(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?(\s(\-)?(\d+.?|(\d*.\d+)),(\-)?(\d+.?|(\d*.\d+))(,(\-)?(\d+.?|(\d*.\d+)))?)*'
  In file 'mod.net.xml'
- At line/column 30/86.
+ At line/column 32/86.
 
 Quitting (on error).
 ------------------ net/edge[0]/lane[0]:<remove>
@@ -548,22 +553,16 @@ Error: Unknown to-edge '2' in connection.
 Error: Unknown to-edge '2' in connection.
 Quitting (on error).
 ------------------ net/junction[0]@id:
-Error: value '' does not match regular expression facet '[^ \t\n\r|\\;,']+'
- In file 'mod.net.xml'
- At line/column 33/109.
-
+Error: Attribute 'id' in definition of a junction is empty.
+Error: Unknown from-node '1' for edge '1'.
 Quitting (on error).
 ------------------ net/junction[1]@id:
-Error: value '' does not match regular expression facet '[^ \t\n\r|\\;,']+'
- In file 'mod.net.xml'
- At line/column 34/133.
-
+Error: Attribute 'id' in definition of a junction is empty.
+Error: Unknown to-node '2' for edge '1'.
 Quitting (on error).
 ------------------ net/junction[2]@id:
-Error: value '' does not match regular expression facet '[^ \t\n\r|\\;,']+'
- In file 'mod.net.xml'
- At line/column 38/122.
-
+Error: Attribute 'id' in definition of a junction is empty.
+Error: Unknown to-node '3' for edge '2'.
 Quitting (on error).
 ------------------ net/junction[0]@id:a
 Error: Unknown from-node '1' for edge '1'.
@@ -577,73 +576,73 @@ Quitting (on error).
 ------------------ net/junction[0]@id:<remove>
 Error: missing required attribute 'id'
  In file 'mod.net.xml'
- At line/column 33/103.
+ At line/column 35/104.
 
 Quitting (on error).
 ------------------ net/junction[1]@id:<remove>
 Error: missing required attribute 'id'
  In file 'mod.net.xml'
- At line/column 34/127.
+ At line/column 36/129.
 
 Quitting (on error).
 ------------------ net/junction[2]@id:<remove>
 Error: missing required attribute 'id'
  In file 'mod.net.xml'
- At line/column 38/116.
+ At line/column 40/117.
 
 Quitting (on error).
 ------------------ net/junction[0]@type:
 Error: value '' not in enumeration
  In file 'mod.net.xml'
- At line/column 33/102.
+ At line/column 35/103.
 
 Quitting (on error).
 ------------------ net/junction[1]@type:
 Error: value '' not in enumeration
  In file 'mod.net.xml'
- At line/column 34/126.
+ At line/column 36/128.
 
 Quitting (on error).
 ------------------ net/junction[2]@type:
 Error: value '' not in enumeration
  In file 'mod.net.xml'
- At line/column 38/115.
+ At line/column 40/116.
 
 Quitting (on error).
 ------------------ net/junction[0]@type:a
 Error: value 'a' not in enumeration
  In file 'mod.net.xml'
- At line/column 33/103.
+ At line/column 35/104.
 
 Quitting (on error).
 ------------------ net/junction[1]@type:a
 Error: value 'a' not in enumeration
  In file 'mod.net.xml'
- At line/column 34/127.
+ At line/column 36/129.
 
 Quitting (on error).
 ------------------ net/junction[2]@type:a
 Error: value 'a' not in enumeration
  In file 'mod.net.xml'
- At line/column 38/116.
+ At line/column 40/117.
 
 Quitting (on error).
 ------------------ net/junction[0]@type:<remove>
 Error: missing required attribute 'type'
  In file 'mod.net.xml'
- At line/column 33/94.
+ At line/column 35/95.
 
 Quitting (on error).
 ------------------ net/junction[1]@type:<remove>
 Error: missing required attribute 'type'
  In file 'mod.net.xml'
- At line/column 34/118.
+ At line/column 36/120.
 
 Quitting (on error).
 ------------------ net/junction[2]@type:<remove>
 Error: missing required attribute 'type'
  In file 'mod.net.xml'
- At line/column 38/107.
+ At line/column 40/108.
 
 Quitting (on error).
 ------------------ net/junction[1]@incLanes:a_0 1_1
@@ -697,13 +696,13 @@ Quitting (on error).
 ------------------ net/connection[0]@from:<remove>
 Error: missing required attribute 'from'
  In file 'mod.net.xml'
- At line/column 40/67.
+ At line/column 42/67.
 
 Quitting (on error).
 ------------------ net/connection[1]@from:<remove>
 Error: missing required attribute 'from'
  In file 'mod.net.xml'
- At line/column 41/67.
+ At line/column 43/67.
 
 Quitting (on error).
 ------------------ net/connection[0]@to:
@@ -723,13 +722,13 @@ Quitting (on error).
 ------------------ net/connection[0]@to:<remove>
 Error: missing required attribute 'to'
  In file 'mod.net.xml'
- At line/column 40/69.
+ At line/column 42/69.
 
 Quitting (on error).
 ------------------ net/connection[1]@to:<remove>
 Error: missing required attribute 'to'
  In file 'mod.net.xml'
- At line/column 41/69.
+ At line/column 43/69.
 
 Quitting (on error).
 ------------------ net/connection[0]:<duplicate>

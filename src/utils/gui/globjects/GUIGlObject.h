@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIGlObject.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // Base class for all objects that may be displayed within the openGL-gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIGlObject_h
 #define GUIGlObject_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <set>
@@ -74,11 +81,20 @@ public:
      * This is the standard constructor that assures that the object is known
      *  and its id is unique. Use it always :-)
      *
-     * @param[in] type The GUIGlObjectType type
-     * @param[in] microsimID unique ID
+     * @param[in] fullName The complete name, including a type-prefix
      * @see GUIGlObjectStorage
      */
     GUIGlObject(GUIGlObjectType type, const std::string& microsimID);
+
+    /** @brief Constructor
+     *
+     * This constructor should be used only for compound objects, that share
+     *  visualization. Use it only if you know what you are doing.
+     *
+     * @param[in] fullName The complete name, including a type-prefix
+     * @see GUIGlObjectStorage
+     */
+    GUIGlObject(const std::string& prefix, GUIGlObjectType type, const std::string& microsimID);
 
     /// @brief Destructor
     virtual ~GUIGlObject();
@@ -91,7 +107,7 @@ public:
 
     /// @brief Returns the name of the parent object (if any)
     /// @return This object's parent id
-    virtual std::string getParentName() const;
+    virtual const std::string& getParentName() const;
 
     /// @brief Returns the numerical id of the object
     /// @return This object's gl-id
@@ -141,10 +157,6 @@ public:
     /// @brief Draws the object
     /// @param[in] s The settings for the current view (may influence drawing)
     virtual void drawGL(const GUIVisualizationSettings& s) const = 0;
-
-    virtual double getColorValue(const GUIVisualizationSettings& /*s*/, int /*activeScheme*/) const {
-        return 0;
-    }
     /// @}
 
     /** @brief Draws additional, user-triggered visualisations
@@ -229,11 +241,8 @@ protected:
     /// @}
 
 protected:
-    /// @brief build basic shape popup options. Used to unify pop-ups menu in netedit and SUMO-GUI
-    void buildShapePopupOptions(GUIMainWindow& app, GUIGLObjectPopupMenu* ret, const std::string& type);
-
-    /// @brief build basic additional popup options. Used to unify pop-ups menu in netedit and SUMO-GUI
-    void buildAdditionalsPopupOptions(GUIMainWindow& app, GUIGLObjectPopupMenu* ret, const std::string& type);
+    /// @brief usually names are prefixed by a type-specific string. this method can be used to change the default
+    void setPrefix(const std::string& prefix);
 
 private:
     /// @brief The numerical id of the object
@@ -244,6 +253,9 @@ private:
 
     /// @brief ID of GL object
     std::string myMicrosimID;
+
+    /// @brief prefix of GL Object
+    std::string myPrefix;
 
     /// @brief full name of GL Object
     std::string myFullName;
@@ -267,10 +279,10 @@ private:
 
 private:
     /// @brief Invalidated copy constructor.
-    GUIGlObject(const GUIGlObject&) = delete;
+    GUIGlObject(const GUIGlObject&);
 
     /// @brief Invalidated assignment operator.
-    GUIGlObject& operator=(const GUIGlObject&) = delete;
+    GUIGlObject& operator=(const GUIGlObject&);
 };
 #endif
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBDistrictCont.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,12 +7,27 @@
 ///
 // A container for districts
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <iostream>
@@ -39,7 +46,7 @@ NBDistrictCont::NBDistrictCont() {}
 
 NBDistrictCont::~NBDistrictCont() {
     for (DistrictCont::iterator i = myDistricts.begin(); i != myDistricts.end(); i++) {
-        delete ((*i).second);
+        delete((*i).second);
     }
     myDistricts.clear();
 }
@@ -60,7 +67,7 @@ NBDistrict*
 NBDistrictCont::retrieve(const std::string& id) const {
     DistrictCont::const_iterator i = myDistricts.find(id);
     if (i == myDistricts.end()) {
-        return nullptr;
+        return 0;
     }
     return (*i).second;
 }
@@ -76,7 +83,7 @@ bool
 NBDistrictCont::addSource(const std::string& dist, NBEdge* const source,
                           double weight) {
     NBDistrict* o = retrieve(dist);
-    if (o == nullptr) {
+    if (o == 0) {
         return false;
     }
     return o->addSource(source, weight);
@@ -87,7 +94,7 @@ bool
 NBDistrictCont::addSink(const std::string& dist, NBEdge* const destination,
                         double weight) {
     NBDistrict* o = retrieve(dist);
-    if (o == nullptr) {
+    if (o == 0) {
         return false;
     }
     return o->addSink(destination, weight);

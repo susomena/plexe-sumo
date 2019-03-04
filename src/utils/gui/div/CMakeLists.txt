@@ -19,8 +19,6 @@ set(utils_gui_div_STAT_SRCS
    GUIVideoEncoder.h
    GLHelper.cpp
    GLHelper.h
-   GUIBaseVehicleHelper.cpp
-   GUIBaseVehicleHelper.h
    GUIDesigns.h
    GLObjectValuePassConnector.h
 )

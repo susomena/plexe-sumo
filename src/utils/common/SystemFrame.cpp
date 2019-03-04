@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SystemFrame.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // A set of actions common to all applications
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "SystemFrame.h"
 #include <string>
@@ -45,7 +52,7 @@ SystemFrame::addConfigurationOptions(OptionsCont& oc) {
     oc.addDescription("configuration-file", "Configuration", "Loads the named config on startup");
     oc.addXMLDefault("configuration-file");
 
-    oc.doRegister("save-configuration", 'C', new Option_FileName());
+    oc.doRegister("save-configuration", new Option_FileName());
     oc.addSynonyme("save-config", "save-configuration");
     oc.addDescription("save-configuration", "Configuration", "Saves current configuration into FILE");
 
@@ -97,9 +104,6 @@ SystemFrame::addReportOptions(OptionsCont& oc) {
     oc.doRegister("error-log", new Option_FileName());
     oc.addDescription("error-log", "Report", "Writes all warnings and errors to FILE");
 
-    oc.doRegister("write-license", new Option_Bool(false));
-    oc.addDescription("write-license", "Output", "Include license info into every output file");
-
     oc.doRegister("output-prefix", new Option_String());
     oc.addDescription("output-prefix", "Output", "Prefix which is applied to all output files. The special string 'TIME' is replaced by the current time.");
 
@@ -108,9 +112,6 @@ SystemFrame::addReportOptions(OptionsCont& oc) {
 
     oc.doRegister("precision.geo", new Option_Integer(6));
     oc.addDescription("precision.geo", "Output", "Defines the number of digits after the comma for lon,lat output");
-
-    oc.doRegister("human-readable-time", 'H', new Option_Bool(false));
-    oc.addDescription("human-readable-time", "Output", "Write time values as hour:minute:second or day:hour:minute:second rathern than seconds");
 }
 
 
@@ -119,7 +120,6 @@ SystemFrame::checkOptions() {
     OptionsCont& oc = OptionsCont::getOptions();
     gPrecision = oc.getInt("precision");
     gPrecisionGeo = oc.getInt("precision.geo");
-    gHumanReadableTime = oc.getBool("human-readable-time");
     return true;
 }
 

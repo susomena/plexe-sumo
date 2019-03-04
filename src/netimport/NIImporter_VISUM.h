@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIImporter_VISUM.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,6 +7,17 @@
 ///
 // A VISUM network importer
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NIImporter_VISUM_h
 #define NIImporter_VISUM_h
 
@@ -22,7 +25,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -140,7 +147,7 @@ private:
      *
      * @param[in] fieldName Name of the column to extract the float from
      * @param[in] defaultValue The default to return in the case of an error
-     * @return The parsed real or the default value if an error while parsing occurred
+     * @return The parsed real or the default value if an error while parsing occured
      */
     double getNamedFloat(const std::string& fieldName, double defaultValue);
 
@@ -149,7 +156,7 @@ private:
      * @param[in] fieldName1 Name of the first column to extract the float from
      * @param[in] fieldName2 Name of the second column to extract the efloat from
      * @param[in] defaultValue The default to return in the case of an error
-     * @return The parsed real or the default value if an error while parsing occurred
+     * @return The parsed real or the default value if an error while parsing occured
      */
     double getNamedFloat(const std::string& fieldName1, const std::string& fieldName2,
                          double defaultValue);
@@ -186,15 +193,10 @@ private:
      * yet support public traffic.
      *
      * @param[in] name Name of the column to extract the real from
-     * @return The real stored under the named column, or if not found the one from name + suffix, or if not found -1
+     * @return The real stored under the named column, or if not found the one from "(IV)"+name, or if not found -1
      */
-    double getWeightedFloat(const std::string& name, const std::string& suffix);
+    double getWeightedFloat(const std::string& name);
 
-    /// @brief as above but with two alternative names
-    double getWeightedFloat2(const std::string& name, const std::string& name2, const std::string& suffix);
-
-    /// @brief parse permissions
-    SVCPermissions getPermissions(const std::string& name, bool warn = false, SVCPermissions unknown = SVCAll);
 
     /** @brief tries to get a bool which is possibly assigned to a certain modality
      *
@@ -221,7 +223,6 @@ private:
      * @exception UnknownElement If the named data field is not in the line
      */
     NBNode* getNamedNode(const std::string& fieldName);
-    NBNode* getNamedNodeSecure(const std::string& fieldName, NBNode* fallback = 0);
 
     /** @brief The same, but two different names for the field are allowed
      *
@@ -331,7 +332,7 @@ private:
      * @param[in] id Name of the district
      * @param[in] dest Name of the according network node
      * @param[in] isSource Information whether this node will be used as a source
-     * @return The built node, zero if an error occurred
+     * @return The built node, zero if an error occured
      */
     NBNode* buildDistrictNode(const std::string& id, NBNode* dest, bool isSource);
 
@@ -455,11 +456,6 @@ private:
      * @param[in] function The function to use for parsing the named db
      */
     void addParser(const std::string& name, ParsingFunction function);
-
-private:
-
-    /// @brief whether the edge id ends with _nodeID
-    static bool isSplitEdge(NBEdge* edge, NBNode* node);
 
 
 private:

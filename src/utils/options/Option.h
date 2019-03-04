@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    Option.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,6 +8,17 @@
 ///
 // Classes representing a single program option (with different types)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef Option_h
 #define Option_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -39,11 +46,6 @@
  * @brief Definition of a vector of ints
  */
 typedef std::vector<int> IntVector;
-/**
- * @typedef FloatVector
- * @brief Definition of a vector of doubles
- */
-typedef std::vector<double> FloatVector;
 
 
 /* -------------------------------------------------------------------------
@@ -144,16 +146,6 @@ public:
      * @exception InvalidArgument If the class is not an instance of Option_IntVector
      */
     virtual const IntVector& getIntVector() const;
-
-    /** @brief Returns the stored float vector
-     *
-     * Option_FloatVector returns the stored float vector in this method's reimplementation.
-     *  All other option classes do not override this method which throws an InvalidArgument-exception.
-     *
-     * @return Returns the stored float vector if being an instance of Option_FloatVector
-     * @exception InvalidArgument If the class is not an instance of Option_FloatVector
-     */
-    virtual const FloatVector& getFloatVector() const;
 
 
     /** @brief Stores the given value
@@ -259,18 +251,6 @@ public:
      * @return The man-readable type name
      */
     virtual const std::string& getTypeName() const;
-
-
-    /** @brief Create a new Option of the given type with given default value but make it unset
-     *  @note Was implemented to allow warning once if user didn't set the option, refs. #4567
-     *  @see MSDeviceSSM::insertOptions()
-     */
-    template<class OptionType, class ValueType>
-    static OptionType* makeUnsetWithDefault(ValueType def) {
-        OptionType* o = new OptionType(def);
-        o->unSet();
-        return o;
-    }
 
 
 protected:
@@ -717,74 +697,6 @@ private:
 };
 
 
-/* -------------------------------------------------------------------------
- * Option_FloatVector
- * ----------------------------------------------------------------------- */
-class Option_FloatVector : public Option {
-public:
-    /** @brief Constructor for an option with no default value
-     */
-    Option_FloatVector();
-
-
-    /** @brief Constructor for an option with a default value
-     *
-     * @param[in] value This option's default value
-     */
-    Option_FloatVector(const FloatVector& value);
-
-
-    /** @brief Copy constructor */
-    Option_FloatVector(const Option_FloatVector& s);
-
-
-    /** @brief Destructor */
-    virtual ~Option_FloatVector();
-
-
-    /** @brief Assignment operator */
-    Option_FloatVector& operator=(const Option_FloatVector& s);
-
-
-    /** @brief Returns the stored float vector
-     * @see const FloatVector &Option::getFloatVector()
-     * @return Returns the stored float vector
-     */
-    const FloatVector& getFloatVector() const;
-
-
-    /** @brief Stores the given value after parsing it into a vector of integers
-     *
-     *  The value is converted into a vector of integers and stored in "myValue".
-     *  Then, "markSet" is called in order to know that a value has been set.
-     *
-     * The method returns whether the value could be set (the return value from
-     *  "markSet").
-     *
-     * If the string could not be converted into a vector of integers, an InvalidArgument
-     *  is thrown.
-     *
-     * @see bool Option::set(std::string v)
-     * @return Whether the new value could be set
-     * @exception InvalidArgument If the value could not be converted into a vector of integers
-     */
-    bool set(const std::string& v);
-
-
-    /** @brief Returns the string-representation of the value
-     *
-     * The stored value is encoded into a string and returned.
-     *
-     * @see std::string Option::getValueString()
-     * @return The stored value encoded into a string
-     */
-    std::string getValueString() const;
-
-
-private:
-    /** the value, valid only when the base-classes "myAmSet"-member is true */
-    FloatVector myValue;
-};
 #endif
 
 /****************************************************************************/

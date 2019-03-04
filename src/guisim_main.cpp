@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    guisim_main.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,12 +9,27 @@
 ///
 // Main for GUISIM
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
@@ -40,12 +47,14 @@
 #include <utils/common/FileHelpers.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/SystemFrame.h>
-#include <utils/foxtools/MsgHandlerSynchronized.h>
 #include <utils/xml/XMLSubSys.h>
 #include <gui/GUIApplicationWindow.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 #include <utils/gui/settings/GUICompleteSchemeStorage.h>
+
+#ifndef NO_TRACI
 #include <traci-server/TraCIServer.h>
+#endif
 
 
 // ===========================================================================
@@ -54,13 +63,13 @@
 int
 main(int argc, char** argv) {
     // make the output aware of threading
-    MsgHandler::setFactory(&MsgHandlerSynchronized::create);
+    MFXMutex lock;
+    MsgHandler::assignLock(&lock);
     // get the options
     OptionsCont& oc = OptionsCont::getOptions();
     // give some application descriptions
-    oc.setApplicationDescription("GUI version of the microscopic, multi-modal traffic simulation SUMO.");
-    oc.setApplicationName("sumo-gui", "Eclipse SUMO GUI Version " VERSION_STRING);
-    gSimulation = true;
+    oc.setApplicationDescription("GUI version of the simulation SUMO.");
+    oc.setApplicationName("sumo-gui", "SUMO gui Version " VERSION_STRING);
     int ret = 0;
     try {
         // initialise subsystems
@@ -73,7 +82,7 @@ main(int argc, char** argv) {
             return 0;
         }
         // Make application
-        FXApp application("SUMO GUI", "Eclipse");
+        FXApp application("SUMO GUISimulation", "DLR");
         // Open display
         application.init(argc, argv);
         int minor, major;
@@ -87,7 +96,7 @@ main(int argc, char** argv) {
         gSchemeStorage.init(&application);
         window->dependentBuild();
         // Create app
-        application.addSignal(SIGINT, window, MID_HOTKEY_CTRL_Q_CLOSE);
+        application.addSignal(SIGINT, window, MID_QUIT);
         application.create();
         // Load configuration given on command line
         if (argc > 1) {
@@ -113,7 +122,9 @@ main(int argc, char** argv) {
         ret = 1;
 #endif
     }
+#ifndef NO_TRACI
     TraCIServer::close();
+#endif
     SystemFrame::close();
     return ret;
 }

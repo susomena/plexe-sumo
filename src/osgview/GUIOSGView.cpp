@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIOSGView.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,12 +7,27 @@
 ///
 // An OSG-based 3D view on the simulation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_OSG
 
@@ -51,6 +58,7 @@
 #include <utils/foxtools/MFXCheckableButton.h>
 #include <utils/gui/images/GUIIconSubSys.h>
 #include <gui/GUIApplicationWindow.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/gui/windows/GUIDialog_ViewSettings.h>
 #include <utils/gui/windows/GUIDialog_EditViewport.h>
 #include <utils/gui/settings/GUICompleteSchemeStorage.h>
@@ -74,7 +82,7 @@
 #include <microsim/traffic_lights/MSSimpleTrafficLightLogic.h>
 #include <utils/common/RGBColor.h>
 #include <utils/common/MsgHandler.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/geom/PositionVector.h>
 #include <gui/GUISUMOViewParent.h>
 #include <utils/gui/globjects/GLIncludes.h>
@@ -205,12 +213,12 @@ GUIOSGView::buildViewToolBars(GUIGlChildWindow& v) {
     {
         const std::vector<std::string>& names = gSchemeStorage.getNames();
         for (std::vector<std::string>::const_iterator i = names.begin(); i != names.end(); ++i) {
-            v.getColoringSchemesCombo()->appendItem(i->c_str());
+            v.getColoringSchemesCombo().appendItem((*i).c_str());
             if ((*i) == myVisualizationSettings->name) {
-                v.getColoringSchemesCombo()->setCurrentItem(v.getColoringSchemesCombo()->getNumItems() - 1);
+                v.getColoringSchemesCombo().setCurrentItem(v.getColoringSchemesCombo().getNumItems() - 1);
             }
         }
-        v.getColoringSchemesCombo()->setNumVisible(5);
+        v.getColoringSchemesCombo().setNumVisible(5);
     }
     // for junctions
     new FXButton(v.getLocatorPopup(),
@@ -311,9 +319,9 @@ GUIOSGView::onPaint(FXObject*, FXSelector, void*) {
                 GUINet* net = (GUINet*) MSNet::getInstance();
                 try {
                     MSTLLogicControl::TLSLogicVariants& vars = net->getTLSControl().get(d.filename.substr(3, linkStringIdx - 3));
-                    const int linkIdx = StringUtils::toInt(d.filename.substr(linkStringIdx + 1));
+                    const int linkIdx = TplConvert::_2int(d.filename.substr(linkStringIdx + 1).c_str());
                     if (linkIdx < 0 || linkIdx >= static_cast<int>(vars.getActive()->getLinks().size())) {
-                        throw NumberFormatException("");
+                        throw NumberFormatException();
                     }
                     const MSLink* const l = vars.getActive()->getLinksAt(linkIdx)[0];
                     osg::Switch* switchNode = new osg::Switch();
@@ -336,21 +344,14 @@ GUIOSGView::onPaint(FXObject*, FXSelector, void*) {
     }
     myDecalsLock.unlock();
     MSVehicleControl::constVehIt it = MSNet::getInstance()->getVehicleControl().loadedVehBegin();
-    // reset active flag
-    for (auto& item : myVehicles) {
-        item.second.active = false;
-    }
     for (; it != MSNet::getInstance()->getVehicleControl().loadedVehEnd(); it++) {
         GUIVehicle* veh = static_cast<GUIVehicle*>(it->second);
-        if (!(veh->isOnRoad() || veh->isParking() || veh->wasRemoteControlled())) {
+        if (!veh->isOnRoad()) {
             continue;
         }
-        auto itVeh = myVehicles.find(veh);
-        if (itVeh == myVehicles.end()) {
+        if (myVehicles.find(veh) == myVehicles.end()) {
             myVehicles[veh] = GUIOSGBuilder::buildMovable(veh->getVehicleType());
             myRoot->addChild(myVehicles[veh].pos);
-        } else {
-            itVeh->second.active = true;
         }
         osg::PositionAttitudeTransform* n = myVehicles[veh].pos;
         n->setPosition(osg::Vec3d(veh->getPosition().x(), veh->getPosition().y(), veh->getPosition().z()));
@@ -375,14 +376,6 @@ GUIOSGView::onPaint(FXObject*, FXSelector, void*) {
         myVehicles[veh].lights->setValue(1, veh->signalSet(MSVehicle::VEH_SIGNAL_BLINKER_LEFT | MSVehicle::VEH_SIGNAL_BLINKER_EMERGENCY));
         myVehicles[veh].lights->setValue(2, veh->signalSet(MSVehicle::VEH_SIGNAL_BRAKELIGHT));
     }
-    // remove inactive
-    for (auto it = myVehicles.begin(); it != myVehicles.end();) {
-        if (!it->second.active) {
-            removeVeh((it++)->first);
-        } else {
-            ++it;
-        }
-    }
 
     const SUMOTime now = MSNet::getInstance()->getCurrentTimeStep();
     if (now != myLastUpdate || (myVisualizationChanger != 0 && myVisualizationChanger->shown())) {
@@ -402,23 +395,12 @@ GUIOSGView::onPaint(FXObject*, FXSelector, void*) {
         myCameraManipulator->setByInverseMatrix(m);
     }
 
-    // reset active flag
-    for (auto& item : myPersons) {
-        item.second.active = false;
-    }
     for (std::map<std::string, MSTransportable*>::const_iterator it = MSNet::getInstance()->getPersonControl().loadedBegin(); it != MSNet::getInstance()->getPersonControl().loadedEnd(); ++it) {
         MSTransportable* person = (*it).second;
         // XXX if not departed: continue
-        if (person->hasArrived() || !person->hasDeparted()) {
-            //std::cout << SIMTIME << " person " << person->getID() << " is loaded but arrived\n";
-            continue;
-        }
-        auto itPers = myPersons.find(person);
-        if (itPers == myPersons.end()) {
+        if (myPersons.find(person) == myPersons.end()) {
             myPersons[person] = GUIOSGBuilder::buildMovable(person->getVehicleType());
             myRoot->addChild(myPersons[person].pos);
-        } else {
-            itPers->second.active = true;
         }
         osg::PositionAttitudeTransform* n = myPersons[person].pos;
         const Position pos = person->getPosition();
@@ -426,16 +408,6 @@ GUIOSGView::onPaint(FXObject*, FXSelector, void*) {
         const double dir = person->getAngle() + M_PI / 2.;
         n->setAttitude(osg::Quat(dir, osg::Vec3d(0, 0, 1)));
     }
-    // remove inactive
-    for (auto it = myPersons.begin(); it != myPersons.end();) {
-        if (!it->second.active) {
-            removeTransportable((it++)->first);
-        } else {
-            ++it;
-        }
-    }
-
-
     if (myAdapter->makeCurrent()) {
         myViewer->frame();
         makeNonCurrent();
@@ -446,7 +418,7 @@ GUIOSGView::onPaint(FXObject*, FXSelector, void*) {
 
 
 void
-GUIOSGView::removeVeh(MSVehicle* veh) {
+GUIOSGView::remove(GUIVehicle* veh) {
     if (myTracked == veh) {
         stopTrack();
     }
@@ -459,28 +431,18 @@ GUIOSGView::removeVeh(MSVehicle* veh) {
 
 
 void
-GUIOSGView::removeTransportable(MSTransportable* t) {
-    std::map<MSTransportable*, OSGMovable>::iterator i = myPersons.find(t);
-    if (i != myPersons.end()) {
-        myRoot->removeChild(i->second.pos);
-        myPersons.erase(i);
-    }
-}
-
-
-void
 GUIOSGView::showViewportEditor() {
     getViewportEditor(); // make sure it exists;
     osg::Vec3d lookFromOSG, lookAtOSG, up;
     myViewer->getCameraManipulator()->getInverseMatrix().getLookAt(lookFromOSG, lookAtOSG, up);
     Position from(lookFromOSG[0], lookFromOSG[1], lookFromOSG[2]), at(lookAtOSG[0], lookAtOSG[1], lookAtOSG[2]);
-    myViewportChooser->setOldValues(from, at, 0);
+    myViewportChooser->setOldValues(from, at);
     myViewportChooser->show();
 }
 
 
 void
-GUIOSGView::setViewportFromToRot(const Position& lookFrom, const Position& lookAt, double /*rotation*/) {
+GUIOSGView::setViewportFromTo(const Position& lookFrom, const Position& lookAt) {
     osg::Vec3d lookFromOSG, lookAtOSG, up;
     myViewer->getCameraManipulator()->getHomePosition(lookFromOSG, lookAtOSG, up);
     lookFromOSG[0] = lookFrom.x();
@@ -499,8 +461,8 @@ void
 GUIOSGView::copyViewportTo(GUISUMOAbstractView* view) {
     osg::Vec3d lookFrom, lookAt, up;
     myCameraManipulator->getHomePosition(lookFrom, lookAt, up);
-    view->setViewportFromToRot(Position(lookFrom[0], lookFrom[1], lookFrom[2]),
-                               Position(lookAt[0], lookAt[1], lookAt[2]), 0);
+    view->setViewportFromTo(Position(lookFrom[0], lookFrom[1], lookFrom[2]),
+                            Position(lookAt[0], lookAt[1], lookAt[2]));
 }
 
 

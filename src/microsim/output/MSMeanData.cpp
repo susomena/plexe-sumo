@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSMeanData.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // Data collector for edges/lanes
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <limits>
 #include <microsim/MSEdgeControl.h>
@@ -58,7 +65,7 @@
 MSMeanData::MeanDataValues::MeanDataValues(
     MSLane* const lane, const double length, const bool doAdd,
     const MSMeanData* const parent) :
-    MSMoveReminder("meandata_" + (lane == nullptr ? "NULL" :  lane->getID()), lane, doAdd),
+    MSMoveReminder("meandata_" + (lane == 0 ? "NULL" :  lane->getID()), lane, doAdd),
     myParent(parent),
     myLaneLength(length),
     sampleSeconds(0),
@@ -77,7 +84,7 @@ MSMeanData::MeanDataValues::notifyEnter(SUMOVehicle& veh, MSMoveReminder::Notifi
     UNUSED_PARAMETER(enteredLane);
 #endif
     UNUSED_PARAMETER(reason);
-    return myParent == nullptr || myParent->vehicleApplies(veh);
+    return myParent == 0 || myParent->vehicleApplies(veh);
 }
 
 
@@ -330,7 +337,7 @@ MSMeanData::MeanDataValueTracker::notifyMoveInternal(const SUMOVehicle& veh, con
 
 bool
 MSMeanData::MeanDataValueTracker::notifyLeave(SUMOVehicle& veh, double lastPos, MSMoveReminder::Notification reason, const MSLane* /* enteredLane */) {
-    if (myParent == nullptr || reason != MSMoveReminder::NOTIFICATION_SEGMENT) {
+    if (myParent == 0 || reason != MSMoveReminder::NOTIFICATION_SEGMENT) {
         myTrackedData[&veh]->myNumVehicleLeft++;
     }
     return myTrackedData[&veh]->myValues->notifyLeave(veh, lastPos, reason);
@@ -433,14 +440,14 @@ MSMeanData::init() {
             if (MSGlobals::gUseMesoSim) {
                 MeanDataValues* data;
                 if (myTrackVehicles) {
-                    data = new MeanDataValueTracker(nullptr, lanes[0]->getLength(), this);
+                    data = new MeanDataValueTracker(0, lanes[0]->getLength(), this);
                 } else {
-                    data = createValues(nullptr, lanes[0]->getLength(), false);
+                    data = createValues(0, lanes[0]->getLength(), false);
                 }
                 data->setDescription("meandata_" + (*e)->getID());
                 myMeasures.back().push_back(data);
                 MESegment* s = MSGlobals::gMesoNet->getSegmentForEdge(**e);
-                while (s != nullptr) {
+                while (s != 0) {
                     s->addDetector(data);
                     s->prepareDetectorForWriting(*data);
                     s = s->getNextSegment();
@@ -450,7 +457,7 @@ MSMeanData::init() {
                 continue;
             }
             if (myAmEdgeBased && myTrackVehicles) {
-                myMeasures.back().push_back(new MeanDataValueTracker(nullptr, lanes[0]->getLength(), this));
+                myMeasures.back().push_back(new MeanDataValueTracker(0, lanes[0]->getLength(), this));
             }
             for (std::vector<MSLane*>::const_iterator lane = lanes.begin(); lane != lanes.end(); ++lane) {
                 if (myTrackVehicles) {
@@ -485,7 +492,7 @@ MSMeanData::resetOnly(SUMOTime stopTime) {
         for (std::vector<std::vector<MeanDataValues*> >::const_iterator i = myMeasures.begin(); i != myMeasures.end(); ++i, ++edge) {
             MESegment* s = MSGlobals::gMesoNet->getSegmentForEdge(**edge);
             MeanDataValues* data = i->front();
-            while (s != nullptr) {
+            while (s != 0) {
                 s->prepareDetectorForWriting(*data);
                 s = s->getNextSegment();
             }
@@ -514,7 +521,7 @@ MSMeanData::writeEdge(OutputDevice& dev,
     if (MSGlobals::gUseMesoSim) {
         MESegment* s = MSGlobals::gMesoNet->getSegmentForEdge(*edge);
         MeanDataValues* data = edgeValues.front();
-        while (s != nullptr) {
+        while (s != 0) {
             s->prepareDetectorForWriting(*data);
             s = s->getNextSegment();
         }
@@ -558,7 +565,7 @@ MSMeanData::writeEdge(OutputDevice& dev,
             }
             meanData.reset(true);
         } else {
-            MeanDataValues* sumData = createValues(nullptr, edge->getLength(), false);
+            MeanDataValues* sumData = createValues(0, edge->getLength(), false);
             for (lane = edgeValues.begin(); lane != edgeValues.end(); ++lane) {
                 MeanDataValues& meanData = **lane;
                 meanData.addTo(*sumData);
@@ -575,7 +582,7 @@ MSMeanData::writeEdge(OutputDevice& dev,
 
 void
 MSMeanData::openInterval(OutputDevice& dev, const SUMOTime startTime, const SUMOTime stopTime) {
-    dev.openTag(SUMO_TAG_INTERVAL).writeAttr(SUMO_ATTR_BEGIN, time2string(startTime)).writeAttr(SUMO_ATTR_END, time2string(stopTime));
+    dev.openTag(SUMO_TAG_INTERVAL).writeAttr(SUMO_ATTR_BEGIN, STEPS2TIME(startTime)).writeAttr(SUMO_ATTR_END, STEPS2TIME(stopTime));
     dev.writeAttr(SUMO_ATTR_ID, myID);
 }
 
@@ -625,7 +632,6 @@ MSMeanData::writeXMLOutput(OutputDevice& dev,
             writeEdge(dev, (*i), *edge, startTime, stopTime);
         }
         dev.closeTag();
-        dev.flush();
     }
 }
 

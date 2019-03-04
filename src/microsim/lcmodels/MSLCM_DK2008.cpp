@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSLCM_DK2008.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Friedemann Wesner
@@ -18,12 +10,27 @@
 ///
 // A lane change model developed by D. Krajzewicz between 2004 and 2010
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2005-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <utils/common/RandHelper.h>
@@ -31,6 +38,8 @@
 #include <microsim/MSLane.h>
 #include <microsim/MSNet.h>
 #include "MSLCM_DK2008.h"
+
+//#define DEBUG_VEHICLE_GUI_SELECTION 1
 
 // ===========================================================================
 // variable definitions
@@ -89,6 +98,11 @@ MSLCM_DK2008::wantsChangeToRight(MSAbstractLaneChangeModel::MSLCMessager& msgPas
                                  MSVehicle** lastBlocked,
                                  MSVehicle** firstBlocked) {
     UNUSED_PARAMETER(firstBlocked);
+#ifdef DEBUG_VEHICLE_GUI_SELECTION
+    if (gDebugSelectedVehicle == myVehicle.getID()) {
+        int bla = 0;
+    }
+#endif
     MSVehicle::LaneQ curr, best;
     int bestLaneOffset = 0;
     double currentDist = 0;
@@ -135,7 +149,7 @@ MSLCM_DK2008::wantsChangeToRight(MSAbstractLaneChangeModel::MSLCMessager& msgPas
 
     // process information about the last blocked vehicle
     //  if this vehicle is blocking someone in front, we maybe decelerate to let him in
-    if ((*lastBlocked) != nullptr) {
+    if ((*lastBlocked) != 0) {
         double gap = (*lastBlocked)->getPositionOnLane() - (*lastBlocked)->getVehicleType().getLength() - myVehicle.getPositionOnLane() - myVehicle.getVehicleType().getMinGap();
         if (gap > 0.1) {
             if (myVehicle.getSpeed() < ACCEL2SPEED(myVehicle.getCarFollowModel().getMaxDecel())) {
@@ -145,7 +159,7 @@ MSLCM_DK2008::wantsChangeToRight(MSAbstractLaneChangeModel::MSLCMessager& msgPas
                     ret |= LCA_AMBACKBLOCKER;
                 }
                 myVSafes.push_back(myCarFollowModel.followSpeed(&myVehicle, myVehicle.getSpeed(), (double)(gap - 0.1), (*lastBlocked)->getSpeed(), (*lastBlocked)->getCarFollowModel().getMaxDecel()));
-                (*lastBlocked) = nullptr;
+                (*lastBlocked) = 0;
             }
             return ret;
         }
@@ -296,6 +310,11 @@ MSLCM_DK2008::wantsChangeToLeft(MSAbstractLaneChangeModel::MSLCMessager& msgPass
                                 MSVehicle** lastBlocked,
                                 MSVehicle** firstBlocked) {
     UNUSED_PARAMETER(firstBlocked);
+#ifdef DEBUG_VEHICLE_GUI_SELECTION
+    if (gDebugSelectedVehicle == myVehicle.getID()) {
+        int bla = 0;
+    }
+#endif
     MSVehicle::LaneQ curr, best;
     int bestLaneOffset = 0;
     double currentDist = 0;
@@ -342,7 +361,7 @@ MSLCM_DK2008::wantsChangeToLeft(MSAbstractLaneChangeModel::MSLCMessager& msgPass
 
     // process information about the last blocked vehicle
     //  if this vehicle is blocking someone in front, we maybe decelerate to let him in
-    if ((*lastBlocked) != nullptr) {
+    if ((*lastBlocked) != 0) {
         double gap = (*lastBlocked)->getPositionOnLane() - (*lastBlocked)->getVehicleType().getLength() - myVehicle.getPositionOnLane() - myVehicle.getVehicleType().getMinGap();
         if (gap > 0.1) {
             if (myVehicle.getSpeed() < ACCEL2SPEED(myVehicle.getCarFollowModel().getMaxDecel())) {
@@ -352,7 +371,7 @@ MSLCM_DK2008::wantsChangeToLeft(MSAbstractLaneChangeModel::MSLCMessager& msgPass
                     ret |= LCA_AMBACKBLOCKER;
                 }
                 myVSafes.push_back(myCarFollowModel.followSpeed(&myVehicle, myVehicle.getSpeed(), (double)(gap - 0.1), (*lastBlocked)->getSpeed(), (*lastBlocked)->getCarFollowModel().getMaxDecel()));
-                (*lastBlocked) = nullptr;
+                (*lastBlocked) = 0;
             }
             return ret;
         }
@@ -492,6 +511,11 @@ MSLCM_DK2008::wantsChangeToLeft(MSAbstractLaneChangeModel::MSLCMessager& msgPass
 
 double
 MSLCM_DK2008::patchSpeed(const double min, const double wanted, const double max, const MSCFModel& cfModel) {
+#ifdef DEBUG_VEHICLE_GUI_SELECTION
+    if (gDebugSelectedVehicle == myVehicle.getID()) {
+        int bla = 0;
+    }
+#endif
     int state = myOwnState;
 
     // letting vehicles merge in at the end of the lane in case of counter-lane change, step#2

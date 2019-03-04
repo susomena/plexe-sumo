@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PCNetProjectionLoader.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,32 +8,46 @@
 ///
 // A reader for a SUMO network's projection description
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
 #include <fstream>
 #include <utils/options/OptionsCont.h>
 #include <utils/options/Option.h>
-#include <utils/common/FileHelpers.h>
-#include <utils/common/MsgHandler.h>
-#include <utils/common/RGBColor.h>
 #include <utils/common/StdDefs.h>
-#include <utils/common/SysUtils.h>
+#include <polyconvert/PCPolyContainer.h>
+#include <utils/common/RGBColor.h>
 #include <utils/geom/GeomHelper.h>
 #include <utils/geom/Boundary.h>
 #include <utils/geom/Position.h>
 #include <utils/geom/GeoConvHelper.h>
 #include <utils/xml/XMLSubSys.h>
-#include <utils/xml/SUMOXMLDefinitions.h>
 #include <utils/xml/SUMOSAXReader.h>
 #include <utils/geom/GeomConvHelper.h>
-#include <polyconvert/PCPolyContainer.h>
+#include <utils/common/MsgHandler.h>
+#include <utils/common/FileHelpers.h>
+#include <utils/xml/SUMOXMLDefinitions.h>
 #include "PCNetProjectionLoader.h"
 
 
@@ -60,7 +66,6 @@ PCNetProjectionLoader::load(const std::string& file, double scale) {
     PCNetProjectionLoader handler(scale);
     handler.setFileName(file);
     SUMOSAXReader* parser = XMLSubSys::getSAXReader(handler);
-    const long before = SysUtils::getCurrentMillis();
     PROGRESS_BEGIN_MESSAGE("Parsing network projection from '" + file + "'");
     if (!parser->parseFirst(file)) {
         delete parser;
@@ -69,7 +74,7 @@ PCNetProjectionLoader::load(const std::string& file, double scale) {
     // parse
     while (parser->parseNext() && !handler.hasReadAll());
     // clean up
-    PROGRESS_TIME_MESSAGE(before);
+    PROGRESS_DONE_MESSAGE();
     if (!handler.hasReadAll()) {
         throw ProcessError("Could not find projection parameter in net.");
     }
@@ -99,10 +104,10 @@ PCNetProjectionLoader::myStartElement(int element,
     }
     // @todo refactor parsing of location since its duplicated in NLHandler and PCNetProjectionLoader
     myFoundLocation = true;
-    PositionVector s = attrs.get<PositionVector>(SUMO_ATTR_NET_OFFSET, nullptr, myFoundLocation);
-    Boundary convBoundary = attrs.get<Boundary>(SUMO_ATTR_CONV_BOUNDARY, nullptr, myFoundLocation);
-    Boundary origBoundary = attrs.get<Boundary>(SUMO_ATTR_ORIG_BOUNDARY, nullptr, myFoundLocation);
-    std::string proj = attrs.get<std::string>(SUMO_ATTR_ORIG_PROJ, nullptr, myFoundLocation);
+    PositionVector s = attrs.get<PositionVector>(SUMO_ATTR_NET_OFFSET, 0, myFoundLocation);
+    Boundary convBoundary = attrs.get<Boundary>(SUMO_ATTR_CONV_BOUNDARY, 0, myFoundLocation);
+    Boundary origBoundary = attrs.get<Boundary>(SUMO_ATTR_ORIG_BOUNDARY, 0, myFoundLocation);
+    std::string proj = attrs.get<std::string>(SUMO_ATTR_ORIG_PROJ, 0, myFoundLocation);
     if (myFoundLocation) {
         OptionsCont& oc = OptionsCont::getOptions();
         Position networkOffset = s[0] + Position(oc.getFloat("offset.x"), oc.getFloat("offset.y"));

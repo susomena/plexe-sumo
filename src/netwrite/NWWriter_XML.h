@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NWWriter_XML.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Exporter writing networks using XML (native input) format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NWWriter_XML_h
 #define NWWriter_XML_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -39,7 +46,6 @@ class NBEdgeCont;
 class NBNetBuilder;
 class NBNode;
 class NBNodeCont;
-class NBParkingCont;
 class NBPTStopCont;
 class NBPTLineCont;
 class NBTrafficLightLogicCont;
@@ -108,10 +114,7 @@ private:
      * @param[in] nc The pt stop container from which to read data
      */
     static void writePTStops(const OptionsCont& oc, NBPTStopCont& ec);
-    static void writePTLines(const OptionsCont& cont, NBPTLineCont& lc, NBEdgeCont& ec);
-
-    /// @brief writes imported parking areas to file
-    static void writeParkingAreas(const OptionsCont& cont, NBParkingCont& pc, NBEdgeCont& ec);
+    static void writePTLines(const OptionsCont& cont, NBPTLineCont& lineCont);
 };
 
 

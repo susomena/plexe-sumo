@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBTrafficLightLogicCont.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // A container for traffic light definitions and built programs
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBTrafficLightLogicCont_h
 #define NBTrafficLightLogicCont_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include <string>
@@ -207,9 +214,6 @@ public:
      */
     void setTLControllingInformation(const NBEdgeCont& ec, const NBNodeCont& nc);
 
-    /// @brief Returns a list of all definitions (convenience for easier iteration)
-    typedef std::vector<NBTrafficLightDefinition*> Definitions;
-    Definitions getDefinitions() const;
 
 private:
     /// @brief Definition of internal the container types
@@ -218,6 +222,7 @@ private:
     typedef std::map<std::string, NBTrafficLightDefinition*> Program2Def;
     typedef std::map<std::string, Program2Def> Id2Defs;
     typedef std::vector<NBTrafficLightLogic*> Logics;
+    typedef std::vector<NBTrafficLightDefinition*> Definitions;
 
     /// @brief The container for previously computed tl-logics
     Id2Logics myComputed;
@@ -237,6 +242,8 @@ private:
     static const Program2Def EmptyDefinitions;
 
 private:
+    /// @brief Returns a list of all definitions (convenience for easier iteration)
+    Definitions getDefinitions() const;
 
     /** @brief Destroys all stored definitions and logics
      */

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    netgen_main.cpp
 /// @author  Markus Hartinger
 /// @author  Daniel Krajzewicz
@@ -17,12 +9,27 @@
 ///
 // Main for NETGENERATE
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
@@ -71,13 +78,12 @@ fillOptions() {
     oc.addOptionSubTopic("Spider Network");
     oc.addOptionSubTopic("Random Network");
     oc.addOptionSubTopic("Output");
-    oc.addOptionSubTopic("Processing");
-    oc.addOptionSubTopic("Building Defaults");
     oc.addOptionSubTopic("TLS Building");
+    //oc.addOptionSubTopic("Ramp Guessing");
     oc.addOptionSubTopic("Edge Removal");
     oc.addOptionSubTopic("Unregulated Nodes");
-    oc.addOptionSubTopic("Junctions");
-    oc.addOptionSubTopic("Pedestrian");
+    oc.addOptionSubTopic("Processing");
+    oc.addOptionSubTopic("Building Defaults");
     SystemFrame::addReportOptions(oc); // this subtopic is filled here, too
 
     NGFrame::fillOptions();
@@ -85,7 +91,7 @@ fillOptions() {
     NWFrame::fillOptions(true);
     oc.doRegister("default-junction-type", 'j', new Option_String());
     oc.addSynonyme("default-junction-type", "junctions");
-    oc.addDescription("default-junction-type", "Building Defaults", "[traffic_light|priority|right_before_left|traffic_light_right_on_red|priority_stop|allway_stop|...] Determines junction type (see wiki/Networks/PlainXML#Node_types)");
+    oc.addDescription("default-junction-type", "Building Defaults", "[traffic_light|priority|right_before_left] Determines the type of the build junctions");
     RandHelper::insertRandOptions();
 }
 
@@ -95,7 +101,6 @@ checkOptions() {
     bool ok = NGFrame::checkOptions();
     ok &= NBFrame::checkOptions();
     ok &= NWFrame::checkOptions();
-    ok &= SystemFrame::checkOptions();
     return ok;
 }
 
@@ -103,7 +108,6 @@ checkOptions() {
 NGNet*
 buildNetwork(NBNetBuilder& nb) {
     OptionsCont& oc = OptionsCont::getOptions();
-
     // spider-net
     if (oc.getBool("spider")) {
         // check values
@@ -151,7 +155,7 @@ buildNetwork(NBNetBuilder& nb) {
         }
         // check values
         bool hadError = false;
-        if (attachLength == 0 && (xNo < 2 || yNo < 2)) {
+        if (xNo < 2 || yNo < 2) {
             WRITE_ERROR("The number of nodes must be at least 2 in both directions.");
             hadError = true;
         }
@@ -163,12 +167,18 @@ buildNetwork(NBNetBuilder& nb) {
             WRITE_ERROR("The length of attached streets must be at least 10m.");
             hadError = true;
         }
+        const bool alphaIDs = oc.getBool("grid.alphanumerical-ids");
+        if (alphaIDs && xNo > 26) {
+            WRITE_ERROR("There must be at most 26 nodes in the x-direction when using alphanumerical ids.");
+            hadError = true;
+        }
+
         if (hadError) {
             throw ProcessError();
         }
         // build if everything's ok
         NGNet* net = new NGNet(nb);
-        net->createChequerBoard(xNo, yNo, xLength, yLength, attachLength);
+        net->createChequerBoard(xNo, yNo, xLength, yLength, attachLength, alphaIDs);
         return net;
     }
     // random net
@@ -187,7 +197,7 @@ buildNetwork(NBNetBuilder& nb) {
                                  oc.getFloat("rand.connectivity"),
                                  oc.getInt("rand.num-tries"),
                                  neighborDist);
-    randomNet.createNet(oc.getInt("rand.iterations"), oc.getBool("rand.grid"));
+    randomNet.createNet(oc.getInt("rand.iterations"));
     return net;
 }
 
@@ -197,8 +207,8 @@ int
 main(int argc, char** argv) {
     OptionsCont& oc = OptionsCont::getOptions();
     // give some application descriptions
-    oc.setApplicationDescription("Synthetic network generator for the microscopic, multi-modal traffic simulation SUMO.");
-    oc.setApplicationName("netgenerate", "Eclipse SUMO netgenerate Version " VERSION_STRING);
+    oc.setApplicationDescription("Road network generator for the microscopic road traffic simulation SUMO.");
+    oc.setApplicationName("netgenerate", "SUMO netgenerate Version " VERSION_STRING);
     int ret = 0;
     try {
         // initialise the application system (messaging, xml, options)

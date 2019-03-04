@@ -1,24 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    runner.py
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2010-01-30
-# @version $Id$
-
 """
+@file    runner.py
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2010-01-30
+@version $Id$
+
 This script runs the gaming GUI for the LNdW traffic light game.
 It checks for possible scenarios in the current working directory
 and lets the user start them as a game. Furthermore it
 saves highscores to local disc and to the central highscore server.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -27,22 +28,16 @@ import subprocess
 import sys
 import re
 import pickle
+import httplib
 import glob
-try:
-    import Tkinter
-except ImportError:
-    import tkinter as Tkinter
+import Tkinter
 from optparse import OptionParser
 from xml.dom import pulldom
-from collections import defaultdict
 
-_UPLOAD = False if "noupload" in sys.argv else True
 _SCOREFILE = "scores.pkl"
-if _UPLOAD:
-    _TIMEOUT = 5
-    _SCORESERVER = "sumo.dlr.de"
-    _SCORESCRIPT = "/scores.php?game=TLS&"
-_DEBUG = True if "debug" in sys.argv else False
+_SCORESERVER = "sumo.dlr.de"
+_SCORESCRIPT = "/scores.php?game=TLS&"
+_DEBUG = False
 _SCORES = 30
 
 _LANGUAGE_EN = {'title': 'Interactive Traffic Light',
@@ -55,7 +50,6 @@ _LANGUAGE_EN = {'title': 'Interactive Traffic Light',
                 'bs3Dosm': '3D Junction OpenStreetMap',
                 'ramp': 'Highway Ramp',
                 'corridor': 'Corridor',
-                'A10KW': 'Highway Ramp A10 (new)',
                 'high': 'Highscore',
                 'reset': 'Reset Highscore',
                 'lang': 'Deutsch',
@@ -74,7 +68,6 @@ _LANGUAGE_DE = {'title': 'Interaktives Ampelspiel',
                 'bs3d': '3D Forschungskreuzung Virtuelle Welt',
                 'bs3Dosm': '3D Forschungskreuzung OpenStreetMap',
                 'ramp': 'Autobahnauffahrt',
-                'A10KW': 'A10 KW (neu)',
                 'corridor': 'Strecke',
                 'high': 'Bestenliste',
                 'reset': 'Bestenliste zurücksetzen',
@@ -87,130 +80,26 @@ _LANGUAGE_DE = {'title': 'Interaktives Ampelspiel',
                 }
 
 
-def printDebug(*args):
-    if _DEBUG:
-        print("DEBUG:", end=" ")
-        for message in args:
-            print(message, end=" ")
-        print()
-
-
-if _UPLOAD:
-    printDebug("import httplib...")
-    try:
-        import httplib  # noqa
-        printDebug("SUCCESS")
-    except ImportError:
-        printDebug("FAILED - disabling upload...")
-        _UPLOAD = False
-if _UPLOAD:
-    print("Highscore upload is enabled. To disable call this script with 'noupload' argument.")
-else:
-    print("Upload is disabled.")
-
-
-def computeScoreFromWaitingTime(gamename):
-    totalDistance = 0
-    totalFuel = 0
-    totalArrived = 0
-    totalWaitingTime = 0
-    complete = True
-    for line in open(os.path.join(base, "%s.netstate.xml" % start.category)):
-        m = re.search('<interval begin="0(.00)?" end="([^"]*)"', line)
-        if m and float(m.group(2)) != start.gametime:
-            print("error: incomplete output")
-            complete = False
-        m = re.search('sampledSeconds="([^"]*)".*speed="([^"]*)"', line)
-        if m:
-            totalDistance += float(m.group(1)) * float(m.group(2))
-        m = re.search('fuel_abs="([^"]*)"', line)
-        if m:
-            totalFuel += float(m.group(1))
-        m = re.search('arrived="([^"]*)"', line)
-        if m:
-            totalArrived += float(m.group(1))
-        m = re.search('waitingTime="([^"]*)"', line)
-        if m:
-            totalWaitingTime += float(m.group(1))
-    # doing nothing gives a waitingTime of 6033 for cross and 6700 for
-    # square
-    score = 10000 - totalWaitingTime
-    return score, totalArrived, complete
-
-
-def computeScoreFromTimeLoss(gamename):
-    totalArrived = 0
-    timeLoss = None
-    departDelay = None
-    departDelayWaiting = None
-    inserted = None
-    running = None
-    waiting = None
-    completed = False
-
-    for line in open(gamename + ".log"):
-        if "Simulation ended at time" in line:
-            completed = True
-        m = re.search('Inserted: ([0-9]*)', line)
-        if m:
-            inserted = float(m.group(1))
-        m = re.search('Running: (.*)', line)
-        if m:
-            running = float(m.group(1))
-        m = re.search('Waiting: (.*)', line)
-        if m:
-            waiting = float(m.group(1))
-        m = re.search('TimeLoss: (.*)', line)
-        if m:
-            timeLoss = float(m.group(1))
-        m = re.search('DepartDelay: (.*)', line)
-        if m:
-            departDelay = float(m.group(1))
-        m = re.search('DepartDelayWaiting: (.*)', line)
-        if m:
-            departDelayWaiting = float(m.group(1))
-    if not completed or timeLoss is None:
-        return 0, totalArrived, False
-    else:
-        totalArrived = inserted - running
-        if _DEBUG:
-            print("timeLoss=%s departDelay=%s departDelayWaiting=%s inserted=%s running=%s waiting=%s" % (
-                timeLoss, departDelay, departDelayWaiting, inserted, running, waiting))
-
-        score = 10000 - int(100 * ((timeLoss + departDelay) * inserted +
-                                   departDelayWaiting * waiting) / (inserted + waiting))
-        return score, totalArrived, True
-
-
-_SCORING_FUNCTION = defaultdict(lambda: computeScoreFromWaitingTime)
-_SCORING_FUNCTION.update({
-    'A10KW': computeScoreFromTimeLoss,
-})
-
-
 def loadHighscore():
-    if _UPLOAD:
-        printDebug("try to load highscore from scoreserver...")
-        try:
-            conn = httplib.HTTPConnection(_SCORESERVER, timeout=_TIMEOUT)
-            conn.request("GET", _SCORESCRIPT + "top=" + str(_SCORES))
-            response = conn.getresponse()
-            if response.status == httplib.OK:
-                scores = {}
-                for line in response.read().splitlines():
-                    category, values = line.split()
-                    scores[category] = _SCORES * [("", "", -1.)]
-                    for idx, item in enumerate(values.split(':')):
-                        name, game, score = item.split(',')
-                        scores[category][idx] = (name, game, int(float(score)))
-                printDebug("SUCCESS")
-                return scores
-        except Exception:
-            printDebug("FAILED")
+    try:
+        conn = httplib.HTTPConnection(_SCORESERVER)
+        conn.request("GET", _SCORESCRIPT + "top=" + str(_SCORES))
+        response = conn.getresponse()
+        if response.status == httplib.OK:
+            scores = {}
+            for line in response.read().splitlines():
+                category, values = line.split()
+                scores[category] = _SCORES * [("", "", -1.)]
+                for idx, item in enumerate(values.split(':')):
+                    name, game, score = item.split(',')
+                    scores[category][idx] = (name, game, int(float(score)))
+            return scores
+    except:
+        pass
 
     try:
         return pickle.load(open(_SCOREFILE))
-    except Exception:
+    except:
         pass
     return {}
 
@@ -220,6 +109,7 @@ def parseEndTime(cfg):
     for event, parsenode in cfg_doc:
         if event == pulldom.START_ELEMENT and parsenode.localName == 'end':
             return float(parsenode.getAttribute('value'))
+            break
 
 
 class IMAGE:
@@ -272,9 +162,8 @@ class StartDialog(Tkinter.Frame):
             button.grid(row=row, column=COL_START)
 
             button = Tkinter.Button(self, width=bWidth_high,
-                                    command=lambda cfg=cfg: ScoreDialog(self, [], None, self.category_name(cfg),
-                                                                        self._language_text)
-                                    )  # .grid(row=row, column=COL_HIGH)
+                                    command=lambda cfg=cfg: ScoreDialog(self, [],
+                                                                        None, self.category_name(cfg), self._language_text))  # .grid(row=row, column=COL_HIGH)
             self.addButton(button, 'high')
             button.grid(row=row, column=COL_HIGH)
 
@@ -323,35 +212,52 @@ class StartDialog(Tkinter.Frame):
             print("starting", cfg)
         self.gametime = parseEndTime(cfg)
         self.ret = subprocess.call(
-            [guisimPath, "-S", "-G", "-Q", "-c", cfg, '-l', 'log',
-                '--output-prefix', "%s." % self.category,
-                '--duration-log.statistics',
-                '--tripinfo-output.write-unfinished'], stderr=sys.stderr)
-
+            [guisimPath, "-S", "-G", "-Q", "-c", cfg, '-l', 'log'], stderr=sys.stderr)
         if _DEBUG:
             print("ended", cfg)
 
         # compute score
-        score, totalArrived, complete = _SCORING_FUNCTION[self.category](self.category)
-
-        # parse switches
+        totalDistance = 0
+        totalFuel = 0
+        totalArrived = 0
+        totalWaitingTime = 0
+        complete = True
+        for line in open(os.path.join(base, "%s.netstate.xml" % start.category)):
+            m = re.search('<interval begin="0(.00)?" end="([^"]*)"', line)
+            if m and float(m.group(2)) != start.gametime:
+                print("error: incomplete output")
+                complete = False
+            m = re.search('sampledSeconds="([^"]*)".*speed="([^"]*)"', line)
+            if m:
+                totalDistance += float(m.group(1)) * float(m.group(2))
+            m = re.search('fuel_abs="([^"]*)"', line)
+            if m:
+                totalFuel += float(m.group(1))
+            m = re.search('arrived="([^"]*)"', line)
+            if m:
+                totalArrived += float(m.group(1))
+            m = re.search('waitingTime="([^"]*)"', line)
+            if m:
+                totalWaitingTime += float(m.group(1))
         switch = []
         lastProg = {}
         for line in open(os.path.join(base, "%s.tlsstate.xml" % start.category)):
-            m = re.search(r'tlsstate time="(\d+(.\d+)?)" id="([^"]*)" programID="([^"]*)"', line)
+            m = re.search(
+                'tlsstate time="(\d+(.\d+)?)" id="([^"]*)" programID="([^"]*)"', line)
             if m:
                 tls = m.group(3)
                 program = m.group(4)
                 if tls not in lastProg or lastProg[tls] != program:
                     lastProg[tls] = program
                     switch += [m.group(3), m.group(1)]
-
+        # doing nothing gives a waitingTime of 6033 for cross and 6700 for
+        # square
+        score = 10000 - totalWaitingTime
         lang = start._language_text
         if _DEBUG:
             print(switch, score, totalArrived, complete)
         if complete:
             ScoreDialog(self, switch, score, self.category, lang)
-
         # if ret != 0:
         # quit on error
         #    sys.exit(start.ret)
@@ -433,33 +339,27 @@ class ScoreDialog:
                 f = open(_SCOREFILE, 'w')
                 pickle.dump(high, f)
                 f.close()
-            except Exception:
+            except:
                 pass
-
-            if _UPLOAD:
-                printDebug("try to upload score...")
-                try:
-                    conn = httplib.HTTPConnection(_SCORESERVER, timeout=_TIMEOUT)
-                    conn.request("GET", _SCORESCRIPT + "category=%s&name=%s&instance=%s&points=%s" % (
-                        self.category, name, "_".join(self.switch), self.score))
-                    if _DEBUG:
-                        r1 = conn.getresponse()
-                        print(r1.status, r1.reason, r1.read())
-                    printDebug("SUCCESS")
-                except BaseException:
-                    printDebug("FAILED")
+            try:
+                conn = httplib.HTTPConnection(_SCORESERVER)
+                conn.request("GET", _SCORESCRIPT + "category=%s&name=%s&instance=%s&points=%s" % (
+                    self.category, name, "_".join(self.switch), self.score))
+                if _DEBUG:
+                    r1 = conn.getresponse()
+                    print(r1.status, r1.reason, r1.read())
+            except:
+                pass
         self.quit()
 
     def quit(self, event=None):
         self.root.destroy()
 
-
 stereoModes = (
     'ANAGLYPHIC', 'QUAD_BUFFER', 'VERTICAL_SPLIT', 'HORIZONTAL_SPLIT')
 optParser = OptionParser()
 optParser.add_option("-s", "--stereo", metavar="OSG_STEREO_MODE",
-                     help="Defines the stereo mode to use for 3D output; unique prefix of %s" % (
-                           ", ".join(stereoModes)))
+                     help="Defines the stereo mode to use for 3D output; unique prefix of %s" % (", ".join(stereoModes)))
 options, args = optParser.parse_args()
 
 base = os.path.dirname(sys.argv[0])
@@ -480,7 +380,7 @@ def findSumoBinary(guisimBinary):
 
 
 guisimPath = findSumoBinary("sumo-gui")
-haveOSG = "OSG" in subprocess.check_output(findSumoBinary("sumo"), universal_newlines=True)
+haveOSG = "OSG" in subprocess.check_output(findSumoBinary("sumo"))
 
 if options.stereo:
     for m in stereoModes:
@@ -500,6 +400,6 @@ else:
 root = Tkinter.Tk()
 IMAGE.dlrLogo = Tkinter.PhotoImage(file='dlr.gif')
 IMAGE.sumoLogo = Tkinter.PhotoImage(file='logo.gif')
-IMAGE.qrCode = Tkinter.PhotoImage(file='qr_sumo.dlr.de.gif')
+IMAGE.qrCode = Tkinter.PhotoImage(file='dlr_lndw_15_ts_4.gif')
 start = StartDialog(root, lang)
 root.mainloop()

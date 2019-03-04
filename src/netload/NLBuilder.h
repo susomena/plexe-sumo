@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NLBuilder.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,6 +7,17 @@
 ///
 // The main interface for loading a microsim
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NLBuilder_h
 #define NLBuilder_h
 
@@ -22,7 +25,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -94,12 +101,9 @@ public:
     virtual bool build();
 
     /**
-    * loads the net, additional routes and the detectors
+    * loads the net, additional routes and the detectors and starts the simulation
     */
-    static MSNet* init();
-
-    /// @brief initializes all RNGs
-    static void initRandomness();
+    static int loadAndRun();
 
 
 protected:
@@ -131,7 +135,7 @@ protected:
      *  "route-files" and builds loaders reading these files
      * @param[in] oc The options to read the list of route files to open from
      * @return The built route loader control
-     * @exception ProcessError If an error occurred
+     * @exception ProcessError If an error occured
      */
     SUMORouteLoaderControl* buildRouteLoaderControl(const OptionsCont& oc);
 

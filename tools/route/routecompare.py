@@ -1,25 +1,26 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    routecompare.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @date    2008-03-25
-# @version $Id$
-
 """
+@file    routecompare.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@date    2008-03-25
+@version $Id$
+
 This script compares two route sets by calculating
 a similarity for any two routes based on the number of common edges
 and determining a maximum weighted matching between the route sets.
 It needs at least two parameters, which are the route sets to compare.
 Optionally a district file may be given, then only routes with
 the same origin and destination district are matched.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -142,31 +143,31 @@ def augmentSimultan(vTerm):
     dead = set()
     for v in vTerm:
         path = [v]
-        id = 0
+        l = 0
         while True:
-            while len(path[id].pre) > 0 and path[id].pre[0] in dead:
-                path[id].pre.pop(0)
-            if len(path[id].pre) == 0:
-                if id == 0:
+            while len(path[l].pre) > 0 and path[l].pre[0] in dead:
+                path[l].pre.pop(0)
+            if len(path[l].pre) == 0:
+                if l == 0:
                     break
-                dead.add(path[id - 1])
-                id -= 2
+                dead.add(path[l - 1])
+                l -= 2
             else:
-                if id == len(path) - 1:
+                if l == len(path) - 1:
                     path.append(None)
-                path[id + 1] = path[id].pre.pop(0)
-                dead.add(path[id + 1])
-                id += 1
-                if path[id].level == 0:
-                    for j in range(0, id + 1, 2):
+                path[l + 1] = path[l].pre.pop(0)
+                dead.add(path[l + 1])
+                l += 1
+                if path[l].level == 0:
+                    for j in range(0, l + 1, 2):
                         path[j].match = path[j + 1]
                         path[j + 1].match = path[j]
                     break
                 else:
-                    if id == len(path) - 1:
+                    if l == len(path) - 1:
                         path.append(None)
-                    path[id + 1] = path[id].match
-                    id += 1
+                    path[l + 1] = path[l].match
+                    l += 1
 
 
 def hungarianDAG(U, V, similarityMatrix):

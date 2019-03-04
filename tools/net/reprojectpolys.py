@@ -1,19 +1,11 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    reprojectpolys.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2008-03-27
-# @version $Id$
-
 """
+@file    reprojectpolys.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2008-03-27
+@version $Id$
+
 This script computes projection needed to make net2 (-2) fit
  to net1 (-1). The read polygons (-p) are then reprojected
  using this projection.
@@ -21,6 +13,15 @@ This script computes projection needed to make net2 (-2) fit
 This means, the resulting polygons, written to the output
  specified by --output, are net2's polygons as they would
  be on net1.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -29,7 +30,7 @@ import sys
 from optparse import OptionParser
 from xml.sax import make_parser, handler
 sys.path.append("../lib")
-import rmsd  # noqa
+import rmsd
 
 
 class NetReader(handler.ContentHandler):
@@ -159,7 +160,6 @@ class PolyReprojector:
                 poly["shape"][i][0] = projection[i][0]
                 poly["shape"][i][1] = projection[i][1]
                 index = index + 1
-
 
 # initialise
 optParser = OptionParser()

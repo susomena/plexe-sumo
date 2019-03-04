@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    TraCIServerAPI_Simulation.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,6 +7,17 @@
 ///
 // APIs for getting/setting edge values via TraCI
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef TraCIServerAPI_Simulation_h
 #define TraCIServerAPI_Simulation_h
 
@@ -22,11 +25,18 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
+
+#ifndef NO_TRACI
 
 #include <string>
 #include <map>
 #include <vector>
+#include "TraCIDefs.h"
 #include "TraCIServer.h"
 #include <foreign/tcpip/storage.h>
 
@@ -60,6 +70,14 @@ public:
 
 
     /**
+     * Converts a cartesian position to the closest road map position
+     *
+     * @param pos cartesian position that is to be converted
+     * @return the closest road map position to the cartesian position
+     */
+    static std::pair<MSLane*, double> convertCartesianToRoadMap(Position pos);
+
+    /**
      * Converts a road map position to a cartesian position
      *
      * @param pos road map position that is to be convertes
@@ -72,11 +90,8 @@ public:
     static bool commandDistanceRequest(TraCIServer& server, tcpip::Storage& inputStorage,
                                        tcpip::Storage& outputStorage, int commandId);
 
-private:
     static void writeVehicleStateNumber(TraCIServer& server, tcpip::Storage& outputStorage, MSNet::VehicleState state);
     static void writeVehicleStateIDs(TraCIServer& server, tcpip::Storage& outputStorage, MSNet::VehicleState state);
-    static void writeStage(tcpip::Storage& outputStorage, const libsumo::TraCIStage& stage);
-
 
 private:
     /// @brief invalidated copy constructor
@@ -88,6 +103,8 @@ private:
 
 };
 
+
+#endif
 
 #endif
 

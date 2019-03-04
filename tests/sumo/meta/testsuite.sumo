@@ -22,9 +22,6 @@ bool_value
 # Tests xml validation
 xml_validation
 
-# Tests xml validation with root element check
-xml_validation_root
-
 # Tests xml validation with invalid schema
 xml_invalid_schema
 
@@ -48,9 +45,3 @@ umlaut_encoding
 
 # Tests configuration with space in file names
 space
-
-# Tests space in input file names
-space_input
-
-# Tests space in input file paths
-space_input_path

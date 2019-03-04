@@ -1,18 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RORoutable.h
 /// @author  Michael Behrisch
 /// @date    Oct 2015
 /// @version $Id$
 ///
 // A routable thing such as a vehicle or person
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef RORoutable_h
 #define RORoutable_h
@@ -21,13 +24,17 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <iostream>
 #include <utils/common/StdDefs.h>
 #include <utils/common/SUMOTime.h>
-#include <utils/router/RouterProvider.h>
+#include <utils/vehicle/IntermodalRouter.h>
 #include <utils/vehicle/SUMOVehicleParameter.h>
 #include <utils/vehicle/SUMOVTypeParameter.h>
 
@@ -67,18 +74,9 @@ public:
     virtual ~RORoutable() {}
 
 
-    /** @brief Returns the definition of the vehicle / person parameter
-    *
-    * @return The vehicle / person's parameter
-    */
-    inline const SUMOVehicleParameter& getParameter() const {
-        return myParameter;
-    }
-
-
-    /** @brief Returns the type of the routable
+    /** @brief Returns the type of the vehicle
      *
-     * @return The routable's type
+     * @return The vehicle's type
      *
      * @todo Why not return a reference?
      */
@@ -87,9 +85,9 @@ public:
     }
 
 
-    /** @brief Returns the id of the routable
+    /** @brief Returns the id of the vehicle
      *
-     * @return The id of the routable
+     * @return The id of the vehicle
      */
     inline const std::string& getID() const {
         return myParameter.id;
@@ -118,14 +116,6 @@ public:
 
     virtual const ROEdge* getDepartEdge() const = 0;
 
-
-    inline bool isPublicTransport() const {
-        return myParameter.line != "";
-    }
-
-    inline bool isPartOfFlow() const {
-        return myParameter.repetitionNumber >= 0;
-    }
 
     virtual void computeRoute(const RORouterProvider& provider,
                               const bool removeLoops, MsgHandler* errorHandler) = 0;
@@ -170,14 +160,13 @@ protected:
     virtual void saveAsXML(OutputDevice& os, OutputDevice* const typeos, bool asAlternatives, OptionsCont& options) const = 0;
 
 
-private:
+protected:
     /// @brief The vehicle's parameter
     SUMOVehicleParameter myParameter;
 
     /// @brief The type of the vehicle
     const SUMOVTypeParameter* const myType;
 
-protected:
     /// @brief Whether the last routing was successful
     bool myRoutingSuccess;
 

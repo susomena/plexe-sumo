@@ -1,19 +1,11 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    buildHTMLDocs.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2011-10-20
-# @version $Id$
-
 """
+@file    buildHTMLDocs.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2011-10-20
+@version $Id$
+
 Converts wiki-documentation into HTML pages.
 
 Determines what to convert, first: if a command line argument is given,
@@ -38,6 +30,15 @@ All pages downloaded earlier are loaded, and embedded into the index.html
 between the <!-- content begins --> / <!-- content ends --> markers. Then,
 the page is saved into options.output/<PAGE_PATH>. All images are copied
 from options.mirror/images to options.output/images.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -46,52 +47,39 @@ try:
 except ImportError:
     from urllib.request import urlopen
 import os
-import sys
 import shutil
 import datetime
-import pydoc
-import types
 from optparse import OptionParser
 
 from mirrorWiki import readParsePage, readParseEditPage, getAllPages
-TOOLDIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(TOOLDIR)
-from sumolib.miscutils import working_dir  # noqa
 
 
 def patchLinks(page, name):
     images = set()
     level = len(name.split("/")) - 1
     level = "../" * level
-    b = page.find(" href=")
+    b = page.find("<a href")
     while b >= 0:
         # images/files
-        if page[b + 7:].startswith("/wiki/File:") or page[b + 7:].startswith("/wiki/Image:"):
+        if page[b + 9:].startswith("/wiki/File:") or page[b + 9:].startswith("/wiki/Image:"):
             b2 = b
             b = page.find(":", b) + 1
-            images.add(page[b2 + 7:page.find("\"", b)])
-            page = page[:b2 + 7] + level + "images/" + page[b:]
+            images.add(page[b2 + 9:page.find("\"", b)])
+            page = page[:b2 + 9] + level + "images/" + page[b:]
         # pages (HTML)
-        elif page[b + 7:].startswith("/wiki/"):
-            e = b + 7 + 6
-            e2 = page.find("\"", b + 7)
+        elif page[b + 9:].startswith("/wiki/"):
+            e = b + 9 + 6
+            e2 = page.find("\"", b + 9)
             link = page[e:e2]
-            if "action=edit" not in link:
+            if link.find("action=edit") < 0:
                 if link.find("#") > 0:
                     link = level + link.replace("#", ".html#")
-                elif link.find("#") < 0 and not link.endswith((".png", ".jpg", ".svg")):
+                elif link.find("#") < 0 and not (link.endswith(".png") or link.endswith(".jpg") or link.endswith(".svg")):
                     link = level + link + ".html"
-                page = page[:b + 7] + link + page[e2:]
-        # pages (pydoc)
-        else:
-            lb = page.find('"', b) + 1
-            le = page.find('"', lb)
-            link = page[lb:le]
-            p = link.find("daily/pydoc")
-            if p >= 0:
-                link = level + ".." + link[p + 5:]
-                page = page[:lb] + link + page[le:]
-        b = page.find(" href=", b + 1)
+                page = page[:b + 9] + link + page[e2:]
+            else:
+                page = page[:b + 9] + "http://sourceforge.net/" + page[b + 10:]
+        b = page.find("<a href", b + 1)
     return page, images, level
 
 
@@ -105,11 +93,11 @@ def patchImages(page, name):
         b += 5
         e = page.find("\"", b + 2)
         add = page[b:e]
-        ls = add[add.rfind("/"):]
+        l = add[add.rfind("/"):]
         if add.find("thumb") >= 0:
-            ls = ls[ls.find("-") + 1:]
+            l = l[l.find("-") + 1:]
         images.add(add)
-        page = page[:b] + level + "images/" + ls + page[e:]
+        page = page[:b] + level + "images/" + l + page[e:]
         b = page.find("<img", b + 1)
         b = page.find("src", b)
     page = page.replace(".svg.png", ".svg")
@@ -145,47 +133,21 @@ def parseWikiLink(l):
         link = ""
     return text, link
 
-
-def pydoc_recursive(module):
-    pydoc.writedoc(module)
-    for submod in module.__dict__.values():
-        if type(submod) is types.ModuleType and submod.__name__.startswith(module.__name__):
-            pydoc_recursive(submod)
-
-
-def generate_pydoc(out_dir):
-    os.mkdir(out_dir)
-    import traci
-    import sumolib
-    with working_dir(out_dir):
-        for module in (traci, sumolib):
-            pydoc_recursive(module)
-
-
 optParser = OptionParser()
 optParser.add_option("-m", "--mirror", default="mirror", help="mirror folder")
 optParser.add_option("-o", "--output", default="docs", help="output folder")
-optParser.add_option("-p", "--pydoc-output", help="output folder for pydoc")
 optParser.add_option("-i", "--index", default=os.path.join(os.path.dirname(
     __file__), "..", "..", "docs", "wiki", "index.html"), help="index template file")
 optParser.add_option("-r", "--version", help="add version info")
-optParser.add_option("-c", "--clean", action="store_true", default=False, help="remove output dirs")
 (options, args) = optParser.parse_args()
 
-if options.pydoc_output:
-    if options.clean:
-        shutil.rmtree(options.pydoc_output, ignore_errors=True)
-    generate_pydoc(options.pydoc_output)
-if options.clean:
-    shutil.rmtree(options.mirror, ignore_errors=True)
-    shutil.rmtree(options.output, ignore_errors=True)
 try:
     os.mkdir(options.mirror)
-except Exception:
+except:
     pass
 try:
     os.mkdir(options.mirror + "/images")
-except Exception:
+except:
     pass
 images = set()
 pages = getAllPages(args)
@@ -198,7 +160,7 @@ for name in pages:
     if name.find("/") > 0:
         try:
             os.makedirs(os.path.join(options.mirror, name[:name.rfind("/")]))
-        except Exception:
+        except:
             pass
     if True:  # name.find(".")<0:
         c, pi, level = patchLinks(c, name)
@@ -215,19 +177,16 @@ for name in pages:
 imageFiles = []
 for i in images:
     print("Fetching image %s" % i)
-    if i.startswith("https://"):
-        f = urlopen(i)
-        i = i[i.rfind("/") + 1:]
     if i.find(":") >= 0:
-        f = urlopen("https://sumo.dlr.de%s" % i)
+        f = urlopen("http://sumo.dlr.de%s" % i)
         c = f.read()
         b = c.find("<div class=\"fullImageLink\" id=\"file\">")
         b = c.find("href=", b) + 6
         e = c.find("\"", b + 1)
-        f = urlopen("https://sumo.dlr.de/%s" % c[b:e])
+        f = urlopen("http://sumo.dlr.de/%s" % c[b:e])
         i = i[i.find(":") + 1:]
     else:
-        f = urlopen("https://sumo.dlr.de/%s" % i)
+        f = urlopen("http://sumo.dlr.de/%s" % i)
         i = i[i.rfind("/") + 1:]
     if i.find("px-") >= 0:
         i = i[:i.find('-') + 1]
@@ -295,17 +254,17 @@ tpl = tpl[:b] + c + tpl[e:]
 # build HTML pages
 try:
     os.mkdir(options.output)
-except Exception:
+except:
     pass
 try:
     os.mkdir(options.output + "/images")
-except Exception:
+except:
     pass
 for name in pages:
     if name.endswith(".css"):
         print("Skipping css-file %s" % name)
         continue
-    fromStr = 'generated on %s from <a href="https://sumo.dlr.de/wiki/%s">the wiki page for %s</a>' % (
+    fromStr = 'generated on %s from <a href="http://sumo.dlr.de/wiki/%s">the wiki page for %s</a>' % (
         datetime.datetime.now(), name, name)
     name = name + ".html"
     t = os.path.join(options.output, name)
@@ -313,12 +272,8 @@ for name in pages:
     c = fd.read().decode("utf8")
     if options.version:
         fromStr += " for SUMO %s" % options.version
-    c = c.replace('<div id="siteSub" class="noprint">From Sumo</div>',
-                  '<div id="siteSub" class="noprint">%s</div>' % fromStr)
-    navLink = c.find('<a class="mw-jump-link" ')
-    while navLink > 0:
-        c = c[:navLink] + c[c.find('</a>', navLink)+4:]
-        navLink = c.find('<a class="mw-jump-link" ')
+    c = c.replace(
+        '<div id="siteSub">From Sumo</div>', '<div id="siteSub">%s</div>' % fromStr)
     fd.close()
     #
     if name.find('/') >= 0:
@@ -346,7 +301,7 @@ for name in pages:
 
     try:
         os.makedirs(os.path.split(t)[0])
-    except Exception:
+    except:
         pass
     fd = open(t, "wb")
     fd.write(cc.encode("utf8"))

@@ -1,14 +1,17 @@
-# basic test
-basic
+# default values of selection
+select_default
 
-# check draws selections (Rectangle, polygons, etc.)
-draws
+# save selection
+select_save_selection
 
-# view options (toogle edges, show connections, etc.)
-viewoptions
+# try to select elements with wrong parameters
+wrong_parameters
 
-# operations (load, save, etc.)
-operations
+# select differents busstops
+selectadditional_basic
 
-# lock selection
-lockselection
+# check set operators clear and invert
+select_setoperators
+
+# check that undo-redo of elements works correctly
+undo_redo

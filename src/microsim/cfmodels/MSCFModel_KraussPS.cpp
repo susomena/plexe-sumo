@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_KraussPS.cpp
 /// @author  Tobias Mayer
 /// @author  Daniel Krajzewicz
@@ -18,12 +10,27 @@
 ///
 // Krauss car-following model, changing accel and speed by slope
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/geom/GeomHelper.h>
 #include <microsim/MSVehicle.h>
@@ -34,8 +41,10 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-MSCFModel_KraussPS::MSCFModel_KraussPS(const MSVehicleType* vtype) :
-    MSCFModel_Krauss(vtype) {
+MSCFModel_KraussPS::MSCFModel_KraussPS(const MSVehicleType* vtype, double accel,
+                                       double decel, double emergencyDecel, double apparentDecel,
+                                       double dawdle, double headwayTime) :
+    MSCFModel_Krauss(vtype, accel, decel, emergencyDecel, apparentDecel, dawdle, headwayTime) {
 }
 
 
@@ -54,7 +63,7 @@ MSCFModel_KraussPS::maxNextSpeed(double speed, const MSVehicle* const veh) const
 
 MSCFModel*
 MSCFModel_KraussPS::duplicate(const MSVehicleType* vtype) const {
-    return new MSCFModel_KraussPS(vtype);
+    return new MSCFModel_KraussPS(vtype, myAccel, myDecel, myEmergencyDecel, myApparentDecel, myDawdle, myHeadwayTime);
 }
 
 

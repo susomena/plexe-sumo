@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    FXSingleEventThread.cpp
 /// @author  unknown_author
 /// @author  Daniel Krajzewicz
@@ -18,11 +10,26 @@
 ///
 //
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 /* =========================================================================
  * included modules
  * ======================================================================= */
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/common/StdDefs.h>
 #include "MFXInterThreadEventClient.h"
@@ -62,7 +69,7 @@ FXSingleEventThread::FXSingleEventThread(FXApp* a, MFXInterThreadEventClient* cl
     UNUSED_PARAMETER(res); // only used for assertion
     myApp->addInput(event[PIPE_READ], INPUT_READ, this, ID_THREAD_EVENT);
 #else
-    event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    event = CreateEvent(NULL, FALSE, FALSE, NULL);
     FXASSERT(event != NULL);
     myApp->addInput(event, INPUT_READ, this, ID_THREAD_EVENT);
 #endif
@@ -86,8 +93,7 @@ void
 FXSingleEventThread::signal() {
 #ifndef WIN32
     FXuint seltype = SEL_THREAD;
-    FXint res = ::write(event[PIPE_WRITE], &seltype, sizeof(seltype));
-    UNUSED_PARAMETER(res); // to make the compiler happy
+    ::write(event[PIPE_WRITE], &seltype, sizeof(seltype));
 #else
     ::SetEvent(event);
 #endif
@@ -98,8 +104,7 @@ void
 FXSingleEventThread::signal(FXuint seltype) {
     UNUSED_PARAMETER(seltype);
 #ifndef WIN32
-    FXint res = ::write(event[PIPE_WRITE], &seltype, sizeof(seltype));
-    UNUSED_PARAMETER(res); // to make the compiler happy
+    ::write(event[PIPE_WRITE], &seltype, sizeof(seltype));
 #else
     ::SetEvent(event);
 #endif
@@ -110,20 +115,19 @@ long
 FXSingleEventThread::onThreadSignal(FXObject*, FXSelector, void*) {
 #ifndef WIN32
     FXuint seltype = SEL_THREAD;
-    FXint res = ::read(event[PIPE_READ], &seltype, sizeof(seltype));
-    UNUSED_PARAMETER(res); // to make the compiler happy
+    ::read(event[PIPE_READ], &seltype, sizeof(seltype));
 #else
     //FIXME need win32 support
 #endif
     FXSelector sel = FXSEL(SEL_THREAD, 0);
-    handle(this, sel, nullptr);
+    handle(this, sel, 0);
     return 0;
 }
 
 
 long
-FXSingleEventThread::onThreadEvent(FXObject*, FXSelector, void*) {
-    myClient->eventOccurred();
+FXSingleEventThread::onThreadEvent(FXObject*, FXSelector , void*) {
+    myClient->eventOccured();
     /*
     FXuint seltype1 = FXSELTYPE(SEL_THREAD);
     if(myTarget && myTarget->handle(this,FXSEL(seltype1,mySelector),NULL)) {

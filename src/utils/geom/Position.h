@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    Position.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 /// @version $Id$
 ///
 // A position in the 2D- or 3D-world
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef Position_h
 #define Position_h
@@ -27,7 +30,11 @@
 #include <iostream>
 #include <cmath>
 
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 // ===========================================================================
 // class definitions
@@ -39,32 +46,31 @@
 class Position {
 public:
     /// @brief default constructor
-    Position() :
-        myX(0.0), myY(0.0), myZ(0.0) { }
+    Position() : myX(0.0), myY(0.0), myZ(0.0) { }
 
-    /// @brief Parametrised constructor (only for x-y)
-    Position(double x, double y) :
-        myX(x), myY(y), myZ(0) { }
+    /// @brief parametrised constructor
+    Position(double x, double y)
+        : myX(x), myY(y), myZ(0) { }
 
-    /// @brief Parametrised constructor
-    Position(double x, double y, double z) :
-        myX(x), myY(y), myZ(z) { }
+    /// @brief parametrised constructor
+    Position(double x, double y, double z)
+        : myX(x), myY(y), myZ(z) { }
 
     /// @brief Destructor
     ~Position() { }
 
     /// @brief Returns the x-position
-    inline double x() const {
+    double x() const {
         return myX;
     }
 
     /// @brief Returns the y-position
-    inline double y() const {
+    double y() const {
         return myY;
     }
 
     /// @brief Returns the z-position
-    inline double z() const {
+    double z() const {
         return myZ;
     }
 
@@ -225,7 +231,7 @@ public:
         }
     }
 
-    /// @brief check if two position is almost the sme as other
+    /// @brief checki if two position is almost the sme as other
     bool almostSame(const Position& p2, double maxDiv = POSITION_EPS) const {
         return distanceTo(p2) < maxDiv;
     }
@@ -266,19 +272,6 @@ public:
     /// @brief returns the dot product (scalar product) between this point and the second one
     inline double dotProduct(const Position& pos) {
         return myX * pos.myX + myY * pos.myY + myZ * pos.myZ;
-    }
-
-    /// @brief rotate this position by rad around origin and return the result
-    Position rotateAround2D(double rad, const Position& origin);
-
-    /// @brief swap position X and Y
-    void swapXY() {
-        std::swap(myX, myY);
-    }
-
-    /// @brief check if position is NAN
-    bool isNAN() const {
-        return (std::isnan(myX) || std::isnan(myY) || std::isnan(myZ));
     }
 
     /// @brief used to indicate that a position is valid

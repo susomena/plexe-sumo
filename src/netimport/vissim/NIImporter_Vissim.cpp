@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIImporter_Vissim.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,18 +10,33 @@
 ///
 // -------------------
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 
 #include <string>
 #include <fstream>
 #include <utils/common/StringUtils.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/options/OptionsCont.h>
 #include <netbuild/NBNetBuilder.h>
@@ -235,23 +242,23 @@ NIImporter_Vissim::NIVissimXMLHandler_Streckendefinition::myStartElement(int ele
     if (element == VISSIM_TAG_LINK) {
         //parse all links
         bool ok = true;
-        int id = attrs.get<int>(VISSIM_ATTR_NO, nullptr, ok);
+        int id = attrs.get<int>(VISSIM_ATTR_NO, 0, ok);
         myLastNodeID = id;
 
         // !!! assuming empty myElemData
-        myElemData["id"].push_back(attrs.get<std::string>(VISSIM_ATTR_NO, nullptr, ok));
+        myElemData["id"].push_back(attrs.get<std::string>(VISSIM_ATTR_NO, 0, ok));
         // error ignored if name is empty
-        myElemData["name"].push_back(attrs.get<std::string>(VISSIM_ATTR_NAME, nullptr, ok, false));
-        myElemData["type"].push_back(attrs.get<std::string>(VISSIM_ATTR_LINKBEHAVETYPE, nullptr, ok));
-        myElemData["zuschlag1"].push_back(attrs.get<std::string>(VISSIM_ATTR_ZUSCHLAG1, nullptr, ok));
-        myElemData["zuschlag2"].push_back(attrs.get<std::string>(VISSIM_ATTR_ZUSCHLAG2, nullptr, ok));
+        myElemData["name"].push_back(attrs.get<std::string>(VISSIM_ATTR_NAME, 0, ok, false));
+        myElemData["type"].push_back(attrs.get<std::string>(VISSIM_ATTR_LINKBEHAVETYPE, 0, ok));
+        myElemData["zuschlag1"].push_back(attrs.get<std::string>(VISSIM_ATTR_ZUSCHLAG1, 0, ok));
+        myElemData["zuschlag2"].push_back(attrs.get<std::string>(VISSIM_ATTR_ZUSCHLAG2, 0, ok));
     }
 
     if (element == VISSIM_TAG_LANE) {
         bool ok = true;
         // appends empty element if no width found
         // error ignored if name is empty
-        myElemData["width"].push_back(attrs.get<std::string>(VISSIM_ATTR_WIDTH, nullptr, ok, false));
+        myElemData["width"].push_back(attrs.get<std::string>(VISSIM_ATTR_WIDTH, 0, ok, false));
     }
 
     if (element == VISSIM_TAG_FROM) {
@@ -260,8 +267,8 @@ NIImporter_Vissim::NIVissimXMLHandler_Streckendefinition::myStartElement(int ele
         }
         bool ok = true;
         std::vector<std::string> from(StringTokenizer(attrs.get<std::string>(
-                                          VISSIM_ATTR_LANE, nullptr, ok), " ").getVector());
-        myElemData["from_pos"].push_back(attrs.get<std::string>(VISSIM_ATTR_POS, nullptr, ok));
+                                          VISSIM_ATTR_LANE, 0, ok), " ").getVector());
+        myElemData["from_pos"].push_back(attrs.get<std::string>(VISSIM_ATTR_POS, 0, ok));
         myElemData["from_id"].push_back(from[0]);
         myElemData["from_lane"].push_back(from[1]);
     }
@@ -269,8 +276,8 @@ NIImporter_Vissim::NIVissimXMLHandler_Streckendefinition::myStartElement(int ele
     if (element == VISSIM_TAG_TO) {
         bool ok = true;
         std::vector<std::string> to(StringTokenizer(attrs.get<std::string>(
-                                        VISSIM_ATTR_LANE, nullptr, ok), " ").getVector());
-        myElemData["to_pos"].push_back(attrs.get<std::string>(VISSIM_ATTR_POS, nullptr, ok));
+                                        VISSIM_ATTR_LANE, 0, ok), " ").getVector());
+        myElemData["to_pos"].push_back(attrs.get<std::string>(VISSIM_ATTR_POS, 0, ok));
         myElemData["to_id"].push_back(to[0]);
         myElemData["to_lane"].push_back(to[1]);
     }
@@ -280,11 +287,11 @@ NIImporter_Vissim::NIVissimXMLHandler_Streckendefinition::myStartElement(int ele
         // create a <sep> separated string of coordinate data
         std::string sep(" ");
 
-        std::string posS(attrs.get<std::string>(VISSIM_ATTR_X, nullptr, ok));
+        std::string posS(attrs.get<std::string>(VISSIM_ATTR_X, 0, ok));
         posS += sep;
-        posS.append(attrs.get<std::string>(VISSIM_ATTR_Y, nullptr, ok));
+        posS.append(attrs.get<std::string>(VISSIM_ATTR_Y, 0, ok));
         // allow for no Z
-        std::string z(attrs.get<std::string>(VISSIM_ATTR_ZOFFSET, nullptr, ok, false));
+        std::string z(attrs.get<std::string>(VISSIM_ATTR_ZOFFSET, 0, ok, false));
         if (z.length() > 0) {
             posS += sep;
             posS.append(z);
@@ -302,7 +309,7 @@ NIImporter_Vissim::NIVissimXMLHandler_Streckendefinition::myEndElement(int eleme
 
         NIVissimClosedLanesVector clv;          //FIXME -> clv einlesen
         std::vector<int> assignedVehicles;      //FIXME -> assignedVehicles einlesen
-        int id(StringUtils::toInt(myElemData["id"].front()));
+        int id(TplConvert::_str2int(myElemData["id"].front()));
 
         PositionVector geom;
         // convert all position coordinate strings to PositionVectors
@@ -314,7 +321,7 @@ NIImporter_Vissim::NIVissimXMLHandler_Streckendefinition::myEndElement(int eleme
 
             // doing a transform with explicit hint on function signature
             std::transform(sPos_v.begin(), sPos_v.end(), pos_v.begin(),
-                           StringUtils::toDouble);
+                           TplConvert::_str2double);
             geom.push_back_noDoublePos(Position(pos_v[0], pos_v[1], pos_v[2]));
         }
         // FIXME: a length = 0 PosVec seems fatal -> segfault
@@ -322,16 +329,12 @@ NIImporter_Vissim::NIVissimXMLHandler_Streckendefinition::myEndElement(int eleme
 
         if (isConnector == false) {
             // Add Edge
-            std::vector<double> laneWidths;
-            for (std::string& w : myElemData["width"]) {
-                laneWidths.push_back(StringUtils::toDouble(w));
-            }
             NIVissimEdge* edge = new NIVissimEdge(id,
                                                   myElemData["name"].front(),
                                                   myElemData["type"].front(),
-                                                  laneWidths,
-                                                  StringUtils::toDouble(myElemData["zuschlag1"].front()),
-                                                  StringUtils::toDouble(myElemData["zuschlag2"].front()),
+                                                  (int)myElemData["width"].size(),   // numLanes,
+                                                  TplConvert::_str2double(myElemData["zuschlag1"].front()),
+                                                  TplConvert::_str2double(myElemData["zuschlag2"].front()),
                                                   length, geom, clv);
             NIVissimEdge::dictionary(id, edge);
             if (id == 85 || id == 91) {
@@ -347,30 +350,30 @@ NIImporter_Vissim::NIVissimXMLHandler_Streckendefinition::myEndElement(int eleme
 
             //NOTE: there should be only 1 lane number in XML
             // subtraction of 1 as in readExtEdgePointDef()
-            laneVec[0] = StringUtils::toInt(myElemData["from_lane"].front()) - 1;
+            laneVec[0] = TplConvert::_str2int(myElemData["from_lane"].front()) - 1;
             // then count up, building lane number vector
             for (std::vector<int>::iterator each = ++laneVec.begin(); each != laneVec.end(); ++each) {
                 *each = *(each - 1) + 1;
             }
 
             NIVissimExtendedEdgePoint from_def(
-                StringUtils::toInt(myElemData["from_id"].front()),
+                TplConvert::_str2int(myElemData["from_id"].front()),
                 laneVec,
-                StringUtils::toDouble(myElemData["from_pos"].front()),
+                TplConvert::_str2double(myElemData["from_pos"].front()),
                 assignedVehicles);
 
             //NOTE: there should be only 1 lane number in XML
             // subtraction of 1 as in readExtEdgePointDef()
-            laneVec[0] = StringUtils::toInt(myElemData["to_lane"].front()) - 1;
+            laneVec[0] = TplConvert::_str2int(myElemData["to_lane"].front()) - 1;
             // then count up, building lane number vector
             for (std::vector<int>::iterator each = ++laneVec.begin(); each != laneVec.end(); ++each) {
                 *each = *(each - 1) + 1;
             }
 
             NIVissimExtendedEdgePoint to_def(
-                StringUtils::toInt(myElemData["to_id"].front()),
+                TplConvert::_str2int(myElemData["to_id"].front()),
                 laneVec,
-                StringUtils::toDouble(myElemData["to_pos"].front()),
+                TplConvert::_str2double(myElemData["to_pos"].front()),
                 assignedVehicles);
 
             NIVissimConnection* connector = new
@@ -383,10 +386,8 @@ NIImporter_Vissim::NIVissimXMLHandler_Streckendefinition::myEndElement(int eleme
         }
         // clear the element data
         myElemData.clear();
-        isConnector = false;
         //std::cout << "elemData len (clear):" << myElemData.size() << std::endl;
         //std::cout.flush();
-
     }
     --myHierarchyLevel;
 }
@@ -409,9 +410,9 @@ NIImporter_Vissim::NIVissimXMLHandler_Zuflussdefinition::myStartElement(int elem
     if (element == VISSIM_TAG_VEHICLE_INPUT) {
         //parse all flows
         bool ok = true;
-        std::string id = attrs.get<std::string>(VISSIM_ATTR_NO, nullptr, ok);
-        std::string edgeid = attrs.get<std::string>(VISSIM_ATTR_LINK, nullptr, ok);
-        std::string name = attrs.get<std::string>(VISSIM_ATTR_NAME, nullptr, ok, false);
+        std::string id = attrs.get<std::string>(VISSIM_ATTR_NO, 0, ok);
+        std::string edgeid = attrs.get<std::string>(VISSIM_ATTR_LINK, 0, ok);
+        std::string name = attrs.get<std::string>(VISSIM_ATTR_NAME, 0, ok, false);
 
         NIVissimSource::dictionary(id,
                                    name,
@@ -436,18 +437,18 @@ NIImporter_Vissim::NIVissimXMLHandler_Parkplatzdefinition::myStartElement(int el
     if (element == VISSIM_TAG_PARKINGLOT) {
         //parse all parkinglots
         bool ok = true;
-        int id = attrs.get<int>(VISSIM_ATTR_NO, nullptr, ok);
-        int edgeid = attrs.get<int>(VISSIM_ATTR_INTLINK, nullptr, ok);
-        std::string name = attrs.get<std::string>(VISSIM_ATTR_NAME, nullptr, ok, false);
-        double position = attrs.get<double>(VISSIM_ATTR_POS, nullptr, ok);
+        int id = attrs.get<int>(VISSIM_ATTR_NO, 0, ok);
+        int edgeid = attrs.get<int>(VISSIM_ATTR_INTLINK, 0, ok);
+        std::string name = attrs.get<std::string>(VISSIM_ATTR_NAME, 0, ok, false);
+        double position = attrs.get<double>(VISSIM_ATTR_POS, 0, ok);
         std::vector<std::pair<int, int> > assignedVehicles; // (vclass, vwunsch)
         //FIXME: vWunsch + Fahzeugklassen einlesen
         // There can be s
         std::vector<int> districts;
         //FIXME: Parkplatzdefinition für mehrere Zonen implementieren
         std::vector<double> percentages;
-        districts.push_back(attrs.get<int>(VISSIM_ATTR_DISTRICT, nullptr, ok));
-        percentages.push_back(attrs.get<double>(VISSIM_ATTR_PERCENTAGE, nullptr, ok));
+        districts.push_back(attrs.get<int>(VISSIM_ATTR_DISTRICT, 0, ok));
+        percentages.push_back(attrs.get<double>(VISSIM_ATTR_PERCENTAGE, 0, ok));
 
         NIVissimDistrictConnection::dictionary(id,
                                                name,
@@ -480,9 +481,9 @@ NIImporter_Vissim::NIVissimXMLHandler_Fahrzeugklassendefinition::myStartElement(
 
     if (element == VISSIM_TAG_VEHICLE_CLASS) {
         bool ok = true;
-        myElemData["id"].push_back(attrs.get<std::string>(VISSIM_ATTR_NO, nullptr, ok));
-        myElemData["name"].push_back(attrs.get<std::string>(VISSIM_ATTR_NAME, nullptr, ok, false));
-        std::string colorStr(attrs.get<std::string>(VISSIM_ATTR_COLOR, nullptr, ok));
+        myElemData["id"].push_back(attrs.get<std::string>(VISSIM_ATTR_NO, 0, ok));
+        myElemData["name"].push_back(attrs.get<std::string>(VISSIM_ATTR_NAME, 0, ok, false));
+        std::string colorStr(attrs.get<std::string>(VISSIM_ATTR_COLOR, 0, ok));
         for (int pos = (int)colorStr.size() - 2; pos > 0; pos -= 2) {
             colorStr.insert(pos, " ");
         }
@@ -490,7 +491,7 @@ NIImporter_Vissim::NIVissimXMLHandler_Fahrzeugklassendefinition::myStartElement(
     }
     if (element == VISSIM_TAG_INTOBJECTREF) {
         bool ok = true;
-        myElemData["types"].push_back(attrs.get<std::string>(VISSIM_ATTR_KEY, nullptr, ok));
+        myElemData["types"].push_back(attrs.get<std::string>(VISSIM_ATTR_KEY, 0, ok));
 
 
     }
@@ -504,7 +505,8 @@ NIImporter_Vissim::NIVissimXMLHandler_Fahrzeugklassendefinition::myEndElement(in
         std::vector<std::string> sCol_v(StringTokenizer(
                                             myElemData["color"].front(), " ").getVector());
         std::vector<int> myColorVector(sCol_v.size());
-        std::transform(sCol_v.begin(), sCol_v.end(), myColorVector.begin(), StringUtils::hexToInt);
+        std::transform(sCol_v.begin(), sCol_v.end(), myColorVector.begin(),
+                       (TplConvert::_strHex2int));
 
         color = RGBColor((unsigned char)myColorVector[0],
                          (unsigned char)myColorVector[1],
@@ -512,11 +514,11 @@ NIImporter_Vissim::NIVissimXMLHandler_Fahrzeugklassendefinition::myEndElement(in
                          (unsigned char)myColorVector[3]);
         std::vector<int> types;
         while (!myElemData["types"].empty()) {
-            types.push_back(StringUtils::toInt(myElemData["types"].front()));
+            types.push_back(TplConvert::_str2int(myElemData["types"].front()));
             myElemData["types"].pop_front();
         }
 
-        NIVissimVehTypeClass::dictionary(StringUtils::toInt(myElemData["id"].front()),
+        NIVissimVehTypeClass::dictionary(TplConvert::_str2int(myElemData["id"].front()),
                                          myElemData["name"].front(),
                                          color,
                                          types);
@@ -544,15 +546,15 @@ NIImporter_Vissim::NIVissimXMLHandler_Geschwindigkeitsverteilungsdefinition::myS
     myHierarchyLevel++;
     if (element == VISSIM_TAG_SPEED_DIST) {
         bool ok = true;
-        myElemData["id"].push_back(attrs.get<std::string>(VISSIM_ATTR_NO, nullptr, ok));
+        myElemData["id"].push_back(attrs.get<std::string>(VISSIM_ATTR_NO, 0, ok));
     }
 
     if (element == VISSIM_TAG_DATAPOINT) {
         bool ok = true;
         std::string sep(" ");
-        std::string posS(attrs.get<std::string>(VISSIM_ATTR_X, nullptr, ok));
+        std::string posS(attrs.get<std::string>(VISSIM_ATTR_X, 0, ok));
         posS += sep;
-        posS.append(attrs.get<std::string>(VISSIM_ATTR_FX, nullptr, ok));
+        posS.append(attrs.get<std::string>(VISSIM_ATTR_FX, 0, ok));
         myElemData["points"].push_back(posS);
 
     }
@@ -567,7 +569,7 @@ NIImporter_Vissim::NIVissimXMLHandler_Geschwindigkeitsverteilungsdefinition::myE
             std::vector<std::string> sPos_v(StringTokenizer(
                                                 myElemData["points"].front(), " ").getVector());
             myElemData["points"].pop_front();
-            points->add(StringUtils::toDouble(sPos_v[0]), StringUtils::toDouble(sPos_v[1]));
+            points->add(TplConvert::_str2double(sPos_v[0]), TplConvert::_str2double(sPos_v[1]));
         }
         DistributionCont::dictionary("speed", myElemData["id"].front(), points);
         myElemData.clear();
@@ -594,7 +596,7 @@ NIImporter_Vissim::NIVissimXMLHandler_VWunschentscheidungsdefinition::myStartEle
     myHierarchyLevel++;
     if (element == VISSIM_TAG_SPEED_DECISION) {
         bool ok = true;
-        myElemData["name"].push_back(attrs.get<std::string>(VISSIM_ATTR_NAME, nullptr, ok, false));
+        myElemData["name"].push_back(attrs.get<std::string>(VISSIM_ATTR_NAME, 0, ok, false));
         //FIXME: 2 vWunsch in the xml file, but only 1 of them is set???
     }
 
@@ -625,14 +627,14 @@ NIImporter_Vissim::NIVissimXMLHandler_Routenentscheidungsdefinition::myStartElem
     myHierarchyLevel++;
     if (element == VISSIM_TAG_DECISION_STATIC) {
         bool ok = true;
-        myElemData["startLink"].push_back(attrs.get<std::string>(VISSIM_ATTR_LINK, nullptr, ok));
-        myElemData["startPos"].push_back(attrs.get<std::string>(VISSIM_ATTR_POS, nullptr, ok));
+        myElemData["startLink"].push_back(attrs.get<std::string>(VISSIM_ATTR_LINK, 0, ok));
+        myElemData["startPos"].push_back(attrs.get<std::string>(VISSIM_ATTR_POS, 0, ok));
     }
     if (element == VISSIM_TAG_ROUTE_STATIC) {
         bool ok = true;
-        myElemData["destLink"].push_back(attrs.get<std::string>(VISSIM_ATTR_DESTLINK, nullptr, ok));
-        myElemData["destPos"].push_back(attrs.get<std::string>(VISSIM_ATTR_DESTPOS, nullptr, ok));
-        myElemData["id"].push_back(attrs.get<std::string>(VISSIM_ATTR_NO, nullptr, ok));
+        myElemData["destLink"].push_back(attrs.get<std::string>(VISSIM_ATTR_DESTLINK, 0, ok));
+        myElemData["destPos"].push_back(attrs.get<std::string>(VISSIM_ATTR_DESTPOS, 0, ok));
+        myElemData["id"].push_back(attrs.get<std::string>(VISSIM_ATTR_NO, 0, ok));
     }
     if (element == VISSIM_TAG_INTOBJECTREF) {
         // bool ok = true;
@@ -661,12 +663,12 @@ NIImporter_Vissim::NIVissimXMLHandler_ConflictArea::myStartElement(int element, 
     if (element == VISSIM_TAG_CA) {
         //parse all flows
         bool ok = true;
-        std::string status = attrs.get<std::string>(VISSIM_ATTR_STATUS, nullptr, ok);
+        std::string status = attrs.get<std::string>(VISSIM_ATTR_STATUS, 0, ok);
         //get only the conflict areas which were set in VISSIM
         if (status != "PASSIVE") {
-            NIVissimConflictArea::dictionary(attrs.get<int>(VISSIM_ATTR_NO, nullptr, ok),
-                                             attrs.get<std::string>(VISSIM_ATTR_LINK1, nullptr, ok),
-                                             attrs.get<std::string>(VISSIM_ATTR_LINK2, nullptr, ok),
+            NIVissimConflictArea::dictionary(attrs.get<int>(VISSIM_ATTR_NO, 0, ok),
+                                             attrs.get<std::string>(VISSIM_ATTR_LINK1, 0, ok),
+                                             attrs.get<std::string>(VISSIM_ATTR_LINK2, 0, ok),
                                              status);
         }
 
@@ -781,7 +783,7 @@ NIImporter_Vissim::VissimSingleTypeParser::parseAssignedVehicleTypes(
         return ret;
     }
     while (tmp != "DATAEND" && tmp != next) {
-        ret.push_back(StringUtils::toInt(tmp));
+        ret.push_back(TplConvert::_2int(tmp.c_str()));
         tmp = readEndSecure(from);
     }
     return ret;
@@ -800,7 +802,7 @@ NIImporter_Vissim::VissimSingleTypeParser::readExtEdgePointDef(
     while (tag != "bei") {
         tag = readEndSecure(from);
         if (tag != "bei") {
-            int lane = StringUtils::toInt(tag);
+            int lane = TplConvert::_2int(tag.c_str());
             lanes.push_back(lane - 1);
         }
     }
@@ -894,7 +896,7 @@ NIImporter_Vissim::~NIImporter_Vissim() {
     NIVissimConnection::clearDict();
     NIVissimConflictArea::clearDict();
     for (ToParserMap::iterator i = myParsers.begin(); i != myParsers.end(); i++) {
-        delete (*i).second;
+        delete(*i).second;
     }
 }
 

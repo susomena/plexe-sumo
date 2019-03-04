@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_IDM.h
 /// @author  Tobias Mayer
 /// @author  Daniel Krajzewicz
@@ -16,13 +8,28 @@
 ///
 // The Intelligent Driver Model (IDM) car-following model
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSCFMODEL_IDM_H
 #define MSCFMODEL_IDM_H
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSCFModel.h"
 #include <microsim/MSLane.h>
@@ -41,10 +48,16 @@
 class MSCFModel_IDM : public MSCFModel {
 public:
     /** @brief Constructor
-     *  @param[in] vtype the type for which this model is built and also the parameter object to configure this model
-     *  @param[in] idmm Wether IDM or IDMM shall be built
+     * @param[in] accel The maximum acceleration
+     * @param[in] decel The maximum deceleration
+     * @param[in] emergencyDecel The maximum emergency deceleration
+     * @param[in] apparentDecel The deceleration as expected by others
+     * @param[in] headwayTime the headway gap
+     * @param[in] delta a model constant
+     * @param[in] internalStepping internal time step size
      */
-    MSCFModel_IDM(const MSVehicleType* vtype, bool idmm);
+    MSCFModel_IDM(const MSVehicleType* vtype, double accel, double decel, double emergencyDecel, double apparentDecel,
+                  double headwayTime, double delta, double internalStepping);
 
 
     /** @brief Constructor
@@ -74,7 +87,7 @@ public:
      * @param[in] vPos The possible velocity
      * @return The velocity after applying interactions with stops and lane change model influences
      */
-    double finalizeSpeed(MSVehicle* const veh, double vPos) const;
+    double moveHelper(MSVehicle* const veh, double vPos) const;
 
 
     /** @brief Computes the vehicle's safe speed (no dawdling)
@@ -85,7 +98,7 @@ public:
      * @return EGO's safe speed
      * @see MSCFModel::ffeV
      */
-    double followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel, const MSVehicle* const pred = 0) const;
+    double followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel) const;
 
 
     /** @brief Computes the vehicle's safe speed for approaching a non-moving obstacle (no dawdling)
@@ -95,7 +108,7 @@ public:
      * @see MSCFModel::ffeS
      * @todo generic Interface, models can call for the values they need
      */
-    double stopSpeed(const MSVehicle* const veh, const double speed, double gap) const;
+    double stopSpeed(const MSVehicle* const veh, const double speed, double gap2pred) const;
 
 
     /** @brief Returns the maximum gap at which an interaction between both vehicles occurs
@@ -107,30 +120,8 @@ public:
      * @todo evaluate signature
      * @see MSCFModel::interactionGap
      */
-    double interactionGap(const MSVehicle* const, double vL) const;
+    double interactionGap(const MSVehicle* const , double vL) const;
 
-
-    /** @brief Computes the vehicle's safe speed (no dawdling)
-     * This method is used during the insertion stage. Whereas the method
-     * followSpeed returns the desired speed which may be lower than the safe
-     * speed, this method only considers safety constraints
-     *
-     * Returns the velocity of the vehicle in dependence to the vehicle's and its leader's values and the distance between them.
-     * @param[in] veh The vehicle (EGO)
-     * @param[in] speed The vehicle's speed
-     * @param[in] gap2pred The (netto) distance to the LEADER
-     * @param[in] predSpeed The speed of LEADER
-     * @return EGO's safe speed
-     */
-    double insertionFollowSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel) const;
-
-
-    /** @brief Returns the minimum gap to reserve if the leader is braking at maximum (>=0)
-      * @param[in] speed EGO's speed
-      * @param[in] leaderSpeed LEADER's speed
-      * @param[in] leaderMaxDecel LEADER's max. deceleration rate
-      */
-    double getSecureGap(const double speed, const double leaderSpeed, const double leaderMaxDecel) const;
 
     /** @brief Returns the model's name
      * @return The model's name
@@ -173,9 +164,6 @@ private:
 
 
 private:
-    /// @brief whether the model is IDMM or IDM
-    const bool myIDMM;
-
     /// @brief The IDM delta exponent
     const double myDelta;
 

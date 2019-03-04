@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUILoadThread.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Class describing the thread that performs the loading of a simulation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <ctime>
@@ -32,7 +39,7 @@
 #include <utils/options/OptionsCont.h>
 #include <utils/options/Option.h>
 #include <utils/options/OptionsIO.h>
-#include <utils/foxtools/FXSynchQue.h>
+#include <utils/foxtools/MFXEventQue.h>
 #include <utils/gui/events/GUIEvent_Message.h>
 #include <utils/gui/windows/GUIAppEnum.h>
 #include <utils/gui/globjects/GUIGlObjectStorage.h>
@@ -52,20 +59,24 @@
 #include <microsim/MSGlobals.h>
 #include <microsim/MSFrame.h>
 #include <microsim/MSRouteHandler.h>
-#include <mesogui/GUIMEVehicleControl.h>
-#include <traci-server/TraCIServer.h>
-#include "TraCIServerAPI_GUI.h"
 #include "GUIApplicationWindow.h"
 #include "GUILoadThread.h"
 #include "GUIGlobals.h"
 #include "GUIEvent_SimulationLoaded.h"
+
+#include <mesogui/GUIMEVehicleControl.h>
+
+#ifndef NO_TRACI
+#include <traci-server/TraCIServer.h>
+#include "TraCIServerAPI_GUI.h"
+#endif
 
 
 // ===========================================================================
 // member method definitions
 // ===========================================================================
 GUILoadThread::GUILoadThread(FXApp* app, GUIApplicationWindow* mw,
-                             FXSynchQue<GUIEvent*>& eq, FXEX::FXThreadEvent& ev)
+                             MFXEventQue<GUIEvent*>& eq, FXEX::FXThreadEvent& ev)
     : FXSingleEventThread(app, mw), myParent(mw), myEventQue(eq),
       myEventThrow(ev) {
     myErrorRetriever = new MsgRetrievingFunction<GUILoadThread>(this, &GUILoadThread::retrieveMessage, MsgHandler::MT_ERROR);
@@ -112,7 +123,7 @@ GUILoadThread::run() {
                 myFile = oc.getString("net-file");
                 myLoadNet = true;
             }
-            myEventQue.push_back(new GUIEvent_Message("Loading '" + myFile + "'."));
+            myEventQue.add(new GUIEvent_Message("Loading '" + myFile + "'."));
             myEventThrow.signal();
             myParent->addRecentFile(FXPath::absolute(myFile.c_str()), myLoadNet);
         }
@@ -143,16 +154,18 @@ GUILoadThread::run() {
         // the options are not valid but maybe we want to quit
         GUIGlobals::gQuitOnEnd = oc.getBool("quit-on-end");
         MsgHandler::getErrorInstance()->inform("Quitting (on error).", false);
-        submitEndAndCleanup(nullptr, 0, 0);
+        submitEndAndCleanup(0, 0, 0);
         return 0;
     }
 
     // initialise global settings
-    NLBuilder::initRandomness();
+    RandHelper::initRandGlobal();
+    RandHelper::initRandGlobal(MSRouteHandler::getParsingRNG());
+    RandHelper::initRandGlobal(MSDevice::getEquipmentRNG());
     MSFrame::setMSGlobals(oc);
     GUITexturesHelper::allowTextures(!oc.getBool("disable-textures"));
 
-    MSVehicleControl* vehControl = nullptr;
+    MSVehicleControl* vehControl = 0;
     GUIVisualizationSettings::UseMesoSim = MSGlobals::gUseMesoSim;
     if (MSGlobals::gUseMesoSim) {
         vehControl = new GUIMEVehicleControl();
@@ -160,23 +173,25 @@ GUILoadThread::run() {
         vehControl = new GUIVehicleControl();
     }
 
-    GUINet* net = nullptr;
+    GUINet* net = 0;
     SUMOTime simStartTime = 0;
     SUMOTime simEndTime = 0;
     std::vector<std::string> guiSettingsFiles;
     bool osgView = false;
-    GUIEdgeControlBuilder* eb = nullptr;
+    GUIEdgeControlBuilder* eb = 0;
     try {
         net = new GUINet(
             vehControl,
             new GUIEventControl(),
             new GUIEventControl(),
             new GUIEventControl());
+#ifndef NO_TRACI
         // need to init TraCI-Server before loading routes to catch VEHICLE_STATE_BUILT
         std::map<int, TraCIServer::CmdExecutor> execs;
-        execs[libsumo::CMD_GET_GUI_VARIABLE] = &TraCIServerAPI_GUI::processGet;
-        execs[libsumo::CMD_SET_GUI_VARIABLE] = &TraCIServerAPI_GUI::processSet;
+        execs[CMD_GET_GUI_VARIABLE] = &TraCIServerAPI_GUI::processGet;
+        execs[CMD_SET_GUI_VARIABLE] = &TraCIServerAPI_GUI::processSet;
         TraCIServer::openSocket(execs);
+#endif
 
         eb = new GUIEdgeControlBuilder();
         GUIDetectorBuilder db(*net);
@@ -198,15 +213,6 @@ GUILoadThread::run() {
 #ifdef HAVE_OSG
             osgView = oc.getBool("osg-view");
 #endif
-            if (oc.isSet("edgedata-files")) {
-                if (!oc.isUsableFileList("edgedata-files")) {
-                    WRITE_ERROR("Could not load edgedata-files '" + oc.getString("edgedata-files") + "'");
-                } else {
-                    for (const std::string& file : oc.getStringVector("edgedata-files")) {
-                        net->loadEdgeData(file);
-                    }
-                }
-            }
         }
     } catch (ProcessError& e) {
         if (std::string(e.what()) != std::string("Process Error") && std::string(e.what()) != std::string("")) {
@@ -214,20 +220,19 @@ GUILoadThread::run() {
         }
         MsgHandler::getErrorInstance()->inform("Quitting (on error).", false);
         delete net;
-        net = nullptr;
+        net = 0;
 #ifndef _DEBUG
     } catch (std::exception& e) {
         WRITE_ERROR(e.what());
         delete net;
-        net = nullptr;
+        net = 0;
 #endif
     }
-    if (net == nullptr) {
+    if (net == 0) {
         MSNet::clearAll();
     }
     delete eb;
-    submitEndAndCleanup(net, simStartTime, simEndTime, guiSettingsFiles, osgView,
-                        oc.getBool("registry-viewport"));
+    submitEndAndCleanup(net, simStartTime, simEndTime, guiSettingsFiles, osgView);
     return 0;
 }
 
@@ -237,15 +242,14 @@ GUILoadThread::submitEndAndCleanup(GUINet* net,
                                    const SUMOTime simStartTime,
                                    const SUMOTime simEndTime,
                                    const std::vector<std::string>& guiSettingsFiles,
-                                   const bool osgView,
-                                   const bool viewportFromRegistry) {
+                                   const bool osgView) {
     // remove message callbacks
     MsgHandler::getErrorInstance()->removeRetriever(myErrorRetriever);
     MsgHandler::getWarningInstance()->removeRetriever(myWarningRetriever);
     MsgHandler::getMessageInstance()->removeRetriever(myMessageRetriever);
     // inform parent about the process
-    GUIEvent* e = new GUIEvent_SimulationLoaded(net, simStartTime, simEndTime, myTitle, guiSettingsFiles, osgView, viewportFromRegistry);
-    myEventQue.push_back(e);
+    GUIEvent* e = new GUIEvent_SimulationLoaded(net, simStartTime, simEndTime, myTitle, guiSettingsFiles, osgView);
+    myEventQue.add(e);
     myEventThrow.signal();
 }
 
@@ -255,7 +259,7 @@ GUILoadThread::loadConfigOrNet(const std::string& file, bool isNet) {
     myFile = file;
     myLoadNet = isNet;
     if (myFile != "") {
-        OptionsIO::setArgs(0, nullptr);
+        OptionsIO::setArgs(0, 0);
     }
     start();
 }
@@ -264,7 +268,7 @@ GUILoadThread::loadConfigOrNet(const std::string& file, bool isNet) {
 void
 GUILoadThread::retrieveMessage(const MsgHandler::MsgType type, const std::string& msg) {
     GUIEvent* e = new GUIEvent_Message(type, msg);
-    myEventQue.push_back(e);
+    myEventQue.add(e);
     myEventThrow.signal();
 }
 

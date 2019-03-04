@@ -1,9 +1,6 @@
 # the standard structure for model tests
 circle
 
-# the standard structure for model tests
-circle_actionsteplength
-
 # idm model test
 idm
 
@@ -24,11 +21,3 @@ wiedemann
 
 # the standard structure for model tests
 kraussX
-ACC
-CACC
-
-# drive in circles with overtaking
-circle_two_lanes
-
-# drive in circles with overtaking
-circle_two_lanes_actionsteplength

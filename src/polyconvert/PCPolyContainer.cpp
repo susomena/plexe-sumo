@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PCPolyContainer.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,12 +9,27 @@
 ///
 // A storage for loaded polygons and pois
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2005-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <algorithm>
@@ -115,17 +122,17 @@ PCPolyContainer::save(const std::string& file, bool useGeo) {
         GeoConvHelper::writeLocation(out);
     }
     // write polygons
-    for (auto i : myPolygons) {
-        i.second->writeXML(out, useGeo);
+    for (std::map<std::string, SUMOPolygon*>::const_iterator i = myPolygons.getMyMap().begin(); i != myPolygons.getMyMap().end(); ++i) {
+        i->second->writeXML(out, useGeo);
     }
     // write pois
     const double zOffset = OptionsCont::getOptions().getFloat("poi-layer-offset");
-    for (auto i : myPOIs) {
-        std::map<std::string, LanePos>::const_iterator it = myLanePosPois.find(i.first);
+    for (std::map<std::string, PointOfInterest*>::const_iterator i = myPOIs.getMyMap().begin(); i != myPOIs.getMyMap().end(); ++i) {
+        std::map<std::string, LanePos>::const_iterator it = myLanePosPois.find(i->first);
         if (it == myLanePosPois.end()) {
-            i.second->writeXML(out, useGeo, zOffset);
+            i->second->writeXML(out, useGeo, zOffset);
         } else {
-            i.second->writeXML(out, useGeo, zOffset, it->second.laneID, it->second.pos, it->second.posLat);
+            i->second->writeXML(out, useGeo, zOffset, it->second.laneID, it->second.pos, it->second.posLat);
         }
     }
     out.close();
@@ -134,7 +141,13 @@ PCPolyContainer::save(const std::string& file, bool useGeo) {
 
 void PCPolyContainer::writeDlrTDPHeader(OutputDevice& device, const OptionsCont& oc) {
     // XXX duplicate of NWWriter_DlrNavteq::writeHeader()
-    device << "# Format matches Extraction version: V6.5 \n";
+    const std::string OUTPUT_VERSION = "6.5"; // XXX duplicate of NWWriter_DlrNavteq OUTPUT_VERSION
+    time_t rawtime;
+    time(&rawtime);
+    char buffer [80];
+    strftime(buffer, 80, "on %c", localtime(&rawtime));
+    device << "# Generated " << buffer << " by " << oc.getFullName() << "\n";
+    device << "# Format matches Extraction version: V" << OUTPUT_VERSION << " \n";
     std::stringstream tmp;
     oc.writeConfiguration(tmp, true, false, false);
     tmp.seekg(std::ios_base::beg);
@@ -160,14 +173,14 @@ PCPolyContainer::saveDlrTDP(const std::string& prefix) {
     // write format specifier
     out << "# ID\tCITY\tTYPE\tNAME\tgeo_x\tgeo_y\n";
     int id = 0;
-    for (const auto& i : myPOIs) {
-        Position pos(*i.second);
+    for (std::map<std::string, PointOfInterest*>::const_iterator i = myPOIs.getMyMap().begin(); i != myPOIs.getMyMap().end(); ++i) {
+        Position pos(*(i->second));
         gch.cartesian2geo(pos);
         pos.mul(geoScale);
         out << id << "\t";
         out << "" << "\t";
-        out << i.second->getShapeType() << "\t";
-        out << i.first << "\t";
+        out << i->second->getType() << "\t";
+        out << i->first << "\t";
         out << pos.x() << "\t";
         out << pos.y() << "\t";
         id++;
@@ -180,13 +193,13 @@ PCPolyContainer::saveDlrTDP(const std::string& prefix) {
     // write format specifier
     out2 << "# ID\tCITY\tTYPE\tNAME\tgeo_x1\tgeo_y1\t[geo_x2 geo_y2 ...]\n";
     id = 0;
-    for (const auto& i : myPolygons) {
+    for (std::map<std::string, SUMOPolygon*>::const_iterator i = myPolygons.getMyMap().begin(); i != myPolygons.getMyMap().end(); ++i) {
         out2 << id << "\t";
         out2 << "" << "\t";
-        out2 << i.second->getShapeType() << "\t";
-        out2 << i.first << "\t";
+        out2 << i->second->getType() << "\t";
+        out2 << i->first << "\t";
 
-        PositionVector shape(i.second->getShape());
+        PositionVector shape(i->second->getShape());
         for (int i = 0; i < (int) shape.size(); i++) {
             Position pos = shape[i];
             gch.cartesian2geo(pos);

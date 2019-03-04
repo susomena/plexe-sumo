@@ -1,11 +1,12 @@
-# guess road acesses for rail stop
-rail_stop_road_access
-
 # direction of bus stops imported correctly based on pt lines
 bus_stop_direction_from_pt_lines
 
-# mport ptlines and handle network modification options
-ptline_network_modification
+# direction of bus stops imported (guessed) correctly
+bus_stop_direction_platform_tagged_as_highway
+
+# pt stop relation refers to a node for which no pt stop position is defined 
+# (see also #3159)
+bus_stop_direction_inconsisten_pt_stop_relation
 
 # direction of bus stops imported (guessed) correctly
 bus_stop_direction_no_platforms
@@ -26,15 +27,13 @@ bus_stop_direction_platform_as_way
 # import bus stops
 bus_stop_position
 
-# import bus stops
-bus_stop_position_numerical_ids
-
 # Area around the ITS in Berlin, Adlershof (13.52494,52.42582,13.53625,52.43026)
 adlershof_dlr
 adlershof_dlr_discard-tls
 
 # Area around the ITS in Berlin, Adlershof (13.52494,52.42582,13.53625,52.43026)
 adlershof_orig_names
+eichstaett
 
 # In this scenario, two nodes with the same coordinates start the shape of an edge. The scenario also tests traffic signals and isolated roads.
 duplicate_nodes
@@ -90,19 +89,3 @@ max_segment_length
 
 # see #3412
 difficult_geometry
-
-# see #3715
-complex_intermodal_intersection
-
-# use osm types for determining FRC (functional road class)
-dlr_navteq
-
-# test import of geo-referenced lefthand network
-geo_from_osm
-
-# a complex example where bypass edges should not be joined
-bypass
-
-# creating opposite-direction edge due to sidewalk information
-sidewalks
-bugs

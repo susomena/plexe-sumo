@@ -1,18 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_Rail.h
 /// @author  Gregor L\"ammel
 /// @date    Tue, 08 Feb 2017
 /// @version $Id$
 ///
 // <description missing>
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef SUMO_MSCFMODEL_RAIL_H
 #define SUMO_MSCFMODEL_RAIL_H
@@ -25,18 +28,18 @@
 class MSCFModel_Rail : public MSCFModel {
 
 public:
-    /** @brief Constructor
-     *  @param[in] vtype the type for which this model is built and also the parameter object to configure this model
-     */
-    MSCFModel_Rail(const MSVehicleType* vtype);
 
     double followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed,
-                       double predMaxDecel, const MSVehicle* const pred = 0) const;
+                       double predMaxDecel) const;
 
     virtual int getModelID() const;
 
     virtual MSCFModel* duplicate(const MSVehicleType* vtype) const;
 
+    /** @brief Constructor
+     * @param[in] trainType The train type
+     */
+    MSCFModel_Rail(const MSVehicleType* vtype, std::string trainType);
 
 
     virtual ~MSCFModel_Rail();
@@ -45,13 +48,11 @@ public:
 
     virtual double minNextSpeed(double speed, const MSVehicle* const veh) const;
 
-    virtual double minNextSpeedEmergency(double speed, const MSVehicle* const veh = 0) const;
-
     double getSpeedAfterMaxDecel(double v) const;
 
     MSCFModel::VehicleVariables* createVehicleVariables() const;
 
-    double finalizeSpeed(MSVehicle* const veh, double vPos) const;
+    double moveHelper(MSVehicle* const veh, double vPos) const;
 
     double freeSpeed(const MSVehicle* const veh, double speed, double seen, double maxSpeed,
                      const bool onInsertion) const;

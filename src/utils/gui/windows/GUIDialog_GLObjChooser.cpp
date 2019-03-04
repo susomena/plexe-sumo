@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIDialog_GLObjChooser.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Class for the window that allows to choose a street, junction or vehicle
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -35,6 +42,7 @@
 #include <utils/gui/div/GUIGlobalSelection.h>
 #include <utils/gui/div/GUIDesigns.h>
 #include <utils/gui/globjects/GUIGlObject_AbstractAdd.h>
+#include <guisim/GUIVehicle.h>
 #include "GUIDialog_GLObjChooser.h"
 
 
@@ -58,35 +66,54 @@ FXIMPLEMENT(GUIDialog_GLObjChooser, FXMainWindow, GUIDialog_GLObjChooserMap, ARR
 // ===========================================================================
 // method definitions
 // ===========================================================================
-GUIDialog_GLObjChooser::GUIDialog_GLObjChooser(GUIGlChildWindow* parent, FXIcon* icon, const FXString& title, const std::vector<GUIGlID>& ids, GUIGlObjectStorage& /*glStorage*/) :
-    FXMainWindow(parent->getApp(), title, icon, nullptr, GUIDesignChooserDialog),
+GUIDialog_GLObjChooser::GUIDialog_GLObjChooser(
+    GUIGlChildWindow* parent,
+    FXIcon* icon,
+    const FXString& title,
+    const std::vector<GUIGlID>& ids,
+    GUIGlObjectStorage& glStorage):
+    FXMainWindow(parent->getApp(), title, icon, NULL, DECOR_ALL, 20, 20, 300, 300),
     myParent(parent) {
-    FXHorizontalFrame* hbox = new FXHorizontalFrame(this, GUIDesignAuxiliarFrame);
+    FXHorizontalFrame* hbox = new FXHorizontalFrame(this, LAYOUT_FILL_X | LAYOUT_FILL_Y, 0, 0, 0, 0, 0, 0, 0, 0);
     // build the list
-    FXVerticalFrame* layoutLeft = new FXVerticalFrame(hbox, GUIDesignChooserLayoutLeft);
-    myTextEntry = new FXTextField(layoutLeft, 0, this, MID_CHOOSER_TEXT, GUIDesignChooserTextField);
-    FXVerticalFrame* layoutList = new FXVerticalFrame(layoutLeft, GUIDesignChooserLayoutList);
-    myList = new FXList(layoutList, this, MID_CHOOSER_LIST, GUIDesignChooserListSingle);
-    refreshList(ids);
-    // build the buttons
-    FXVerticalFrame* layoutRight = new FXVerticalFrame(hbox, GUIDesignChooserLayoutRight);
-    myCenterButton = new FXButton(layoutRight, "Center\t\t", GUIIconSubSys::getIcon(ICON_RECENTERVIEW), this, MID_CHOOSER_CENTER, GUIDesignChooserButtons);
-    myTrackButton = new FXButton(layoutRight, "Track\t\t", GUIIconSubSys::getIcon(ICON_RECENTERVIEW), this, MID_CHOOSER_TRACK, GUIDesignChooserButtons);
-    // only enable Track Button if we're locating vehicles
-    if (title.text() != std::string("Vehicle Chooser")) {
-        myTrackButton->disable();
-        myTrackButton->hide();
+    FXVerticalFrame* layout1 = new FXVerticalFrame(hbox, LAYOUT_FILL_X | LAYOUT_FILL_Y | LAYOUT_TOP, 0, 0, 0, 0, 4, 4, 4, 4);
+    myTextEntry = new FXTextField(layout1, 0, this, MID_CHOOSER_TEXT, LAYOUT_FILL_X | FRAME_THICK | FRAME_SUNKEN);
+    FXVerticalFrame* style1 = new FXVerticalFrame(layout1, LAYOUT_FILL_X | LAYOUT_FILL_Y | LAYOUT_TOP | FRAME_THICK | FRAME_SUNKEN, 0, 0, 0, 0, 0, 0, 0, 0);
+    myList = new FXList(style1, this, MID_CHOOSER_LIST, LAYOUT_FILL_X | LAYOUT_FILL_Y | LIST_SINGLESELECT | FRAME_SUNKEN | FRAME_THICK);
+    for (std::vector<GUIGlID>::const_iterator i = ids.begin(); i != ids.end(); ++i) {
+        GUIGlObject* o = glStorage.getObjectBlocking(*i);
+        if (o == 0) {
+            continue;
+        }
+        const std::string& name = o->getMicrosimID();
+        bool selected = myParent->isSelected(o);
+        FXIcon* icon = selected ? GUIIconSubSys::getIcon(ICON_FLAG) : 0;
+        myIDs.insert(o->getGlID());
+        myList->appendItem(name.c_str(), icon, (void*) & (*myIDs.find(o->getGlID())));
+        glStorage.unblockObject(*i);
     }
-    new FXHorizontalSeparator(layoutRight, GUIDesignHorizontalSeparator);
-    new FXButton(layoutRight, "&Hide Unselected\t\t", GUIIconSubSys::getIcon(ICON_FLAG), this, MID_CHOOSER_FILTER, GUIDesignChooserButtons);
-    new FXButton(layoutRight, "&Select/deselect\tSelect/deselect current object\t", GUIIconSubSys::getIcon(ICON_FLAG), this, MID_CHOOSEN_INVERT, GUIDesignChooserButtons);
-    new FXHorizontalSeparator(layoutRight, GUIDesignHorizontalSeparator);
-    new FXButton(layoutRight, "&Close\t\t", GUIIconSubSys::getIcon(ICON_NO), this, MID_CANCEL, GUIDesignChooserButtons);
+    // build the buttons
+    FXVerticalFrame* layout = new FXVerticalFrame(hbox, LAYOUT_TOP, 0, 0, 0, 0, 4, 4, 4, 4);
+    myCenterButton = new FXButton(layout, "Center\t\t", GUIIconSubSys::getIcon(ICON_RECENTERVIEW),
+                                  this, MID_CHOOSER_CENTER, ICON_BEFORE_TEXT | LAYOUT_FILL_X | FRAME_THICK | FRAME_RAISED,
+                                  0, 0, 0, 0, 4, 4, 4, 4);
+    if (title.text() == std::string("Vehicle Chooser"))
+        myTrackButton = new FXButton(layout, "Track\t\t", GUIIconSubSys::getIcon(ICON_RECENTERVIEW),
+                                     this, MID_CHOOSER_TRACK, ICON_BEFORE_TEXT | LAYOUT_FILL_X | FRAME_THICK | FRAME_RAISED,
+                                     0, 0, 0, 0, 4, 4, 4, 4);
+    new FXHorizontalSeparator(layout, GUIDesignHorizontalSeparator);
+    new FXButton(layout, "&Hide Unselected\t\t", GUIIconSubSys::getIcon(ICON_FLAG),
+                 this, MID_CHOOSER_FILTER, ICON_BEFORE_TEXT | LAYOUT_FILL_X | FRAME_THICK | FRAME_RAISED,
+                 0, 0, 0, 0, 4, 4, 4, 4);
+    new FXButton(layout, "&Select/deselect\tSelect/deselect current object\t", GUIIconSubSys::getIcon(ICON_FLAG),
+                 this, MID_CHOOSEN_INVERT, ICON_BEFORE_TEXT | LAYOUT_FILL_X | FRAME_THICK | FRAME_RAISED,
+                 0, 0, 0, 0, 4, 4, 4, 4);
+    new FXHorizontalSeparator(layout, GUIDesignHorizontalSeparator);
+    new FXButton(layout, "&Close\t\t", GUIIconSubSys::getIcon(ICON_NO),
+                 this, MID_CANCEL, ICON_BEFORE_TEXT | LAYOUT_FILL_X | FRAME_THICK | FRAME_RAISED,
+                 0, 0, 0, 0, 4, 4, 4, 4);
 
     myParent->getParent()->addChild(this);
-    // create and show dialog
-    create();
-    show();
 }
 
 
@@ -121,13 +148,13 @@ GUIDialog_GLObjChooser::onCmdTrack(FXObject*, FXSelector, void*) {
         GUIGlID id = *static_cast<GUIGlID*>(myList->getItemData(selected));
         GUIGlObject* o = GUIGlObjectStorage::gIDStorage.getObjectBlocking(id);
         if (o->getType() == GLO_VEHICLE) {
-            myParent->getView()->startTrack(o->getGlID());
+            GUIVehicle *v = (GUIVehicle *)o;
+            myParent->getView()->startTrack(v->getGlID());
         }
         GUIGlObjectStorage::gIDStorage.unblockObject(id);
     }
     return 1;
 }
-
 
 long
 GUIDialog_GLObjChooser::onCmdClose(FXObject*, FXSelector, void*) {
@@ -144,7 +171,6 @@ GUIDialog_GLObjChooser::onChgText(FXObject*, FXSelector, void*) {
             myList->deselectItem(myList->getCurrentItem());
         }
         myCenterButton->disable();
-        myTrackButton->disable();
         return 1;
     }
     myList->deselectItem(myList->getCurrentItem());
@@ -152,7 +178,6 @@ GUIDialog_GLObjChooser::onChgText(FXObject*, FXSelector, void*) {
     myList->selectItem(id);
     myList->setCurrentItem(id, true);
     myCenterButton->enable();
-    myTrackButton->enable();
     return 1;
 }
 
@@ -173,7 +198,7 @@ GUIDialog_GLObjChooser::onListKeyPress(FXObject*, FXSelector, void* ptr) {
     FXEvent* event = (FXEvent*)ptr;
     switch (event->code) {
         case KEY_Return:
-            onCmdText(nullptr, 0, nullptr);
+            onCmdText(0, 0, 0);
             break;
         default:
             break;
@@ -186,49 +211,33 @@ long
 GUIDialog_GLObjChooser::onCmdFilter(FXObject*, FXSelector, void*) {
     FXIcon* flag = GUIIconSubSys::getIcon(ICON_FLAG);
     std::vector<GUIGlID> selectedGlIDs;
+    std::vector<FXString> selectedMicrosimIDs;
     const int numItems = myList->getNumItems();
     for (int i = 0; i < numItems; i++) {
         const GUIGlID glID = *static_cast<GUIGlID*>(myList->getItemData(i));
         if (myList->getItemIcon(i) == flag) {
             selectedGlIDs.push_back(glID);
+            selectedMicrosimIDs.push_back(myList->getItemText(i));
         }
     }
-    refreshList(selectedGlIDs);
-    return 1;
-}
-
-std::string
-GUIDialog_GLObjChooser::getObjectName(GUIGlObject* o) const {
-    return o->getMicrosimID();
-}
-
-void
-GUIDialog_GLObjChooser::refreshList(const std::vector<GUIGlID>& ids) {
     myList->clearItems();
-    for (auto i : ids) {
-        GUIGlObject* o = GUIGlObjectStorage::gIDStorage.getObjectBlocking(i);
-        if (o == nullptr) {
-            continue;
-        }
-        const std::string& name = getObjectName(o);
-        bool selected = myParent->isSelected(o);
-        FXIcon* icon = selected ? GUIIconSubSys::getIcon(ICON_FLAG) : nullptr;
-        myIDs.insert(o->getGlID());
-        myList->appendItem(name.c_str(), icon, (void*) & (*myIDs.find(o->getGlID())));
-        GUIGlObjectStorage::gIDStorage.unblockObject(i);
+    const int numSelected = (const int)selectedGlIDs.size();
+    for (int i = 0; i < numSelected; i++) {
+        myList->appendItem(selectedMicrosimIDs[i], flag, (void*) & (*myIDs.find(selectedGlIDs[i])));
     }
     myList->update();
+    return 1;
 }
-
 
 long
 GUIDialog_GLObjChooser::onCmdToggleSelection(FXObject*, FXSelector, void*) {
     FXIcon* flag = GUIIconSubSys::getIcon(ICON_FLAG);
     int i = myList->getCurrentItem();
     if (i >= 0) {
-        toggleSelection(i);
+        GUIGlID* glID = static_cast<GUIGlID*>(myList->getItemData(i));
+        gSelected.toggleSelection(*glID);
         if (myList->getItemIcon(i) == flag) {
-            myList->setItemIcon(i, nullptr);
+            myList->setItemIcon(i, 0);
         } else {
             myList->setItemIcon(i, flag);
         }
@@ -237,15 +246,6 @@ GUIDialog_GLObjChooser::onCmdToggleSelection(FXObject*, FXSelector, void*) {
     myParent->getView()->update();
     return 1;
 }
-
-
-void
-GUIDialog_GLObjChooser::toggleSelection(int listIndex) {
-    GUIGlID* glID = static_cast<GUIGlID*>(myList->getItemData(listIndex));
-    gSelected.toggleSelection(*glID);
-}
-
-
 
 
 /****************************************************************************/

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NLTriggerBuilder.h
 /// @author  Daniel Krajzewicz
 /// @author  Tino Morenz
@@ -18,6 +10,17 @@
 ///
 // Builds trigger objects for microsim
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NLTriggerBuilder_h
 #define NLTriggerBuilder_h
 
@@ -25,7 +28,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -153,8 +160,7 @@ public:
                                   const std::string& id, const std::vector<std::string>& lines,
                                   MSLane* lane, double frompos, double topos,
                                   unsigned int capacity,
-                                  double width, double length, double angle, const std::string& name,
-                                  bool onRoad);
+                                  double width, double length, double angle);
 
 
     /** @brief Add a lot entry to current parking area
@@ -204,12 +210,6 @@ public:
      * @exception InvalidArgument If the current parking area is 0
      */
     virtual void endParkingArea();
-
-    /** @brief End a stopping place
-     *
-     * @exception InvalidArgument If the current stopping place is 0
-     */
-    virtual void endStoppingPlace();
 
 
     /** @brief Parses his values and builds a charging station
@@ -274,23 +274,23 @@ protected:
     virtual void buildStoppingPlace(MSNet& net, std::string id, std::vector<std::string> lines, MSLane* lane,
                                     double frompos, double topos, const SumoXMLTag element, std::string string);
 
-    /** @brief Builds a charging station
+    /** @brief Builds a charging Station
      *
-     * Simply calls the MSChargingStation constructor and adds the result to the network.
+     * Simply calls the MSBusStop constructor.
      *
-     * @param[in] net The net the charging station belongs to
-     * @param[in] id The id of the charging station
-     * @param[in] lane The lane the charging station is placed on
-     * @param[in] frompos Begin position of the charging station on the lane
-     * @param[in] topos End position of the charging station on the lane
-     * @param[in] chargingPower energy charged in every timeStep
-     * @param[in] efficiency efficiency of the charge
-     * @param[in] chargeInTransit enable or disable charge in transit
-     * @param[in] chargeDelay delay in the charge
-     * @exception InvalidArgument If the charging station can not be added to the net (is duplicate)
+     * @param[in] net The net the charging Station belongs to
+     * @param[in] id The id of the charging Station
+     * @param[in] lane The lane the charging Station is placed on
+     * @param[in] frompos Begin position of the charging Station on the lane
+     * @param[in] topos End position of the charging Station on the lane
+     * @param[in] chargingPower
+     * @param[in] efficiency
+     * @param[in] chargeInTransit
+     * @param[in] ChargeDelay
+     * @exception InvalidArgument If the charging Station can not be added to the net (is duplicate)
      */
-    virtual void buildChargingStation(MSNet& net, const std::string& id, MSLane* lane, double frompos, double topos, const std::string& name,
-                                      double chargingPower, double efficiency, bool chargeInTransit, double chargeDelay);
+    virtual void buildChargingStation(MSNet& net, const std::string& id, MSLane* lane, double frompos, double topos,
+                                      double chargingPower, double efficiency, bool chargeInTransit, int ChargeDelay);
 
     /** @brief builds a microscopic calibrator
      *
@@ -337,9 +337,7 @@ protected:
      */
     virtual MSTriggeredRerouter* buildRerouter(MSNet& net,
             const std::string& id, MSEdgeVector& edges,
-            double prob, const std::string& file, bool off,
-            SUMOTime timeThreshold,
-            const std::string& vTypes);
+            double prob, const std::string& file, bool off);
     //@}
 
 

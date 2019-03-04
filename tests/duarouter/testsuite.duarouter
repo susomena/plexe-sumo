@@ -1,6 +1,3 @@
-# testing meta processing
-meta
-
 # Testing trip processing
 trips
 
@@ -24,6 +21,9 @@ vclasses
 
 # testing some additional options
 function
+
+# testing meta processing
+meta
 
 # testing error input
 errors

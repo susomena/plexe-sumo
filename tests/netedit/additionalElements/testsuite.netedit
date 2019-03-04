@@ -4,23 +4,17 @@ basic
 # bus stops
 busstop
 
-# access
-access
+# container stops
+containerstop
 
 # charging station
 chargingstation
-
-# container stops
-containerstop
 
 # e1 detector
 e1detector
 
 # e2 detector
 e2detector
-
-# e2 multilane 
-e2MultiLaneDetector
 
 # e3 detector
 e3detector
@@ -31,29 +25,17 @@ detentry
 # det exit
 detexit
 
-# E1 Instant detector
-e1InstantDetector
+# routeprobe
+routeprobe
+
+# vaporizer
+vaporizer
 
 # calibrator
 calibrator
 
-# lanecalibrator
-lanecalibrator
-
-# parking areas
-parkingarea
-
-# parking space
-parkingspace
-
 # rerouter
-#rerouter
-
-# routeprobe
-#routeprobe
-
-# vaporizer
-#vaporizer
+rerouter
 
 # variable speed sign
 #variablespeedsign

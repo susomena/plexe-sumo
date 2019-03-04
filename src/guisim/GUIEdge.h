@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIEdge.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // A road/street connecting two junctions (gui-version)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIEdge_h
 #define GUIEdge_h
 
@@ -24,14 +27,18 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <string>
-#include <fx.h>
 #include <microsim/MSEdge.h>
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/gui/settings/GUIPropertySchemeStorage.h>
+#include <utils/foxtools/MFXMutex.h>
 
 
 // ===========================================================================
@@ -134,23 +141,23 @@ public:
 
 
     void addPerson(MSTransportable* p) const {
-        FXMutexLock locker(myLock);
+        AbstractMutex::ScopedLocker locker(myLock);
         MSEdge::addPerson(p);
     }
 
     void removePerson(MSTransportable* p) const {
-        FXMutexLock locker(myLock);
+        AbstractMutex::ScopedLocker locker(myLock);
         MSEdge::removePerson(p);
     }
 
 
     void addContainer(MSTransportable* c) const {
-        FXMutexLock locker(myLock);
+        AbstractMutex::ScopedLocker locker(myLock);
         MSEdge::addContainer(c);
     }
 
     void removeContainer(MSTransportable* c) const {
-        FXMutexLock locker(myLock);
+        AbstractMutex::ScopedLocker locker(myLock);
         MSEdge::removeContainer(c);
     }
 
@@ -167,13 +174,13 @@ public:
     void setColor(const GUIVisualizationSettings& s) const;
 
     /// @brief sets the color according to the current scheme index and some edge function
-    bool setFunctionalColor(const GUIColorer& c) const;
+    bool setFunctionalColor(int activeScheme) const;
 
     /// @brief sets multiple colors according to the current scheme index and edge function
     bool setMultiColor(const GUIColorer& c) const;
 
     /// @brief gets the color value according to the current scheme index
-    double getColorValue(const GUIVisualizationSettings& s, int activeScheme) const;
+    double getColorValue(int activeScheme) const;
 
     /// @brief gets the scaling value according to the current scheme index
     double getScaleValue(int activeScheme) const;
@@ -208,9 +215,6 @@ public:
         return myMesoColor;
     }
 
-    /// @brief whether this lane is selected in the GUI
-    bool isSelected() const;
-
     /// The color of the segments (cached)
     mutable std::vector<RGBColor> mySegmentColors;
 
@@ -226,7 +230,7 @@ private:
 
 private:
     /// The mutex used to avoid concurrent updates of myPersons/ myContainers
-    mutable FXMutex myLock;
+    mutable MFXMutex myLock;
 
     mutable RGBColor myMesoColor;
 

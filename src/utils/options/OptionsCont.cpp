@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    OptionsCont.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,10 +9,25 @@
 ///
 // A storage for options (typed value containers)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include <string>
@@ -62,7 +69,7 @@ OptionsCont::getOptions() {
 
 OptionsCont::OptionsCont()
     : myAddresses(), myValues(), myDeprecatedSynonymes(), myHaveInformedAboutDeprecatedDivider(false) {
-    myCopyrightNotices.push_back("Copyright (C) 2001-2019 German Aerospace Center (DLR) and others; http://sumo.dlr.de");
+    myCopyrightNotices.push_back("Copyright (C) 2001-2017 DLR and contributors; http://sumo.dlr.de");
 }
 
 
@@ -74,7 +81,7 @@ OptionsCont::~OptionsCont() {
 void
 OptionsCont::doRegister(const std::string& name, Option* v) {
     assert(v != 0);
-    ItemAddressContType::iterator i = std::find(myAddresses.begin(), myAddresses.end(), v);
+    ItemAddressContType::iterator i = find(myAddresses.begin(), myAddresses.end(), v);
     if (i == myAddresses.end()) {
         myAddresses.push_back(v);
     }
@@ -233,13 +240,6 @@ OptionsCont::getIntVector(const std::string& name) const {
 }
 
 
-const FloatVector&
-OptionsCont::getFloatVector(const std::string& name) const {
-    Option* o = getSecure(name);
-    return o->getFloatVector();
-}
-
-
 bool
 OptionsCont::set(const std::string& name, const std::string& value) {
     Option* o = getSecure(name);
@@ -294,19 +294,13 @@ OptionsCont::getSynonymes(const std::string& name) const {
 }
 
 
-const std::string&
-OptionsCont::getDescription(const std::string& name) const {
-    return getSecure(name)->getDescription();
-}
-
-
 std::ostream&
 operator<<(std::ostream& os, const OptionsCont& oc) {
     std::vector<std::string> done;
     os << "Options set:" << std::endl;
     for (OptionsCont::KnownContType::const_iterator i = oc.myValues.begin();
             i != oc.myValues.end(); i++) {
-        std::vector<std::string>::iterator j = std::find(done.begin(), done.end(), (*i).first);
+        std::vector<std::string>::iterator j = find(done.begin(), done.end(), (*i).first);
         if (j == done.end()) {
             std::vector<std::string> synonymes = oc.getSynonymes((*i).first);
             if (synonymes.size() != 0) {
@@ -336,19 +330,30 @@ operator<<(std::ostream& os, const OptionsCont& oc) {
 
 void
 OptionsCont::relocateFiles(const std::string& configuration) const {
-    for (Option* const option : myAddresses) {
-        if (option->isFileName() && option->isSet()) {
-            std::vector<std::string> fileList = StringTokenizer(option->getString(), ",").getVector();
-            for (std::string& f : fileList) {
-                // Pruning is necessary because filenames may be separated by ', ' in the configuration file
-                f = StringUtils::urlDecode(FileHelpers::checkForRelativity(StringUtils::prune(f), configuration));
+    for (ItemAddressContType::const_iterator i = myAddresses.begin(); i != myAddresses.end(); i++) {
+        if ((*i)->isFileName() && (*i)->isSet()) {
+            StringTokenizer st((*i)->getString(), ";, ", true);
+            std::string conv;
+            while (st.hasNext()) {
+                std::string tmp = st.next();
+                // Test whether this is a whitespace string and disregard item if so.
+                // This may stem, e.g., from separating filenames by ', ' in the configuration file
+                if (tmp.find_first_not_of("\t ") == std::string::npos) {
+                    continue;
+                }
+                if (!FileHelpers::isAbsolute(tmp)) {
+                    tmp = FileHelpers::getConfigurationRelative(configuration, tmp);
+                }
+                if (conv.length() != 0) {
+                    conv += ',';
+                }
+                conv += StringUtils::urlDecode(tmp);
             }
-            const std::string conv = joinToString(fileList, ',');
-            if (conv != option->getString()) {
-                const bool hadDefault = option->isDefault();
-                option->set(conv);
+            if (conv != (*i)->getString()) {
+                const bool hadDefault = (*i)->isDefault();
+                (*i)->set(conv);
                 if (hadDefault) {
-                    option->resetDefault();
+                    (*i)->resetDefault();
                 }
             }
         }
@@ -460,7 +465,7 @@ void
 OptionsCont::clear() {
     ItemAddressContType::iterator i;
     for (i = myAddresses.begin(); i != myAddresses.end(); i++) {
-        delete (*i);
+        delete(*i);
     }
     myAddresses.clear();
     myValues.clear();
@@ -567,12 +572,11 @@ OptionsCont::processMetaOptions(bool missingOptions) {
                     myCopyrightNotices.begin(); it != myCopyrightNotices.end(); ++it) {
             std::cout << " " << *it << std::endl;
         }
-        std::cout << " License EPL-2.0: Eclipse Public License Version 2 <https://eclipse.org/legal/epl-v20.html>\n";
+        std::cout << " License GPLv3+: GNU GPL Version 3 or later <http://gnu.org/licenses/gpl.html>\n";
         std::cout << " Use --help to get the list of options." << std::endl;
         return true;
     }
 
-    myWriteLicense = getBool("write-license");
     // check whether the help shall be printed
     if (getBool("help")) {
         std::cout << myFullName << std::endl;
@@ -592,11 +596,16 @@ OptionsCont::processMetaOptions(bool missingOptions) {
             std::cout << " " << *it << std::endl;
         }
         std::cout << "\n" << myFullName << " is part of SUMO.\n";
-        std::cout << "This program and the accompanying materials\n";
-        std::cout << "are made available under the terms of the Eclipse Public License v2.0\n";
-        std::cout << "which accompanies this distribution, and is available at\n";
-        std::cout << "http://www.eclipse.org/legal/epl-v20.html\n";
-        std::cout << "SPDX-License-Identifier: EPL-2.0" << std::endl;
+        std::cout << "SUMO is free software: you can redistribute it and/or modify\n";
+        std::cout << "it under the terms of the GNU General Public License as published by\n";
+        std::cout << "the Free Software Foundation, either version 3 of the License, or\n";
+        std::cout << "(at your option) any later version.\n\n";
+        std::cout << "This program is distributed in the hope that it will be useful,\n";
+        std::cout << "but WITHOUT ANY WARRANTY; without even the implied warranty of\n";
+        std::cout << "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n";
+        std::cout << "GNU General Public License for more details.\n\n";
+        std::cout << "You should have received a copy of the GNU General Public License\n";
+        std::cout << "along with this program. If not, see http://www.gnu.org/licenses/gpl.html" << std::endl;
         return true;
     }
     // check whether the settings shall be printed
@@ -640,14 +649,14 @@ OptionsCont::processMetaOptions(bool missingOptions) {
     }
     if (isSet("save-schema", false)) { // sumo-gui does not register these
         if (getString("save-schema") == "-" || getString("save-schema") == "stdout") {
-            writeSchema(std::cout);
+            writeSchema(std::cout, getBool("save-commented"));
             return true;
         }
         std::ofstream out(getString("save-schema").c_str());
         if (!out.good()) {
             throw ProcessError("Could not save schema to '" + getString("save-schema") + "'");
         } else {
-            writeSchema(out);
+            writeSchema(out, getBool("save-commented"));
             if (getBool("verbose")) {
                 WRITE_MESSAGE("Written schema to '" + getString("save-schema") + "'");
             }
@@ -748,7 +757,7 @@ OptionsCont::printHelp(std::ostream& os) {
         }
     }
     os << std::endl;
-    os << "Report bugs at <https://github.com/eclipse/sumo/issues>." << std::endl;
+    os << "Report bugs at <http://sumo.dlr.de/trac/>." << std::endl;
     os << "Get in contact via <sumo@dlr.de>." << std::endl;
 }
 
@@ -756,10 +765,8 @@ OptionsCont::printHelp(std::ostream& os) {
 void
 OptionsCont::writeConfiguration(std::ostream& os, const bool filled,
                                 const bool complete, const bool addComments,
-                                const bool inComment) const {
-    if (!inComment) {
-        writeXMLHeader(os, false);
-    }
+                                const bool maskDoubleHyphen) const {
+    os << "<?xml version=\"1.0\"" << SUMOSAXAttributes::ENCODING << "?>\n\n";
     os << "<configuration xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://sumo.dlr.de/xsd/";
     if (myAppName == "sumo-gui") {
         os << "sumo";
@@ -789,12 +796,12 @@ OptionsCont::writeConfiguration(std::ostream& os, const bool filled,
             }
             // add the comment if wished
             if (addComments) {
-                os << "        <!-- " << StringUtils::escapeXML(o->getDescription(), inComment) << " -->" << std::endl;
+                os << "        <!-- " << StringUtils::escapeXML(o->getDescription(), maskDoubleHyphen) << " -->" << std::endl;
             }
             // write the option and the value (if given)
             os << "        <" << *j << " value=\"";
             if (o->isSet() && (filled || o->isDefault())) {
-                os << StringUtils::escapeXML(o->getValueString(), inComment);
+                os << StringUtils::escapeXML(o->getValueString(), maskDoubleHyphen);
             }
             if (complete) {
                 std::vector<std::string> synonymes = getSynonymes(*j);
@@ -828,8 +835,8 @@ OptionsCont::writeConfiguration(std::ostream& os, const bool filled,
 
 
 void
-OptionsCont::writeSchema(std::ostream& os) {
-    writeXMLHeader(os, false);
+OptionsCont::writeSchema(std::ostream& os, bool /* addComments */) {
+    os << "<?xml version=\"1.0\"" << SUMOSAXAttributes::ENCODING << "?>\n\n";
     os << "<xsd:schema elementFormDefault=\"qualified\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n\n";
     os << "    <xsd:include schemaLocation=\"baseTypes.xsd\"/>\n";
     os << "    <xsd:element name=\"configuration\" type=\"configurationType\"/>\n\n";
@@ -842,7 +849,7 @@ OptionsCont::writeSchema(std::ostream& os) {
         }
         std::replace(subtopic.begin(), subtopic.end(), ' ', '_');
         std::transform(subtopic.begin(), subtopic.end(), subtopic.begin(), tolower);
-        os << "            <xsd:element name=\"" << subtopic << "\" type=\"" << subtopic << "TopicType\" minOccurs=\"0\"/>\n";
+        os << "            <xsd:element name=\"" << subtopic << "\" type=\"" << subtopic << "Type\" minOccurs=\"0\"/>\n";
     }
     os << "        </xsd:all>\n";
     os << "    </xsd:complexType>\n\n";
@@ -853,7 +860,7 @@ OptionsCont::writeSchema(std::ostream& os) {
         }
         std::replace(subtopic.begin(), subtopic.end(), ' ', '_');
         std::transform(subtopic.begin(), subtopic.end(), subtopic.begin(), tolower);
-        os << "    <xsd:complexType name=\"" << subtopic << "TopicType\">\n";
+        os << "    <xsd:complexType name=\"" << subtopic << "Type\">\n";
         os << "        <xsd:all>\n";
         const std::vector<std::string>& entries = mySubTopicEntries[*i];
         for (std::vector<std::string>::const_iterator j = entries.begin(); j != entries.end(); ++j) {
@@ -873,7 +880,7 @@ OptionsCont::writeSchema(std::ostream& os) {
 
 
 void
-OptionsCont::writeXMLHeader(std::ostream& os, const bool includeConfig) const {
+OptionsCont::writeXMLHeader(std::ostream& os) {
     time_t rawtime;
     char buffer [80];
 
@@ -881,16 +888,7 @@ OptionsCont::writeXMLHeader(std::ostream& os, const bool includeConfig) const {
     time(&rawtime);
     strftime(buffer, 80, "<!-- generated on %c by ", localtime(&rawtime));
     os << buffer << myFullName << "\n";
-    if (myWriteLicense) {
-        os << "This data file and the accompanying materials\n";
-        os << "are made available under the terms of the Eclipse Public License v2.0\n";
-        os << "which accompanies this distribution, and is available at\n";
-        os << "http://www.eclipse.org/legal/epl-v20.html\n";
-        os << "SPDX-License-Identifier: EPL-2.0\n";
-    }
-    if (includeConfig) {
-        writeConfiguration(os, true, false, false, true);
-    }
+    writeConfiguration(os, true, false, false, true);
     os << "-->\n\n";
 }
 
@@ -917,7 +915,7 @@ OptionsCont::isInStringVector(const std::string& optionName,
                               const std::string& itemName) {
     if (isSet(optionName)) {
         std::vector<std::string> values = getStringVector(optionName);
-        return std::find(values.begin(), values.end(), itemName) != values.end();
+        return find(values.begin(), values.end(), itemName) != values.end();
     }
     return false;
 }

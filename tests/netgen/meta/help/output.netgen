@@ -1,7 +1,6 @@
-Eclipse SUMO netgenerate Version v1_0_1+0645-93703db
- Copyright (C) 2001-2019 German Aerospace Center (DLR) and others; http://sumo.dlr.de
-Synthetic network generator for the microscopic, multi-modal traffic simulation
-  SUMO.
+SUMO netgenerate Version dev-SVN-r25465
+ Copyright (C) 2001-2017 DLR and contributors; http://sumo.dlr.de
+Road network generator for the microscopic road traffic simulation SUMO.
 
 Usage: netgenerate [OPTION]*
  Either "--grid", "--spider" or "--rand" must be supplied.
@@ -9,7 +8,7 @@ Usage: netgenerate [OPTION]*
  
 Configuration Options:
   -c, --configuration-file FILE        Loads the named config on startup
-  -C, --save-configuration FILE        Saves current configuration into FILE
+  --save-configuration FILE            Saves current configuration into FILE
   --save-template FILE                 Saves a configuration template (empty)
                                          into FILE
   --save-schema FILE                   Saves the configuration schema into FILE
@@ -32,6 +31,8 @@ Grid Network Options:
   --grid.attach-length FLOAT           The length of streets attached at the
                                          boundary;
                                          0 means no streets are attached
+  --grid.alphanumerical-ids            The Ids of generated nodes use letters
+                                         for the X axis
 
 Spider Network Options:
   -s, --spider                         Forces NETGEN to build a spider-net-like
@@ -67,16 +68,8 @@ Random Network Options:
                                          neighbors
   --rand.neighbor-dist6 FLOAT          Probability for a node having exactly 6
                                          neighbors
-  --rand.random-lanenumber             Draw lane numbers randomly from
-                                         [1,default.lanenumber]
-  --rand.random-priority               Draw edge priority randomly from
-                                         [1,default.priority]
-  --rand.grid                          Place nodes on a regular grid with
-                                         spacing rand.min-distance
 
 Output Options:
-  --write-license                      Include license info into every output
-                                         file
   --output-prefix STR                  Prefix which is applied to all output
                                          files. The special string 'TIME' is
                                          replaced by the current time.
@@ -84,12 +77,6 @@ Output Options:
                                          comma for floating point output
   --precision.geo INT                  Defines the number of digits after the
                                          comma for lon,lat output
-  -H, --human-readable-time            Write time values as hour:minute:second
-                                         or day:hour:minute:second rathern than
-                                         seconds
-  --alphanumerical-ids                 The Ids of generated nodes use an
-                                         alphanumerical code for easier
-                                         readability when possible
   -o, --output-file FILE               The generated net will be written to
                                          FILE
   --plain-output-prefix FILE           Prefix of files to write plain xml
@@ -97,8 +84,6 @@ Output Options:
   --junctions.join-output FILE         Writes information about joined
                                          junctions to FILE (can be loaded as
                                          additional node-file to reproduce joins
-  --prefix STR                         Defines a prefix for edge and junction
-                                         names
   --amitran-output FILE                The generated net will be written to
                                          FILE using Amitran format
   --matsim-output FILE                 The generated net will be written to
@@ -118,70 +103,12 @@ Output Options:
                                          whenever the angular change  between
                                          straight segments exceeds FLOAT degrees
 
-Processing Options:
-  --turn-lanes INT                     Generate INT left-turn lanes
-  --turn-lanes.length FLOAT            Set the length of generated turning
-                                         lanes to FLOAT
-  --perturb-x STR                      Apply random spatial pertubation in x
-                                         direction according the the given
-                                         distribution
-  --perturb-y STR                      Apply random spatial pertubation in y
-                                         direction according the the given
-                                         distribution
-  --perturb-z STR                      Apply random spatial pertubation in z
-                                         direction according the the given
-                                         distribution
-  --numerical-ids                      Remaps alphanumerical IDs of nodes and
-                                         edges to ensure that all IDs are
-                                         integers
-  --reserved-ids FILE                  Ensures that generated ids do not
-                                         included any of the typed IDs from FILE
-                                         (SUMO-GUI selection file format)
-  --geometry.max-grade FLOAT           Warn about edge geometries with a grade
-                                         in % above FLOAT.
-  --geometry.max-grade.fix             Smooth edge edge geometries with a grade
-                                         in above the warning threshold.
-  --offset.disable-normalization       Turn off normalizing node positions
-  --offset.x FLOAT                     Adds FLOAT to net x-positions
-  --offset.y FLOAT                     Adds FLOAT to net y-positions
-  --flip-y-axis                        Flips the y-coordinate along zero
-  --roundabouts.guess                  Enable roundabout-guessing
-  --opposites.guess                    Enable guessing of opposite direction
-                                         lanes usable for overtaking
-  --opposites.guess.fix-lengths        Ensure that opposite edges have the same
-                                         length
-  --lefthand                           Assumes left-hand traffic on the network
-  --edges.join                         Merges edges which connect the same
-                                         nodes and are close to each other
-                                         (recommended for VISSIM import)
-
-Building Defaults Options:
-  -L, --default.lanenumber INT         The default number of lanes in an edge
-  --default.lanewidth FLOAT            The default width of lanes
-  -S, --default.speed FLOAT            The default speed on an edge (in m/s)
-  -P, --default.priority INT           The default priority of an edge
-  --default.sidewalk-width FLOAT       The default width of added sidewalks
-  --default.crossing-width FLOAT       The default width of a pedestrian
-                                         crossing
-  --default.disallow STR               The default for disallowed vehicle
-                                         classes
-  --default.junctions.keep-clear       Whether junctions should be kept clear
-                                         by default
-  --default.junctions.radius FLOAT     The default turning radius of
-                                         intersections
-  --default.right-of-way STR           The default algorithm for computing
-                                         right of way rules ('default',
-                                         'edgePriority')
-  -j, --default-junction-type STR      [traffic_light|priority|right_before_left|traffic_light_right_on_red|priority_stop|allway_stop|...] Determines junction type (see wiki/Networks/PlainXML#Node_types)
-
 TLS Building Options:
   --tls.set STR                        Interprets STR as list of junctions to
                                          be controlled by TLS
   --tls.unset STR                      Interprets STR as list of junctions to
                                          be not controlled by TLS
   --tls.guess                          Turns on TLS guessing
-  --tls.guess.threshold FLOAT          Sets minimum value for the sum of all
-                                         incoming lane speeds when guessing TLS
   --tls-guess.joining                  Includes node clusters into guess
   --tls.join                           Tries to cluster tls-controlled nodes
   --tls.join-dist FLOAT                Determines the maximal distance for
@@ -202,29 +129,15 @@ TLS Building Options:
                                          have a conflicting flow
   --tls.allred.time INT                Set INT as fixed time for intermediate
                                          red phase after every switch
-  --tls.minor-left.max-speed FLOAT     Use FLOAT as threshold for allowing
-                                         left-turning vehicles to move in the
-                                         same phase as oncoming straight-going
-                                         vehicles
   --tls.left-green.time INT            Use INT as green phase duration for left
                                          turns (s). Setting this value to 0
                                          disables additional left-turning phases
-  --tls.crossing-min.time INT          Use INT as minimum green duration for
-                                         pedestrian crossings (s).
-  --tls.crossing-clearance.time INT    Use INT as clearance time for pedestrian
-                                         crossings (s).
-  --tls.scramble.time INT              Use INT as green phase duration for
-                                         pedestrian scramble phase (s).
   --tls.half-offset STR                TLSs in STR will be shifted by
                                          half-phase
   --tls.quarter-offset STR             TLSs in STR will be shifted by
                                          quarter-phase
   --tls.default-type STR               TLSs with unspecified type will use STR
                                          as their algorithm
-  --tls.layout STR                     Set phase layout four grouping opposite
-                                         directions or grouping all movements
-                                         for one incoming edge ['opposites',
-                                         'incoming']
   --tls.min-dur INT                    Default minimum phase duration for
                                          traffic lights with variable phase
                                          length
@@ -263,16 +176,31 @@ Unregulated Nodes Options:
   --keep-nodes-unregulated.explicit STR  Do not regulate nodes in STR
   --keep-nodes-unregulated.district-nodes  Do not regulate district nodes
 
-Junctions Options:
+Processing Options:
   --no-internal-links                  Omits internal links
+  --numerical-ids                      Remaps alphanumerical IDs of nodes and
+                                         edges to ensure that all IDs are
+                                         integers
+  --reserved-ids FILE                  Ensures that generated ids do not
+                                         included any of the typed IDs from FILE
+                                         (SUMO-GUI selection file format)
   --no-turnarounds                     Disables building turnarounds
   --no-turnarounds.tls                 Disables building turnarounds at
                                          tls-controlled junctions
-  --no-turnarounds.geometry            Disables building turnarounds at
-                                         geometry-like junctions
-  --no-turnarounds.except-deadend      Disables building turnarounds except at
-                                         dead end junctions
   --no-left-connections                Disables building connections to left
+  --offset.disable-normalization       Turn off normalizing node positions
+  --offset.x FLOAT                     Adds FLOAT to net x-positions
+  --offset.y FLOAT                     Adds FLOAT to net y-positions
+  --flip-y-axis                        Flips the y-coordinate along zero
+  --roundabouts.guess                  Enable roundabout-guessing
+  --opposites.guess                    Enable guessing of opposite direction
+                                         lanes usable for overtaking
+  --opposites.guess.fix-lengths        Ensure that opposite edges have the same
+                                         length
+  --lefthand                           Assumes left-hand traffic on the network
+  --edges.join                         Merges edges which connect the same
+                                         nodes and are close to each other
+                                         (recommended for VISSIM import)
   --junctions.join                     Joins junctions that are close to each
                                          other (recommended for OSM import)
   --junctions.join-dist FLOAT          Determines the maximal distance for
@@ -291,28 +219,6 @@ Junctions Options:
                                          between geometrical length and assigned
                                          length due to averaging but enables
                                          lane-changing while turning
-  --junctions.limit-turn-speed FLOAT   Limits speed on junctions to an average
-                                         lateral acceleration of at most FLOAT
-                                         m/s^2)
-  --junctions.limit-turn-speed.min-angle FLOAT  Do not limit turn speed for
-                                         angular changes below FLOAT (degrees).
-                                         The value is subtracted from the
-                                         geometric angle before computing the
-                                         turning radius.
-  --junctions.limit-turn-speed.min-angle.railway FLOAT  Do not limit turn speed
-                                         for angular changes below FLOAT
-                                         (degrees) on railway edges. The value
-                                         is subtracted from the geometric angle
-                                         before computing the turning radius.
-  --junctions.limit-turn-speed.warn.straight FLOAT  Warn about turn speed
-                                         limits that reduce the speed of
-                                         straight connections by more than FLOAT
-  --junctions.limit-turn-speed.warn.turn FLOAT  Warn about turn speed limits
-                                         that reduce the speed of turning
-                                         connections (no u-turns) by more than
-                                         FLOAT
-  --junctions.small-radius FLOAT       Default radius for junctions that do not
-                                         require wide vehicle turns
   --rectangular-lane-cut               Forces rectangular cuts between lanes
                                          and intersections
   --check-lane-foes.roundabout         Allow driving onto a multi-lane road if
@@ -321,8 +227,6 @@ Junctions Options:
   --check-lane-foes.all                Allow driving onto a multi-lane road if
                                          there are foes on other lanes
                                          (everywhere)
-
-Pedestrian Options:
   --sidewalks.guess                    Guess pedestrian sidewalks based on edge
                                          speed
   --sidewalks.guess.max-speed FLOAT    Add sidewalks for edges with a speed
@@ -341,6 +245,20 @@ Pedestrian Options:
                                          above the threshold
   --walkingareas                       Always build walking areas even if there
                                          are no crossings
+
+Building Defaults Options:
+  -L, --default.lanenumber INT         The default number of lanes in an edge
+  --default.lanewidth FLOAT            The default width of lanes
+  -S, --default.speed FLOAT            The default speed on an edge (in m/s)
+  -P, --default.priority INT           The default priority of an edge
+  --default.sidewalk-width FLOAT       The default width of added sidewalks
+  --default.disallow STR               The default for disallowed vehicle
+                                         classes
+  --default.junctions.keep-clear       Whether junctions should be kept clear
+                                         by default
+  --default.junctions.radius FLOAT     The default turning radius of
+                                         intersections
+  -j, --default-junction-type STR      [traffic_light|priority|right_before_left] Determines the type of the build junctions
 
 Report Options:
   -v, --verbose                        Switches to verbose output
@@ -376,5 +294,5 @@ Examples:
   netgenerate --rand [random-network options] -o <OUTPUTFILE>
     create random net
 
-Report bugs at <https://github.com/eclipse/sumo/issues>.
+Report bugs at <http://sumo.dlr.de/trac/>.
 Get in contact via <sumo@dlr.de>.

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIInductLoop.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // The gui-version of the MSInductLoop, together with the according
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIInductLoop_h
 #define GUIInductLoop_h
 
@@ -24,9 +27,13 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <fx.h>
+#include <utils/foxtools/MFXMutex.h>
 #include <microsim/output/MSInductLoop.h>
 #include <utils/geom/Position.h>
 #include "GUIDetectorWrapper.h"
@@ -87,9 +94,6 @@ public:
      */
     std::vector<VehicleData> collectVehiclesOnDet(SUMOTime t, bool leaveTime = false) const;
 
-
-    /// @brief sets special caller for myWrapper
-    void setSpecialColor(const RGBColor* color); 
 
 protected:
     /// @name Methods that add and remove vehicles from internal container
@@ -177,10 +181,6 @@ public:
         /// @brief Returns the detector itself
         GUIInductLoop& getLoop();
 
-        /// @brief set (outline) color for extra visualiaztion
-        void setSpecialColor(const RGBColor* color) {
-            mySpecialColor = color;
-        }
 
     private:
         /// @brief The wrapped detector
@@ -198,9 +198,6 @@ public:
         /// @brief The position on the lane
         double myPosition;
 
-        /// @brief color for extra visualization
-        const RGBColor* mySpecialColor;
-
     private:
         /// @brief Invalidated copy constructor.
         MyWrapper(const MyWrapper&);
@@ -210,13 +207,9 @@ public:
 
     };
 
-private:
-
-    /// @brief the glObject wrapper for this induction loop
-    MyWrapper* myWrapper;
 
     /// @brief Mutex preventing parallel read/write access to internal MSInductLoop state
-    mutable FXMutex myLock;
+    mutable MFXMutex myLock;
 
 };
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUITriggeredRerouter.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Reroutes vehicles passing an edge (gui version)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/MsgHandler.h>
@@ -43,6 +50,7 @@
 #include <gui/GUIApplicationWindow.h>
 #include <microsim/logging/FunctionBinding.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/gui/globjects/GLIncludes.h>
 
 
@@ -86,7 +94,7 @@ GUITriggeredRerouter::GUIManip_TriggeredRerouter::GUIManip_TriggeredRerouter(
     const std::string& name, GUITriggeredRerouter& o,
     int /*xpos*/, int /*ypos*/)
     : GUIManipulator(app, name, 0, 0), myParent(&app),
-      myChosenValue(0), myChosenTarget(myChosenValue, nullptr, MID_OPTION),
+      myChosenValue(0), myChosenTarget(myChosenValue, NULL, MID_OPTION),
       myUsageProbability(o.getProbability()), myUsageProbabilityTarget(myUsageProbability),
       myObject(&o) {
     myChosenTarget.setTarget(this);
@@ -112,11 +120,10 @@ GUITriggeredRerouter::GUIManip_TriggeredRerouter::GUIManip_TriggeredRerouter(
                           ICON_BEFORE_TEXT | LAYOUT_SIDE_TOP | LAYOUT_CENTER_Y,
                           0, 0, 0, 0,   2, 2, 0, 0);
         myUsageProbabilityDial =
-            new FXRealSpinner(gf12, 10, this, MID_USER_DEF,
-                              LAYOUT_TOP | FRAME_SUNKEN | FRAME_THICK);
-        //myUsageProbabilityDial->setFormatString("%.2f");
-        //myUsageProbabilityDial->setIncrements(.1, .1, .1);
-        myUsageProbabilityDial->setIncrement(.1);
+            new FXRealSpinDial(gf12, 10, this, MID_USER_DEF,
+                               LAYOUT_TOP | FRAME_SUNKEN | FRAME_THICK);
+        myUsageProbabilityDial->setFormatString("%.2f");
+        myUsageProbabilityDial->setIncrements(.1, .1, .1);
         myUsageProbabilityDial->setRange(0, 1);
         myUsageProbabilityDial->setValue(myObject->getUserProbability());
     }
@@ -132,7 +139,7 @@ GUITriggeredRerouter::GUIManip_TriggeredRerouter::GUIManip_TriggeredRerouter(
                     ? myObject->getUserProbability() > 0
                     ? 1 : 2
                     : 0;
-    new FXButton(f1, "Close", nullptr, this, MID_CLOSE,
+    new FXButton(f1, "Close", NULL, this, MID_CLOSE,
                  BUTTON_INITIAL | BUTTON_DEFAULT | FRAME_RAISED | FRAME_THICK | LAYOUT_TOP | LAYOUT_LEFT | LAYOUT_CENTER_X, 0, 0, 0, 0, 30, 30, 4, 4);
 }
 
@@ -210,14 +217,17 @@ GUITriggeredRerouter::GUITriggeredRerouterPopupMenu::onCmdOpenManip(FXObject*,
     return 1;
 }
 
-// -------------------------------------------------------------------------
-// GUITriggeredRerouter - methods
-// -------------------------------------------------------------------------
 
-GUITriggeredRerouter::GUITriggeredRerouter(const std::string& id, const MSEdgeVector& edges, double prob,
-        const std::string& aXMLFilename, bool off, SUMOTime timeThreshold, const std::string& vTypes, SUMORTree& rtree) :
-    MSTriggeredRerouter(id, edges, prob, aXMLFilename, off, timeThreshold, vTypes),
-    GUIGlObject_AbstractAdd(GLO_REROUTER, id) {
+/* -------------------------------------------------------------------------
+ * GUITriggeredRerouter - methods
+ * ----------------------------------------------------------------------- */
+GUITriggeredRerouter::GUITriggeredRerouter(
+    const std::string& id,
+    const MSEdgeVector& edges,
+    double prob, const std::string& aXMLFilename, bool off,
+    SUMORTree& rtree) :
+    MSTriggeredRerouter(id, edges, prob, aXMLFilename, off),
+    GUIGlObject_AbstractAdd("rerouter", GLO_TRIGGER, id) {
     // add visualisation objects for edges which trigger the rerouter
     for (MSEdgeVector::const_iterator it = edges.begin(); it != edges.end(); ++it) {
         myEdgeVisualizations.push_back(new GUITriggeredRerouterEdge(dynamic_cast<GUIEdge*>(*it), this, false));
@@ -267,7 +277,7 @@ GUITriggeredRerouter::getPopUpMenu(GUIMainWindow& app,
 GUIParameterTableWindow*
 GUITriggeredRerouter::getParameterWindow(GUIMainWindow&,
         GUISUMOAbstractView&) {
-    return nullptr;
+    return 0;
 }
 
 
@@ -301,7 +311,7 @@ GUITriggeredRerouter::openManipulator(GUIMainWindow& app,
  * GUITriggeredRerouterEdge - methods
  * ----------------------------------------------------------------------- */
 GUITriggeredRerouter::GUITriggeredRerouterEdge::GUITriggeredRerouterEdge(GUIEdge* edge, GUITriggeredRerouter* parent, bool closed) :
-    GUIGlObject(GLO_REROUTER_EDGE, parent->getID() + ":" + edge->getID()),
+    GUIGlObject("rerouter_edge", GLO_TRIGGER, parent->getID() + ":" + edge->getID()),
     myParent(parent),
     myEdge(edge),
     myAmClosedEdge(closed) {
@@ -331,13 +341,13 @@ GUITriggeredRerouter::GUITriggeredRerouterEdge::getPopUpMenu(GUIMainWindow& app,
 GUIParameterTableWindow*
 GUITriggeredRerouter::GUITriggeredRerouterEdge::getParameterWindow(GUIMainWindow&,
         GUISUMOAbstractView&) {
-    return nullptr;
+    return 0;
 }
 
 
 void
 GUITriggeredRerouter::GUITriggeredRerouterEdge::drawGL(const GUIVisualizationSettings& s) const {
-    const double exaggeration = s.addSize.getExaggeration(s, this);
+    const double exaggeration = s.addSize.getExaggeration(s);
     if (s.scale * exaggeration >= 3) {
         glPushName(getGlID());
         const double prob = myParent->getProbability();
@@ -345,7 +355,7 @@ GUITriggeredRerouter::GUITriggeredRerouterEdge::drawGL(const GUIVisualizationSet
             // draw closing symbol onto all lanes
             const RerouteInterval* const ri =
                 myParent->getCurrentReroute(MSNet::getInstance()->getCurrentTimeStep());
-            if (ri != nullptr && prob > 0) {
+            if (ri != 0 && prob > 0) {
                 // draw only if the edge is closed at this time
                 if (std::find(ri->closed.begin(), ri->closed.end(), myEdge) != ri->closed.end()) {
                     const int noLanes = (int)myFGPositions.size();
@@ -409,12 +419,22 @@ GUITriggeredRerouter::GUITriggeredRerouterEdge::drawGL(const GUIVisualizationSet
                 glVertex2d(0 + 1.4, 6);
                 glEnd();
 
-                // draw "U"
-                GLHelper::drawText("U", Position(0, 2), .1, 3, RGBColor::BLACK, 180);
+                glTranslated(0, 0, .1);
+                glColor3d(0, 0, 0);
+                pfSetPosition(0, 0);
+                pfSetScale(3.f);
+                double w = pfdkGetStringWidth("U");
+                glRotated(180, 0, 1, 0);
+                glTranslated(-w / 2., 2, 0);
+                pfDrawString("U");
 
-                // draw Probability
-                GLHelper::drawText((toString((int)(prob * 100)) + "%").c_str(), Position(0, 4), .1, 0.7, RGBColor::BLACK, 180);
-
+                glTranslated(w / 2., -2, 0);
+                std::string str = toString((int)(prob * 100)) + "%";
+                pfSetPosition(0, 0);
+                pfSetScale(.7f);
+                w = pfdkGetStringWidth(str.c_str());
+                glTranslated(-w / 2., 4, 0);
+                pfDrawString(str.c_str());
                 glPopMatrix();
             }
         }

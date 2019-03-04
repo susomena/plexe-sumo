@@ -1,24 +1,27 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runInternalTests.py
+@author  Michael Behrisch
+@date    2012-03-29
+@version $Id$
 
-# @file    runInternalTests.py
-# @author  Michael Behrisch
-# @date    2012-03-29
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 import optparse
 import os
 import subprocess
 import sys
 try:
-    import texttestlib  # noqa
+    import texttestlib
     haveTextTestLib = True
 except ImportError:
     haveTextTestLib = False
@@ -54,8 +57,7 @@ def runInternal(suffix, args, out=sys.stdout, guiTests=False, console=False, chr
     env["GUISIM_BINARY"] = os.path.join(root, "..", "bin", "sumo-gui" + suffix)
     env["MAROUTER_BINARY"] = os.path.join(
         root, "..", "bin", "marouter" + suffix)
-    apps = "sumo.meso,sumo.ballistic,sumo.idm,sumo.sublanes,sumo.astar,sumo.parallel,netconvert.gdal,polyconvert.gdal"
-    apps += ",complex.meso,complex.libsumo,duarouter.astar"
+    apps = "sumo.meso,sumo.ballistic,sumo.idm,sumo.sublanes,sumo.astar,complex.meso,duarouter.astar"
     if chrouter:
         apps += ",duarouter.chrouter"
     ttBin = 'texttest.py'
@@ -70,13 +72,12 @@ def runInternal(suffix, args, out=sys.stdout, guiTests=False, console=False, chr
     try:
         subprocess.call(['python3', '-V'])
         apps += ',complex.python3,tools.python3'
-    except Exception:
+    except:
         pass
     if guiTests:
         apps += ",sumo.meso.gui"
     subprocess.call("%s %s -a %s" % (ttBin, args, apps), env=os.environ,
                     stdout=out, stderr=out, shell=True)
-
 
 if __name__ == "__main__":
     optParser = optparse.OptionParser()

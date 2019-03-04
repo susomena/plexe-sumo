@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RODUAFrame.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Sets and checks options for dua-routing
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <fstream>
@@ -69,22 +76,6 @@ RODUAFrame::fillOptions() {
 void
 RODUAFrame::addImportOptions() {
     OptionsCont& oc = OptionsCont::getOptions();
-    oc.doRegister("alternatives-output", new Option_FileName());
-    oc.addSynonyme("alternatives-output", "alternatives");
-    oc.addDescription("alternatives-output", "Output", "Write generated route alternatives to FILE");
-
-    oc.doRegister("intermodal-network-output", new Option_FileName());
-    oc.addDescription("intermodal-network-output", "Output", "Write edge splits and connectivity to FILE");
-
-    oc.doRegister("intermodal-weight-output", new Option_FileName());
-    oc.addDescription("intermodal-weight-output", "Output", "Write intermodal edges with lengths and travel times to FILE");
-
-    oc.doRegister("write-trips", new Option_Bool(false));
-    oc.addDescription("write-trips", "Output", "Write trips instead of vehicles (for validating trip input)");
-
-    oc.doRegister("write-trips.geo", new Option_Bool(false));
-    oc.addDescription("write-trips.geo", "Output", "Write trips with geo-coordinates");
-
     // register import options
     oc.doRegister("weight-files", 'w', new Option_FileName());
     oc.addSynonyme("weight-files", "weights");
@@ -144,9 +135,6 @@ RODUAFrame::addDUAOptions() {
     oc.doRegister("skip-new-routes", new Option_Bool(false));
     oc.addDescription("skip-new-routes", "Processing", "Only reuse routes from input, do not calculate new ones");
 
-    oc.doRegister("ptline-routing", new Option_Bool(false));
-    oc.addDescription("ptline-routing", "Processing", "Route all public transport input");
-
     oc.doRegister("logit", new Option_Bool(false)); // deprecated
     oc.addDescription("logit", "Processing", "Use c-logit model (deprecated in favor of --route-choice-method logit)");
 
@@ -165,11 +153,8 @@ RODUAFrame::addDUAOptions() {
     oc.addSynonyme("logit.theta", "lTheta", true);
     oc.addDescription("logit.theta", "Processing", "Use FLOAT as logit's theta (negative values mean auto-estimation)");
 
-    oc.doRegister("persontrip.walkfactor", new Option_Float(double(0.75)));
+    oc.doRegister("persontrip.walkfactor", new Option_Float(double(0.9)));
     oc.addDescription("persontrip.walkfactor", "Processing", "Use FLOAT as a factor on pedestrian maximum speed during intermodal routing");
-
-    oc.doRegister("persontrip.transfer.car-walk", new Option_String("parkingAreas"));
-    oc.addDescription("persontrip.transfer.car-walk", "Processing", "Where are mode changes from car to walking allowed (possible values: 'parkingAreas', 'ptStops', 'allJunctions' and combinations)");
 
 }
 
@@ -210,10 +195,12 @@ RODUAFrame::checkOptions() {
         WRITE_ERROR("Routing algorithm '" + oc.getString("routing-algorithm") + "' does not support weight-attribute '" + oc.getString("weight-attribute") + "'.");
         return false;
     }
+
     if (oc.getBool("bulk-routing") && (oc.getString("routing-algorithm") == "CH" || oc.getString("routing-algorithm") == "CHWrapper")) {
         WRITE_ERROR("Routing algorithm '" + oc.getString("routing-algorithm") + "' does not support bulk routing.");
         return false;
     }
+
     if (oc.isDefault("routing-algorithm") && (oc.isSet("astar.all-distances") || oc.isSet("astar.landmark-distances") || oc.isSet("astar.save-landmark-distances"))) {
         oc.set("routing-algorithm", "astar");
     }
@@ -222,21 +209,10 @@ RODUAFrame::checkOptions() {
         WRITE_ERROR("Invalid route choice method '" + oc.getString("route-choice-method") + "'.");
         return false;
     }
+
     if (oc.getBool("logit")) {
         WRITE_WARNING("The --logit option is deprecated, please use --route-choice-method logit.");
         oc.set("route-choice-method", "logit");
-    }
-
-    if (oc.isSet("output-file") && !oc.isSet("alternatives-output")) {
-        const std::string& filename = oc.getString("output-file");
-        const int len = (int)filename.length();
-        if (len > 4 && filename.substr(len - 4) == ".xml") {
-            oc.set("alternatives-output", filename.substr(0, len - 4) + ".alt.xml");
-        } else if (len > 4 && filename.substr(len - 4) == ".sbx") {
-            oc.set("alternatives-output", filename.substr(0, len - 4) + ".alt.sbx");
-        } else {
-            WRITE_WARNING("Cannot derive file name for alternatives output, skipping it.");
-        }
     }
     return ok;
 }

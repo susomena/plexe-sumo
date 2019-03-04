@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    emissionsMap_main.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,18 +7,33 @@
 ///
 // Main for an emissions map writer
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
 #endif
 
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <iostream>
 #include <string>
 #include <ctime>
@@ -84,8 +91,8 @@ main(int argc, char** argv) {
     // build options
     OptionsCont& oc = OptionsCont::getOptions();
     //  give some application descriptions
-    oc.setApplicationDescription("Builds and writes an emissions map for SUMO's emission models.");
-    oc.setApplicationName("emissionsMap", "Eclipse SUMO emissionsMap Version " VERSION_STRING);
+    oc.setApplicationDescription("Builds and writes an emissions map.");
+    oc.setApplicationName("emissionsMap", "SUMO emissionsMap Version " VERSION_STRING);
     //  add options
     SystemFrame::addConfigurationOptions(oc);
     oc.addOptionSubTopic("Processing");

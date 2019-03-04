@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GenericSAXHandler.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,17 +9,32 @@
 ///
 // A handler which converts occuring elements and attributes into enums
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include "GenericSAXHandler.h"
-#include <utils/common/StringUtils.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/FileHelpers.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/ToString.h>
@@ -41,8 +48,8 @@
 GenericSAXHandler::GenericSAXHandler(
     StringBijection<int>::Entry* tags, int terminatorTag,
     StringBijection<int>::Entry* attrs, int terminatorAttr,
-    const std::string& file, const std::string& expectedRoot)
-    : myParentHandler(nullptr), myParentIndicator(SUMO_TAG_NOTHING), myFileName(file), myExpectedRoot(expectedRoot), mySchemaSeen(false) {
+    const std::string& file)
+    : myParentHandler(0), myParentIndicator(SUMO_TAG_NOTHING), myFileName(file) {
     int i = 0;
     while (tags[i].key != terminatorTag) {
         myTagMap.insert(TagMap::value_type(tags[i].str, tags[i].key));
@@ -95,13 +102,7 @@ GenericSAXHandler::startElement(const XMLCh* const /*uri*/,
                                 const XMLCh* const /*localname*/,
                                 const XMLCh* const qname,
                                 const XERCES_CPP_NAMESPACE::Attributes& attrs) {
-    std::string name = StringUtils::transcode(qname);
-    if (mySchemaSeen && myExpectedRoot != "") {
-        if (name != myExpectedRoot) {
-            throw ProcessError("Found root element '" + name + "' in file '" + getFileName() + "' (expected '" + myExpectedRoot + "').");
-        }
-        mySchemaSeen = false;
-    }
+    std::string name = TplConvert::_2str(qname);
     int element = convertTag(name);
     myCharactersVector.clear();
     SUMOSAXAttributesImpl_Xerces na(attrs, myPredefinedTags, myPredefinedTagsMML, name);
@@ -121,7 +122,7 @@ void
 GenericSAXHandler::endElement(const XMLCh* const /*uri*/,
                               const XMLCh* const /*localname*/,
                               const XMLCh* const qname) {
-    std::string name = StringUtils::transcode(qname);
+    std::string name = TplConvert::_2str(qname);
     int element = convertTag(name);
     // collect characters
     if (myCharactersVector.size() != 0) {
@@ -152,7 +153,7 @@ GenericSAXHandler::endElement(const XMLCh* const /*uri*/,
         if (myParentHandler && myParentIndicator == element) {
             XMLSubSys::setHandler(*myParentHandler);
             myParentIndicator = SUMO_TAG_NOTHING;
-            myParentHandler = nullptr;
+            myParentHandler = 0;
         }
     }
 }
@@ -169,7 +170,7 @@ GenericSAXHandler::registerParent(const int tag, GenericSAXHandler* handler) {
 void
 GenericSAXHandler::characters(const XMLCh* const chars,
                               const XERCES3_SIZE_t length) {
-    myCharactersVector.push_back(StringUtils::transcode(chars, (int)length));
+    myCharactersVector.push_back(TplConvert::_2str(chars, (int)length));
 }
 
 

@@ -1,19 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    buildTestNets.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2007-04-03
+@version $Id$
 
-# @file    buildTestNets.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2007-04-03
-# @version $Id$
+Rebuils all sumo networks serving as input for the tests.
 
-from __future__ import print_function
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 import os
 import sys
 import subprocess
@@ -31,20 +34,16 @@ for root, dirs, files in os.walk(mRoot):
             exe = binPrefix + "generate"
             if file.endswith(".netccfg"):
                 exe = binPrefix + "convert"
-            print("----------------------------------")
-            print("Rebuilding config: " + os.path.join(root, file))
-            sys.stdout.flush()
+            print "----------------------------------"
+            print "Rebuilding config: " + os.path.join(root, file)
             curDir = os.getcwd()
             os.chdir(root)
             subprocess.call([exe, "--save-configuration", file +
                              ".tmp", "-c", file], stdout=sys.stdout, stderr=sys.stderr)
-            sys.stdout.flush()
             os.remove(file)
             os.rename(file + ".tmp", file)
             os.chdir(curDir)
-            print("Running: " + file)
-            sys.stdout.flush()
+            print "Running: " + file
             subprocess.call(
                 [exe, "-v", "-c", os.path.join(root, file)], stdout=sys.stdout, stderr=sys.stderr)
-            sys.stdout.flush()
-            print("----------------------------------\n")
+            print "----------------------------------\n"

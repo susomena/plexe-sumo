@@ -1,28 +1,34 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NWWriter_XML.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
-/// @author  Leonhard Luecken
 /// @date    Tue, 11.05.2011
 /// @version $Id$
 ///
 // Exporter writing networks using XML (native input) format
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 #include <algorithm>
 #include <utils/common/MsgHandler.h>
 #include <netbuild/NBEdge.h>
@@ -31,7 +37,6 @@
 #include <netbuild/NBNodeCont.h>
 #include <netbuild/NBNetBuilder.h>
 #include <netbuild/NBPTLineCont.h>
-#include <netbuild/NBParking.h>
 #include <utils/common/ToString.h>
 #include <utils/common/StringUtils.h>
 #include <utils/options/OptionsCont.h>
@@ -70,11 +75,7 @@ NWWriter_XML::writeNetwork(const OptionsCont& oc, NBNetBuilder& nb) {
         writePTStops(oc, nb.getPTStopCont());
     }
     if (oc.exists("ptline-output") && oc.isSet("ptline-output")) {
-        writePTLines(oc, nb.getPTLineCont(), nb.getEdgeCont());
-    }
-
-    if (oc.exists("parking-output") && oc.isSet("parking-output")) {
-        writeParkingAreas(oc, nb.getParkingCont(), nb.getEdgeCont());
+        writePTLines(oc, nb.getPTLineCont());
     }
 }
 
@@ -147,10 +148,6 @@ NWWriter_XML::writeNodes(const OptionsCont& oc, NBNodeCont& nc) {
         if (n->getKeepClear() == false) {
             device.writeAttr<bool>(SUMO_ATTR_KEEP_CLEAR, n->getKeepClear());
         }
-        if (n->getRightOfWay() != RIGHT_OF_WAY_DEFAULT) {
-            device.writeAttr<std::string>(SUMO_ATTR_RIGHT_OF_WAY, toString(n->getRightOfWay()));
-        }
-        n->writeParams(device);
         device.closeTag();
     }
     device.close();
@@ -173,6 +170,7 @@ NWWriter_XML::writeEdgesAndConnections(const OptionsCont& oc, NBNodeCont& nc, NB
     const GeoConvHelper& gch = GeoConvHelper::getFinal();
     bool useGeo = oc.exists("proj.plain-geo") && oc.getBool("proj.plain-geo");
     const bool geoAccuracy = useGeo || gch.usingInverseGeoProjection();
+    const bool hasTurns = !oc.getBool("no-turnarounds");
 
     std::map<SumoXMLAttr, std::string> attrs;
     attrs[SUMO_ATTR_VERSION] = NWFrame::MAJOR_VERSION;
@@ -234,9 +232,6 @@ NWWriter_XML::writeEdgesAndConnections(const OptionsCont& oc, NBNodeCont& nc, NB
         if (!e->hasLaneSpecificPermissions()) {
             writePermissions(edevice, e->getPermissions(0));
         }
-        if (!e->hasLaneSpecificStopOffsets() && e->getStopOffsets().size() != 0) {
-            NWWriter_SUMO::writeStopOffsets(edevice, e->getStopOffsets());
-        }
         if (e->needsLaneSpecificOutput()) {
             for (int i = 0; i < (int)e->getLanes().size(); ++i) {
                 const NBEdge::Lane& lane = e->getLanes()[i];
@@ -268,19 +263,18 @@ NWWriter_XML::writeEdgesAndConnections(const OptionsCont& oc, NBNodeCont& nc, NB
                     edevice.writeAttr(SUMO_ATTR_LANE, lane.oppositeID);
                     edevice.closeTag();
                 }
-                lane.writeParams(edevice);
-                NWWriter_SUMO::writeStopOffsets(edevice, lane.stopOffsets);
                 edevice.closeTag();
             }
         }
-        e->writeParams(edevice);
         edevice.closeTag();
         // write this edge's connections to the connections-files
         const std::vector<NBEdge::Connection> connections = e->getConnections();
         if (connections.empty()) {
             // if there are no connections and this appears to be customized, preserve the information
             const int numOutgoing = (int)e->getToNode()->getOutgoingEdges().size();
-            if (numOutgoing > 0) {
+            if (numOutgoing > 1 ||
+                    (numOutgoing == 1 &&
+                     (!e->isTurningDirectionAt(e->getToNode()->getOutgoingEdges().front()) || hasTurns))) {
                 const SVCPermissions inPerm = e->getPermissions();
                 SVCPermissions outPerm = 0;
                 for (auto out : e->getToNode()->getOutgoingEdges()) {
@@ -318,28 +312,19 @@ NWWriter_XML::writeEdgesAndConnections(const OptionsCont& oc, NBNodeCont& nc, NB
             cdevice.writeAttr(SUMO_ATTR_NODE, (*it_node).second->getID());
             cdevice.writeAttr(SUMO_ATTR_EDGES, c->edges);
             cdevice.writeAttr(SUMO_ATTR_PRIORITY, c->priority);
-            if (c->customWidth != NBEdge::UNSPECIFIED_WIDTH) {
-                cdevice.writeAttr(SUMO_ATTR_WIDTH, c->customWidth);
-            }
-            if (c->customTLIndex != -1) {
-                cdevice.writeAttr(SUMO_ATTR_TLLINKINDEX, c->customTLIndex);
-            }
-            if (c->customTLIndex2 != -1) {
-                cdevice.writeAttr(SUMO_ATTR_TLLINKINDEX2, c->customTLIndex2);
-            }
-            if (c->customShape.size() != 0) {
-                cdevice.writeAttr(SUMO_ATTR_SHAPE, c->customShape);
+            if (c->width != NBNode::DEFAULT_CROSSING_WIDTH) {
+                cdevice.writeAttr(SUMO_ATTR_WIDTH, c->width);
             }
             cdevice.closeTag();
         }
     }
-    // write custom walkingarea shapes to the connections file
+    // write customShapes to the connection-file
     for (std::map<std::string, NBNode*>::const_iterator it_node = nc.begin(); it_node != nc.end(); ++it_node) {
-        for (const auto& wacs : it_node->second->getWalkingAreaCustomShapes()) {
-            cdevice.openTag(SUMO_TAG_WALKINGAREA);
-            cdevice.writeAttr(SUMO_ATTR_NODE, it_node->first);
-            cdevice.writeAttr(SUMO_ATTR_EDGES, joinNamedToString(wacs.edges, " "));
-            cdevice.writeAttr(SUMO_ATTR_SHAPE, wacs.shape);
+        NBNode::CustomShapeMap customShapes = (*it_node).second->getCustomLaneShapes();
+        for (NBNode::CustomShapeMap::const_iterator it = customShapes.begin(); it != customShapes.end(); ++it) {
+            cdevice.openTag(SUMO_TAG_CUSTOMSHAPE);
+            cdevice.writeAttr(SUMO_ATTR_ID, (*it).first);
+            cdevice.writeAttr(SUMO_ATTR_SHAPE, (*it).second);
             cdevice.closeTag();
         }
     }
@@ -418,20 +403,12 @@ NWWriter_XML::writePTStops(const OptionsCont& oc, NBPTStopCont& sc) {
     }
     device.close();
 }
-void NWWriter_XML::writePTLines(const OptionsCont& oc, NBPTLineCont& lc, NBEdgeCont& ec) {
+void NWWriter_XML::writePTLines(const OptionsCont& oc, NBPTLineCont& sc) {
     OutputDevice& device = OutputDevice::getDevice(oc.getString("ptline-output"));
     device.writeXMLHeader("additional", "additional_file.xsd");
-    for (std::vector<NBPTLine*>::const_iterator i = lc.begin(); i != lc.end(); ++i) {
-        (*i)->write(device, ec);
-    }
-    device.close();
-}
-
-void NWWriter_XML::writeParkingAreas(const OptionsCont& oc, NBParkingCont& pc, NBEdgeCont& ec) {
-    OutputDevice& device = OutputDevice::getDevice(oc.getString("parking-output"));
-    device.writeXMLHeader("additional", "additional_file.xsd");
-    for (NBParking& p : pc) {
-        p.write(device, ec);
+    for (std::vector<NBPTLine*>::const_iterator i = sc.begin(); i != sc.end(); ++i) {
+        NBPTLine* line = (*i);
+        line->write(device);
     }
     device.close();
 }

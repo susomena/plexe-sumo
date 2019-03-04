@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOSAXAttributesImpl_Xerces.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Encapsulated Xerces-SAX-attributes
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2007-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef SUMOSAXAttributesImpl_Xerces_h
 #define SUMOSAXAttributesImpl_Xerces_h
 
@@ -23,14 +26,18 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
 #include <iostream>
 #include <xercesc/sax2/Attributes.hpp>
 #include <utils/common/SUMOTime.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include "SUMOSAXAttributes.h"
 
 
@@ -231,8 +238,6 @@ public:
      */
     SumoXMLNodeType getNodeType(bool& ok) const;
 
-    /// @brief returns rightOfWay method
-    RightOfWay getRightOfWay(bool& ok) const;
 
     /**
      * @brief Returns the value of the named attribute
@@ -246,7 +251,7 @@ public:
     /** @brief Tries to read given attribute assuming it is a PositionVector
      *
      * @param[in] attr The id of the attribute to read
-     * @return The read value if given and not empty; "" if an error occurred
+     * @return The read value if given and not empty; "" if an error occured
      */
     PositionVector getShape(int attr) const;
 
@@ -254,9 +259,16 @@ public:
     /** @brief Tries to read given attribute assuming it is a Boundary
      *
      * @param[in] attr The id of the attribute to read
-     * @return The read value if given and not empty; "" if an error occurred
+     * @return The read value if given and not empty; "" if an error occured
      */
     Boundary getBoundary(int attr) const;
+
+    /** @brief Tries to read given attribute assuming it is a string vector
+     *
+     * @param[in] attr The id of the attribute to read
+     * @return The read value if given and not empty; empty vector if an error occured
+     */
+    std::vector<std::string> getStringVector(int attr) const;
 
     /** @brief Converts the given attribute id into a man readable string
      *
@@ -273,10 +285,6 @@ public:
      * @param[in] os The stream to use
      */
     void serialize(std::ostream& os) const;
-
-    /** @brief Retrieves all attribute names
-     */
-    std::vector<std::string> getAttributeNames() const;
 
     /// @brief return a new deep-copy attributes object
     SUMOSAXAttributes* clone() const;

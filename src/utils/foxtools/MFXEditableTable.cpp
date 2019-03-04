@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MFXEditableTable.cpp
 /// @author  Daniel Krajzewicz
 /// @date    2004-07-02
@@ -14,12 +6,27 @@
 ///
 // missing_desc
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <fx.h>
 #include <fxkeys.h>
@@ -104,7 +111,7 @@ MFXEditableTable::MFXEditableTable(FXComposite* p, FXObject* tgt,
                                    FXint x, FXint y, FXint w, FXint h,
                                    FXint pl, FXint pr, FXint pt, FXint pb)
     : FXTable(p, tgt, sel, opts, x, y, w, h, pl, pr, pt, pb),
-      myEditedItem(nullptr) {
+      myEditedItem(0) {
     myEditor =
         new FXTextField((FXComposite*)getParent(), 1, this,
                         ID_EDITOR, FRAME_NORMAL | LAYOUT_EXPLICIT);
@@ -125,7 +132,7 @@ MFXEditableTable::onLeftBtnPress(FXObject* sender, FXSelector sel, void* ptr) {
 
 
 long
-MFXEditableTable::onLeftBtnClicked(FXObject*, FXSelector, void* ptr) {
+MFXEditableTable::onLeftBtnClicked(FXObject*, FXSelector , void* ptr) {
     FXTablePos* e = (FXTablePos*)ptr;
     int r = e->row;
     int c = e->col;
@@ -159,7 +166,7 @@ MFXEditableTable::onLeftBtnRelease(FXObject* sender, FXSelector sel, void* ptr) 
 
 void
 MFXEditableTable::editItem(FXTableItem* item, FXint how) {
-    if (item == nullptr) {
+    if (item == 0) {
         editEnd();
         return;
     }
@@ -207,11 +214,11 @@ MFXEditableTable::editEnd() {
         return;
     }
     FXTableItem* item = myEditedItem;
-    myEditedItem = nullptr;
+    myEditedItem = NULL;
     myEditor->hide();
     setFocus();
     FXString text = myEditor->getText();
-    myEditedItem = nullptr;
+    myEditedItem = 0;
     if (item->getText() == text) {
         return;
     }
@@ -233,9 +240,9 @@ MFXEditableTable::editEnd() {
 
 
 long
-MFXEditableTable::onEditEnd(FXObject*, FXSelector, void*) {
+MFXEditableTable::onEditEnd(FXObject*, FXSelector , void*) {
     delete myEditedItem;
-    myEditedItem = nullptr;
+    myEditedItem = 0;
     return 1;
 }
 
@@ -245,7 +252,7 @@ MFXEditableTable::editCancel() {
     if (!myEditedItem) {
         return;
     }
-    myEditedItem = nullptr;
+    myEditedItem = 0;
     myEditor->hide();
     setFocus();
     killSelection(true);
@@ -288,7 +295,7 @@ MFXEditableTable::onKeyRelease(FXObject* sender, FXSelector sel, void* ptr) {
 
 
 long
-MFXEditableTable::onEditFocusOut(FXObject*, FXSelector, void*) {
+MFXEditableTable::onEditFocusOut(FXObject*, FXSelector , void*) {
     editEnd();
     return 0;
 }
@@ -435,7 +442,7 @@ MFXEditableTable::onClipboardRequest(FXObject* o, FXSelector s, void* d) {
 
 
 long
-MFXEditableTable::onDoubleClicked(FXObject*, FXSelector, void*) {
+MFXEditableTable::onDoubleClicked(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -443,7 +450,7 @@ MFXEditableTable::onDoubleClicked(FXObject*, FXSelector, void*) {
 
 
 long
-MFXEditableTable::onTripleClicked(FXObject*, FXSelector, void*) {
+MFXEditableTable::onTripleClicked(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -486,7 +493,7 @@ MFXEditableTable::onCmdVertGrid(FXObject* o, FXSelector s, void* d) {
 
 
 long
-MFXEditableTable::onCmdDeleteColumn(FXObject*, FXSelector, void*) {
+MFXEditableTable::onCmdDeleteColumn(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -494,7 +501,7 @@ MFXEditableTable::onCmdDeleteColumn(FXObject*, FXSelector, void*) {
 
 
 long
-MFXEditableTable::onUpdDeleteColumn(FXObject*, FXSelector, void*) {
+MFXEditableTable::onUpdDeleteColumn(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -502,7 +509,7 @@ MFXEditableTable::onUpdDeleteColumn(FXObject*, FXSelector, void*) {
 
 
 long
-MFXEditableTable::onCmdDeleteRow(FXObject*, FXSelector, void*) {
+MFXEditableTable::onCmdDeleteRow(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -510,7 +517,7 @@ MFXEditableTable::onCmdDeleteRow(FXObject*, FXSelector, void*) {
 
 
 long
-MFXEditableTable::onUpdDeleteRow(FXObject*, FXSelector, void*) {
+MFXEditableTable::onUpdDeleteRow(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -518,7 +525,7 @@ MFXEditableTable::onUpdDeleteRow(FXObject*, FXSelector, void*) {
 
 
 long
-MFXEditableTable::onCmdInsertColumn(FXObject*, FXSelector, void*) {
+MFXEditableTable::onCmdInsertColumn(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -526,7 +533,7 @@ MFXEditableTable::onCmdInsertColumn(FXObject*, FXSelector, void*) {
 
 
 long
-MFXEditableTable::onCmdInsertRow(FXObject*, FXSelector, void*) {
+MFXEditableTable::onCmdInsertRow(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -613,7 +620,7 @@ MFXEditableTable::onCmdSelectRowIndex(FXObject* o, FXSelector s, void* d) {
 
 
 long
-MFXEditableTable::onCmdSelectColumnIndex(FXObject*, FXSelector, void*) {
+MFXEditableTable::onCmdSelectColumnIndex(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -621,7 +628,7 @@ MFXEditableTable::onCmdSelectColumnIndex(FXObject*, FXSelector, void*) {
 
 
 long
-MFXEditableTable::onCmdSelectColumn(FXObject*, FXSelector, void*) {
+MFXEditableTable::onCmdSelectColumn(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -636,7 +643,7 @@ MFXEditableTable::onCmdSelectRow(FXObject* o, FXSelector s, void* d) {
 
 
 long
-MFXEditableTable::onCmdSelectCell(FXObject*, FXSelector, void*) {
+MFXEditableTable::onCmdSelectCell(FXObject*, FXSelector , void*) {
 //    editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -644,7 +651,7 @@ MFXEditableTable::onCmdSelectCell(FXObject*, FXSelector, void*) {
 
 
 long
-MFXEditableTable::onCmdSelectAll(FXObject*, FXSelector, void*) {
+MFXEditableTable::onCmdSelectAll(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);
@@ -652,7 +659,7 @@ MFXEditableTable::onCmdSelectAll(FXObject*, FXSelector, void*) {
 
 
 long
-MFXEditableTable::onCmdDeselectAll(FXObject*, FXSelector, void*) {
+MFXEditableTable::onCmdDeselectAll(FXObject*, FXSelector , void*) {
     editEnd();
     return 1;
 //    return FXTable::onUngrabbed(o, s, d);

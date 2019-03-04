@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSRoute.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Friedemann Wesner
@@ -17,12 +9,27 @@
 ///
 // A vehicle route
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <algorithm>
@@ -52,13 +59,10 @@ FXMutex MSRoute::myDictMutex(true);
 MSRoute::MSRoute(const std::string& id,
                  const ConstMSEdgeVector& edges,
                  const bool isPermanent, const RGBColor* const c,
-                 const std::vector<SUMOVehicleParameter::Stop>& stops) :
-    Named(id), myEdges(edges), myAmPermanent(isPermanent),
-    myReferenceCounter(isPermanent ? 1 : 0),
-    myColor(c),
-    myCosts(-1),
-    mySavings(0),
-    myStops(stops) {}
+                 const std::vector<SUMOVehicleParameter::Stop>& stops)
+    : Named(id), myEdges(edges), myAmPermanent(isPermanent),
+      myReferenceCounter(isPermanent ? 1 : 0),
+      myColor(c), myStops(stops) {}
 
 
 MSRoute::~MSRoute() {
@@ -145,7 +149,7 @@ MSRoute::dictionary(const std::string& id, std::mt19937* rng) {
     if (it == myDict.end()) {
         RouteDistDict::iterator it2 = myDistDict.find(id);
         if (it2 == myDistDict.end() || it2->second.first->getOverallProb() == 0) {
-            return nullptr;
+            return 0;
         }
         return it2->second.first->get(rng);
     }
@@ -160,7 +164,7 @@ MSRoute::distDictionary(const std::string& id) {
 #endif
     RouteDistDict::iterator it2 = myDistDict.find(id);
     if (it2 == myDistDict.end()) {
-        return nullptr;
+        return 0;
     }
     return it2->second.first;
 }
@@ -218,7 +222,7 @@ int
 MSRoute::writeEdgeIDs(OutputDevice& os, const MSEdge* const from, const MSEdge* const upTo) const {
     int numWritten = 0;
     ConstMSEdgeVector::const_iterator i = myEdges.begin();
-    if (from != nullptr) {
+    if (from != 0) {
         i = std::find(myEdges.begin(), myEdges.end(), from);
     }
     for (; i != myEdges.end(); ++i) {
@@ -275,41 +279,18 @@ MSRoute::dict_saveState(OutputDevice& out) {
 
 double
 MSRoute::getDistanceBetween(double fromPos, double toPos,
-                            const MSEdge* fromEdge, const MSEdge* toEdge, bool includeInternal, int routePosition) const {
-    //std::cout << SIMTIME << " getDistanceBetween from=" << fromEdge->getID() << " to=" << toEdge->getID() << " fromPos=" << fromPos << " toPos=" << toPos << " includeInternal=" << includeInternal << "\n";
-    if (routePosition < 0 || routePosition >= (int)myEdges.size()) {
-        throw ProcessError("Invalid routePosition " + toString(routePosition) + " for route with " + toString(myEdges.size()) + " edges");
-    }
-    if (fromEdge->isInternal() && toEdge->isInternal() && fromEdge->getToJunction() == toEdge->getToJunction()) {
-        // internal edges within the same junction
-        if (fromEdge == toEdge) {
-            if (fromPos <= toPos) {
-                return toPos - fromPos;
-            }
-        } else if (fromEdge->getSuccessors().front() == toEdge) {
-            return fromEdge->getLength() - fromPos + toPos;
-        }
-    }
+                            const MSEdge* fromEdge, const MSEdge* toEdge, bool includeInternal) const {
     if (fromEdge->isInternal()) {
-        if (fromEdge == myEdges.front()) {
-            const MSEdge* succ = fromEdge->getSuccessors().front();
-            assert(succ != 0);
-            //std::cout << "  recurse fromSucc=" << succ->getID() << "\n";
-            return (fromEdge->getLength() - fromPos) + getDistanceBetween(0, toPos, succ, toEdge, includeInternal);
-        } else {
-            const MSEdge* pred = fromEdge->getPredecessors().front();
-            assert(pred != 0);
-            //std::cout << "  recurse fromPred=" << pred->getID() << "\n";
-            return getDistanceBetween(pred->getLength(), toPos, pred, toEdge, includeInternal, routePosition) - fromPos;
-        }
+        const MSEdge* pred = fromEdge->getPredecessors().front();
+        assert(pred != 0);
+        return fromPos + getDistanceBetween(pred->getLength(), toPos, pred, toEdge, includeInternal);
     }
     if (toEdge->isInternal()) {
         const MSEdge* pred = toEdge->getPredecessors().front();
         assert(pred != 0);
-        //std::cout << "  recurse toPred=" << pred->getID() << "\n";
-        return toPos + getDistanceBetween(fromPos, pred->getLength(), fromEdge, pred, includeInternal, routePosition);
+        return toPos + getDistanceBetween(fromPos, pred->getLength(), fromEdge, pred, includeInternal);
     }
-    ConstMSEdgeVector::const_iterator it = std::find(myEdges.begin() + routePosition, myEdges.end(), fromEdge);
+    ConstMSEdgeVector::const_iterator it = std::find(myEdges.begin(), myEdges.end(), fromEdge);
     if (it == myEdges.end() || std::find(it, myEdges.end(), toEdge) == myEdges.end()) {
         // start or destination not contained in route
         return std::numeric_limits<double>::max();
@@ -364,7 +345,7 @@ MSRoute::getDistanceBetween(double fromPos, double toPos,
 
 const RGBColor&
 MSRoute::getColor() const {
-    if (myColor == nullptr) {
+    if (myColor == 0) {
         return RGBColor::DEFAULT_COLOR;
     }
     return *myColor;

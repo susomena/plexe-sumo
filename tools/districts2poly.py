@@ -1,32 +1,33 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    districts2poly.py
-# @author  Jakob Erdmann
-# @date    2015-07-31
-# @version $Id$
-
 """
+@file    districts2poly.py
+@author  Jakob Erdmann
+@date    2015-07-31
+@version $Id$
+
 From a sumo network and a taz (district) file, this script colors each district
 with a unique color (by creating a colored polygon for each edge in that
 district)
 These polygons can then be visualized in sumo-gui
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 import sys
 import os
 import random
 from optparse import OptionParser
-sys.path.append(os.path.join(os.environ["SUMO_HOME"], 'tools'))
-from sumolib.output import parse  # noqa
-from sumolib.net import readNet  # noqa
-from sumolib.miscutils import Colorgen  # noqa
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from sumolib.output import parse
+from sumolib.net import readNet
+from sumolib.miscutils import Colorgen
 
 
 def parse_args():
@@ -46,7 +47,7 @@ def parse_args():
         options.net, options.routefile = args
         options.colorgen = Colorgen(
             (options.hue, options.saturation, options.brightness))
-    except Exception:
+    except:
         sys.exit(USAGE)
     if options.outfile is None:
         options.outfile = options.routefile + ".poly.xml"
@@ -71,7 +72,6 @@ def main():
             generate_poly(net, taz.id, options.colorgen(),
                           options.layer, taz.edges.split(), outf)
         outf.write('</polygons>\n')
-
 
 if __name__ == "__main__":
     main()

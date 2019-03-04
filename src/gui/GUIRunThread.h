@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIRunThread.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // The thread that runs the simulation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIRunThread_h
 #define GUIRunThread_h
 
@@ -23,16 +26,19 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
-#include <vector>
-#include <set>
 #include <iostream>
 #include <fx.h>
 #include <utils/foxtools/FXSingleEventThread.h>
+#include <utils/foxtools/FXRealSpinDial.h>
 #include <utils/foxtools/FXThreadEvent.h>
-#include <utils/foxtools/FXSynchQue.h>
+#include <utils/foxtools/MFXEventQue.h>
 #include <utils/common/SUMOTime.h>
 
 
@@ -58,7 +64,7 @@ class GUIRunThread : public FXSingleEventThread {
 public:
     /// constructor
     GUIRunThread(FXApp* app, MFXInterThreadEventClient* mw,
-                 double& simDelay, FXSynchQue<GUIEvent*>& eq, FXEX::FXThreadEvent& ev);
+                 FXRealSpinDial& simDelay, MFXEventQue<GUIEvent*>& eq, FXEX::FXThreadEvent& ev);
 
     /// destructor
     virtual ~GUIRunThread();
@@ -114,10 +120,18 @@ public:
         return myBreakpointLock;
     }
 
+    std::set<SUMOTime>& getSnapshots() {
+        return myApplicationSnapshots;
+    }
+
+    FXMutex& getSnapshotsLock() {
+        return myApplicationSnapshotsLock;
+    }
+
 protected:
     void makeStep();
 
-    void waitForSnapshots(const SUMOTime snapshotTime);
+    void waitForSnapshots(SUMOTime snapShotTime);
 
 protected:
     /// the loaded simulation network
@@ -150,13 +164,13 @@ protected:
         Needed to be deleted from the handler later on */
     OutputDevice* myErrorRetriever, *myMessageRetriever, *myWarningRetriever;
 
-    double& mySimDelay;
+    FXRealSpinDial& mySimDelay;
 
-    FXSynchQue<GUIEvent*>& myEventQue;
+    MFXEventQue<GUIEvent*>& myEventQue;
 
     FXEX::FXThreadEvent& myEventThrow;
 
-    FXMutex mySimulationLock;
+    MFXMutex mySimulationLock;
 
     /// @brief List of breakpoints
     std::vector<SUMOTime> myBreakpoints;
@@ -164,9 +178,16 @@ protected:
     /// @brief Lock for modifying the list of breakpoints
     FXMutex myBreakpointLock;
 
+    /// @brief List of snapshot times
+    std::set<SUMOTime> myApplicationSnapshots;
+
+    /// @brief Lock for modifying the list of snapshot times
+    FXMutex myApplicationSnapshotsLock;
+
 };
 
 
 #endif
 
 /****************************************************************************/
+

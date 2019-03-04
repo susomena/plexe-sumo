@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIChargingStation.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // A lane area vehicles can halt at (gui-version)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/MsgHandler.h>
@@ -45,7 +52,7 @@
 #include <gui/GUIApplicationWindow.h>
 #include <microsim/logging/FunctionBinding.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
-#include <foreign/fontstash/fontstash.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/geom/GeomHelper.h>
 #include <utils/gui/globjects/GLIncludes.h>
 
@@ -53,11 +60,9 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-GUIChargingStation::GUIChargingStation(const std::string& id, MSLane& lane, double frompos, double topos,
-                                       const std::string& name,
-                                       double chargingPower, double efficiency, bool chargeInTransit, double chargeDelay) :
-    MSChargingStation(id, lane, frompos, topos, name, chargingPower, efficiency, chargeInTransit, chargeDelay),
-    GUIGlObject_AbstractAdd(GLO_CHARGING_STATION, id) {
+GUIChargingStation::GUIChargingStation(const std::string& id, MSLane& lane, double frompos, double topos,  double chargingPower, double efficiency, bool chargeInTransit, int chargeDelay) :
+    MSChargingStation(id, lane, frompos, topos, chargingPower, efficiency, chargeInTransit, chargeDelay),
+    GUIGlObject_AbstractAdd("chargingStation", GLO_TRIGGER, id) {
     myFGShape = lane.getShape();
     myFGShape = myFGShape.getSubpart(
                     lane.interpolateLanePosToGeometryPos(frompos),
@@ -89,14 +94,11 @@ GUIChargingStation::~GUIChargingStation() {
 GUIParameterTableWindow*
 GUIChargingStation::getParameterWindow(GUIMainWindow& app, GUISUMOAbstractView&) {
     // Create table items
-    GUIParameterTableWindow* ret = new GUIParameterTableWindow(app, *this, 9);
+    GUIParameterTableWindow* ret = new GUIParameterTableWindow(app, *this, 6);
 
     // add items
-    ret->mkItem("name", false, getMyName());
     ret->mkItem("begin position [m]", false, myBegPos);
     ret->mkItem("end position [m]", false, myEndPos);
-    ret->mkItem("stopped vehicles[#]", true, new FunctionBinding<GUIChargingStation, int>(this, &MSStoppingPlace::getStoppedVehicleNumber));
-    ret->mkItem("last free pos[m]", true, new FunctionBinding<GUIChargingStation, double>(this, &MSStoppingPlace::getLastFreePos));
     ret->mkItem("charging power [W]", false, myChargingPower);
     ret->mkItem("charging myEfficiency []", false, myEfficiency);
     ret->mkItem("charge in transit [true/false]", false, myChargeInTransit);
@@ -133,17 +135,20 @@ GUIChargingStation::drawGL(const GUIVisualizationSettings& s) const {
     // Draw Charging Station
     glPushName(getGlID());
     glPushMatrix();
+    RGBColor blue(114, 210, 252, 255);
+    RGBColor green(76, 170, 50, 255);
+    RGBColor yellow(255, 235, 0, 255);
+    RGBColor yellowCharge(255, 180, 0, 255);
 
     // draw the area depending if the vehicle is charging
     glTranslated(0, 0, getType());
 
-    // set color depending if charging station is charging
     if (myChargingVehicle == true) {
-        GLHelper::setColor(s.SUMO_color_chargingStation_charge);
+        GLHelper::setColor(yellowCharge);
     } else {
-        GLHelper::setColor(s.SUMO_color_chargingStation);
+        GLHelper::setColor(blue);
     }
-    const double exaggeration = s.addSize.getExaggeration(s, this);
+    const double exaggeration = s.addSize.getExaggeration(s);
     GLHelper::drawBoxLines(myFGShape, myFGShapeRotations, myFGShapeLengths, exaggeration);
 
     // draw details unless zoomed out to far
@@ -151,12 +156,34 @@ GUIChargingStation::drawGL(const GUIVisualizationSettings& s) const {
 
         // push charging power matrix
         glPushMatrix();
+
+        // Traslate End positionof signal
+        glTranslated(myFGSignPos.x(), myFGSignPos.y(), 0);
+
+        // Rotate 180 (Eje X -> Mirror)
+        glRotated(180, 1, 0, 0);
+
+        // Rotate again using myBlockIconRotation
+        glRotated(myFGSignRot, 0, 0, 1);
+
+        // Set polygon mode
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        // set polyfront position on 0,0
+        pfSetPosition(0, 0);
+
+        // Set polyfront scale to 1
+        pfSetScale(1.f);
+
+        // traslate matrix
+        glTranslated(1.2, 0, 0);
+
         // draw charging power
-        GLHelper::drawText((toString(myChargingPower) + " W").c_str(), myFGSignPos + Position(1.2, 0), .1, 1.f, s.SUMO_color_chargingStation, myFGSignRot, FONS_ALIGN_LEFT);
+        pfDrawString((toString(myChargingPower) + " W").c_str());
+
         // pop charging power matrix
         glPopMatrix();
 
-        glPushMatrix();
         // draw the sign
         glTranslated(myFGSignPos.x(), myFGSignPos.y(), 0);
         int noPoints = 9;
@@ -168,23 +195,19 @@ GUIChargingStation::drawGL(const GUIVisualizationSettings& s) const {
         GLHelper::drawFilledCircle((double) 1.1, noPoints);
         glTranslated(0, 0, .1);
 
-        GLHelper::setColor(s.SUMO_color_busStop_sign);
+        GLHelper::setColor(yellow);
         GLHelper::drawFilledCircle((double) 0.9, noPoints);
 
         if (s.scale * exaggeration >= 4.5) {
-            GLHelper::drawText("C", Position(), .1, 1.6, s.SUMO_color_chargingStation, myFGSignRot);
+            GLHelper::drawText("C", Position(), .1, 1.6, blue, myFGSignRot);
         }
 
         glTranslated(5, 0, 0);
-        glPopMatrix();
 
-    }
-    if (s.addFullName.show && getMyName() != "") {
-        GLHelper::drawTextSettings(s.addFullName, getMyName(), myFGSignPos, s.scale, s.getTextAngle(myFGSignRot), GLO_MAX - getType());
     }
     glPopMatrix();
     glPopName();
-    drawName(getCenteringBoundary().getCenter(), s.scale, s.addName, s.angle);
+    drawName(getCenteringBoundary().getCenter(), s.scale, s.addName);
 }
 
 /****************************************************************************/

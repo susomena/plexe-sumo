@@ -1,9 +1,5 @@
-# Tests parsing of stopOffsets (lane / edge child elements)
-stopOffsets
-
 # whether connectiosn are correctly read and processed
 connections
-customTLS
 
 # handle them!
 internal_lanes
@@ -26,9 +22,6 @@ traffic_light_actuated
 # handle shape, allow, disallow, type
 attributes
 
-# dismiss vclass information
-dismiss-vclasses
-
 # handle non-default spreadType
 spreadType
 
@@ -50,9 +43,6 @@ roundabout_modify
 
 # test discarding traffic lights for geometry-like junctions
 tls.discard-simple
-
-# test discarding traffic lights for geometry-like junctions, protect joined tls
-tls.discard-simple_joined
 
 # see ticket917
 infer_option_street_names
@@ -81,23 +71,3 @@ remove_lane
 
 # load a network with edge types and write it to plain-xml and .net.xml
 edge_types
-params
-short_edge
-
-# merge 2 networks without geo-referencing that are shifted appropriately
-merge
-
-# merge 2 geo-referenced networks
-merge_geo
-
-# re-import limited speed on junctions based on radius
-limit-turn-speed
-
-# re-import limited speed on junctions based on radius and overwrite with a new limit argument
-limit-turn-speed_overwrite
-
-# import check-lane-foes options from .net.xml
-checkLaneFoes
-
-# test computation of lane shapes from edge shapes with elevation
-elevation

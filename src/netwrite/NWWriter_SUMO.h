@@ -1,21 +1,23 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NWWriter_SUMO.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
-/// @author  Leonhard Luecken
 /// @date    Tue, 04.05.2011
 /// @version $Id$
 ///
 // Exporter writing networks using the SUMO format
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef NWWriter_SUMO_h
 #define NWWriter_SUMO_h
@@ -24,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -95,31 +101,27 @@ public:
     static void writeRoundabouts(OutputDevice& into, const std::set<EdgeSet>& roundabouts,
                                  const NBEdgeCont& ec);
 
-
-    /** @brief Write a stopOffset element into output device
-     */
-    static void writeStopOffsets(OutputDevice& into, const std::map<SVCPermissions, double>& stopOffsets);
-
-
-private:
+protected:
     /// @name Methods for writing network parts
     /// @{
 
     /** @brief Writes internal edges (<edge ... with id[0]==':') of the given node
      * @param[in] into The device to write the edges into
      * @param[in] n The node to write the edges of
+     * @param[in] origNames Whether original names shall be written as parameter
      * @return Whether an internal edge was written
      */
-    static bool writeInternalEdges(OutputDevice& into, const NBEdgeCont& ec, const NBNode& n);
+    static bool writeInternalEdges(OutputDevice& into, const NBEdgeCont& ec, const NBNode& n, bool origNames);
 
 
     /** @brief Writes an edge (<edge ...)
      * @param[in] into The device to write the edge into
      * @param[in] e The edge to write
      * @param[in] noNames Whether names shall be ignored
+     * @param[in] origNames Whether original names shall be written as parameter
      * @see writeLane()
      */
-    static void writeEdge(OutputDevice& into, const NBEdge& e, bool noNames);
+    static void writeEdge(OutputDevice& into, const NBEdge& e, bool noNames, bool origNames);
 
 
     /** @brief Writes a lane (<lane ...) of an edge
@@ -128,24 +130,26 @@ private:
      * @param[in] origID The original ID of the edge in the input
      * @param[in] length Lane's length
      * @param[in] index The index of the lane within the edge
+     * @param[in] origNames Whether original names shall be written as parameter
      * @param[in] oppositeID The ID of the opposite lane for overtaking
+     * @param[in] node The node to check for custom shape data
      * @param[in] accelRamp whether this lane is an acceleration lane
      * @param[in] customShape whether this lane has a custom shape
      */
     static void writeLane(OutputDevice& into, const std::string& lID,
                           double speed, SVCPermissions permissions, SVCPermissions preferred,
-                          double startOffset, double endOffset,
-                          std::map<SVCPermissions, double> stopOffsets, double width, PositionVector shape,
-                          const Parameterised* params, double length, int index,
-                          const std::string& oppositeID, bool accelRamp = false,
+                          double endOffset, double width, PositionVector shape,
+                          const std::string& origID, double length, int index, bool origNames,
+                          const std::string& oppositeID, const NBNode* node = 0, bool accelRamp = false,
                           bool customShape = false);
 
 
     /** @brief Writes a junction (<junction ...)
      * @param[in] into The device to write the edge into
      * @param[in] n The junction/node to write
+     * @param[in] checkLaneFoes Whether laneConflicts shall be checked at this junction
      */
-    static void writeJunction(OutputDevice& into, const NBNode& n);
+    static void writeJunction(OutputDevice& into, const NBNode& n, const bool checkLaneFoes);
 
 
     /** @brief Writes internal junctions (<junction with id[0]==':' ...) of the given node
@@ -168,6 +172,7 @@ private:
      */
     static void writeDistrict(OutputDevice& into, const NBDistrict& d);
 
+private:
     /** @brief Writes a single internal connection
      * @param[in] from The id of the from-edge
      * @param[in] to The id of the to-edge
@@ -176,10 +181,7 @@ private:
      */
     static void writeInternalConnection(OutputDevice& into,
                                         const std::string& from, const std::string& to,
-                                        int fromLane, int toLane, const std::string& via,
-                                        LinkDirection dir = LINKDIR_STRAIGHT,
-                                        const std::string& tlID = "",
-                                        int linkIndex = NBConnection::InvalidTlIndex);
+                                        int fromLane, int toLane, const std::string& via);
 
     /// @brief writes a SUMOTime as int if possible, otherwise as a float
     static std::string writeSUMOTime(SUMOTime time);
@@ -197,7 +199,7 @@ private:
                                 const NBEdgeCont& ec);
 
     /// @brief retrieve the id of the opposite direction internal lane if it exists
-    static std::string getOppositeInternalID(const NBEdgeCont& ec, const NBEdge* from, const NBEdge::Connection& con, double& oppositeLength);
+    static std::string getOppositeInternalID(const NBEdgeCont& ec, const NBEdge* from, const NBEdge::Connection& con);
 
 };
 

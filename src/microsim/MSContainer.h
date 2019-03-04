@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSContainer.h
 /// @author  Melanie Weber
 /// @author  Andreas Kendziorra
@@ -15,13 +7,28 @@
 ///
 // The class for modelling container-movements
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSContainer_h
 #define MSContainer_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -70,7 +77,7 @@ public:
     class MSContainerStage_Driving : public MSTransportable::Stage_Driving {
     public:
         /// constructor
-        MSContainerStage_Driving(const MSEdge* destination, MSStoppingPlace* toStop,
+        MSContainerStage_Driving(const MSEdge& destination, MSStoppingPlace* toStop,
                                  const double arrivalPos, const std::vector<std::string>& lines);
 
         /// destructor
@@ -81,21 +88,20 @@ public:
 
         /// @brief returns the stage description as a string
         std::string getStageDescription() const;
-        std::string getStageSummary() const;
 
         /** @brief Called on writing tripinfo output
          *
          * @param[in] os The stream to write the information into
          * @exception IOError not yet implemented
          */
-        virtual void tripInfoOutput(OutputDevice& os, const MSTransportable* const transportable) const;
+        virtual void tripInfoOutput(OutputDevice& os) const;
 
         /** @brief Called on writing vehroute output
          *
          * @param[in] os The stream to write the information into
          * @exception IOError not yet implemented
          */
-        virtual void routeOutput(OutputDevice& os, const bool withRouteLength) const;
+        virtual void routeOutput(OutputDevice& os) const;
     };
 
     /**
@@ -147,19 +153,18 @@ public:
         std::string getStageDescription() const {
             return "tranship";
         }
-        std::string getStageSummary() const;
 
         /** @brief Called on writing tripinfo output
          * @param[in] os The stream to write the information into
          * @exception IOError not yet implemented
          */
-        virtual void tripInfoOutput(OutputDevice& os, const MSTransportable* const transportable) const;
+        virtual void tripInfoOutput(OutputDevice& os) const;
 
         /** @brief Called on writing vehroute output
          * @param[in] os The stream to write the information into
          * @exception IOError not yet implemented
          */
-        virtual void routeOutput(OutputDevice& os, const bool withRouteLength) const;
+        virtual void routeOutput(OutputDevice& os) const;
 
         /** @brief Called for writing the events output
          * @param[in] os The stream to write the information into
@@ -247,10 +252,9 @@ public:
     /** @brief Called on writing vehroute output
     *
     * @param[in] os The stream to write the information into
-    * @param[in] withRouteLength whether route length shall be written
     * @exception IOError not yet implemented
     */
-    virtual void routeOutput(OutputDevice& os, const bool withRouteLength) const;
+    virtual void routeOutput(OutputDevice& os) const;
 
 private:
     /// @brief Invalidated copy constructor.

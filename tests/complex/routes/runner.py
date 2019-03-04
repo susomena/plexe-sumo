@@ -1,18 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2015-02-03
+@version $Id$
 
-# @file    runner.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2015-02-03
-# @version $Id$
+This script is a test runner for the route input tests.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 from __future__ import print_function
 from __future__ import absolute_import
@@ -32,10 +36,10 @@ class PassThroughOptionParser(OptionParser):
     see http://stackoverflow.com/questions/1885161/how-can-i-get-optparses-optionparser-to-ignore-invalid-options
 
     When unknown arguments are encountered, bundle with largs and try again,
-    until rargs is depleted.
+    until rargs is depleted.  
 
     sys.exit(status) will still be called if a known argument is passed
-    incorrectly (e.g. missing arguments or bad argument types, etc.)
+    incorrectly (e.g. missing arguments or bad argument types, etc.)        
     """
 
     def _process_args(self, largs, rargs, values):
@@ -50,8 +54,7 @@ def runInstance(elem, attrSet, childSet, depart):
     print(elem, attrSet, childSet)
     sys.stdout.flush()
     with open("routes.xml", "w") as routes:
-        routes.write('''<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" \
-xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+        routes.write('''<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     <route id="a" edges="1fi 1si 2o 2fi 2si"/>
     <%s id="v" %s''' % (elem, depart))
         for idx, attr in enumerate(attrs):
@@ -69,7 +72,6 @@ xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
     if retCode < 0 or retCodeTaz < 0:
         sys.stdout.write(open(routes.name).read())
         sys.exit()
-
 
 optParser = PassThroughOptionParser()
 optParser.add_option("-e", "--element", help="xml element to choose")

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ROMARouteHandler.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,17 +9,31 @@
 ///
 // Parser and container for routes during their loading
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <utils/common/MsgHandler.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/vehicle/SUMOVehicleParameter.h>
-#include <utils/vehicle/SUMOVehicleParserHelper.h>
+#include <utils/xml/SUMOVehicleParserHelper.h>
 #include <od/ODMatrix.h>
 #include "ROMARouteHandler.h"
 
@@ -36,7 +42,8 @@
 // method definitions
 // ===========================================================================
 ROMARouteHandler::ROMARouteHandler(ODMatrix& matrix) :
-    SUMOSAXHandler(""), myMatrix(matrix) {
+    SUMOSAXHandler(""),
+    myMatrix(matrix) {
     if (OptionsCont::getOptions().isSet("taz-param")) {
         myTazParamKeys = OptionsCont::getOptions().getStringVector("taz-param");
     }
@@ -48,23 +55,16 @@ ROMARouteHandler::~ROMARouteHandler() {
 
 
 void
-ROMARouteHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
+ROMARouteHandler::myStartElement(int element,
+                                 const SUMOSAXAttributes& attrs) {
     if (element == SUMO_TAG_TRIP || element == SUMO_TAG_VEHICLE) {
         myVehicleParameter = SUMOVehicleParserHelper::parseVehicleAttributes(attrs);
-        if (!myVehicleParameter->wasSet(VEHPARS_FROM_TAZ_SET) && attrs.hasAttribute(SUMO_ATTR_FROM)) {
-            myVehicleParameter->fromTaz = attrs.getString(SUMO_ATTR_FROM);
-        }
-        if (!myVehicleParameter->wasSet(VEHPARS_TO_TAZ_SET) && attrs.hasAttribute(SUMO_ATTR_TO)) {
-            myVehicleParameter->toTaz = attrs.getString(SUMO_ATTR_TO);
-        }
     } else if (element == SUMO_TAG_PARAM && !myTazParamKeys.empty()) {
         if (attrs.getString(SUMO_ATTR_KEY) == myTazParamKeys[0]) {
             myVehicleParameter->fromTaz = attrs.getString(SUMO_ATTR_VALUE);
-            myVehicleParameter->parametersSet |= VEHPARS_FROM_TAZ_SET;
         }
         if (myTazParamKeys.size() > 1 && attrs.getString(SUMO_ATTR_KEY) == myTazParamKeys[1]) {
             myVehicleParameter->toTaz = attrs.getString(SUMO_ATTR_VALUE);
-            myVehicleParameter->parametersSet |= VEHPARS_TO_TAZ_SET;
         }
     }
 }
@@ -73,13 +73,8 @@ ROMARouteHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
 void
 ROMARouteHandler::myEndElement(int element) {
     if (element == SUMO_TAG_TRIP || element == SUMO_TAG_VEHICLE) {
-        if (myVehicleParameter->fromTaz == "" || myVehicleParameter->toTaz == "") {
-            WRITE_WARNING("No origin or no destination given, ignoring '" + myVehicleParameter->id + "'!");
-        } else {
-            myMatrix.add(myVehicleParameter->id, myVehicleParameter->depart,
-                         myVehicleParameter->fromTaz, myVehicleParameter->toTaz, myVehicleParameter->vtypeid,
-                         !myVehicleParameter->wasSet(VEHPARS_FROM_TAZ_SET), !myVehicleParameter->wasSet(VEHPARS_TO_TAZ_SET));
-        }
+        std::pair<const std::string, const std::string> od = std::make_pair(myVehicleParameter->fromTaz, myVehicleParameter->toTaz);
+        myMatrix.add(myVehicleParameter->id, myVehicleParameter->depart, od, myVehicleParameter->vtypeid);
         delete myVehicleParameter;
     }
 }

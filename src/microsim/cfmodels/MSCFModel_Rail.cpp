@@ -1,24 +1,30 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_Rail.cpp
 /// @author  Gregor L\"ammel
-/// @author  Leander Flamm
 /// @date    Tue, 08 Feb 2017
 /// @version $Id$
 ///
 // <description missing>
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <utils/common/MsgHandler.h>
@@ -29,9 +35,11 @@
 
 #define G  9.80665
 
-MSCFModel_Rail::MSCFModel_Rail(const MSVehicleType* vtype) :
-    MSCFModel(vtype) {
-    const std::string trainType = vtype->getParameter().getCFParamString(SUMO_ATTR_TRAIN_TYPE, "NGT400");
+MSCFModel_Rail::MSCFModel_Rail(const MSVehicleType* vtype, std::string trainType)
+    :
+
+    MSCFModel(vtype, -1, -1, -1, -1, 1) {
+
     if (trainType.compare("RB425") == 0) {
         myTrainParams = initRB425Params();
     } else if (trainType.compare("RB628") == 0) {
@@ -52,47 +60,16 @@ MSCFModel_Rail::MSCFModel_Rail(const MSVehicleType* vtype) :
         WRITE_ERROR("Unknown train type: " + trainType + ". Exiting!");
         throw ProcessError();
     }
-    // override with user values
-    if (vtype->wasSet(VTYPEPARS_MAXSPEED_SET)) {
-        myTrainParams.vmax = vtype->getMaxSpeed();
-    }
-    if (vtype->wasSet(VTYPEPARS_LENGTH_SET)) {
-        myTrainParams.length = vtype->getLength();
-    }
-    myTrainParams.decl = vtype->getParameter().getCFParam(SUMO_ATTR_DECEL, myTrainParams.decl);
     setMaxDecel(myTrainParams.decl);
-    setEmergencyDecel(vtype->getParameter().getCFParam(SUMO_ATTR_EMERGENCYDECEL, myTrainParams.decl + 0.3));
-    // update type parameters so they are shown correctly in the gui (if defaults from trainType are used)
-    const_cast<MSVehicleType*>(vtype)->setMaxSpeed(myTrainParams.vmax);
-    const_cast<MSVehicleType*>(vtype)->setLength(myTrainParams.length);
 
 }
 
-MSCFModel_Rail::~MSCFModel_Rail() { }
+MSCFModel_Rail::~MSCFModel_Rail() {
+}
 
-double MSCFModel_Rail::followSpeed(const MSVehicle* const veh, double speed, double gap,
-                                   double /* predSpeed */, double /* predMaxDecel*/, const MSVehicle* const /*pred*/) const {
-
-    // followSpeed module is used for the simulation of moving block operations. The safety gap is chosen similar to the existing german
-    // system CIR-ELKE (based on LZB). Other implementations of moving block systems may differ, but for now no appropriate parameter
-    // can be set (would be per lane, not per train) -> hard-coded
-
-    double safetyGap = 5.0; // default value for low speeds (< 30 km/h)
-    if (speed >= 30 / 3.6) {
-        safetyGap = 50.0; // safety distance for higher speeds (>= 30 km/h)
-    }
-
-    const double vsafe = maximumSafeStopSpeed(gap - safetyGap, speed, false, TS); // absolute breaking distance
-    const double vmin = minNextSpeed(speed, veh);
-    const double vmax = maxNextSpeed(speed, veh);
-
-    if (MSGlobals::gSemiImplicitEulerUpdate) {
-        return MIN2(vsafe, vmax);
-    } else {
-        // ballistic
-        // XXX: the euler variant can break as strong as it wishes immediately! The ballistic cannot, refs. #2575.
-        return MAX2(MIN2(vsafe, vmax), vmin);
-    }
+double MSCFModel_Rail::followSpeed(const MSVehicle* const veh, double speed, double /* gap2pred*/,
+                                   double /* predSpeed */, double /* predMaxDecel*/) const {
+    return maxNextSpeed(speed, veh);
 }
 
 int
@@ -101,8 +78,9 @@ MSCFModel_Rail::getModelID() const {
 }
 
 MSCFModel*
-MSCFModel_Rail::duplicate(const MSVehicleType* vtype) const {
-    return new MSCFModel_Rail(vtype);
+MSCFModel_Rail::duplicate(const MSVehicleType* /* vtype */) const {
+    /// XXX Fixme
+    throw ProcessError("not yet implemented");
 }
 
 double MSCFModel_Rail::maxNextSpeed(double speed, const MSVehicle* const veh) const {
@@ -141,30 +119,19 @@ double MSCFModel_Rail::maxNextSpeed(double speed, const MSVehicle* const veh) co
 
 double MSCFModel_Rail::minNextSpeed(double speed, const MSVehicle* const veh) const {
 
-    const double slope = veh->getSlope();
-    const double gr = myTrainParams.weight * G * sin(DEG2RAD(slope)); //kN
-    const double res = getInterpolatedValueFromLookUpMap(speed, &(myTrainParams.resistance)); // kN
-    const double totalRes = res + gr; //kN
-    const double a = myTrainParams.decl + totalRes / myTrainParams.rotWeight;
-    const double vMin = speed - a * DELTA_T / 1000.;
-    if (MSGlobals::gSemiImplicitEulerUpdate) {
-        return MAX2(vMin, 0.);
-    } else {
-        // NOTE: ballistic update allows for negative speeds to indicate a stop within the next timestep
-        return vMin;
-    }
+    double slope = veh->getSlope();
+    double gr = myTrainParams.weight * G * sin(DEG2RAD(slope)); //kN
+    double res = getInterpolatedValueFromLookUpMap(speed, &(myTrainParams.resistance)); // kN
+    double totalRes = res + gr; //kN
+
+
+    double a = myTrainParams.decl + totalRes / myTrainParams.rotWeight;
+
+    return speed - a * DELTA_T / 1000.;
 
 }
-
-
-double
-MSCFModel_Rail::minNextSpeedEmergency(double speed, const MSVehicle* const veh) const {
-    return minNextSpeed(speed, veh);
-}
-
 
 double MSCFModel_Rail::getInterpolatedValueFromLookUpMap(double speed, const LookUpMap* lookUpMap) const {
-    speed = speed * 3.6; // lookup values in km/h
     std::map<double, double>::const_iterator low, prev;
     low = lookUpMap->lower_bound(speed);
 
@@ -219,8 +186,13 @@ MSCFModel::VehicleVariables* MSCFModel_Rail::createVehicleVariables() const {
 }
 
 
-double MSCFModel_Rail::finalizeSpeed(MSVehicle* const veh, double vPos) const {
-    return MSCFModel::finalizeSpeed(veh, vPos);
+double MSCFModel_Rail::moveHelper(MSVehicle* const veh, double vPos) const {
+    const double oldV = veh->getSpeed(); // save old v for optional acceleration computation
+    const double vSafe = MIN2(vPos, veh->processNextStop(vPos)); // process stops
+    const double vMin = minNextSpeed(oldV, veh);
+    const double vMax = MAX2(vMin, MIN3(veh->getMaxSpeedOnLane(), maxNextSpeed(oldV, veh), vSafe));
+    const double vNext = veh->getLaneChangeModel().patchSpeed(vMin, vMax, vMax, *this);
+    return vNext;
 }
 
 double MSCFModel_Rail::freeSpeed(const MSVehicle* const /* veh */, double /* speed */, double dist, double targetSpeed,
@@ -250,7 +222,7 @@ double MSCFModel_Rail::freeSpeed(const MSVehicle* const /* veh */, double /* spe
         const double fullSpeedGain = (yFull + (onInsertion ? 1. : 0.)) * ACCEL2SPEED(myTrainParams.decl);
         return DIST2SPEED(MAX2(0.0, dist - exactGap) / (yFull + 1)) + fullSpeedGain + targetSpeed;
     } else {
-        WRITE_ERROR("Anything else than semi implicit euler update is not yet implemented. Exiting!");
+        WRITE_ERROR("Anything else then semi implicit euler update is not yet implemented. Exiting!");
         throw ProcessError();
     }
 }

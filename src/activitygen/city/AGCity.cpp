@@ -1,14 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-// activitygen module
-// Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    AGCity.cpp
 /// @author  Piotr Woznica
 /// @author  Daniel Krajzewicz
@@ -21,12 +11,29 @@
 // City class that contains all other objects of the city: in particular
 // streets, households, bus lines, work positions and school
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+// activitygen module
+// Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <vector>
@@ -37,7 +44,6 @@
 #include <utils/options/OptionsCont.h>
 #include <router/RONet.h>
 #include <router/ROEdge.h>
-#include "AGAdult.h"
 #include "AGStreet.h"
 #include "AGWorkPosition.h"
 #include "AGCity.h"
@@ -68,8 +74,8 @@ AGCity::completeStreets() {
                                        * ((double)statData.getPeopleYoungerThan(statData.limitAgeRetirement)
                                           - (double)statData.getPeopleYoungerThan(statData.limitAgeChildren))
                                        + (double)statData.incomingTraffic;
-    // by default laborDemand = 1.05. We generate 5% more work positions that really needed to avoid any expensive research of random work positions
-    neededWorkPositionsInCity *= statData.laborDemand;
+    // we generate 5% more work positions that really needed: to avoid any expensive research of random work positions
+    neededWorkPositionsInCity *= double(1.05);
     statData.workPositions = (int)neededWorkPositionsInCity;
     statData.factorWorkPositions = neededWorkPositionsInCity / (double) work;
 
@@ -80,16 +86,18 @@ AGCity::completeStreets() {
     }
 
     //completing streets from edges of the network not handled/present in STAT file (no population no work position)
-    for (const auto& itE : net->getEdgeMap()) {
-        std::vector<AGStreet*>::iterator itS;
+    std::map<std::string, ROEdge*>::const_iterator itE;
+    std::vector<AGStreet*>::iterator itS;
+
+    for (itE = net->getEdgeMap().begin(); itE != net->getEdgeMap().end(); ++itE) {
         for (itS = streets.begin(); itS != streets.end(); ++itS) {
-            if (*itS == itE.second) {
+            if (*itS == itE->second) {
                 break;
             }
         }
         //if this edge isn't represented by a street
-        if (itS == streets.end() && !itE.second->isInternal()) {
-            streets.push_back(static_cast<AGStreet*>(itE.second));
+        if (itS == streets.end() && !itE->second->isInternal()) {
+            streets.push_back(static_cast<AGStreet*>(itE->second));
         }
     }
 }

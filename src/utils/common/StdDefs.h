@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    StdDefs.h
 /// @author  Daniel Krajzewicz
 /// @author  Laura Bieker
@@ -17,6 +9,17 @@
 ///
 //
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2005-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef StdDefs_h
 #define StdDefs_h
 
@@ -24,21 +27,17 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 #include <string>
 #include <cmath>
 #include <limits>
 
 /* avoiding compiler warning unreferenced parameter */
 #define UNUSED_PARAMETER(x)  ((void)(x))
-
-#ifdef _MSC_VER
-#define FALLTHROUGH /* do nothing */
-#elif __GNUC__ < 7
-#define FALLTHROUGH /* do nothing */
-#else
-#define FALLTHROUGH __attribute__((fallthrough))
-#endif
 
 /// @brief the maximum number of connections across an intersection
 #define  SUMO_MAX_CONNECTIONS 256
@@ -49,12 +48,11 @@ class RGBColor;
  * some constant defaults used by SUMO
  * ----------------------------------------------------------------------- */
 const double SUMO_const_laneWidth = (double) 3.2;
-const double SUMO_const_laneOffset = (double) 0;
-const double SUMO_const_halfLaneWidth = SUMO_const_laneWidth / 2;
-const double SUMO_const_quarterLaneWidth = SUMO_const_laneWidth / 4;
-const double SUMO_const_laneWidthAndOffset = SUMO_const_laneWidth + SUMO_const_laneOffset;
-const double SUMO_const_halfLaneAndOffset = SUMO_const_halfLaneWidth + SUMO_const_laneOffset;
-const double SUMO_const_laneMarkWidth = (double) 0.1;
+const double SUMO_const_halfLaneWidth = (double) 1.6;
+const double SUMO_const_quarterLaneWidth = (double) 0.8;
+const double SUMO_const_laneOffset = (double) .1;
+const double SUMO_const_laneWidthAndOffset = (double) 3.3;
+const double SUMO_const_halfLaneAndOffset = (double)(3.2 / 2. + .1);
 
 /// @brief the speed threshold at which vehicles are considered as halting
 const double SUMO_const_haltingSpeed = (double) 0.1;
@@ -117,8 +115,6 @@ ISNAN(T a) {
 /// the precision for floating point outputs
 extern int gPrecision;
 extern int gPrecisionGeo; // for lon,lat
-extern bool gHumanReadableTime;
-extern bool gSimulation; // whether the current application is sumo or sumo-gui (as opposed to a router)
 
 
 /// @brief global utility flags for debugging
@@ -126,6 +122,8 @@ extern bool gDebugFlag1;
 extern bool gDebugFlag2;
 extern bool gDebugFlag3;
 extern bool gDebugFlag4;
+
+extern std::string gDebugSelectedVehicle;
 
 /// @brief discrds mantissa bits beyond the given number
 double truncate(double x, int fractionBits);

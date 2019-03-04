@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBNetBuilder.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,6 +10,17 @@
 ///
 // Instance responsible for building networks
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBNetBuilder_h
 #define NBNetBuilder_h
 
@@ -25,18 +28,20 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <iostream>
 #include <vector>
 #include <set>
-#include <utils/shapes/ShapeContainer.h>
 #include "NBEdgeCont.h"
 #include "NBTypeCont.h"
 #include "NBNodeCont.h"
 #include "NBNode.h"
-#include "NBParking.h"
 #include "NBTrafficLightLogicCont.h"
 #include "NBDistrictCont.h"
 #include "NBPTStopCont.h"
@@ -184,12 +189,9 @@ public:
     }
     /// @}
 
-    NBParkingCont& getParkingCont() {
-        return myParkingCont;
-    }
-
-    ShapeContainer& getShapeCont() {
-        return myShapeCont;
+    /// @brief notify about style of loaded network (Without internal edges
+    void haveLoadedNetworkWithoutInternalEdges() {
+        myHaveLoadedNetworkWithoutInternalEdges = true;
     }
 
     /// @brief notify about style of loaded network (Without Crossings)
@@ -212,9 +214,6 @@ public:
      */
     static bool transformCoordinate(Position& from, bool includeInBoundary = true, GeoConvHelper* from_srs = 0);
     static bool transformCoordinates(PositionVector& from, bool includeInBoundary = true, GeoConvHelper* from_srs = 0);
-
-    /// @brief whether netbuilding takes place in the context of NETEDIT
-    static bool runningNetedit();
 
 
 protected:
@@ -255,10 +254,8 @@ protected:
     /// @brief The used container for pt stops
     NBPTLineCont myPTLineCont;
 
-    NBParkingCont myParkingCont;
-
-    /// @brief container for loaded polygon data
-    ShapeContainer myShapeCont;
+    /// @brief whether a .net.xml without internal edges was loaded
+    bool myHaveLoadedNetworkWithoutInternalEdges;
 
     /// @brief flag to indicate that network has crossings
     bool myNetworkHaveCrossings;

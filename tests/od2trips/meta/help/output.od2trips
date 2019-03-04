@@ -1,12 +1,11 @@
-Eclipse SUMO od2trips Version v1_1_0+0040-b68edb7a21e
- Copyright (C) 2001-2019 German Aerospace Center (DLR) and others; http://sumo.dlr.de
-Importer of O/D-matrices for the microscopic, multi-modal traffic simulation
-  SUMO.
+SUMO od2trips Version dev-SVN-r25481
+ Copyright (C) 2001-2017 DLR and contributors; http://sumo.dlr.de
+Importer of O/D-matrices for the road traffic simulation SUMO.
 
 Usage: od2trips [OPTION]*
 Configuration Options:
   -c, --configuration-file FILE    Loads the named config on startup
-  -C, --save-configuration FILE    Saves current configuration into FILE
+  --save-configuration FILE        Saves current configuration into FILE
   --save-template FILE             Saves a configuration template (empty) into
                                      FILE
   --save-schema FILE               Saves the configuration schema into FILE
@@ -21,7 +20,6 @@ Input Options:
                                      FILE(s)
 
 Output Options:
-  --write-license                  Include license info into every output file
   --output-prefix STR              Prefix which is applied to all output files.
                                      The special string 'TIME' is replaced by
                                      the current time.
@@ -29,8 +27,6 @@ Output Options:
                                      for floating point output
   --precision.geo INT              Defines the number of digits after the comma
                                      for lon,lat output
-  -H, --human-readable-time        Write time values as hour:minute:second or
-                                     day:hour:minute:second rathern than seconds
   -o, --output-file FILE           Writes trip definitions into FILE
   --flow-output FILE               Writes flow definitions into FILE
   --flow-output.probability        Writes probabilistic flow instead of evenly
@@ -57,6 +53,7 @@ Processing Options:
   --prefix STR                     Defines the prefix for vehicle names
   --timeline STR                   Uses STR as a timeline definition
   --timeline.day-in-hours          Uses STR as a 24h-timeline definition
+  --ignore-errors                  Continue on broken input
   --no-step-log                    Disable console output of current time step
 
 Defaults Options:
@@ -82,7 +79,6 @@ Report Options:
   --message-log FILE               Writes all non-error messages to FILE
                                      (implies verbose)
   --error-log FILE                 Writes all warnings and errors to FILE
-  --ignore-errors                  Continue on broken input
 
 Random Number Options:
   --random                         Initialises the random number generator with
@@ -95,5 +91,5 @@ Examples:
   od2trips -c <CONFIGURATION>
     run with configuration file
 
-Report bugs at <https://github.com/eclipse/sumo/issues>.
+Report bugs at <http://sumo.dlr.de/trac/>.
 Get in contact via <sumo@dlr.de>.

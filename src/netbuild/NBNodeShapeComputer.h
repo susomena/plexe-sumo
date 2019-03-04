@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBNodeShapeComputer.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // This class computes shapes of junctions
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBNodeShapeComputer_h
 #define NBNodeShapeComputer_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/geom/PositionVector.h>
 
@@ -52,11 +59,6 @@ public:
 
     /// Computes the shape of the assigned junction
     PositionVector compute();
-
-    /// @brief get computed radius for node
-    double getRadius() const {
-        return myRadius;
-    }
 
 private:
     typedef std::map<NBEdge*, PositionVector> GeomsMap;
@@ -137,23 +139,15 @@ private:
                               double& ccad);
 
     /// @return whether trying to intersect these edges would probably fail
-    bool badIntersection(const NBEdge* e1, const NBEdge* e2, double distance);
+    bool badIntersection(const NBEdge* e1, const NBEdge* e2,
+                         const PositionVector& e1cw, const PositionVector& e2ccw, double distance);
 
     /// @brief return the intersection point closest to the given offset
     double closestIntersection(const PositionVector& geom1, const PositionVector& geom2, double offset);
 
-    /// @brief determine the default radius appropriate for the current junction
-    double getDefaultRadius(const OptionsCont& oc);
-
-    /// @brief compute with of rightmost lanes that exlude the given permissions
-    static double getExtraWidth(const NBEdge* e, SVCPermissions exclude);
-
 private:
     /// The node to compute the geometry for
     const NBNode& myNode;
-
-    /// @brief the computed node radius
-    double myRadius;
 
 private:
     /// @brief Invalidated assignment operator

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIOSGView.h
 /// @author  Daniel Krajzewicz
 /// @date    19.01.2012
@@ -14,13 +6,28 @@
 ///
 // An OSG-based 3D view on the simulation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIOSGView_h
 #define GUIOSGView_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_OSG
 
@@ -117,7 +124,6 @@ public:
         osg::ref_ptr<osg::PositionAttitudeTransform> pos;
         osg::ref_ptr<osg::ShapeDrawable> geom;
         osg::ref_ptr<osg::Switch> lights;
-        bool active;
     };
 
 
@@ -145,7 +151,7 @@ public:
     void showViewportEditor();
 
     /// applies the given viewport settings
-    void setViewportFromToRot(const Position& lookFrom, const Position& lookAt, double rotation);
+    void setViewportFromTo(const Position& lookFrom, const Position& lookAt);
 
     ///@brief copy the viewport to the given view
     void copyViewportTo(GUISUMOAbstractView* view);
@@ -174,8 +180,7 @@ public:
     /// @brief get the current simulation time
     SUMOTime getCurrentTimeStep() const;
 
-    void removeVeh(MSVehicle* veh);
-    void removeTransportable(MSTransportable* t);
+    void remove(GUIVehicle* veh);
 
     // callback
     long onConfigure(FXObject*, FXSelector, void*);

@@ -1,22 +1,34 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2015-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    SimpleWebSocketServer.py
-# @author  Dave Pallot
-# @date    2013
-# @version $Id$
-
 """
+@file    SimpleWebSocketServer.py
+@author  Dave Pallot
+@date    2013
+@version $Id$
+
 A web socket server implementation to be used by the osm server.py
 Originally distributed under the MIT license at
 https://github.com/dpallot/simple-websocket-server/tree/master/SimpleWebSocketServer.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2015-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 import sys
+
+VER = sys.version_info[0]
+if VER >= 3:
+    import socketserver
+    from http.server import BaseHTTPRequestHandler
+    from io import StringIO, BytesIO
+else:
+    import SocketServer
+    from BaseHTTPServer import BaseHTTPRequestHandler
+    from StringIO import StringIO
+
 import hashlib
 import base64
 import socket
@@ -27,17 +39,6 @@ import codecs
 from collections import deque
 from select import select
 
-VER = sys.version_info[0]
-if VER >= 3:
-    import socketserver  # noqa
-    from http.server import BaseHTTPRequestHandler
-    from io import StringIO, BytesIO
-else:
-    import SocketServer  # noqa
-    from BaseHTTPServer import BaseHTTPRequestHandler
-    from StringIO import StringIO
-
-
 __all__ = ['WebSocket',
            'SimpleWebSocketServer',
            'SimpleSSLWebSocketServer']
@@ -47,8 +48,7 @@ def _check_unicode(val):
     if VER >= 3:
         return isinstance(val, str)
     else:
-        # python 2.7
-        return isinstance(val, unicode)  # noqa
+        return isinstance(val, unicode)
 
 
 class HTTPRequest(BaseHTTPRequestHandler):
@@ -61,7 +61,6 @@ class HTTPRequest(BaseHTTPRequestHandler):
         self.raw_requestline = self.rfile.readline()
         self.error_code = self.error_message = None
         self.parse_request()
-
 
 _VALID_STATUS_CODES = [1000, 1001, 1002, 1003, 1007, 1008,
                        1009, 1010, 1011, 3000, 3999, 4000, 4999]
@@ -184,7 +183,7 @@ class WebSocket(object):
                 if len(reason) > 0:
                     try:
                         reason = reason.decode('utf8', errors='strict')
-                    except Exception:
+                    except:
                         status = 1002
             else:
                 status = 1002
@@ -254,7 +253,7 @@ class WebSocket(object):
                 if self.opcode == TEXT:
                     try:
                         self.data = self.data.decode('utf8', errors='strict')
-                    except Exception:
+                    except Exception as exp:
                         raise Exception('invalid utf-8 payload')
 
                 self.handleMessage()
@@ -647,7 +646,7 @@ class SimpleWebSocketServer(object):
                             if opcode == CLOSE:
                                 raise Exception('received client close')
 
-                except Exception:
+                except Exception as n:
                     client.client.close()
                     client.handleClose()
                     del self.connections[ready]
@@ -663,7 +662,7 @@ class SimpleWebSocketServer(object):
                         self.connections[fileno] = self._constructWebSocket(
                             newsock, address)
                         self.listeners.append(fileno)
-                    except Exception:
+                    except Exception as n:
                         if sock is not None:
                             sock.close()
                 else:
@@ -672,7 +671,7 @@ class SimpleWebSocketServer(object):
                     client = self.connections[ready]
                     try:
                         client._handleData()
-                    except Exception:
+                    except Exception as n:
                         client.client.close()
                         client.handleClose()
                         del self.connections[ready]

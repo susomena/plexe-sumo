@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSEdge.h
 /// @author  Christian Roessel
 /// @author  Daniel Krajzewicz
@@ -18,6 +10,17 @@
 ///
 // A road/street connecting two junctions
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSEdge_h
 #define MSEdge_h
 
@@ -25,7 +28,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <map>
@@ -70,15 +77,14 @@ class MSTransportable;
 
 typedef std::vector<MSEdge*> MSEdgeVector;
 typedef std::vector<const MSEdge*> ConstMSEdgeVector;
-typedef std::vector<std::pair<const MSEdge*, const MSEdge*> > MSConstEdgePairVector;
 
 class MSEdge : public Named, public Parameterised {
-private:
-    /** @brief "Map" from vehicle class to allowed lanes */
-    typedef std::vector<std::pair<SVCPermissions, const std::vector<MSLane*>* > > AllowedLanesCont;
+public:
+    /** @brief Suceeding edges (keys) and allowed lanes to reach these edges (values). */
+    typedef std::map< const MSEdge*, std::vector<MSLane*>* > AllowedLanesCont;
 
-    /** @brief Succeeding edges (keys) and allowed lanes to reach these edges (values). */
-    typedef std::map<const MSEdge*, AllowedLanesCont> AllowedLanesByTarget;
+    /** @brief Map from vehicle types to lanes that may be used to reach one of the next edges */
+    typedef std::map< SUMOVehicleClass, AllowedLanesCont > ClassedAllowedLanesCont;
 
 
 public:
@@ -123,7 +129,7 @@ public:
     /* @brief returns whether initizliaing a lane change is permitted on this edge
      * @note Has to be called after all sucessors and predecessors have been set (after closeBuilding())
      */
-    bool allowsLaneChanging() const;
+    bool allowsLaneChanging();
 
     /// @name Access to the edge's lanes
     /// @{
@@ -159,7 +165,7 @@ public:
      *
      * @return This edge's lanes
      */
-    inline const std::vector<MSLane*>& getLanes() const {
+    const std::vector<MSLane*>& getLanes() const {
         return *myLanes;
     }
 
@@ -191,11 +197,10 @@ public:
      *
      * @param[in] destination The edge to reach
      * @param[in] vclass The vehicle class for which this information shall be returned
-     * @return The lanes that may be used to reach the given edge, nullptr if no such lanes exist
+     * @return The lanes that may be used to reach the given edge, 0 if no such lanes exist
      */
     const std::vector<MSLane*>* allowedLanes(const MSEdge& destination,
             SUMOVehicleClass vclass = SVC_IGNORING) const;
-
 
 
     /** @brief Get the allowed lanes for the given vehicle class.
@@ -233,11 +238,11 @@ public:
 
 
     /// @brief check and register the opposite superposable edge if any
-    void checkAndRegisterBiDirEdge(const std::string& bidiID = "");
+    void checkAndRegisterBiDirEdge();
 
     /// @brief return opposite superposable/congruent edge, if it exist and 0 else
-    inline const MSEdge* getBidiEdge() const {
-        return myBidiEdge;
+    inline const MSEdge* getMyOppositeSuperposableEdge() const {
+        return myOppositingSuperposableEdge;
     }
 
     /// @brief return whether this edge is walking area
@@ -300,7 +305,7 @@ public:
      * This is mainly used by the taz (district) parsing
      * @param[in] edge The edge to add
      */
-    void addSuccessor(MSEdge* edge, const MSEdge* via = nullptr);
+    void addSuccessor(MSEdge* edge);
 
     /** @brief Returns the number of edges that may be reached from this edge
      * @return The number of following edges
@@ -310,17 +315,18 @@ public:
     }
 
 
+    /** @brief Returns the following edges
+     */
+    const MSEdgeVector& getSuccessors() const {
+        return mySuccessors;
+    }
+
+
     /** @brief Returns the following edges, restricted by vClass
      * @param[in] vClass The vClass for which to restrict the successors
      * @return The eligible following edges
      */
-    const MSEdgeVector& getSuccessors(SUMOVehicleClass vClass = SVC_IGNORING) const;
-
-    /** @brief Returns the following edges with internal vias, restricted by vClass
-     * @param[in] vClass The vClass for which to restrict the successors
-     * @return The eligible following edges
-     */
-    const MSConstEdgePairVector& getViaSuccessors(SUMOVehicleClass vClass = SVC_IGNORING) const;
+    const MSEdgeVector& getSuccessors(SUMOVehicleClass vClass) const;
 
 
     /** @brief Returns the number of edges this edge is connected to
@@ -349,7 +355,10 @@ public:
     }
 
 
-    void setJunctions(MSJunction* from, MSJunction* to);
+    void setJunctions(MSJunction* from, MSJunction* to) {
+        myFromJunction = from;
+        myToJunction = to;
+    }
     /// @}
 
 
@@ -406,9 +415,9 @@ public:
         if (myFunction == EDGEFUNC_CONNECTOR) {
             return 0;
         } else if (veh != 0) {
-            return getLength() / getVehicleMaxSpeed(veh) + myTimePenalty;
+            return getLength() / getVehicleMaxSpeed(veh);
         } else {
-            return myEmptyTraveltime;
+            return getLength() / getSpeedLimit();
         }
     }
 
@@ -547,19 +556,12 @@ public:
 
     void rebuildAllowedLanes();
 
-    void rebuildAllowedTargets(const bool updateVehicles = true);
-
 
     /** @brief optimistic air distance heuristic for use in routing
      * @param[in] other The edge to which the distance shall be returned
-     * @param[in] doBoundaryEstimate whether the distance should be estimated by looking at the distance of the bounding boxes
      * @return The distance to the other edge
      */
-    double getDistanceTo(const MSEdge* other, const bool doBoundaryEstimate = false) const;
-
-
-    /// @brief return the coordinates of the center of the given stop
-    static const Position getStopPosition(const SUMOVehicleParameter::Stop& stop);
+    double getDistanceTo(const MSEdge* other) const;
 
 
     /** @brief return the length of the edge
@@ -590,7 +592,6 @@ public:
      * @return The maximum velocity on this edge for the given vehicle
      */
     double getVehicleMaxSpeed(const SUMOVehicle* const veh) const;
-
 
     virtual void addPerson(MSTransportable* p) const {
         myPersons.insert(p);
@@ -628,20 +629,12 @@ public:
         myAmDelayed = true;
     }
 
-    // return whether there have been vehicles on this edge at least once
-    inline bool isDelayed() const {
-        return myAmDelayed || myBidiEdge == nullptr || myBidiEdge->myAmDelayed;
-    }
-
     bool hasLaneChanger() const {
         return myLaneChanger != 0;
     }
 
     /// @brief whether this edge allows changing to the opposite direction edge
     bool canChangeToOpposite();
-
-    /// @brief Returns the opposite direction edge if on exists else a nullptr
-    const MSEdge* getOppositeEdge() const;
 
     /// @brief get the mean speed
     double getMeanSpeed() const;
@@ -652,11 +645,6 @@ public:
     /// @brief return whether this edge is at the fringe of the network
     bool isFringe() const {
         return myAmFringe;
-    }
-
-    /// @brief whether this lane is selected in the GUI
-    virtual bool isSelected() const {
-        return false;
     }
 
     /// @brief grant exclusive access to the mesoscopic state
@@ -724,7 +712,7 @@ protected:
 
         /// @brief comparing operator
         int operator()(const MSEdge* const e1, const MSEdge* const e2) const {
-            return e1->getNumericalID() < e2->getNumericalID();
+            return e1->getID() < e2->getID();
         }
 
     };
@@ -742,6 +730,22 @@ protected:
     private:
         SUMOTime myTime;
     };
+
+
+    /** @brief Get the allowed lanes to reach the destination-edge.
+     *
+     * If there is no such edge, get 0. Then you are on the wrong edge.
+     *
+     * @param[in] destination The edge to reach
+     * @param[in] vclass The vehicle class for which this information shall be returned
+     * @return The lanes that may be used to reach the given edge, 0 if no such lanes exist
+     */
+    const std::vector<MSLane*>* allowedLanes(const MSEdge* destination,
+            SUMOVehicleClass vclass = SVC_IGNORING) const;
+
+
+    /// @brief lookup in map and return 0 if not found
+    const std::vector<MSLane*>* getAllowedLanesWithDefault(const AllowedLanesCont& c, const MSEdge* dest) const;
 
 
     /// @brief return upper bound for the depart position on this edge
@@ -777,8 +781,6 @@ protected:
     /// @brief The succeeding edges
     MSEdgeVector mySuccessors;
 
-    MSConstEdgePairVector myViaSuccessors;
-
     /// @brief The preceeding edges
     MSEdgeVector myPredecessors;
 
@@ -795,11 +797,12 @@ protected:
     /// @name Storages for allowed lanes (depending on vehicle classes)
     /// @{
 
-    /// @brief Associative container from vehicle class to allowed-lanes.
+    /// @brief Associative container from destination-edge to allowed-lanes.
     AllowedLanesCont myAllowed;
 
-    /// @brief From target edge to lanes allowed to be used to reach it
-    AllowedLanesByTarget myAllowedTargets;
+    /// @brief From vehicle class to lanes allowed to be used by it
+    // @note: this map is filled on demand
+    mutable ClassedAllowedLanesCont myClassedAllowed;
 
     /// @brief The intersection of lane permissions for this edge
     SVCPermissions myMinimumPermissions;
@@ -824,9 +827,6 @@ protected:
 
     /// @brief the traveltime on the empty edge (cached value for speedup)
     double myEmptyTraveltime;
-
-    /// @brief flat penalty when computing traveltime
-    double myTimePenalty;
 
     /// @brief whether this edge had a vehicle with less than max speed on it
     mutable bool myAmDelayed;
@@ -861,16 +861,13 @@ protected:
     /// @brief The successors available for a given vClass
     mutable std::map<SUMOVehicleClass, MSEdgeVector> myClassesSuccessorMap;
 
-    /// @brief The successors available for a given vClass
-    mutable std::map<SUMOVehicleClass, MSConstEdgePairVector> myClassesViaSuccessorMap;
-
-    /// @brief The bounding rectangle of end nodes incoming or outgoing edges for taz connectors or of my own start and end node for normal edges
-    Boundary myBoundary;
+    /// @brief The bounding rectangle of incoming or outgoing edges for taz connectors
+    Boundary myTazBoundary;
 
 private:
 
     /// @brief the oppositing superposble edge
-    const MSEdge* myBidiEdge;
+    const MSEdge* myOppositingSuperposableEdge;
 
     /// @brief Invalidated copy constructor.
     MSEdge(const MSEdge&);
@@ -879,8 +876,6 @@ private:
     MSEdge& operator=(const MSEdge&);
 
     bool isSuperposable(const MSEdge* other);
-
-    void addToAllowed(const SVCPermissions permissions, const std::vector<MSLane*>* allowedLanes, AllowedLanesCont& laneCont) const;
 };
 
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RODFDetectorHandler.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Eric Nicolay
@@ -17,19 +9,34 @@
 ///
 // A handler for loading detector descriptions
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/options/OptionsCont.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/StringTokenizer.h>
 #include <utils/common/UtilExceptions.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/ToString.h>
 #include <utils/xml/SUMOSAXHandler.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
@@ -56,7 +63,7 @@ RODFDetectorHandler::myStartElement(int element,
         try {
             bool ok = true;
             // get the id, report an error if not given or empty...
-            std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+            std::string id = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
             if (!ok) {
                 throw ProcessError();
             }
@@ -65,8 +72,8 @@ RODFDetectorHandler::myStartElement(int element,
                 throw ProcessError();
             }
             ROEdge* edge = myNet->getEdge(lane.substr(0, lane.rfind('_')));
-            int laneIndex = StringUtils::toIntSecure(lane.substr(lane.rfind('_') + 1), std::numeric_limits<int>::max());
-            if (edge == nullptr || laneIndex >= edge->getNumLanes()) {
+            int laneIndex = TplConvert::_2intSec(lane.substr(lane.rfind('_') + 1).c_str(), std::numeric_limits<int>::max());
+            if (edge == 0 || laneIndex >= edge->getNumLanes()) {
                 throw ProcessError("Unknown lane '" + lane + "' for detector '" + id + "' in '" + getFileName() + "'.");
             }
             double pos = attrs.get<double>(SUMO_ATTR_POSITION, id.c_str(), ok);

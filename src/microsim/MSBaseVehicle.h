@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSBaseVehicle.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,6 +8,17 @@
 ///
 // A base class for vehicle implementations
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSBaseVehicle_h
 #define MSBaseVehicle_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <vector>
@@ -38,9 +45,6 @@
 // class declarations
 // ===========================================================================
 class MSLane;
-class MSDevice_Transportable;
-class MSVehicleDevice;
-
 
 // ===========================================================================
 // class definitions
@@ -85,9 +89,6 @@ public:
      * @return The vehicle's parameter
      */
     const SUMOVehicleParameter& getParameter() const;
-
-    /// @brief replace the vehicle parameter (deleting the old one)
-    void replaceParameter(const SUMOVehicleParameter* newParameter);
 
     /// @brief check whether the vehicle is equiped with a device of the given type
     bool hasDevice(const std::string& deviceName) const;
@@ -161,11 +162,6 @@ public:
         return false;
     }
 
-    virtual bool wasRemoteControlled(SUMOTime lookBack = DELTA_T) const {
-        UNUSED_PARAMETER(lookBack);
-        return false;
-    }
-
     /** @brief Returns the information whether the front of the vehhicle is on the given lane
      * @return Whether the vehicle's front is on that lane
      */
@@ -208,7 +204,7 @@ public:
      * @param[in] router The router to use
      * @see replaceRoute
      */
-    void reroute(SUMOTime t, const std::string& info, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router, const bool onInit = false, const bool withTaz = false, const bool silent = false);
+    void reroute(SUMOTime t, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router, const bool onInit = false, const bool withTaz = false);
 
 
     /** @brief Replaces the current route by the given edges
@@ -220,10 +216,10 @@ public:
      * @param[in] edges The new list of edges to pass
      * @param[in] onInit Whether the vehicle starts with this route
      * @param[in] check Whether the route should be checked for validity
-     * @param[in] removeStops Whether stops should be removed if they do not fit onto the new route
+     * @param[in] addStops Parameter for replaceRoute
      * @return Whether the new route was accepted
      */
-    bool replaceRouteEdges(ConstMSEdgeVector& edges, double cost, double savings, const std::string& info, bool onInit = false, bool check = false, bool removeStops = true);
+    bool replaceRouteEdges(ConstMSEdgeVector& edges, bool onInit = false, bool check = false, bool addStops = true);
 
 
     /** @brief Returns the vehicle's acceleration
@@ -300,26 +296,11 @@ public:
     /// @brief Returns this vehicles impatience
     double getImpatience() const;
 
-    /** @brief Returns the number of persons
-     * @return The number of passengers on-board
-     */
-    int getPersonNumber() const;
-
-    /** @brief Returns the list of persons
-     * @return The list of passengers on-board
-     */
-    std::vector<std::string> getPersonIDList() const;
-
-    /** @brief Returns the number of containers
-     * @return The number of contaiers on-board
-     */
-    int getContainerNumber() const;
-
 
     /** @brief Returns this vehicle's devices
      * @return This vehicle's devices
      */
-    inline const std::vector<MSVehicleDevice*>& getDevices() const {
+    inline const std::vector<MSDevice*>& getDevices() const {
         return myDevices;
     }
 
@@ -339,16 +320,6 @@ public:
      * @param[in] container The container to add
      */
     virtual void addContainer(MSTransportable* container);
-
-    /// @brief removes a person or container
-    void removeTransportable(MSTransportable* t);
-
-    /// @brief retrieve riding persons
-    const std::vector<MSTransportable*>& getPersons() const;
-
-    /// @brief retrieve riding containers
-    const std::vector<MSTransportable*>& getContainers() const;
-
 
     /** @brief Validates the current or given route
      * @param[out] msg Description why the route is not valid (if it is the case)
@@ -416,7 +387,7 @@ public:
     }
 
     /// @brief Returns a device of the given type if it exists or 0
-    MSVehicleDevice* getDevice(const std::type_info& type) const;
+    MSDevice* getDevice(const std::type_info& type) const;
 
 
     /** @brief Replaces the current vehicle type by the one given
@@ -456,18 +427,6 @@ public:
      */
     void addStops(const bool ignoreStopErrors);
 
-    /// @brief whether this vehicle is selected in the GUI
-    virtual bool isSelected() const {
-        return false;
-    }
-
-    /// @brief @return The vehicle's associated RNG
-    std::mt19937* getRNG() const;
-
-    inline NumericalID getNumericalID() const {
-        return myNumericalID;
-    }
-
 protected:
     /** @brief (Re-)Calculates the arrival position and lane from the vehicle parameters
      */
@@ -475,7 +434,7 @@ protected:
 
     /** @brief Returns the list of still pending stop edges
      */
-    virtual const ConstMSEdgeVector getStopEdges(double& firstPos, double& lastPos) const = 0;
+    virtual const ConstMSEdgeVector getStopEdges() const = 0;
 
 protected:
     /// @brief This vehicle's parameter.
@@ -509,13 +468,7 @@ protected:
     /// @}
 
     /// @brief The devices this vehicle has
-    std::vector<MSVehicleDevice*> myDevices;
-
-    /// @brief The passengers this vehicle may have
-    MSDevice_Transportable* myPersonDevice;
-
-    /// @brief The containers this vehicle may have
-    MSDevice_Transportable* myContainerDevice;
+    std::vector<MSDevice*> myDevices;
 
     /// @brief The real departure time
     SUMOTime myDeparture;
@@ -536,13 +489,6 @@ protected:
      * @note: in previous versions this was -1
      */
     static const SUMOTime NOT_YET_DEPARTED;
-
-    static std::vector<MSTransportable*> myEmptyTransportableVector;
-
-private:
-    const NumericalID myNumericalID;
-
-    static NumericalID myCurrentNumericalIndex;
 
 private:
     /// invalidated assignment operator

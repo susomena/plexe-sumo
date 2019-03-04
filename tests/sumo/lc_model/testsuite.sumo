@@ -9,9 +9,6 @@ keep_right
 
 # overtaking a slower vehicle
 overtaking
-
-# tests for changing to gain speed
-speedGain
 errors
 
 # testing cooperative speed adjustments
@@ -23,11 +20,8 @@ double_connection
 # tests for merging behavior on acceleration lane
 onRamp
 
-# test continuous lane change maneuvers
-continuous_lanechange
-overtake_stopped
-
 # test effects of apparentDecel on lane changing
 #apparentDecel
+
 
 bugs

@@ -19,12 +19,8 @@ nocenter
 # trying to build the minimal spider-net
 min_version
 
-# no internal lanes
-nointernal
-prefix
-
-# build turning lanes
-turnlanes
-
 # Tests processing of errors in input
 errors
+
+# no internal lanes
+nointernal

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GeomConvHelper.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,19 +8,34 @@
 ///
 // Some helping functions for geometry parsing
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <sstream>
 #include <utils/geom/PositionVector.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/StringTokenizer.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include "GeomConvHelper.h"
 
 
@@ -55,12 +62,12 @@ GeomConvHelper::parseShapeReporting(const std::string& shpdef, const std::string
             return PositionVector();
         }
         try {
-            double x = StringUtils::toDouble(pos.next());
-            double y = StringUtils::toDouble(pos.next());
+            double x = TplConvert::_2double(pos.next().c_str());
+            double y = TplConvert::_2double(pos.next().c_str());
             if (pos.size() == 2) {
                 shape.push_back(Position(x, y));
             } else {
-                double z = StringUtils::toDouble(pos.next());
+                double z = TplConvert::_2double(pos.next().c_str());
                 shape.push_back(Position(x, y, z));
             }
         } catch (NumberFormatException&) {
@@ -87,10 +94,10 @@ GeomConvHelper::parseBoundaryReporting(const std::string& def, const std::string
         return Boundary();
     }
     try {
-        double xmin = StringUtils::toDouble(st.next());
-        double ymin = StringUtils::toDouble(st.next());
-        double xmax = StringUtils::toDouble(st.next());
-        double ymax = StringUtils::toDouble(st.next());
+        double xmin = TplConvert::_2double(st.next().c_str());
+        double ymin = TplConvert::_2double(st.next().c_str());
+        double xmax = TplConvert::_2double(st.next().c_str());
+        double ymax = TplConvert::_2double(st.next().c_str());
         return Boundary(xmin, ymin, xmax, ymax);
     } catch (NumberFormatException&) {
         emitError(report, "Shape", objecttype, objectid, "not numeric entry");
@@ -110,11 +117,11 @@ GeomConvHelper::emitError(bool report, const std::string& what, const std::strin
     }
     std::ostringstream oss;
     oss << what << " of ";
-    if (objectid == nullptr) {
+    if (objectid == 0) {
         oss << "a(n) ";
     }
     oss << objecttype;
-    if (objectid != nullptr) {
+    if (objectid != 0) {
         oss << " '" << objectid << "'";
     }
     oss << " is broken: " << desc << ".";

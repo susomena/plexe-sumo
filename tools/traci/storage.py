@@ -1,26 +1,28 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    storage.py
+@author  Michael Behrisch
+@author  Lena Kalleske
+@author  Mario Krumnow
+@author  Daniel Krajzewicz
+@author  Jakob Erdmann
+@date    2008-10-09
+@version $Id$
 
-# @file    storage.py
-# @author  Michael Behrisch
-# @author  Lena Kalleske
-# @author  Mario Krumnow
-# @author  Daniel Krajzewicz
-# @author  Jakob Erdmann
-# @date    2008-10-09
-# @version $Id$
+Python implementation of the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 import struct
-
-from . import constants as tc
 
 _DEBUG = False
 
@@ -39,18 +41,8 @@ class Storage:
     def readInt(self):
         return self.read("!i")[0]
 
-    def readTypedInt(self):
-        t, i = self.read("!Bi")
-        assert(t == tc.TYPE_INTEGER)
-        return i
-
     def readDouble(self):
         return self.read("!d")[0]
-
-    def readTypedDouble(self):
-        t, d = self.read("!Bd")
-        assert(t == tc.TYPE_DOUBLE)
-        return d
 
     def readLength(self):
         length = self.read("!B")[0]
@@ -62,29 +54,16 @@ class Storage:
         length = self.read("!i")[0]
         return str(self.read("!%ss" % length)[0].decode("latin1"))
 
-    def readTypedString(self):
-        t = self.read("!B")[0]
-        assert(t == tc.TYPE_STRING)
-        return self.readString()
-
     def readStringList(self):
         n = self.read("!i")[0]
-        return tuple([self.readString() for i in range(n)])
-
-    def readTypedStringList(self):
-        t = self.read("!B")[0]
-        assert(t == tc.TYPE_STRINGLIST)
-        return self.readStringList()
+        list = []
+        for i in range(n):
+            list.append(self.readString())
+        return list
 
     def readShape(self):
-        length = self.readLength()
-        return tuple([self.read("!dd") for i in range(length)])
-
-    def readCompound(self, expectedSize=None):
-        t, s = self.read("!Bi")
-        assert(t == tc.TYPE_COMPOUND)
-        assert(expectedSize is None or s == expectedSize)
-        return s
+        length = self.read("!B")[0]
+        return [self.read("!dd") for i in range(length)]
 
     def ready(self):
         return self._pos < len(self._content)

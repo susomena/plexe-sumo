@@ -1,19 +1,24 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    node.py
+@author  Daniel Krajzewicz
+@author  Laura Bieker
+@author  Karol Stosiek
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2011-11-28
+@version $Id$
 
-# @file    node.py
-# @author  Daniel Krajzewicz
-# @author  Laura Bieker
-# @author  Karol Stosiek
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2011-11-28
-# @version $Id$
+This file contains a Python-representation of a single node.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 
 class Node:
@@ -32,7 +37,6 @@ class Node:
         self._intLanes = intLanes
         self._shape3D = None
         self._shape = None
-        self._params = {}
 
     def getID(self):
         return self._id
@@ -98,15 +102,12 @@ class Node:
     def getLinkIndex(self, conn):
         ret = 0
         for lane_id in self._incLanes:
-            lastUnderscore = lane_id.rfind("_")
-            if lastUnderscore > 0:
-                edge_id = lane_id[:lastUnderscore]
-                index = lane_id[lastUnderscore+1:]
-                edge = [e for e in self._incoming if e.getID() == edge_id][0]
-                for candidate_conn in edge.getLane(int(index)).getOutgoing():
-                    if candidate_conn == conn:
-                        return ret
-                    ret += 1
+            (edge_id, index) = lane_id.split("_")
+            edge = [e for e in self._incoming if e.getID() == edge_id][0]
+            for candidate_conn in edge.getLane(int(index)).getOutgoing():
+                if candidate_conn == conn:
+                    return ret
+                ret += 1
         return -1
 
     def forbids(self, possProhibitor, possProhibited):
@@ -127,40 +128,19 @@ class Node:
         return self._type
 
     def getConnections(self, source=None, target=None):
+        incoming = list(self.getIncoming())
         if source:
             incoming = [source]
-        else:
-            incoming = list(self._incoming)
         conns = []
         for e in incoming:
-            if (hasattr(e, "getLanes")):
-                lanes = e.getLanes()
-            else:
-                # assuming source is a lane
-                lanes = [e]
-            for l in lanes:
+            for l in e.getLanes():
                 all_outgoing = l.getOutgoing()
                 outgoing = []
                 if target:
-                    if hasattr(target, "getLanes"):
-                        for o in all_outgoing:
-                            if o.getTo() == target:
-                                outgoing.append(o)
-                    else:
-                        # assuming target is a lane
-                        for o in all_outgoing:
-                            if o.getToLane() == target:
-                                outgoing.append(o)
+                    for o in all_outgoing:
+                        if o.getTo() == target:
+                            outgoing.append(o)
                 else:
                     outgoing = all_outgoing
                 conns.extend(outgoing)
         return conns
-
-    def setParam(self, key, value):
-        self._params[key] = value
-
-    def getParam(self, key, default=None):
-        return self._params.get(key, default)
-
-    def getParams(self):
-        return self._params

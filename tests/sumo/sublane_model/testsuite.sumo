@@ -4,9 +4,6 @@ overtaking_bicycle
 # vehicles overtaking a bicycle on a single-lane road
 overtaking_bicycle_step0.2
 
-# vehicles overtaking a slow leader in lefthand network
-overtaking_lefthand
-
 # like overtaking_bicyle but with severly reduced lateral speed
 maxSpeedLat
 
@@ -22,7 +19,6 @@ depart_random_last
 
 # vehicle behavior on a single edge with cars and mopeds
 1edge_2lanes_compact_mixed
-1edge_2lanes_compact_mixed_maxSpeedLatStanding
 
 # vehicle behavior on a single edge with cars and mopeds (all pushy)
 1edge_2lanes_compact_mixed_pushy
@@ -42,20 +38,11 @@ strategic_stay_and_speedgain2
 # a vehicle urgently needs to change lanes and pushes a blocker by using a lower minGapLat
 push_for_merge
 
-# like push_for_merge but use parameter lcPushyGap
-push_for_merge_pushygap
-
-# a vehicle urgently needs to change lanes and pushes into the save space of blocking vehicle
-push_for_merge_highres
-
 # a vehicle urgently needs to change lanes and tries pushes a blocker but is ignored
 push_for_merge_ignored
 
 # a vehicle urgently needs to change lanes and pushes a blocker by using a lower minGapLat. The blocker is constraint by a neighboring vehicle to the left and equalizes left and right lateral gaps
 push_for_merge_equalize_gaps
-
-# lots of heterogeneous traffic at on ramp (some pushy)
-push_for_merge_ramp_mixed
 
 # a vehicle urgently needs to change lanes but is configured to refrain from pushing
 nopush_for_merge
@@ -74,10 +61,12 @@ nopush_for_merge_impatience_growth
 
 # a vehicle urgently needs to change lanes but is configured to refrain from pushing. 
 # To merge in front of the foe vehicle it would have to keep an unsafe gap to the acceleration lane end
+# 
 nopush_for_merge_end_gap
 
 # a vehicle urgently needs to change lanes but is configured to refrain from pushing. 
 # To merge in front of the foe vehicle it would have to keep an unsafe gap to the leader on its own lane
+# 
 nopush_for_merge_undercut_frontgap
 
 # test whether cooperative changing works fluidly
@@ -107,40 +96,6 @@ bestOffset2_reserve
 # do not reserve space for unseen blockers in all cases
 bestOffset2_noReserve
 future_braking
-
-# configuring assymetry in strategic left-right lookahead
-lcLookaheadLeft
-
-# when checking for linkleaders, vehicles on a sibling lane should only affect ego if there is lateral overlap (see ticket3573)
-junction_leader_sibling_pass
-
-# when checking for linkleaders, vehicles on a sibling lane should only affect ego if there is lateral overlap (see ticket3573)
-junction_leader_sibling_block
-
-# when checking for linkleaders, vehicles on a sibling lane should only affect ego if there is lateral overlap (see ticket3573)
-# ego is blocked before entering the internal edge
-junction_leader_sibling_block2
-
-# handling of sibling internal lanes with different widths
-junction_leader_sibling_diffWidth
-
-# a wide lane splits into three turning lanes
-wide_lane_split
-
-# a wide lane splits into two lanes
-wide_lane_split2
-
-# 2 lanes merge into a wide lane
-wide_lane_merge2
-
-# 2 lanes merge into a wide lane
-wide_lane_merge2_unregulated
-
-# 2 lanes merge into a wide lane
-wide_lane_merge2_zipper
-
-# This tests the effect of the attribute lcTurnAlignmentDistance. Left- and right-turning vehicles should align at the corresponding side of the turn lane from the given distance on.
-turnAlignment
 
 # tests for various tickets
 bugs

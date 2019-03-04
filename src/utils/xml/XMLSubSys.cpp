@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    XMLSubSys.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,17 +8,31 @@
 ///
 // Utility methods for initialising, closing and using the XML-subsystem
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <cstdint>
 #include <xercesc/util/PlatformUtils.hpp>
 #include <utils/common/MsgHandler.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include "SUMOSAXHandler.h"
 #include "SUMOSAXReader.h"
 #include "XMLSubSys.h"
@@ -50,7 +56,7 @@ XMLSubSys::init() {
         XERCES_CPP_NAMESPACE::XMLPlatformUtils::Initialize();
         myNextFreeReader = 0;
     } catch (const XERCES_CPP_NAMESPACE::XMLException& e) {
-        throw ProcessError("Error during XML-initialization:\n " + StringUtils::transcode(e.getMessage()));
+        throw ProcessError("Error during XML-initialization:\n " + TplConvert::_2str(e.getMessage()));
     }
 }
 
@@ -75,15 +81,6 @@ XMLSubSys::setValidation(const std::string& validationScheme, const std::string&
     } else {
         throw ProcessError("Unknown network validation scheme + '" + netValidationScheme + "'.");
     }
-}
-
-
-bool
-XMLSubSys::isValidating(const bool net) {
-    if (net) {
-        return myNetValidationScheme != XERCES_CPP_NAMESPACE::SAX2XMLReader::Val_Never;
-    }
-    return myValidationScheme != XERCES_CPP_NAMESPACE::SAX2XMLReader::Val_Never;
 }
 
 
@@ -136,7 +133,7 @@ XMLSubSys::runParser(GenericSAXHandler& handler,
         WRITE_ERROR("Error occurred: " + std::string(ex.what()) + " while parsing '" + file + "'");
         return false;
     } catch (...) {
-        WRITE_ERROR("Unspecified error occurred wile parsing '" + file + "'");
+        WRITE_ERROR("Unspecified error occured wile parsing '" + file + "'");
         return false;
     }
     return !MsgHandler::getErrorInstance()->wasInformed();

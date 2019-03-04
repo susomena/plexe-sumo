@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PHEMCEPHandler.cpp
 /// @author  Nikolaus Furian
 /// @author  Daniel Krajzewicz
@@ -17,11 +9,26 @@
 ///
 // Helper class for PHEM Light, holds CEP data for emission computation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cstdlib>
 #include <fstream>
@@ -43,7 +50,7 @@ PHEMCEPHandler::PHEMCEPHandler() {
 PHEMCEPHandler::~PHEMCEPHandler() {
     std::map<SUMOEmissionClass, PHEMCEP*>::iterator iter = _ceps.begin();
     while (iter != _ceps.end()) {
-        delete (iter->second);
+        delete(iter->second);
         iter++;
     } // end while
     _ceps.clear();
@@ -95,10 +102,10 @@ PHEMCEPHandler::Load(SUMOEmissionClass emissionClass, const std::string& emissio
     //std::string phemPath = oc.getString("phemlight-path") + "/";
     std::vector<std::string> phemPath;
     phemPath.push_back(oc.getString("phemlight-path") + "/");
-    if (getenv("PHEMLIGHT_PATH") != nullptr) {
+    if (getenv("PHEMLIGHT_PATH") != 0) {
         phemPath.push_back(std::string(getenv("PHEMLIGHT_PATH")) + "/");
     }
-    if (getenv("SUMO_HOME") != nullptr) {
+    if (getenv("SUMO_HOME") != 0) {
         phemPath.push_back(std::string(getenv("SUMO_HOME")) + "/data/emissions/PHEMlight/");
     }
     if (!ReadVehicleFile(phemPath, emissionClassIdentifier,
@@ -174,7 +181,7 @@ PHEMCEP*
 PHEMCEPHandler::GetCep(SUMOEmissionClass emissionClass) {
     // check if Cep has been loaded
     if (_ceps.find(emissionClass) == _ceps.end()) {
-        return nullptr;
+        return 0;
     } // end if
 
     return _ceps[emissionClass];

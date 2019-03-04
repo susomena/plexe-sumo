@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    OutputDevice_COUT.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,12 +7,27 @@
 ///
 // An output device that encapsulates cout
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include "OutputDevice_COUT.h"
@@ -29,7 +36,7 @@
 // ===========================================================================
 // static member definitions
 // ===========================================================================
-OutputDevice* OutputDevice_COUT::myInstance = nullptr;
+OutputDevice* OutputDevice_COUT::myInstance = 0;
 
 
 // ===========================================================================
@@ -38,7 +45,7 @@ OutputDevice* OutputDevice_COUT::myInstance = nullptr;
 OutputDevice*
 OutputDevice_COUT::getDevice() {
     // check whether the device has already been aqcuired
-    if (myInstance == nullptr) {
+    if (myInstance == 0) {
         myInstance = new OutputDevice_COUT();
     }
     return myInstance;
@@ -48,13 +55,11 @@ OutputDevice_COUT::getDevice() {
 // ===========================================================================
 // method definitions
 // ===========================================================================
-OutputDevice_COUT::OutputDevice_COUT() {
-    myFilename = "COUT";
-}
+OutputDevice_COUT::OutputDevice_COUT() {}
 
 
 OutputDevice_COUT::~OutputDevice_COUT() {
-    myInstance = nullptr;
+    myInstance = 0;
 }
 
 

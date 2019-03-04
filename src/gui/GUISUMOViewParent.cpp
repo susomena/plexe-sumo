@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUISUMOViewParent.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // A single child window which contains a view of the simulation area
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -93,9 +100,9 @@ GUISUMOViewParent::GUISUMOViewParent(FXMDIClient* p, FXMDIMenu* mdimenu,
                                      const FXString& name,
                                      GUIMainWindow* parentWindow,
                                      FXIcon* ic, FXuint opts,
-                                     FXint x, FXint y, FXint w, FXint h) :
-    GUIGlChildWindow(p, parentWindow, mdimenu, name, nullptr, ic, opts, x, y, w, h) {
-    myParent->addGLChild(this);
+                                     FXint x, FXint y, FXint w, FXint h)
+    : GUIGlChildWindow(p, parentWindow, mdimenu, name, ic, opts, x, y, w, h) {
+    myParent->addChild(this, false);
 }
 
 
@@ -114,23 +121,23 @@ GUISUMOViewParent::init(FXGLCanvas* share, GUINet& net, GUISUMOViewParent::ViewT
     }
     myView->buildViewToolBars(*this);
     if (myParent->isGaming()) {
-        myStaticNavigationToolBar->hide();
+        myNavigationToolBar->hide();
     }
     return myView;
 }
 
 
 GUISUMOViewParent::~GUISUMOViewParent() {
-    myParent->removeGLChild(this);
+    myParent->removeChild(this);
 }
 
 
 void
 GUISUMOViewParent::setToolBarVisibility(const bool value) {
     if (value) {
-        myStaticNavigationToolBar->show();
+        myNavigationToolBar->show();
     } else {
-        myStaticNavigationToolBar->hide();
+        myNavigationToolBar->hide();
     }
 }
 
@@ -234,7 +241,10 @@ GUISUMOViewParent::onCmdLocate(FXObject*, FXSelector sel, void*) {
     myLocatorPopup->popdown();
     myLocatorButton->killFocus();
     myLocatorPopup->update();
-    new GUIDialog_GLObjChooser(this, GUIIconSubSys::getIcon(icon), title.c_str(), ids, GUIGlObjectStorage::gIDStorage);
+    GUIDialog_GLObjChooser* chooser = new GUIDialog_GLObjChooser(
+        this, GUIIconSubSys::getIcon(icon), title.c_str(), ids, GUIGlObjectStorage::gIDStorage);
+    chooser->create();
+    chooser->show();
     return 1;
 }
 
@@ -254,14 +264,14 @@ GUISUMOViewParent::isSelected(GUIGlObject* o) const {
         return true;
     } else if (type == GLO_EDGE) {
         GUIEdge* edge = dynamic_cast<GUIEdge*>(o);
-        if (edge == nullptr) {
+        if (edge == 0) {
             // hmph, just some security stuff
             return false;
         }
         const std::vector<MSLane*>& lanes = edge->getLanes();
         for (std::vector<MSLane*>::const_iterator j = lanes.begin(); j != lanes.end(); ++j) {
             GUILane* l = dynamic_cast<GUILane*>(*j);
-            if (l != nullptr && gSelected.isSelected(GLO_LANE, l->getGlID())) {
+            if (l != 0 && gSelected.isSelected(GLO_LANE, l->getGlID())) {
                 return true;
             }
         }
@@ -287,3 +297,4 @@ GUISUMOViewParent::onKeyRelease(FXObject* o, FXSelector sel, void* data) {
 
 
 /****************************************************************************/
+

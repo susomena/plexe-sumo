@@ -9,7 +9,7 @@ delete
 inspect
 
 # inspect selection
-inspect_selected
+inspect_selection
 
 # load shape
 load
@@ -22,3 +22,4 @@ volatileRecomputing
 
 #edit shape
 #edit_shape
+

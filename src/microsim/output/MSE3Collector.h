@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2003-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSE3Collector.h
 /// @author  Christian Roessel
 /// @author  Daniel Krajzewicz
@@ -17,6 +9,17 @@
 ///
 // A detector of vehicles passing an area between entry/exit points
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2003-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSE3Collector_h
 #define MSE3Collector_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -73,17 +80,6 @@ public:
 
         /// @name Methods inherited from MSMoveReminder.
         /// @{
-        /** @brief Checks whether the reminder is activated by a vehicle entering the lane
-         *
-         * Lane change means in this case that the vehicle changes to the lane
-         *  the reminder is placed at.
-         *
-         * @param[in] veh The entering vehicle.
-         * @param[in] reason how the vehicle enters the lane
-         * @return True if vehicle enters the reminder.
-         * @see Notification
-         */
-        bool notifyEnter(SUMOVehicle& veh, Notification reason, const MSLane* enteredLane);
 
         /** @brief Checks whether the vehicle enters
          *
@@ -100,7 +96,7 @@ public:
          * @see MSMoveReminder::notifyMove
          * @see MSE3Collector::enter
          */
-        bool notifyMove(SUMOVehicle& veh, double, double newPos, double);
+        bool notifyMove(SUMOVehicle& veh, double , double newPos, double);
 
 
         /** @brief Processes state changes of a vehicle
@@ -151,17 +147,6 @@ public:
 
         /// @name methods from MSMoveReminder
         //@{
-        /** @brief Checks whether the reminder is activated by a vehicle entering the lane
-         *
-         * Lane change means in this case that the vehicle changes to the lane
-         *  the reminder is placed at.
-         *
-         * @param[in] veh The entering vehicle.
-         * @param[in] reason how the vehicle enters the lane
-         * @return True if vehicle enters the reminder.
-         * @see Notification
-         */
-        bool notifyEnter(SUMOVehicle& veh, Notification reason, const MSLane* enteredLane);
 
         /** @brief Checks whether the vehicle leaves
          *
@@ -224,7 +209,7 @@ public:
                   const CrossSectionVector& entries, const CrossSectionVector& exits,
                   double haltingSpeedThreshold,
                   SUMOTime haltingTimeThreshold,
-                  const std::string& vTypes, bool openEntry);
+                  const std::string& vTypes);
 
 
     /// @brief Destructor
@@ -244,7 +229,7 @@ public:
      *  @param[in] entryTimestep The time in seconds the vehicle entered the area
      *  @param[in] fractionTimeOnDet The interpolated time in seconds the vehicle already spent on the detector
      */
-    void enter(const SUMOVehicle& veh, const double entryTimestep, const double fractionTimeOnDet, MSE3EntryReminder* entryReminder);
+    void enter(const SUMOVehicle& veh, const double entryTimestep, const double fractionTimeOnDet);
 
 
     /** @brief Called if a vehicle front passes a leave-cross-section.
@@ -379,7 +364,7 @@ protected:
         /// @brief The sum of haltings the vehicle has/had within the area
         int haltings;
         /// @brief Begin time of last halt begin
-        SUMOTime haltingBegin;
+        double haltingBegin;
         /// @brief The sum of registered speeds the vehicle has/had inside the area during the current interval
         double intervalSpeedSum;
         /// @brief The sum of haltings the vehicle has/had within the area during the current interval
@@ -390,15 +375,13 @@ protected:
         SUMOTime intervalTimeLoss;
         /// @brief An internal information whether the update step was performed
         bool hadUpdate;
-        /// @brief the reminder on which the vehicle entered the detector
-        MSE3EntryReminder* entryReminder;
     };
 
     /// @brief Container for vehicles that have entered the area
     std::map<const SUMOVehicle*, E3Values> myEnteredContainer;
 
     /// @brief Container for vehicles that have left the area
-    std::vector<E3Values> myLeftContainer;
+    std::map<const SUMOVehicle*, E3Values> myLeftContainer;
 
 
     /// @name Storages for current values
@@ -415,8 +398,6 @@ protected:
     /// @brief Information when the last reset has been done
     SUMOTime myLastResetTime;
 
-    /// @brief whether this dector is declared as having incomplete entry detectors
-    const bool myOpenEntry;
 
 private:
     /// @brief Invalidated copy constructor.

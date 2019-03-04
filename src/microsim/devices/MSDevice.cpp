@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDevice.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,16 +7,30 @@
 ///
 // Abstract in-vehicle device
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/options/OptionsCont.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <microsim/MSVehicle.h>
-#include <microsim/MSTransportable.h>
 #include <microsim/MSVehicleControl.h>
 #include "MSDevice.h"
 #include "MSDevice_Vehroutes.h"
@@ -36,12 +42,7 @@
 #include "MSDevice_Example.h"
 #include "MSDevice_Battery.h"
 #include "MSDevice_SSM.h"
-#include "MSDevice_ToC.h"
-#include "MSDevice_DriverState.h"
 #include "MSDevice_Bluelight.h"
-#include "MSDevice_FCD.h"
-#include "MSPersonDevice_Routing.h"
-#include "MSRoutingEngine.h"
 
 
 // ===========================================================================
@@ -49,12 +50,6 @@
 // ===========================================================================
 std::map<std::string, std::set<std::string> > MSDevice::myExplicitIDs;
 std::mt19937 MSDevice::myEquipmentRNG;
-
-// ===========================================================================
-// debug flags
-// ===========================================================================
-//#define DEBUG_DEVICE_PARAMS
-
 
 // ===========================================================================
 // method definitions
@@ -71,10 +66,7 @@ MSDevice::insertOptions(OptionsCont& oc) {
     MSDevice_Example::insertOptions(oc);
     MSDevice_Battery::insertOptions(oc);
     MSDevice_SSM::insertOptions(oc);
-    MSDevice_ToC::insertOptions(oc);
-    MSDevice_DriverState::insertOptions(oc);
     MSDevice_Bluelight::insertOptions(oc);
-    MSDevice_FCD::insertOptions(oc);
 }
 
 
@@ -87,7 +79,7 @@ MSDevice::checkOptions(OptionsCont& oc) {
 
 
 void
-MSDevice::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into) {
+MSDevice::buildVehicleDevices(SUMOVehicle& v, std::vector<MSDevice*>& into) {
     MSDevice_Vehroutes::buildVehicleDevices(v, into);
     MSDevice_Tripinfo::buildVehicleDevices(v, into);
     MSDevice_Routing::buildVehicleDevices(v, into);
@@ -97,51 +89,57 @@ MSDevice::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& int
     MSDevice_Example::buildVehicleDevices(v, into);
     MSDevice_Battery::buildVehicleDevices(v, into);
     MSDevice_SSM::buildVehicleDevices(v, into);
-    MSDevice_ToC::buildVehicleDevices(v, into);
-    MSDevice_DriverState::buildVehicleDevices(v, into);
     MSDevice_Bluelight::buildVehicleDevices(v, into);
-    MSDevice_FCD::buildVehicleDevices(v, into);
 }
 
 
 void
-MSDevice::buildPersonDevices(MSTransportable& p, std::vector<MSPersonDevice*>& into) {
-    MSPersonDevice_Routing::buildDevices(p, into);
-}
+MSDevice::insertDefaultAssignmentOptions(const std::string& deviceName, const std::string& optionsTopic, OptionsCont& oc) {
+    oc.doRegister("device." + deviceName + ".probability", new Option_Float(0.));//!!! describe
+    oc.addDescription("device." + deviceName + ".probability", optionsTopic, "The probability for a vehicle to have a '" + deviceName + "' device");
 
+    oc.doRegister("device." + deviceName + ".explicit", new Option_String());//!!! describe
+    oc.addSynonyme("device." + deviceName + ".explicit", "device." + deviceName + ".knownveh", true);
+    oc.addDescription("device." + deviceName + ".explicit", optionsTopic, "Assign a '" + deviceName + "' device to named vehicles");
 
-void
-MSDevice::cleanupAll() {
-    MSRoutingEngine::cleanup();
-    MSDevice_Tripinfo::cleanup();
-    MSDevice_FCD::cleanup();
-}
-
-void
-MSDevice::insertDefaultAssignmentOptions(const std::string& deviceName, const std::string& optionsTopic, OptionsCont& oc, const bool isPerson) {
-    const std::string prefix = (isPerson ? "person-device." : "device.") + deviceName;
-    const std::string object = isPerson ? "person" : "vehicle";
-    oc.doRegister(prefix + ".probability", new Option_Float(-1.0));// (default: no need to call RNG)
-    oc.addDescription(prefix + ".probability", optionsTopic, "The probability for a " + object + " to have a '" + deviceName + "' device");
-
-    oc.doRegister(prefix + ".explicit", new Option_String());
-    oc.addSynonyme(prefix + ".explicit", prefix + ".knownveh", true);
-    oc.addDescription(prefix + ".explicit", optionsTopic, "Assign a '" + deviceName + "' device to named " + object + "s");
-
-    oc.doRegister(prefix + ".deterministic", new Option_Bool(false));
-    oc.addDescription(prefix + ".deterministic", optionsTopic, "The '" + deviceName + "' devices are set deterministic using a fraction of 1000");
+    oc.doRegister("device." + deviceName + ".deterministic", new Option_Bool(false)); //!!! describe
+    oc.addDescription("device." + deviceName + ".deterministic", optionsTopic, "The '" + deviceName + "' devices are set deterministic using a fraction of 1000");
 }
 
 
 bool
-MSDevice::equippedByParameter(const MSTransportable* t, const std::string& deviceName, bool outputOptionSet) {
-    const std::string key = "has." + deviceName + ".device";
-    if (t->getParameter().knowsParameter(key)) {
-        return StringUtils::toBool(t->getParameter().getParameter(key, "false"));
-    } else if (t->getVehicleType().getParameter().knowsParameter(key)) {
-        return StringUtils::toBool(t->getVehicleType().getParameter().getParameter(key, "false"));
+MSDevice::equippedByDefaultAssignmentOptions(const OptionsCont& oc, const std::string& deviceName, SUMOVehicle& v) {
+    // assignment by number
+    bool haveByNumber = false;
+    if (oc.exists("device." + deviceName + ".deterministic") && oc.getBool("device." + deviceName + ".deterministic")) {
+        haveByNumber = MSNet::getInstance()->getVehicleControl().getQuota(oc.getFloat("device." + deviceName + ".probability")) == 1;
+    } else {
+        if (oc.exists("device." + deviceName + ".probability") && oc.getFloat("device." + deviceName + ".probability") != 0) {
+            haveByNumber = RandHelper::rand(&myEquipmentRNG) <= oc.getFloat("device." + deviceName + ".probability");
+        }
     }
-    return outputOptionSet;
+    // assignment by name
+    bool haveByName = false;
+    if (oc.exists("device." + deviceName + ".explicit") && oc.isSet("device." + deviceName + ".explicit")) {
+        if (myExplicitIDs.find(deviceName) == myExplicitIDs.end()) {
+            myExplicitIDs[deviceName] = std::set<std::string>();
+            const std::vector<std::string> idList = OptionsCont::getOptions().getStringVector("device." + deviceName + ".explicit");
+            myExplicitIDs[deviceName].insert(idList.begin(), idList.end());
+        }
+        haveByName = myExplicitIDs[deviceName].count(v.getID()) > 0;
+    }
+    // assignment by abstract parameters
+    bool haveByParameter = false;
+    bool parameterGiven = false;
+    const std::string key = "has." + deviceName + ".device";
+    if (v.getParameter().knowsParameter(key)) {
+        parameterGiven = true;
+        haveByParameter = TplConvert::_2bool(v.getParameter().getParameter(key, "false").c_str());
+    } else if (v.getVehicleType().getParameter().knowsParameter(key)) {
+        parameterGiven = true;
+        haveByParameter = TplConvert::_2bool(v.getVehicleType().getParameter().getParameter(key, "false").c_str());
+    }
+    return (haveByNumber && !parameterGiven) || haveByName || haveByParameter;
 }
 
 
@@ -155,103 +153,5 @@ void
 MSDevice::loadState(const SUMOSAXAttributes& /* attrs */) {
 }
 
-
-std::string
-MSDevice::getStringParam(const SUMOVehicle& v, const OptionsCont& oc, std::string paramName, std::string deflt, bool required) {
-    std::string result = deflt;
-    if (v.getParameter().knowsParameter("device." + paramName)) {
-        try {
-            result = v.getParameter().getParameter("device." + paramName, "").c_str();
-        } catch (...) {
-            WRITE_WARNING("Invalid value '" + v.getParameter().getParameter("device." + paramName, "") + "'for vehicle parameter 'toc." + paramName + "'");
-        }
-    } else if (v.getVehicleType().getParameter().knowsParameter("device." + paramName)) {
-        try {
-            result = v.getVehicleType().getParameter().getParameter("device." + paramName, "").c_str();
-        } catch (...) {
-            WRITE_WARNING("Invalid value '" + v.getVehicleType().getParameter().getParameter("device." + paramName, "") + "'for vType parameter 'toc." + paramName + "'");
-        }
-    } else {
-        if (oc.isSet("device." + paramName)) {
-            result = oc.getString("device." + paramName);
-        } else {
-            if (required) {
-                throw ProcessError("Missing parameter 'device." + paramName + "' for vehicle '" + v.getID());
-            } else {
-                result = deflt;
-#ifdef DEBUG_DEVICE_PARAMS
-                std::cout << "vehicle '" << v.getID() << "' does not supply vehicle parameter 'device." + paramName + "'. Using default of '" << result << "'\n";
-#endif
-            }
-        }
-    }
-    return result;
-}
-
-
-double
-MSDevice::getFloatParam(const SUMOVehicle& v, const OptionsCont& oc, std::string paramName, double deflt, bool required) {
-    double result = deflt;
-    if (v.getParameter().knowsParameter("device." + paramName)) {
-        try {
-            result = StringUtils::toDouble(v.getParameter().getParameter("device." + paramName, ""));
-        } catch (...) {
-            WRITE_WARNING("Invalid value '" + v.getParameter().getParameter("device." + paramName, "") + "'for vehicle parameter 'toc." + paramName + "'");
-        }
-    } else if (v.getVehicleType().getParameter().knowsParameter("device." + paramName)) {
-        try {
-            result = StringUtils::toDouble(v.getVehicleType().getParameter().getParameter("device." + paramName, ""));
-        } catch (...) {
-            WRITE_WARNING("Invalid value '" + v.getVehicleType().getParameter().getParameter("device." + paramName, "") + "'for vType parameter 'toc." + paramName + "'");
-        }
-    } else {
-        if (oc.isSet("device." + paramName)) {
-            result = oc.getFloat("device." + paramName);
-        } else {
-            if (required) {
-                throw ProcessError("Missing parameter 'device." + paramName + "' for vehicle '" + v.getID());
-            } else {
-                result = deflt;
-#ifdef DEBUG_DEVICE_PARAMS
-                std::cout << "vehicle '" << v.getID() << "' does not supply vehicle parameter 'device." + paramName + "'. Using default of '" << result << "'\n";
-#endif
-            }
-        }
-    }
-    return result;
-}
-
-
-bool
-MSDevice::getBoolParam(const SUMOVehicle& v, const OptionsCont& oc, std::string paramName, bool deflt, bool required) {
-    bool result = deflt;
-    if (v.getParameter().knowsParameter("device." + paramName)) {
-        try {
-            result = StringUtils::toBool(v.getParameter().getParameter("device." + paramName, ""));
-        } catch (...) {
-            WRITE_WARNING("Invalid value '" + v.getParameter().getParameter("device." + paramName, "") + "'for vehicle parameter 'toc." + paramName + "'");
-        }
-    } else if (v.getVehicleType().getParameter().knowsParameter("device." + paramName)) {
-        try {
-            result = StringUtils::toBool(v.getVehicleType().getParameter().getParameter("device." + paramName, ""));
-        } catch (...) {
-            WRITE_WARNING("Invalid value '" + v.getVehicleType().getParameter().getParameter("device." + paramName, "") + "'for vType parameter 'toc." + paramName + "'");
-        }
-    } else {
-        if (oc.isSet("device." + paramName)) {
-            result = oc.getBool("device." + paramName);
-        } else {
-            if (required) {
-                throw ProcessError("Missing parameter 'device." + paramName + "' for vehicle '" + v.getID());
-            } else {
-                result = deflt;
-#ifdef DEBUG_DEVICE_PARAMS
-                std::cout << "vehicle '" << v.getID() << "' does not supply vehicle parameter 'device." + paramName + "'. Using default of '" << result << "'\n";
-#endif
-            }
-        }
-    }
-    return result;
-}
 
 /****************************************************************************/

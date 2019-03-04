@@ -1,24 +1,25 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    plot_csv_timeline.py
-# @author  Daniel Krajzewicz
-# @author  Laura Bieker
-# @date    2014-01-14
-# @version $Id$
-
 """
+@file    plot_csv_timeline.py
+@author  Daniel Krajzewicz
+@author  Laura Bieker
+@date    2014-01-14
+@version $Id$
+
 
 This script plots selected columns from a given .csv file (';'-separated).
 The loaded time lines are visualised as lines.
 matplotlib (http://matplotlib.org/) has to be installed for this purpose
 
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -27,17 +28,18 @@ import os
 import sys
 import csv
 
-sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import sumolib  # noqa
-from sumolib.visualization import helpers  # noqa
-import matplotlib.pyplot as plt  # noqa
+from sumolib.visualization import helpers
+
+import matplotlib.pyplot as plt
 
 
 def readValues(file, verbose, columns):
+    if verbose:
+        print("Reading '%s'..." % f)
     ret = {}
     with open(file, 'rb') as f:
-        if verbose:
-            print("Reading '%s'..." % f)
         reader = csv.reader(f, delimiter=';')
         for row in reader:
             if columns is None:
@@ -64,7 +66,7 @@ def main(args=None):
     helpers.addInteractionOptions(optParser)
     helpers.addPlotOptions(optParser)
     # parse
-    options, _ = optParser.parse_args(args=args)
+    options, remaining_args = optParser.parse_args(args=args)
 
     if options.input is None:
         print("Error: an input file must be given")
@@ -86,9 +88,9 @@ def main(args=None):
         if options.columns is not None:
             ci = options.columns.index(i)
         c = helpers.getColor(options, ci, len(nums))
-        plt.plot(ts[0:len(v)], v, label=helpers.getLabel(str(i), ci, options), color=c)
+        l = helpers.getLabel(str(i), ci, options)
+        plt.plot(ts[0:len(v)], v, label=l, color=c)
     helpers.closeFigure(fig, ax, options)
-
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))

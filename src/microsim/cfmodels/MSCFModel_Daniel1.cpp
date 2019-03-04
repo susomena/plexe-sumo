@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_Daniel1.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // The original Krauss (1998) car-following model and parameter
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <microsim/MSVehicle.h>
 #include <microsim/MSLane.h>
@@ -33,15 +40,13 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-MSCFModel_Daniel1::MSCFModel_Daniel1(const MSVehicleType* vtype) :
-    MSCFModel(vtype),
-    myDawdle(vtype->getParameter().getCFParam(SUMO_ATTR_SIGMA, SUMOVTypeParameter::getDefaultImperfection(vtype->getParameter().vehicleClass))),
-    myTauDecel(myDecel * myHeadwayTime),
-    myTmp1(vtype->getParameter().getCFParam(SUMO_ATTR_TMP1, 1.0)),
-    myTmp2(vtype->getParameter().getCFParam(SUMO_ATTR_TMP2, 1.0)),
-    myTmp3(vtype->getParameter().getCFParam(SUMO_ATTR_TMP3, 1.0)),
-    myTmp4(vtype->getParameter().getCFParam(SUMO_ATTR_TMP4, 1.0)),
-    myTmp5(vtype->getParameter().getCFParam(SUMO_ATTR_TMP5, 1.0)) {
+MSCFModel_Daniel1::MSCFModel_Daniel1(const MSVehicleType* vtype,  double accel,
+                                     double decel, double emergencyDecel, double apparentDecel,
+                                     double dawdle, double headwayTime,
+                                     double tmp1, double tmp2, double tmp3, double tmp4, double tmp5) :
+    MSCFModel(vtype, accel, decel, emergencyDecel, apparentDecel, headwayTime),
+    myDawdle(dawdle), myTauDecel(decel * headwayTime),
+    myTmp1(tmp1), myTmp2(tmp2), myTmp3(tmp3), myTmp4(tmp4), myTmp5(tmp5) {
 }
 
 
@@ -49,7 +54,7 @@ MSCFModel_Daniel1::~MSCFModel_Daniel1() {}
 
 
 double
-MSCFModel_Daniel1::finalizeSpeed(MSVehicle* const veh, double vPos) const {
+MSCFModel_Daniel1::moveHelper(MSVehicle* const veh, double vPos) const {
     const double oldV = veh->getSpeed(); // save old v for optional acceleration computation
     const double vSafe = MIN2(vPos, veh->processNextStop(vPos)); // process stops
     // we need the acceleration for emission computation;
@@ -63,12 +68,12 @@ MSCFModel_Daniel1::finalizeSpeed(MSVehicle* const veh, double vPos) const {
         WRITE_WARNING("Maximum speed of vehicle '" + veh->getID() + "' is lower than the minimum speed (min: " + toString(vMin) + ", max: " + toString(vMax) + ").");
     }
 #endif
-    return veh->getLaneChangeModel().patchSpeed(vMin, MAX2(vMin, dawdle(vMax, veh->getRNG())), vMax, *this);
+    return veh->getLaneChangeModel().patchSpeed(vMin, MAX2(vMin, dawdle(vMax)), vMax, *this);
 }
 
 
 double
-MSCFModel_Daniel1::followSpeed(const MSVehicle* const veh, double speed, double gap, double predSpeed, double /*predMaxDecel*/, const MSVehicle* const /*pred*/) const {
+MSCFModel_Daniel1::followSpeed(const MSVehicle* const veh, double speed, double gap, double predSpeed, double /*predMaxDecel*/) const {
     return MIN2(_vsafe(gap, predSpeed), maxNextSpeed(speed, veh));
 }
 
@@ -80,8 +85,8 @@ MSCFModel_Daniel1::stopSpeed(const MSVehicle* const veh, const double speed, dou
 
 
 double
-MSCFModel_Daniel1::dawdle(double speed, std::mt19937* rng) const {
-    return MAX2(0., speed - ACCEL2SPEED(myDawdle * myAccel * RandHelper::rand(rng)));
+MSCFModel_Daniel1::dawdle(double speed) const {
+    return MAX2(0., speed - ACCEL2SPEED(myDawdle * myAccel * RandHelper::rand()));
 }
 
 
@@ -103,5 +108,6 @@ double MSCFModel_Daniel1::_vsafe(double gap, double predSpeed) const {
 
 MSCFModel*
 MSCFModel_Daniel1::duplicate(const MSVehicleType* vtype) const {
-    return new MSCFModel_Daniel1(vtype);
+    return new MSCFModel_Daniel1(vtype, myAccel, myDecel, myEmergencyDecel, myApparentDecel, myDawdle, myHeadwayTime,
+                                 myTmp1, myTmp2, myTmp3, myTmp4, myTmp5);
 }

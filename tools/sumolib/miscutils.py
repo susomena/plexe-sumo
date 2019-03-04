@@ -1,17 +1,21 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    miscutils.py
+@author  Jakob Erdmann
+@author  Michael Behrisch
+@date    2012-05-08
+@version $Id$
 
-# @file    miscutils.py
-# @author  Jakob Erdmann
-# @author  Michael Behrisch
-# @date    2012-05-08
-# @version $Id$
+Common utility functions
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2016 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import sys
@@ -28,13 +32,6 @@ from collections import defaultdict
 # sys.path.append(os.path.join(THIS_DIR, 'foo', 'bar'))
 
 # http://www.python.org/dev/peps/pep-0326/
-
-
-def round(value):  # to round in Python 3 like in Python 2
-    if value < 0:
-        return math.ceil(value - 0.5)
-    else:
-        return math.floor(value + 0.5)
 
 
 class _ExtremeType(object):
@@ -64,7 +61,6 @@ class _ExtremeType(object):
 
     def __repr__(self):
         return self._rep
-
 
 uMax = _ExtremeType(True, "uMax")
 uMin = _ExtremeType(False, "uMin")
@@ -257,21 +253,16 @@ class Colorgen:
 
     def __init__(self, hsv):
         self.hsv = hsv
-        self.cycle = [random.randint(0, 255) for x in self.hsv]
 
-    def get_value(self, opt, index):
+    def get_value(self, opt):
         if opt == 'random':
             return random.random()
-        elif opt == 'cycle':
-            # the 255 below is intentional to get all color values when cycling long enough
-            self.cycle[index] = (self.cycle[index] + 24) % 255
-            return self.cycle[index] / 255.0
         else:
             return float(opt)
 
     def floatTuple(self):
         """return color as a tuple of floats each in [0,1]"""
-        return colorsys.hsv_to_rgb(*[self.get_value(o, i) for i, o in enumerate(self.hsv)])
+        return colorsys.hsv_to_rgb(*map(self.get_value, self.hsv))
 
     def byteTuple(self):
         """return color as a tuple of bytes each in [0,255]"""
@@ -306,13 +297,3 @@ def getSocketStream(port, mode='rb'):
 # euclidean distance between two coordinates in the plane
 def euclidean(a, b):
     return math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
-
-
-def parseTime(t):
-    try:
-        return float(t)
-    except ValueError:
-        pass
-    # prepended zero is ignored if the date value already contains days
-    days, hours, minutes, seconds = ([0] + list(map(float, t.split(':'))))[-4:]
-    return 3600 * 24 * days + 3600 * hours + 60 * minutes + seconds

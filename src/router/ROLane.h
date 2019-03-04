@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ROLane.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -15,6 +7,17 @@
 ///
 // A single lane the router may use
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef ROLane_h
 #define ROLane_h
 
@@ -22,10 +25,13 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
-#include <utils/geom/PositionVector.h>
 #include <utils/common/Named.h>
 #include <utils/common/SUMOVehicleClass.h>
 
@@ -57,8 +63,8 @@ public:
      * @param[in] maxSpeed The maximum speed allowed on the lane
      * @param[in] permissions Vehicle classes that may pass this lane
      */
-    ROLane(const std::string& id, ROEdge* edge, double length, double maxSpeed, SVCPermissions permissions, const PositionVector& shape) :
-        Named(id), myEdge(edge), myLength(length), myMaxSpeed(maxSpeed), myPermissions(permissions), myShape(shape) {
+    ROLane(const std::string& id, ROEdge* edge, double length, double maxSpeed, SVCPermissions permissions) :
+        Named(id), myEdge(edge), myLength(length), myMaxSpeed(maxSpeed), myPermissions(permissions) {
     }
 
 
@@ -96,13 +102,13 @@ public:
         return *myEdge;
     }
 
-    /// @brief get the map of outgoing lanes to via edges
-    const std::vector<std::pair<const ROLane*, const ROEdge*> >& getOutgoingViaLanes() const {
+    /// @brief get the list of outgoing lanes
+    const std::vector<const ROLane*>& getOutgoingLanes() const {
         return myOutgoingLanes;
     }
 
-    void addOutgoingLane(ROLane* lane, ROEdge* via = nullptr) {
-        myOutgoingLanes.push_back(std::make_pair(lane, via));
+    void addOutgoingLane(ROLane* lane) {
+        myOutgoingLanes.push_back(lane);
     }
 
     /// @brief get the state of the link from the logical predecessor to this lane (ignored for routing)
@@ -112,10 +118,6 @@ public:
 
     inline bool allowsVehicleClass(SUMOVehicleClass vclass) const {
         return (myPermissions & vclass) == vclass;
-    }
-
-    const PositionVector& getShape() const {
-        return myShape;
     }
 
 private:
@@ -131,10 +133,7 @@ private:
     /// @brief The encoding of allowed vehicle classes
     SVCPermissions myPermissions;
 
-    std::vector<std::pair<const ROLane*, const ROEdge*> > myOutgoingLanes;
-
-    /// @brief shape for this lane
-    const PositionVector myShape;
+    std::vector<const ROLane*> myOutgoingLanes;
 
 
 private:

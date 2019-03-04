@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIPointOfInterest.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // missing_desc
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIPointOfInterest_h
 #define GUIPointOfInterest_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/shapes/PointOfInterest.h>
@@ -49,23 +56,17 @@ public:
      * @param[in] id The name of the POI
      * @param[in] type The (abstract) type of the POI
      * @param[in] color The color of the POI
-     * @param[in] pos The position of the POI
-     * @param[in[ geo use GEO coordinates (lon/lat)
-     * @param[in] lane The Lane in which this POI is placed
-     * @param[in] posOverLane The position over Lane
-     * @param[in] posLat The position lateral over Lane
      * @param[in] layer The layer of the POI
      * @param[in] angle The rotation of the POI
      * @param[in] imgFile The raster image of the shape
-     * @param[in] relativePath set image file as relative path
+     * @param[in] pos The position of the POI
      * @param[in] width The width of the POI image
      * @param[in] height The height of the POI image
      */
     GUIPointOfInterest(const std::string& id, const std::string& type,
-                       const RGBColor& color, const Position& pos, bool geo,
-                       const std::string& lane, double posOverLane, double posLat,
+                       const RGBColor& color, const Position& pos,
                        double layer, double angle, const std::string& imgFile,
-                       bool relativePath, double width, double height);
+                       double width, double height);
 
     /// @brief Destructor
     virtual ~GUIPointOfInterest();
@@ -112,18 +113,6 @@ public:
     void drawGL(const GUIVisualizationSettings& s) const;
     //@}
 
-protected:
-    /// @brief set color
-    void setColor(const GUIVisualizationSettings& s, bool forceSelectionColor) const;
-
-    /// @brief check if POI can be drawn
-    bool checkDraw(const GUIVisualizationSettings& s) const;
-
-    /// @brief draw inner POI (before pushName() )
-    void drawInnerPOI(const GUIVisualizationSettings& s, bool forceSelectionColor) const;
-
-    /// @brief after every iteration of drawgl, position of vertices that make the circle are saved here. It used to drawn a dotted contour in Netedit)
-    static std::vector<Position> myPOIVertices;
 };
 
 

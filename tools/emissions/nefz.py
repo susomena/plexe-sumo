@@ -1,20 +1,21 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    nefz.py
-# @author  daniel.krajzewicz@dlr.de
-# @date    2014-01-14
-# @version $Id$
-
 """
+@file    nefz.py
+@author  daniel.krajzewicz@dlr.de
+@date    2014-01-14
+@version $Id$
+
 Generates a ';'-separated file that contains the time line of the NEFZ
  driving cycle.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2016 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import print_function
 
@@ -89,6 +90,7 @@ def build(what):
     vs3 = []
     as3 = []
     ct = 0
+    ca = 0
     cv = 0
     lv = 0
     lt = 0
@@ -98,6 +100,7 @@ def build(what):
     for tav in what:
         [t, a, v] = tav[:3]
         v = v / 3.6
+        isDestinationVelocityEntry = False
         if v >= 0:
             # destination velocity
             if a != 0:
@@ -105,6 +108,7 @@ def build(what):
             ts1.append(ct + t)
             as1.append(0)
             vs1.append(v)
+            isDestinationVelocityEntry = True
         # via acceleration
         for it in range(0, t):
             ts2.append(ct + it)
@@ -125,6 +129,7 @@ def build(what):
                     vs3.append(lv + a * float(it - lt))
 
         ct = ct + t
+        ca = a
         if v >= 0:
             cv = v
             lv = v

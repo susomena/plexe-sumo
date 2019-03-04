@@ -1,23 +1,24 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    visum_parseZaehlstelle.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2008-11-30
-# @version $Id$
-
 """
+@file    visum_parseZaehlstelle.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2008-11-30
+@version $Id$
+
 
 This script reads "Zaehlstellen" from a given VISUM-network
  and projects them onto a given SUMO-network.
 The parsed "Zaehlstellen" are written as POIs.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -28,7 +29,7 @@ from xml.sax import make_parser
 
 sys.path.append(
     os.path.join(os.path.abspath(os.path.dirname(sys.argv[0])), "../../lib"))
-import sumonet  # noqa
+import sumonet
 
 if len(sys.argv) < 3:
     print("Usage: " + sys.argv[0] + " <SUMO-net> <VISUM-net> <output>")
@@ -44,7 +45,6 @@ fd = open(sys.argv[2])
 fdo = open(sys.argv[3], "w")
 fdo.write("<pois>\n")
 parsingCounts = False
-lastKnown = ""
 for line in fd:
     if parsingCounts:
         if line[0] == '*' or line[0] == '$' or line.find(";") < 0:

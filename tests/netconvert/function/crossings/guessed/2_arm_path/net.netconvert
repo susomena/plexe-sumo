@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Fri Dec 14 09:27:58 2018 by Eclipse SUMO netconvert Version v1_0_1+0645-93703db
-This data file and the accompanying materials
-are made available under the terms of the Eclipse Public License v2.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v20.html
-SPDX-License-Identifier: EPL-2.0
+<!-- generated on Fri Jun 30 08:53:40 2017 by SUMO netconvert Version dev-SVN-r24993
+<?xml version="1.0" encoding="UTF-8"?>
+
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
@@ -14,17 +11,13 @@ SPDX-License-Identifier: EPL-2.0
     </input>
 
     <output>
-        <write-license value="true"/>
         <output-file value="net.net.xml"/>
     </output>
 
-    <junctions>
+    <processing>
         <no-turnarounds value="true"/>
-    </junctions>
-
-    <pedestrian>
         <crossings.guess value="true"/>
-    </pedestrian>
+    </processing>
 
     <report>
         <xml-validation value="never"/>
@@ -33,23 +26,23 @@ SPDX-License-Identifier: EPL-2.0
 </configuration>
 -->
 
-<net version="1.1" junctionCornerDetail="5" walkingareas="true" limitTurnSpeed="5.50" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
+<net version="0.27" walkingareas="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
 
     <location netOffset="100.00,0.00" convBoundary="0.00,0.00,200.00,0.00" origBoundary="-10000000000.00,-10000000000.00,10000000000.00,10000000000.00" projParameter="!"/>
 
     <edge id=":C_w0" function="walkingarea">
-        <lane id=":C_w0_0" index="0" allow="pedestrian" speed="1.00" length="0.10" width="3.20" shape="100.00,0.00 100.00,-3.20 100.00,-3.20 100.00,0.00"/>
+        <lane id=":C_w0_0" index="0" allow="pedestrian" speed="1.00" length="0.10" width="3.20" shape="100.00,-0.05 100.00,-3.25 100.00,-3.25 100.00,-0.05"/>
     </edge>
     <edge id="CE" from="C" to="E" priority="-1">
-        <lane id="CE_0" index="0" allow="pedestrian" speed="13.89" length="100.00" shape="100.00,-1.60 200.00,-1.60"/>
+        <lane id="CE_0" index="0" allow="pedestrian" speed="13.90" length="100.00" shape="100.00,-1.65 200.00,-1.65"/>
     </edge>
     <edge id="WC" from="W" to="C" priority="-1">
-        <lane id="WC_0" index="0" allow="pedestrian" speed="13.89" length="100.00" shape="0.00,-1.60 100.00,-1.60"/>
+        <lane id="WC_0" index="0" allow="pedestrian" speed="13.90" length="100.00" shape="0.00,-1.65 100.00,-1.65"/>
     </edge>
 
-    <junction id="C" type="dead_end" x="100.00" y="0.00" incLanes="WC_0" intLanes="" shape="100.00,0.00 100.00,-3.20 100.00,0.00"/>
-    <junction id="E" type="dead_end" x="200.00" y="0.00" incLanes="CE_0" intLanes="" shape="200.00,-3.20 200.00,0.00"/>
-    <junction id="W" type="dead_end" x="0.00" y="0.00" incLanes="" intLanes="" shape="0.00,0.00 0.00,-3.20"/>
+    <junction id="C" type="dead_end" x="100.00" y="0.00" incLanes="WC_0" intLanes="" shape="100.00,-0.05 100.00,-3.25 100.00,-0.05"/>
+    <junction id="E" type="dead_end" x="200.00" y="0.00" incLanes="CE_0" intLanes="" shape="200.00,-3.25 200.00,-0.05"/>
+    <junction id="W" type="dead_end" x="0.00" y="0.00" incLanes="" intLanes="" shape="0.00,-0.05 0.00,-3.25"/>
 
     <connection from=":C_w0" to="CE" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from="WC" to=":C_w0" fromLane="0" toLane="0" dir="s" state="M"/>

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    OptionsIO.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,12 +7,27 @@
 ///
 // Helper for parsing command line arguments and reading configuration files
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <iostream>
@@ -39,12 +46,12 @@
 #include "OptionsParser.h"
 #include <utils/common/FileHelpers.h>
 #include <utils/common/MsgHandler.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 
 // ===========================================================================
 // static member definitions
 // ===========================================================================
-int OptionsIO::myArgC = 0;
+int OptionsIO::myArgC;
 char** OptionsIO::myArgV;
 
 
@@ -60,10 +67,9 @@ OptionsIO::setArgs(int argc, char** argv) {
 
 void
 OptionsIO::setArgs(const std::vector<std::string>& args) {
-    char* const app = myArgC > 0 ? myArgV[0] : nullptr;
     myArgC = (int)args.size() + 1;
     char** argv = new char* [myArgC];
-    argv[0] = app;
+    argv[0] = myArgV[0];
     for (int i = 1; i < myArgC; i++) {
         argv[i] = new char[args[i - 1].size() + 1];
         std::strcpy(argv[i], args[i - 1].c_str());
@@ -120,11 +126,11 @@ OptionsIO::loadConfiguration() {
         parser.setDocumentHandler(&handler);
         parser.setErrorHandler(&handler);
         parser.parse(path.c_str());
-        if (handler.errorOccurred()) {
+        if (handler.errorOccured()) {
             throw ProcessError("Could not load configuration '" + path + "'.");
         }
     } catch (const XERCES_CPP_NAMESPACE::XMLException& e) {
-        throw ProcessError("Could not load configuration '" + path + "':\n " + StringUtils::transcode(e.getMessage()));
+        throw ProcessError("Could not load configuration '" + path + "':\n " + TplConvert::_2str(e.getMessage()));
     }
     oc.relocateFiles(path);
     PROGRESS_DONE_MESSAGE();
@@ -145,11 +151,11 @@ OptionsIO::getRoot(const std::string& filename) {
             throw ProcessError("Can not read XML-file '" + filename + "'.");
         }
         while (parser.parseNext(token) && handler.getItem() == "");
-        if (handler.errorOccurred()) {
+        if (handler.errorOccured()) {
             throw ProcessError("Could not load '" + filename + "'.");
         }
     } catch (const XERCES_CPP_NAMESPACE::XMLException& e) {
-        throw ProcessError("Could not load '" + filename + "':\n " + StringUtils::transcode(e.getMessage()));
+        throw ProcessError("Could not load '" + filename + "':\n " + TplConvert::_2str(e.getMessage()));
     }
     return handler.getItem();
 }

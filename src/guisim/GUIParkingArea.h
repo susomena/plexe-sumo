@@ -1,18 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIParkingArea.h
 /// @author  Mirco Sturari
 /// @date    Tue, 19.01.2016
 /// @version $Id$
 ///
 // A area where vehicles can park next to the road (gui version)
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef GUIParkingArea_h
 #define GUIParkingArea_h
@@ -21,7 +24,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <string>
@@ -34,6 +41,7 @@
 #include <utils/gui/globjects/GUIGLObjectPopupMenu.h>
 #include <utils/geom/Position.h>
 #include <gui/GUIManipulator.h>
+#include <utils/foxtools/FXRealSpinDial.h>
 
 
 // ===========================================================================
@@ -76,8 +84,7 @@ public:
     GUIParkingArea(const std::string& id,
                    const std::vector<std::string>& lines, MSLane& lane,
                    double frompos, double topos, unsigned int capacity,
-                   double width, double length, double angle, const std::string& name,
-                   bool onRoad);
+                   double width, double length, double angle);
 
 
     /// @brief Destructor
@@ -119,9 +126,6 @@ public:
      */
     Boundary getCenteringBoundary() const;
 
-    /// @brief extend boundary
-    void addLotEntry(double x, double y, double z,
-                     double width, double length, double angle);
 
     /** @brief Draws the object
      * @param[in] s The settings for the current view (may influence drawing)
@@ -143,9 +147,6 @@ private:
 
     /// @brief The rotation of the sign
     double mySignRot;
-
-    /// @brief the centering boundary
-    Boundary myBoundary;
 
 };
 

@@ -1,21 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    vehicle2flow.py
-# @author  Michael Behrisch
-# @date    2012-11-15
-# @version $Id$
-
 """
+@file    vehicle2flow.py
+@author  Michael Behrisch
+@date    2012-11-15
+@version $Id$
+
 This script replaces all vehicle definitions in a route file by
 flow definitions, adding an XML ntity for the repeat interval for
 easy later modification.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 import sys
@@ -36,7 +37,7 @@ def parse_args():
     options, args = optParser.parse_args()
     try:
         options.routefile = args[0]
-    except Exception:
+    except:
         sys.exit(USAGE)
     if options.outfile is None:
         options.outfile = options.routefile + ".rou.xml"
@@ -47,6 +48,7 @@ def main():
     options = parse_args()
     with open(options.routefile) as f:
         with open(options.outfile, 'w') as outf:
+            headerSeen = False
             for line in f:
                 if options.with_entities:
                     if "<routes " in line or "<routes>" in line:
@@ -56,15 +58,12 @@ def main():
     ]>
     """ % (options.repeat, options.end))
                     line = re.sub(
-                        r'<vehicle(.*)depart( ?= ?"[^"]*")', r'<flow\1begin\2 end="&RepeatEnd;" ' +
-                        'period="&RepeatInterval;"', line)
+                        r'<vehicle(.*)depart( ?= ?"[^"]*")', r'<flow\1begin\2 end="&RepeatEnd;" period="&RepeatInterval;"', line)
                 else:
                     line = re.sub(
-                        r'<vehicle(.*)depart( ?= ?"[^"]*")', r'<flow\1begin\2 end="%s" period="%s"' %
-                        (options.end, options.repeat), line)
+                        r'<vehicle(.*)depart( ?= ?"[^"]*")', r'<flow\1begin\2 end="%s" period="%s"' % (options.end, options.repeat), line)
                 line = re.sub(r'</vehicle>', '</flow>', line)
                 outf.write(line)
-
 
 if __name__ == "__main__":
     main()

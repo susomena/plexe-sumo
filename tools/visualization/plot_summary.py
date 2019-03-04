@@ -1,23 +1,24 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    plot_summary.py
-# @author  Daniel Krajzewicz
-# @author  Laura Bieker
-# @date    2013-11-11
-# @version $Id$
-
 """
+@file    plot_summary.py
+@author  Daniel Krajzewicz
+@author  Laura Bieker
+@date    2013-11-11
+@version $Id$
+
 
 This script plots a selected measure from a summary-output.
 matplotlib (http://matplotlib.org/) has to be installed for this purpose
 
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -25,10 +26,11 @@ from __future__ import print_function
 import os
 import sys
 
-sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import sumolib  # noqa
-from sumolib.visualization import helpers  # noqa
-import matplotlib.pyplot as plt  # noqa
+from sumolib.visualization import helpers
+
+import matplotlib.pyplot as plt
 
 
 def readValues(files, verbose, measure):
@@ -55,7 +57,7 @@ def main(args=None):
     helpers.addInteractionOptions(optParser)
     helpers.addPlotOptions(optParser)
     # parse
-    options, _ = optParser.parse_args(args=args)
+    options, remaining_args = optParser.parse_args(args=args)
 
     if options.summary is None:
         print("Error: at least one summary file must be given")
@@ -68,16 +70,16 @@ def main(args=None):
     times = readValues(files, options.verbose, "time")
     for f in files:
         maxV = max(maxV, len(nums[f]))
-    range(minV, maxV + 1)
+    ts = range(minV, maxV + 1)
 
     fig, ax = helpers.openFigure(options)
     for i, f in enumerate(files):
         v = sumolib.output.toList(nums[f], options.measure)
         t = sumolib.output.toList(times[f], "time")
         c = helpers.getColor(options, i, len(files))
-        plt.plot(t, v, label=helpers.getLabel(f, i, options), color=c)
+        l = helpers.getLabel(f, i, options)
+        plt.plot(t, v, label=l, color=c)
     helpers.closeFigure(fig, ax, options)
-
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))

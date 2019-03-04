@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOSAXReader.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // SAX-reader encapsulation containing binary reader
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <iostream>
@@ -31,7 +38,7 @@
 
 #include <utils/common/MsgHandler.h>
 #include <utils/common/ToString.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/iodevices/BinaryFormatter.h>
 #include <utils/iodevices/BinaryInputDevice.h>
 #include "SUMOSAXAttributesImpl_Binary.h"
@@ -43,9 +50,8 @@
 // method definitions
 // ===========================================================================
 SUMOSAXReader::SUMOSAXReader(GenericSAXHandler& handler, const XERCES_CPP_NAMESPACE::SAX2XMLReader::ValSchemes validationScheme)
-    : myHandler(nullptr), myValidationScheme(validationScheme), myXMLReader(nullptr), myBinaryInput(nullptr) {
-    setHandler(handler);
-}
+    : myHandler(&handler), myValidationScheme(validationScheme),
+      myXMLReader(0), myBinaryInput(0)  {}
 
 
 SUMOSAXReader::~SUMOSAXReader() {
@@ -57,8 +63,7 @@ SUMOSAXReader::~SUMOSAXReader() {
 void
 SUMOSAXReader::setHandler(GenericSAXHandler& handler) {
     myHandler = &handler;
-    mySchemaResolver.setHandler(handler);
-    if (myXMLReader != nullptr) {
+    if (myXMLReader != 0) {
         myXMLReader->setContentHandler(&handler);
         myXMLReader->setErrorHandler(&handler);
     }
@@ -67,9 +72,9 @@ SUMOSAXReader::setHandler(GenericSAXHandler& handler) {
 
 void
 SUMOSAXReader::setValidation(const XERCES_CPP_NAMESPACE::SAX2XMLReader::ValSchemes validationScheme) {
-    if (myXMLReader != nullptr && validationScheme != myValidationScheme) {
+    if (myXMLReader != 0 && validationScheme != myValidationScheme) {
         if (validationScheme == XERCES_CPP_NAMESPACE::SAX2XMLReader::Val_Never) {
-            myXMLReader->setEntityResolver(nullptr);
+            myXMLReader->setEntityResolver(0);
             myXMLReader->setProperty(XERCES_CPP_NAMESPACE::XMLUni::fgXercesScannerName, (void*)XERCES_CPP_NAMESPACE::XMLUni::fgWFXMLScanner);
         } else {
             myXMLReader->setEntityResolver(&mySchemaResolver);
@@ -90,7 +95,7 @@ SUMOSAXReader::parse(std::string systemID) {
             while (parseNext());
         }
     } else {
-        if (myXMLReader == nullptr) {
+        if (myXMLReader == 0) {
             myXMLReader = getSAXReader();
         }
         myXMLReader->parse(systemID.c_str());
@@ -100,7 +105,7 @@ SUMOSAXReader::parse(std::string systemID) {
 
 void
 SUMOSAXReader::parseString(std::string content) {
-    if (myXMLReader == nullptr) {
+    if (myXMLReader == 0) {
         myXMLReader = getSAXReader();
     }
     XERCES_CPP_NAMESPACE::MemBufInputSource memBufIS((const XMLByte*)content.c_str(), content.size(), "registrySettings");
@@ -110,7 +115,7 @@ SUMOSAXReader::parseString(std::string content) {
 
 bool
 SUMOSAXReader::parseFirst(std::string systemID) {
-    if (systemID.length() >= 4 && systemID.substr(systemID.length() - 4) == ".sbx") {
+    if (systemID.substr(systemID.length() - 4) == ".sbx") {
         myBinaryInput = new BinaryInputDevice(systemID, true, myValidationScheme == XERCES_CPP_NAMESPACE::SAX2XMLReader::Val_Always);
         *myBinaryInput >> mySbxVersion;
         if (mySbxVersion < 1 || mySbxVersion > 2) {
@@ -138,7 +143,7 @@ SUMOSAXReader::parseFirst(std::string systemID) {
         // !!! check followers here
         return parseNext();
     } else {
-        if (myXMLReader == nullptr) {
+        if (myXMLReader == 0) {
             myXMLReader = getSAXReader();
         }
         myToken = XERCES_CPP_NAMESPACE::XMLPScanToken();
@@ -149,12 +154,12 @@ SUMOSAXReader::parseFirst(std::string systemID) {
 
 bool
 SUMOSAXReader::parseNext() {
-    if (myBinaryInput != nullptr) {
+    if (myBinaryInput != 0) {
         int next = myBinaryInput->peek();
         switch (next) {
             case EOF:
                 delete myBinaryInput;
-                myBinaryInput = nullptr;
+                myBinaryInput = 0;
                 return false;
             case BinaryFormatter::BF_XML_TAG_START: {
                 int tag;
@@ -185,7 +190,7 @@ SUMOSAXReader::parseNext() {
         }
         return true;
     } else {
-        if (myXMLReader == nullptr) {
+        if (myXMLReader == 0) {
             throw ProcessError("The XML-parser was not initialized.");
         }
         return myXMLReader->parseNext(myToken);
@@ -196,7 +201,7 @@ SUMOSAXReader::parseNext() {
 XERCES_CPP_NAMESPACE::SAX2XMLReader*
 SUMOSAXReader::getSAXReader() {
     XERCES_CPP_NAMESPACE::SAX2XMLReader* reader = XERCES_CPP_NAMESPACE::XMLReaderFactory::createXMLReader();
-    if (reader == nullptr) {
+    if (reader == 0) {
         throw ProcessError("The XML-parser could not be build.");
     }
     // see here https://svn.apache.org/repos/asf/xerces/c/trunk/samples/src/SAX2Count/SAX2Count.cpp for the way to set features
@@ -216,17 +221,16 @@ SUMOSAXReader::getSAXReader() {
 
 XERCES_CPP_NAMESPACE::InputSource*
 SUMOSAXReader::LocalSchemaResolver::resolveEntity(const XMLCh* const /* publicId */, const XMLCh* const systemId) {
-    const std::string url = StringUtils::transcode(systemId);
+    const std::string url = TplConvert::_2str(systemId);
     const std::string::size_type pos = url.rfind("/");
     if (pos != std::string::npos) {
         const std::string dir = url.substr(0, pos);
         if (dir == "http://sumo.sf.net/xsd" || dir == "http://sumo-sim.org/xsd" || dir == "http://sumo-sim.org/xsd/amitran" ||
                 dir == "http://sumo.dlr.de/xsd" || dir == "http://sumo.dlr.de/xsd/amitran") {
-            myHandler->setSchemaSeen();
             const char* sumoPath = std::getenv("SUMO_HOME");
-            if (sumoPath == nullptr) {
+            if (sumoPath == 0) {
                 WRITE_WARNING("Environment variable SUMO_HOME is not set, schema resolution will use slow website lookups.");
-                return nullptr;
+                return 0;
             }
             const std::string file = sumoPath + std::string("/data/xsd") + url.substr(url.find("/xsd/") + 4);
             if (FileHelpers::isReadable(file)) {
@@ -239,13 +243,7 @@ SUMOSAXReader::LocalSchemaResolver::resolveEntity(const XMLCh* const /* publicId
             }
         }
     }
-    return nullptr;
-}
-
-
-void
-SUMOSAXReader::LocalSchemaResolver::setHandler(GenericSAXHandler& handler) {
-    myHandler = &handler;
+    return 0;
 }
 
 

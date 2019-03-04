@@ -1,19 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@author  Leonhard Luecken
+@date    2010-02-20
+@version $Id$
 
-# @file    runner.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @author  Leonhard Luecken
-# @date    2010-02-20
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -24,14 +27,23 @@ import time
 import math
 from multiprocessing import Process, freeze_support
 
-SUMO_HOME = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..")
-sys.path.append(os.path.join(os.environ.get("SUMO_HOME", SUMO_HOME), "tools"))
+sumoHome = os.path.abspath(
+    os.path.join(os.path.dirname(sys.argv[0]), '..', '..', '..', '..', '..'))
+sys.path.append(os.path.join(sumoHome, "tools"))
 import sumolib  # noqa
-import traci  # noqa
+import traci
 
 PORT = sumolib.miscutils.getFreeSocketPort()
 DELTA_T = 1000
-sumoBinary = sumolib.checkBinary(sys.argv[1])
+
+if sys.argv[1] == "sumo":
+    sumoBinary = os.environ.get(
+        "SUMO_BINARY", os.path.join(sumoHome, 'bin', 'sumo'))
+    addOption = "--remote-port %s" % PORT
+else:
+    sumoBinary = os.environ.get(
+        "GUISIM_BINARY", os.path.join(sumoHome, 'bin', 'sumo-gui'))
+    addOption = "-S -Q --remote-port %s" % PORT
 
 
 def traciLoop(port, traciEndTime, index, SUMOsteplength, steplength=0):
@@ -49,15 +61,15 @@ def traciLoop(port, traciEndTime, index, SUMOsteplength, steplength=0):
     try:
         traciEndStep = math.ceil(traciEndTime / steplength)
         while not step > traciEndStep:
-            traci.simulationStep(step * steplength)
-            # print(index, "asking for vehicles")
+            traci.simulationStep(int(step * steplength * 1000))
+            #print(index, "asking for vehicles")
             # sys.stdout.flush()
-            traci.vehicle.getIDList()
+            vehs = traci.vehicle.getIDList()
             nrEnteredVehicles += traci.simulation.getDepartedNumber()
-            # ~ print(index, "Newly entered vehicles: ", traci.simulation.getDepartedNumber(), "(vehs: ", vehs, ")")
-            # ~ sys.stdout.flush()
+            #~ print(index, "Newly entered vehicles: ", traci.simulation.getDepartedNumber(), "(vehs: ", vehs, ")")
+            #~ sys.stdout.flush()
             step += 1
-        endTime = traci.simulation.getTime()
+        endTime = traci.simulation.getCurrentTime() / DELTA_T
         traci.close()
     except traci.FatalTraCIError as e:
         if str(e) == "connection closed by SUMO":
@@ -81,8 +93,7 @@ def runSingle(sumoEndTime, traciEndTime, numClients, steplengths, runNr, SUMOste
     fdi.close()
     fdo.close()
     sumoProcess = subprocess.Popen(
-        "%s -v --num-clients %s -c used.sumocfg -S -Q --remote-port %s" %
-        (sumoBinary, numClients, PORT), shell=True, stdout=sys.stdout)
+        "%s -v --num-clients %s -c used.sumocfg %s" % (sumoBinary, numClients, addOption), shell=True, stdout=sys.stdout)
     # Alternate ordering
     indexRange = range(numClients) if (runNr % 2 == 0) else list(reversed(range(numClients)))
     procs = [Process(target=traciLoop, args=(PORT, traciEndTime, i + 1, SUMOsteplength, steplengths[indexRange[i]]))

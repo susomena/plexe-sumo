@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RODFNet.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Eric Nicolay
@@ -17,10 +9,25 @@
 ///
 // A DFROUTER-network
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <iostream>
@@ -61,8 +68,9 @@ RODFNet::~RODFNet() {
 
 void
 RODFNet::buildApproachList() {
-    for (const auto& rit : getEdgeMap()) {
-        ROEdge* ce = rit.second;
+    const std::map<std::string, ROEdge*>& edges = getEdgeMap();
+    for (std::map<std::string, ROEdge*>::const_iterator rit = edges.begin(); rit != edges.end(); ++rit) {
+        ROEdge* ce = (*rit).second;
         if (ce->isInternal()) {
             continue;
         }
@@ -273,7 +281,7 @@ RODFNet::computeRoutesFor(ROEdge* edge, RODFRouteDesc& base, int /*no*/,
         // check for missing end connections
         if (!addNextNoFurther) {
             // ... if this one would be processed, but already too many edge
-            //  without a detector occurred
+            //  without a detector occured
             if (current.passedNo > maxFollowingLength) {
                 // mark not to process any further
                 WRITE_WARNING("Could not close route for '" + det.getID() + "'");
@@ -358,8 +366,8 @@ RODFNet::buildRoutes(RODFDetectorCon& detcont, bool keepUnfoundEnds, bool includ
         RODFRouteDesc rd;
         rd.edges2Pass.push_back(e);
         rd.duration_2 = (e->getLength() / e->getSpeedLimit()); //!!!;
-        rd.endDetectorEdge = nullptr;
-        rd.lastDetectorEdge = nullptr;
+        rd.endDetectorEdge = 0;
+        rd.lastDetectorEdge = 0;
         rd.distance = e->getLength();
         rd.distance2Last = 0;
         rd.duration2Last = 0;
@@ -627,7 +635,7 @@ RODFNet::getDetectorEdge(const RODFDetector& det) const {
     std::string edgeName = det.getLaneID();
     edgeName = edgeName.substr(0, edgeName.rfind('_'));
     ROEdge* ret = getEdge(edgeName);
-    if (ret == nullptr) {
+    if (ret == 0) {
         throw ProcessError("Edge '" + edgeName + "' used by detector '" + det.getID() + "' is not known.");
     }
     return ret;
@@ -941,7 +949,7 @@ RODFNet::buildEdgeFlowMap(const RODFDetectorFlows& flows,
 
         const std::vector<std::string>& dets = (*i).second;
         std::map<double, std::vector<std::string> > cliques;
-        std::vector<std::string>* maxClique = nullptr;
+        std::vector<std::string>* maxClique = 0;
         for (std::vector<std::string>::const_iterator j = dets.begin(); j != dets.end(); ++j) {
             if (!flows.knows(*j)) {
                 continue;
@@ -962,7 +970,7 @@ RODFNet::buildEdgeFlowMap(const RODFDetectorFlows& flows,
                 maxClique = &cliques[det.getPos()];
             }
         }
-        if (maxClique == nullptr) {
+        if (maxClique == 0) {
             continue;
         }
         std::vector<FlowDef> mflows; // !!! reserve

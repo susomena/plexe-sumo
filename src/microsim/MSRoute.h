@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSRoute.h
 /// @author  Daniel Krajzewicz
 /// @author  Friedemann Wesner
@@ -18,6 +10,17 @@
 ///
 // A vehicle route
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSRoute_h
 #define MSRoute_h
 
@@ -25,7 +28,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -132,10 +139,9 @@ public:
      * @param[in] fromEdge edge at wich computation begins
      * @param[in] toEdge   edge at which distance computation shall stop
      * @param[in] includeInternal Whether the lengths of internal edges shall be counted
-     * @param[in] routePosition Optional offset when searching for the fromEdge within the route
      * @return             distance between the position fromPos on fromEdge and toPos on toEdge
      */
-    double getDistanceBetween(double fromPos, double toPos, const MSEdge* fromEdge, const MSEdge* toEdge, bool includeInternal = true, int routePosition = 0) const;
+    double getDistanceBetween(double fromPos, double toPos, const MSEdge* fromEdge, const MSEdge* toEdge, bool includeInternal = true) const;
 
     /** @brief Compute the distance between 2 given edges on this route, including the length of internal lanes.
      * This has the same semantics as above but uses iterators instead of edge
@@ -161,27 +167,12 @@ public:
         return myCosts;
     }
 
-    /** @brief Returns the estimated savings due to using this route (compare to the route before rerouting)
-     *
-     * @return The route's estimated savings (the difference in costs of this route to the previous one)
-     */
-    double getSavings() const {
-        return mySavings;
-    }
-
     /** @brief Sets the costs of the route
      *
      * @param[in] costs The new route costs
      */
     void setCosts(double costs) {
         myCosts = costs;
-    }
-    /** @brief Sets the savings of the route
-     *
-     * @param[in] costs The new route costs
-     */
-    void setSavings(double savings) {
-        mySavings = savings;
     }
 
     /// Returns the stops
@@ -253,9 +244,6 @@ private:
 
     /// @brief The assigned or calculated costs
     double myCosts;
-
-    /// @brief The estimated savings when rerouting
-    double mySavings;
 
     /// @brief List of the stops on the parsed route
     std::vector<SUMOVehicleParameter::Stop> myStops;

@@ -1,31 +1,32 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    vehicle.py
+@author  Michael Behrisch
+@author  Lena Kalleske
+@author  Mario Krumnow
+@author  Lena Kalleske
+@author  Jakob Erdmann
+@author  Laura Bieker
+@author  Daniel Krajzewicz
+@date    2011-03-09
+@version $Id$
 
-# @file    _vehicle.py
-# @author  Michael Behrisch
-# @author  Lena Kalleske
-# @author  Mario Krumnow
-# @author  Lena Kalleske
-# @author  Jakob Erdmann
-# @author  Laura Bieker
-# @author  Daniel Krajzewicz
-# @author  Leonhard Luecken
-# @date    2011-03-09
-# @version $Id$
+Python implementation of the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import struct
-import warnings
 from .domain import Domain
 from .storage import Storage
 from . import constants as tc
-from . import exceptions
 
 
 def _readBestLanes(result):
@@ -36,13 +37,14 @@ def _readBestLanes(result):
         result.read("!B")
         laneID = result.readString()
         length, occupation, offset = result.read("!BdBdBb")[1::2]
-        allowsContinuation = bool(result.read("!BB")[1])
+        allowsContinuation = result.read("!BB")[1]
         nextLanesNo = result.read("!Bi")[1]
         nextLanes = []
         for j in range(nextLanesNo):
             nextLanes.append(result.readString())
-        lanes.append((laneID, length, occupation, offset, allowsContinuation, tuple(nextLanes)))
-    return tuple(lanes)
+        lanes.append(
+            [laneID, length, occupation, offset, allowsContinuation, nextLanes])
+    return lanes
 
 
 def _readLeader(result):
@@ -55,19 +57,6 @@ def _readLeader(result):
     return None
 
 
-def _readNeighbors(result):
-    """ result has structure:
-    byte(TYPE_COMPOUND) | length(neighList) | Per list entry: string(vehID) | double(dist)   
-    """
-    N = result.readInt()  # length of the vehicle list
-    neighs = []
-    for i in range(N):
-        vehID = result.readString()
-        dist = result.readDouble()
-        neighs.append((vehID, dist))
-    return neighs
-
-
 def _readNextTLS(result):
     result.read("!iB")  # numCompounds, TYPE_INT
     numTLS = result.read("!i")[0]
@@ -77,33 +66,11 @@ def _readNextTLS(result):
         tlsID = result.readString()
         tlsIndex, dist, state = result.read("!BiBdBB")[1::2]
         nextTLS.append((tlsID, tlsIndex, dist, chr(state)))
-    return tuple(nextTLS)
-
-
-def _readNextStops(result):
-    result.read("!iB")  # numCompounds, TYPE_INT
-    numStops = result.read("!i")[0]
-    nextStop = []
-    for i in range(numStops):
-        result.read("!B")
-        lane = result.readString()
-        result.read("!B")
-        endPos = result.readDouble()
-        result.read("!B")
-        stoppingPlaceID = result.readString()
-        result.read("!B")
-        stopFlags = result.readInt()
-        result.read("!B")
-        duration = result.readDouble()
-        result.read("!B")
-        until = result.readDouble()
-        nextStop.append((lane, endPos, stoppingPlaceID, stopFlags, duration, until))
-    return tuple(nextStop)
+    return nextTLS
 
 
 _RETURN_VALUE_FUNC = {tc.VAR_SPEED: Storage.readDouble,
                       tc.VAR_SPEED_WITHOUT_TRACI: Storage.readDouble,
-                      tc.VAR_ACCELERATION: Storage.readDouble,
                       tc.VAR_POSITION: lambda result: result.read("!dd"),
                       tc.VAR_POSITION3D: lambda result: result.read("!ddd"),
                       tc.VAR_ANGLE: Storage.readDouble,
@@ -124,10 +91,9 @@ _RETURN_VALUE_FUNC = {tc.VAR_SPEED: Storage.readDouble,
                       tc.VAR_NOISEEMISSION: Storage.readDouble,
                       tc.VAR_ELECTRICITYCONSUMPTION: Storage.readDouble,
                       tc.VAR_PERSON_NUMBER: Storage.readInt,
-                      tc.LAST_STEP_PERSON_ID_LIST: Storage.readStringList,
                       tc.VAR_EDGE_TRAVELTIME: Storage.readDouble,
                       tc.VAR_EDGE_EFFORT: Storage.readDouble,
-                      tc.VAR_ROUTE_VALID: lambda result: bool(result.read("!i")[0]),
+                      tc.VAR_ROUTE_VALID: lambda result: bool(result.read("!B")[0]),
                       tc.VAR_EDGES: Storage.readStringList,
                       tc.VAR_SIGNALS: Storage.readInt,
                       tc.VAR_LENGTH: Storage.readDouble,
@@ -139,7 +105,6 @@ _RETURN_VALUE_FUNC = {tc.VAR_SPEED: Storage.readDouble,
                       tc.VAR_EMISSIONCLASS: Storage.readString,
                       tc.VAR_WAITING_TIME: Storage.readDouble,
                       tc.VAR_ACCUMULATED_WAITING_TIME: Storage.readDouble,
-                      tc.VAR_LANECHANGE_MODE: Storage.readInt,
                       tc.VAR_SPEEDSETMODE: Storage.readInt,
                       tc.VAR_SLOPE: Storage.readDouble,
                       tc.VAR_WIDTH: Storage.readDouble,
@@ -152,22 +117,17 @@ _RETURN_VALUE_FUNC = {tc.VAR_SPEED: Storage.readDouble,
                       tc.VAR_DECEL: Storage.readDouble,
                       tc.VAR_EMERGENCY_DECEL: Storage.readDouble,
                       tc.VAR_APPARENT_DECEL: Storage.readDouble,
-                      tc.VAR_ACTIONSTEPLENGTH: Storage.readDouble,
-                      tc.VAR_LASTACTIONTIME: Storage.readDouble,
                       tc.VAR_IMPERFECTION: Storage.readDouble,
                       tc.VAR_TAU: Storage.readDouble,
                       tc.VAR_BEST_LANES: _readBestLanes,
                       tc.VAR_LEADER: _readLeader,
-                      tc.VAR_NEIGHBORS: _readNeighbors,
                       tc.VAR_NEXT_TLS: _readNextTLS,
-                      tc.VAR_NEXT_STOPS: _readNextStops,
                       tc.VAR_LANEPOSITION_LAT: Storage.readDouble,
                       tc.VAR_MAXSPEED_LAT: Storage.readDouble,
                       tc.VAR_MINGAP_LAT: Storage.readDouble,
                       tc.VAR_LATALIGNMENT: Storage.readString,
                       tc.DISTANCE_REQUEST: Storage.readDouble,
-                      tc.VAR_ROUTING_MODE: Storage.readInt,
-                      tc.VAR_STOPSTATE: Storage.readInt,
+                      tc.VAR_STOPSTATE: lambda result: result.read("!B")[0],
                       tc.VAR_DISTANCE: Storage.readDouble}
 
 
@@ -204,13 +164,6 @@ class VehicleDomain(Domain):
         Returns the speed in m/s of the named vehicle within the last step.
         """
         return self._getUniversal(tc.VAR_SPEED, vehID)
-
-    def getAcceleration(self, vehID):
-        """getAcceleration(string) -> double
-
-        Returns the acceleration in m/s^2 of the named vehicle within the last step.
-        """
-        return self._getUniversal(tc.VAR_ACCELERATION, vehID)
 
     def getSpeedWithoutTraCI(self, vehID):
         """getSpeedWithoutTraCI(string) -> double
@@ -356,7 +309,7 @@ class VehicleDomain(Domain):
     def getElectricityConsumption(self, vehID):
         """getElectricityConsumption(string) -> double
 
-        Returns the electricity consumption in Wh for the last time step.
+        Returns the electricity consumption in ml for the last time step.
         """
         return self._getUniversal(tc.VAR_ELECTRICITYCONSUMPTION, vehID)
 
@@ -368,22 +321,15 @@ class VehicleDomain(Domain):
         """
         return self._getUniversal(tc.VAR_PERSON_NUMBER, vehID)
 
-    def getPersonIDList(self, vehID):
-        """getPersonIDList(string) -> integer
-        Returns the list of persons which includes those defined using attribute 'personNumber'
-        as well as <person>-objects which are riding in this vehicle.
-        """
-        return self._getUniversal(tc.LAST_STEP_PERSON_ID_LIST, vehID)
-
     def getAdaptedTraveltime(self, vehID, time, edgeID):
         """getAdaptedTraveltime(string, double, string) -> double
 
         .
         """
         self._connection._beginMessage(tc.CMD_GET_VEHICLE_VARIABLE,
-                                       tc.VAR_EDGE_TRAVELTIME, vehID, 1 + 4 + 1 + 8 + 1 + 4 + len(edgeID))
+                                       tc.VAR_EDGE_TRAVELTIME, vehID, 1 + 4 + 1 + 4 + 1 + 4 + len(edgeID))
         self._connection._string += struct.pack(
-            "!BiBd", tc.TYPE_COMPOUND, 2, tc.TYPE_DOUBLE, time)
+            "!BiBi", tc.TYPE_COMPOUND, 2, tc.TYPE_INTEGER, time)
         self._connection._packString(edgeID)
         return self._connection._checkResult(tc.CMD_GET_VEHICLE_VARIABLE, tc.VAR_EDGE_TRAVELTIME, vehID).readDouble()
 
@@ -393,9 +339,9 @@ class VehicleDomain(Domain):
         .
         """
         self._connection._beginMessage(tc.CMD_GET_VEHICLE_VARIABLE,
-                                       tc.VAR_EDGE_EFFORT, vehID, 1 + 4 + 1 + 8 + 1 + 4 + len(edgeID))
+                                       tc.VAR_EDGE_EFFORT, vehID, 1 + 4 + 1 + 4 + 1 + 4 + len(edgeID))
         self._connection._string += struct.pack(
-            "!BiBd", tc.TYPE_COMPOUND, 2, tc.TYPE_DOUBLE, time)
+            "!BiBi", tc.TYPE_COMPOUND, 2, tc.TYPE_INTEGER, time)
         self._connection._packString(edgeID)
         return self._connection._checkResult(tc.CMD_GET_VEHICLE_VARIABLE, tc.VAR_EDGE_EFFORT, vehID).readDouble()
 
@@ -506,13 +452,6 @@ class VehicleDomain(Domain):
         """
         return self._getUniversal(tc.VAR_ACCUMULATED_WAITING_TIME, vehID)
 
-    def getLaneChangeMode(self, vehID):
-        """getLaneChangeMode(string) -> integer
-
-        Gets the vehicle's lane change mode as a bitset.
-        """
-        return self._getUniversal(tc.VAR_LANECHANGE_MODE, vehID)
-
     def getSpeedMode(self, vehID):
         """getSpeedMode -> int
         The speed mode of a vehicle
@@ -595,20 +534,6 @@ class VehicleDomain(Domain):
         """
         return self._getUniversal(tc.VAR_APPARENT_DECEL, vehID)
 
-    def getActionStepLength(self, vehID):
-        """getActionStepLength(string) -> double
-
-        Returns the action step length for this vehicle.
-        """
-        return self._getUniversal(tc.VAR_ACTIONSTEPLENGTH, vehID)
-
-    def getLastActionTime(self, vehID):
-        """getLastActionTime(string) -> double
-
-        Returns the time of last action point for this vehicle.
-        """
-        return self._getUniversal(tc.VAR_LASTACTIONTIME, vehID)
-
     def getImperfection(self, vehID):
         """getImperfection(string) -> double
 
@@ -644,90 +569,12 @@ class VehicleDomain(Domain):
         self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, dist)
         return _readLeader(self._connection._checkResult(tc.CMD_GET_VEHICLE_VARIABLE, tc.VAR_LEADER, vehID))
 
-    def getRightFollowers(self, vehID, blockingOnly=False):
-        """ bool -> list(pair(string, double))
-        Convenience method, see getNeighbors()
-        """
-        if blockingOnly:
-            mode = 5
-        else:
-            mode = 1
-        return self.getNeighbors(vehID, mode)
-
-    def getRightLeaders(self, vehID, blockingOnly=False):
-        """ bool -> list(pair(string, double))
-        Convenience method, see getNeighbors()
-        """
-        if blockingOnly:
-            mode = 7
-        else:
-            mode = 3
-        return self.getNeighbors(vehID, mode)
-
-    def getLeftFollowers(self, vehID, blockingOnly=False):
-        """ bool -> list(pair(string, double))
-        Convenience method, see getNeighbors()
-        """
-        if blockingOnly:
-            mode = 4
-        else:
-            mode = 0
-        return self.getNeighbors(vehID, mode)
-
-    def getLeftLeaders(self, vehID, blockingOnly=False):
-        """ bool -> list(pair(string, double))
-        Convenience method, see getNeighbors()
-        """
-        if blockingOnly:
-            mode = 6
-        else:
-            mode = 2
-        return self.getNeighbors(vehID, mode)
-
-    def getNeighbors(self, vehID, mode):
-        """ byte -> list(pair(string, double)) 
-
-        The parameter mode is a bitset (UBYTE), specifying the following:
-        bit 1: query lateral direction (left:0, right:1)
-        bit 2: query longitudinal direction (followers:0, leaders:1)
-        bit 3: blocking (return all:0, return only blockers:1)
-
-        The returned list contains pairs (ID, dist) for all lane change relevant neighboring leaders, resp. followers, 
-        along with their longitudinal distance to the ego vehicle (egoFront - egoMinGap to leaderBack, resp. 
-        followerFront - followerMinGap to egoBack. The value can be negative for overlapping neighs). 
-        For the non-sublane case, the lists will contain at most one entry.
-
-        Note: The exact set of blockers in case blocking==1 is not determined for the sublane model, 
-        but either all neighboring vehicles are returned (in case LCA_BLOCKED) or
-        none is returned (in case !LCA_BLOCKED).
-        """
-        self._connection._beginMessage(tc.CMD_GET_VEHICLE_VARIABLE, tc.VAR_NEIGHBORS, vehID, 2)
-        self._connection._string += struct.pack("!BB", tc.TYPE_UBYTE, mode)
-        return _readNeighbors(self._connection._checkResult(tc.CMD_GET_VEHICLE_VARIABLE, tc.VAR_NEIGHBORS, vehID))
-
     def getNextTLS(self, vehID):
         """getNextTLS(string) ->
 
         Return list of upcoming traffic lights [(tlsID, tlsIndex, distance, state), ...]
         """
         return self._getUniversal(tc.VAR_NEXT_TLS, vehID)
-
-    def getNextStops(self, vehID):
-        """getNextStop(string) -> [(string, double, string, int, int, int)], ...
-
-        Return list of upcoming stops [(lane, endPos, stoppingPlaceID, stopFlags, duration, until), ...]
-        where integer stopFlag is defined as:
-               1 * stopped +
-               2 * parking +
-               4 * personTriggered +
-               8 * containerTriggered +
-              16 * isBusStop +
-              32 * isContainerStop +
-              64 * chargingStation +
-             128 * parkingarea
-        with each of these flags defined as 0 or 1.
-        """
-        return self._getUniversal(tc.VAR_NEXT_STOPS, vehID)
 
     def subscribeLeader(self, vehID, dist=0., begin=0, end=2**31 - 1):
         """subscribeLeader(string, double) -> None
@@ -738,7 +585,7 @@ class VehicleDomain(Domain):
         self._connection._subscribe(tc.CMD_SUBSCRIBE_VEHICLE_VARIABLE, begin, end, vehID,
                                     (tc.VAR_LEADER,), {tc.VAR_LEADER: struct.pack("!Bd", tc.TYPE_DOUBLE, dist)})
 
-    def getDrivingDistance(self, vehID, edgeID, pos, laneIndex=0):
+    def getDrivingDistance(self, vehID, edgeID, pos, laneID=0):
         """getDrivingDistance(string, string, double, integer) -> double
 
         Return the distance to the given edge and position along the vehicles route.
@@ -748,7 +595,7 @@ class VehicleDomain(Domain):
         self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 2)
         self._connection._packString(edgeID, tc.POSITION_ROADMAP)
         self._connection._string += struct.pack("!dBB",
-                                                pos, laneIndex, tc.REQUEST_DRIVINGDIST)
+                                                pos, laneID, tc.REQUEST_DRIVINGDIST)
         return self._connection._checkResult(tc.CMD_GET_VEHICLE_VARIABLE, tc.DISTANCE_REQUEST, vehID).readDouble()
 
     def getDrivingDistance2D(self, vehID, x, y):
@@ -820,68 +667,24 @@ class VehicleDomain(Domain):
         result = self._connection._checkResult(tc.CMD_GET_VEHICLE_VARIABLE, tc.CMD_CHANGELANE, vehID)
         return result.read("!iBiBi")[2::2]  # ignore num compounds and type int
 
-    def getLaneChangeStatePretty(self, vehID, direction):
-        """getLaneChangeState(string, int) -> ([string, ...], [string, ...])
-        Return the lane change state for the vehicle as a list of string constants
-        """
-        constants = {
-            0: 'stay',
-            1: 'left',
-            2: 'right',
-            3: 'strategic',
-            4: 'cooperative',
-            5: 'speedGain',
-            6: 'keepRight',
-            7: 'TraCI',
-            8: 'urgent',
-            9: 'blocked by left leader',
-            10: 'blocked by left follower',
-            11: 'blocked by right leader',
-            12: 'bloecked by right follower',
-            13: 'overlapping',
-            14: 'insufficient space',
-            15: 'sublane',
-        }
-
-        def prettifyBitstring(intval):
-            return [v for k, v in constants.items() if (intval & 2**k)]
-
-        state, stateTraCI = self.getLaneChangeState(vehID, direction)
-        return prettifyBitstring(state), prettifyBitstring(stateTraCI)
-
-    def couldChangeLane(self, vehID, direction, state=None):
+    def couldChangeLane(self, vehID, direction):
         """couldChangeLane(string, int) -> bool
         Return whether the vehicle could change lanes in the specified direction
         """
-        if state is None:
-            state, stateTraCI = self.getLaneChangeState(vehID, direction)
-            if self.wantsAndCouldChangeLane(vehID, direction, stateTraCI):
-                # vehicle changed in the last step. state is no longer applicable
-                return False
+        state = self.getLaneChangeState(vehID, direction)[0]
         return state != tc.LCA_UNKNOWN and (state & tc.LCA_BLOCKED == 0)
 
-    def wantsAndCouldChangeLane(self, vehID, direction, state=None):
+    def wantsAndCouldChangeLane(self, vehID, direction):
         """wantsAndCouldChangeLane(string, int) -> bool
         Return whether the vehicle wants to and could change lanes in the specified direction
         """
-        if state is None:
-            state, stateTraCI = self.getLaneChangeState(vehID, direction)
-            if self.wantsAndCouldChangeLane(vehID, direction, stateTraCI):
-                # vehicle changed in the last step. state is no longer applicable
-                return False
+        state = self.getLaneChangeState(vehID, direction)[0]
         if state & tc.LCA_BLOCKED == 0:
             if direction == -1:
                 return state & tc.LCA_RIGHT != 0
             if direction == 1:
                 return state & tc.LCA_LEFT != 0
         return False
-
-    def getRoutingMode(self, vehID):
-        """returns the current routing mode:
-        tc.ROUTING_MODE_DEFAULT    : use weight storages and fall-back to edge speeds (default)
-        tc.ROUTING_MODE_AGGREGATED : use global smoothed travel times from device.rerouting
-        """
-        return self._getUniversal(tc.VAR_ROUTING_MODE, vehID)
 
     def setMaxSpeed(self, vehID, speed):
         """setMaxSpeed(string, double) -> None
@@ -899,75 +702,55 @@ class VehicleDomain(Domain):
         self._connection._sendDoubleCmd(
             tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_MAXSPEED_LAT, vehID, speed)
 
-    def rerouteParkingArea(self, vehID, parkingAreaID):
-        """rerouteParkingArea(string, string)
-
-        Changes the next parking area in parkingAreaID, updates the vehicle route,
-        and preserve consistency in case of passengers/containers on board.
-        """
-        self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.CMD_REROUTE_TO_PARKING, vehID,
-                                       1 + 4 +  # compound
-                                       1 + 4 + len(parkingAreaID))
-        self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 1)
-        self._connection._packString(parkingAreaID)
-        self._connection._sendExact()
-
-    def setStop(self, vehID, edgeID, pos=1., laneIndex=0, duration=tc.INVALID_DOUBLE_VALUE,
-                flags=tc.STOP_DEFAULT, startPos=tc.INVALID_DOUBLE_VALUE, until=tc.INVALID_DOUBLE_VALUE):
-        """setStop(string, string, double, integer, double, integer, double, double) -> None
+    def setStop(self, vehID, edgeID, pos=1., laneIndex=0, duration=2**31 - 1,
+                flags=tc.STOP_DEFAULT, startPos=tc.INVALID_DOUBLE_VALUE, until=-1):
+        """setStop(string, string, double, integer, integer, integer, double, integer) -> None
 
         Adds or modifies a stop with the given parameters. The duration and the until attribute are
-        in seconds.
+        in milliseconds.
         """
-        if type(duration) is int and duration >= 1000 and duration % 1000 == 0:
-            warnings.warn("API change now handles duration as floating point seconds", stacklevel=2)
         self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.CMD_STOP,
-                                       vehID, (1 + 4 + 1 + 4 + len(edgeID) + 1 + 8 + 1 + 1 +
-                                               1 + 8 + 1 + 1 + 1 + 8 + 1 + 8))
+                                       vehID, 1 + 4 + 1 + 4 + len(edgeID) + 1 + 8 + 1 + 1 + 1 + 4 + 1 + 1 + 1 + 8 + 1 + 4)
         self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 7)
         self._connection._packString(edgeID)
-        self._connection._string += struct.pack("!BdBBBdBB", tc.TYPE_DOUBLE, pos,
-                                                tc.TYPE_BYTE, laneIndex, tc.TYPE_DOUBLE, duration, tc.TYPE_BYTE, flags)
-        self._connection._string += struct.pack("!BdBd",
-                                                tc.TYPE_DOUBLE, startPos, tc.TYPE_DOUBLE, until)
+        self._connection._string += struct.pack("!BdBBBiBB", tc.TYPE_DOUBLE, pos,
+                                                tc.TYPE_BYTE, laneIndex, tc.TYPE_INTEGER, duration, tc.TYPE_BYTE, flags)
+        self._connection._string += struct.pack("!BdBi",
+                                                tc.TYPE_DOUBLE, startPos, tc.TYPE_INTEGER, until)
         self._connection._sendExact()
 
-    def setBusStop(self, vehID, stopID, duration=tc.INVALID_DOUBLE_VALUE,
-                   until=tc.INVALID_DOUBLE_VALUE, flags=tc.STOP_DEFAULT):
-        """setBusStop(string, string, double, double, integer) -> None
+    def setBusStop(self, vehID, stopID, duration=2**31 - 1, until=-1, flags=tc.STOP_DEFAULT):
+        """setBusStop(string, string, integer, integer, integer) -> None
 
         Adds or modifies a bus stop with the given parameters. The duration and the until attribute are
-        in seconds.
+        in milliseconds.
         """
         self.setStop(vehID, stopID, duration=duration,
                      until=until, flags=flags | tc.STOP_BUS_STOP)
 
-    def setContainerStop(self, vehID, stopID, duration=tc.INVALID_DOUBLE_VALUE,
-                         until=tc.INVALID_DOUBLE_VALUE, flags=tc.STOP_DEFAULT):
-        """setContainerStop(string, string, double, double, integer) -> None
+    def setContainerStop(self, vehID, stopID, duration=2**31 - 1, until=-1, flags=tc.STOP_DEFAULT):
+        """setContainerStop(string, string, integer, integer, integer) -> None
 
         Adds or modifies a container stop with the given parameters. The duration and the until attribute are
-        in seconds.
+        in milliseconds.
         """
         self.setStop(vehID, stopID, duration=duration, until=until,
                      flags=flags | tc.STOP_CONTAINER_STOP)
 
-    def setChargingStationStop(self, vehID, stopID, duration=tc.INVALID_DOUBLE_VALUE,
-                               until=tc.INVALID_DOUBLE_VALUE, flags=tc.STOP_DEFAULT):
-        """setChargingStationStop(string, string, double, double, integer) -> None
+    def setChargingStationStop(self, vehID, stopID, duration=2**31 - 1, until=-1, flags=tc.STOP_DEFAULT):
+        """setChargingStationStop(string, string, integer, integer, integer) -> None
 
         Adds or modifies a stop at a chargingStation with the given parameters. The duration and the until attribute are
-        in seconds.
+        in milliseconds.
         """
         self.setStop(vehID, stopID, duration=duration, until=until,
                      flags=flags | tc.STOP_CHARGING_STATION)
 
-    def setParkingAreaStop(self, vehID, stopID, duration=tc.INVALID_DOUBLE_VALUE,
-                           until=tc.INVALID_DOUBLE_VALUE, flags=tc.STOP_PARKING):
-        """setParkingAreaStop(string, string, double, double, integer) -> None
+    def setParkingAreaStop(self, vehID, stopID, duration=2**31 - 1, until=-1, flags=tc.STOP_PARKING):
+        """setParkingAreaStop(string, string, integer, integer, integer) -> None
 
         Adds or modifies a stop at a parkingArea with the given parameters. The duration and the until attribute are
-        in seconds.
+        in milliseconds.
         """
         self.setStop(vehID, stopID, duration=duration, until=until,
                      flags=flags | tc.STOP_PARKING_AREA)
@@ -983,102 +766,37 @@ class VehicleDomain(Domain):
         self._connection._sendExact()
 
     def changeLane(self, vehID, laneIndex, duration):
-        """changeLane(string, int, double) -> None
+        """changeLane(string, int, int) -> None
 
         Forces a lane change to the lane with the given index; if successful,
-        the lane will be chosen for the given amount of time (in s).
+        the lane will be chosen for the given amount of time (in ms).
         """
-        if type(duration) is int and duration >= 1000:
-            warnings.warn("API change now handles duration as floating point seconds", stacklevel=2)
         self._connection._beginMessage(
-            tc.CMD_SET_VEHICLE_VARIABLE, tc.CMD_CHANGELANE, vehID, 1 + 4 + 1 + 1 + 1 + 8)
+            tc.CMD_SET_VEHICLE_VARIABLE, tc.CMD_CHANGELANE, vehID, 1 + 4 + 1 + 1 + 1 + 4)
         self._connection._string += struct.pack(
-            "!BiBBBd", tc.TYPE_COMPOUND, 2, tc.TYPE_BYTE, laneIndex, tc.TYPE_DOUBLE, duration)
-        self._connection._sendExact()
-
-    def changeLaneRelative(self, vehID, indexOffset, duration):
-        """changeLaneRelative(string, int, double) -> None
-
-        Forces a relative lane change; if successful,
-        the lane will be chosen for the given amount of time (in s).
-        The indexOffset specifies the target lane relative to the vehicles current lane
-        """
-        if type(duration) is int and duration >= 1000:
-            warnings.warn("API change now handles duration as floating point seconds", stacklevel=2)
-        self._connection._beginMessage(
-            tc.CMD_SET_VEHICLE_VARIABLE, tc.CMD_CHANGELANE, vehID, 1 + 4 + 1 + 1 + 1 + 8 + 1 + 1)
-        self._connection._string += struct.pack(
-            "!BiBBBdBB", tc.TYPE_COMPOUND, 3, tc.TYPE_BYTE, indexOffset, tc.TYPE_DOUBLE, duration, tc.TYPE_BYTE, 1)
+            "!BiBBBi", tc.TYPE_COMPOUND, 2, tc.TYPE_BYTE, laneIndex, tc.TYPE_INTEGER, duration)
         self._connection._sendExact()
 
     def changeSublane(self, vehID, latDist):
         """changeLane(string, double) -> None
-        Forces a lateral change by the given amount (negative values indicate changing to the right, positive
-        to the left). This will override any other lane change motivations but conform to
+        Forces a lateral change by the given amount (negative values indicate changing to the right, positive to the left)
+        This will override any other lane change motivations but conform to
         safety-constraints as configured by laneChangeMode.
         """
         self._connection._sendDoubleCmd(
             tc.CMD_SET_VEHICLE_VARIABLE, tc.CMD_CHANGESUBLANE, vehID, latDist)
 
     def slowDown(self, vehID, speed, duration):
-        """slowDown(string, double, double) -> None
+        """slowDown(string, double, int) -> None
 
         Changes the speed smoothly to the given value over the given amount
-        of time in seconds (can also be used to increase speed).
+        of time in ms (can also be used to increase speed).
         """
-        if type(duration) is int and duration >= 1000:
-            warnings.warn("API change now handles duration as floating point seconds", stacklevel=2)
         self._connection._beginMessage(
-            tc.CMD_SET_VEHICLE_VARIABLE, tc.CMD_SLOWDOWN, vehID, 1 + 4 + 1 + 8 + 1 + 8)
+            tc.CMD_SET_VEHICLE_VARIABLE, tc.CMD_SLOWDOWN, vehID, 1 + 4 + 1 + 8 + 1 + 4)
         self._connection._string += struct.pack(
-            "!BiBdBd", tc.TYPE_COMPOUND, 2, tc.TYPE_DOUBLE, speed, tc.TYPE_DOUBLE, duration)
+            "!BiBdBi", tc.TYPE_COMPOUND, 2, tc.TYPE_DOUBLE, speed, tc.TYPE_INTEGER, duration)
         self._connection._sendExact()
-
-    def openGap(self, vehID, newTimeHeadway, newSpaceHeadway, duration, changeRate, maxDecel=-1, referenceVehID=None):
-        """openGap(string, double, double, double, double, double, string) -> None
-
-        Changes the vehicle's desired time headway (cf-parameter tau) smoothly to the given new value
-        using the given change rate. Similarly, the given space headway is applied gradually
-        to achieve a minimal spatial gap.
-        The vehicle is commanded to keep the increased headway for
-        the given duration once its target value is attained. The maximal value for the
-        deceleration can be given to prevent harsh braking due to the change of tau. If maxDecel=-1, 
-        the limit determined by the CF model is used. 
-        A vehicle ID for a reference vehicle can optionally be given, otherwise, the gap is created with
-        respect to the current leader on the ego vehicle's current lane.
-        Note that this does only affect the following behavior regarding the current leader and does
-        not influence the gap acceptance during lane change, etc.
-        """
-        if type(duration) is int and duration >= 1000:
-            warnings.warn("API change now handles duration as floating point seconds", stacklevel=2)
-        nParams = 5
-        # compoundType, nParams, float params (2 newHeadways, duration, changeRate, maxDecel)
-        msgLength = 1 + 4 + (1 + 8) * nParams
-        if referenceVehID is not None:
-            nParams = 6
-            msgLength += 1 + 4 + len(referenceVehID)  # TYPE_STRING, len, referenceVehID
-        self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.CMD_OPENGAP, vehID, msgLength)
-        self._connection._string += struct.pack("!BiBdBdBdBdBd", tc.TYPE_COMPOUND, nParams,
-                                                tc.TYPE_DOUBLE, newTimeHeadway, tc.TYPE_DOUBLE, newSpaceHeadway,
-                                                tc.TYPE_DOUBLE, duration, tc.TYPE_DOUBLE, changeRate,
-                                                tc.TYPE_DOUBLE, maxDecel)
-        if nParams == 6:
-            self._connection._packString(referenceVehID)
-        self._connection._sendExact()
-
-    def deactivateGapControl(self, vehID):
-        """deactivateGapControl(string) -> None
-
-        Deactivate the vehicle's gap control
-        """
-        self.openGap(vehID, -1, -1, -1, -1)
-
-    def requestToC(self, vehID, leadTime):
-        """ requestToC(string, double) -> None
-
-        Interface for triggering a transition of control for a vehicle equipped with a ToC device.
-        """
-        self.setParameter(vehID, "device.toc.requestToC", str(leadTime))
 
     def changeTarget(self, vehID, edgeID):
         """changeTarget(string, string) -> None
@@ -1123,102 +841,37 @@ class VehicleDomain(Domain):
         self._connection._packStringList(edgeList)
         self._connection._sendExact()
 
-    def updateBestLanes(self, vehID):
-        """ updateBestLanes(string) -> None
-        Triggers an update of the vehicle's bestLanes (structure determining the lane preferences used by LC models)
-        It may be called after modifying the vClass for instance.
-        """
-        self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_UPDATE_BESTLANES, vehID)
+    def setAdaptedTraveltime(self, vehID, begTime, endTime, edgeID, time):
+        """setAdaptedTraveltime(string, double, string, double) -> None
 
-    def setAdaptedTraveltime(self, vehID, edgeID, time=None, begTime=None, endTime=None):
-        """setAdaptedTraveltime(string, string, double, double, double) -> None
         Inserts the information about the travel time of edge "edgeID" valid
         from begin time to end time into the vehicle's internal edge weights
-        container.
-        If the time is not specified, any previously set values for that edge
-        are removed.
-        If begTime or endTime are not specified the value is set for the whole
-        simulation duration.
+        container. .
         """
-        if type(edgeID) != str and type(begTime) == str:
-            # legacy handling
-            warnings.warn(
-                "Parameter order has changed for setAdaptedTraveltime(). Attempting legacy ordering. " +
-                "Please update your code.", stacklevel=2)
-            return self.setAdaptedTraveltime(vehID, begTime, endTime, edgeID, time)
-        if time is None:
-            # reset
-            self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_EDGE_TRAVELTIME,
-                                           vehID, 1 + 4 + 1 + 4 + len(edgeID))
-            self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 1)
-            self._connection._packString(edgeID)
-            self._connection._sendExact()
-        elif begTime is None:
-            # set value for the whole simulation
-            self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_EDGE_TRAVELTIME,
-                                           vehID, 1 + 4 + 1 + 4 + len(edgeID) + 1 + 8)
-            self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 2)
-            self._connection._packString(edgeID)
-            self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, time)
-            self._connection._sendExact()
-        else:
-            self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_EDGE_TRAVELTIME,
-                                           vehID, 1 + 4 + 1 + 8 + 1 + 8 + 1 + 4 + len(edgeID) + 1 + 8)
-            self._connection._string += struct.pack("!BiBdBd", tc.TYPE_COMPOUND, 4, tc.TYPE_DOUBLE, begTime,
-                                                    tc.TYPE_DOUBLE, endTime)
-            self._connection._packString(edgeID)
-            self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, time)
-            self._connection._sendExact()
+        self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_EDGE_TRAVELTIME,
+                                       vehID, 1 + 4 + 1 + 4 + 1 + 4 + 1 + 4 + len(edgeID) + 1 + 8)
+        self._connection._string += struct.pack("!BiBiBi", tc.TYPE_COMPOUND, 4, tc.TYPE_INTEGER, begTime,
+                                                tc.TYPE_INTEGER, endTime)
+        self._connection._packString(edgeID)
+        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, time)
+        self._connection._sendExact()
 
-    def setEffort(self, vehID, edgeID, effort=None, begTime=None, endTime=None):
-        """setEffort(string, string, double, double, double) -> None
+    def setEffort(self, vehID, begTime, endTime, edgeID, effort):
+        """setEffort(string, double, string, double) -> None
+
         Inserts the information about the effort of edge "edgeID" valid from
         begin time to end time into the vehicle's internal edge weights
         container.
-        If the time is not specified, any previously set values for that edge
-        are removed.
-        If begTime or endTime are not specified the value is set for the whole
-        simulation duration.
         """
-        if type(edgeID) != str and type(begTime) == str:
-            # legacy handling
-            warnings.warn(
-                "Parameter order has changed for setEffort(). Attempting legacy ordering. Please update your code.",
-                stacklevel=2)
-            return self.setEffort(vehID, begTime, endTime, edgeID, effort)
-        if effort is None:
-            # reset
-            self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_EDGE_EFFORT,
-                                           vehID, 1 + 4 + 1 + 4 + len(edgeID))
-            self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 1)
-            self._connection._packString(edgeID)
-            self._connection._sendExact()
-        elif begTime is None:
-            # set value for the whole simulation
-            self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_EDGE_EFFORT,
-                                           vehID, 1 + 4 + 1 + 4 + len(edgeID) + 1 + 8)
-            self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 2)
-            self._connection._packString(edgeID)
-            self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, effort)
-            self._connection._sendExact()
-        else:
-            self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_EDGE_EFFORT,
-                                           vehID, 1 + 4 + 1 + 8 + 1 + 8 + 1 + 4 + len(edgeID) + 1 + 8)
-            self._connection._string += struct.pack("!BiBdBd", tc.TYPE_COMPOUND, 4, tc.TYPE_DOUBLE, begTime,
-                                                    tc.TYPE_DOUBLE, endTime)
-            self._connection._packString(edgeID)
-            self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, effort)
-            self._connection._sendExact()
+        self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_EDGE_EFFORT,
+                                       vehID, 1 + 4 + 1 + 4 + 1 + 4 + 1 + 4 + len(edgeID) + 1 + 4)
+        self._connection._string += struct.pack("!BiBiBi", tc.TYPE_COMPOUND, 4, tc.TYPE_INTEGER, begTime,
+                                                tc.TYPE_INTEGER, endTime)
+        self._connection._packString(edgeID)
+        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, effort)
+        self._connection._sendExact()
 
     LAST_TRAVEL_TIME_UPDATE = -1
-
-    def setRoutingMode(self, vehID, routingMode):
-        """sets the current routing mode:
-        tc.ROUTING_MODE_DEFAULT    : use weight storages and fall-back to edge speeds (default)
-        tc.ROUTING_MODE_AGGREGATED : use global smoothed travel times from device.rerouting
-        """
-        self._connection._sendIntCmd(
-            tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_ROUTING_MODE, vehID, routingMode)
 
     def rerouteTraveltime(self, vehID, currentTravelTimes=True):
         """rerouteTraveltime(string, bool) -> None Reroutes a vehicle. If
@@ -1232,7 +885,7 @@ class VehicleDomain(Domain):
         times at the time of that call (even for subsequent simulation steps).
         """
         if currentTravelTimes:
-            time = self._connection.simulation.getTime()
+            time = self._connection.simulation.getCurrentTime()
             if time != self.LAST_TRAVEL_TIME_UPDATE:
                 self.LAST_TRAVEL_TIME_UPDATE = time
                 for edge in self._connection.edge.getIDList():
@@ -1269,21 +922,20 @@ class VehicleDomain(Domain):
         """setSpeed(string, double) -> None
 
         Sets the speed in m/s for the named vehicle within the last step.
-        Calling with speed=-1 hands the vehicle control back to SUMO.
         """
         self._connection._sendDoubleCmd(
             tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_SPEED, vehID, speed)
 
     def setColor(self, vehID, color):
         """setColor(string, (integer, integer, integer, integer))
-
-        Sets the color for the vehicle with the given ID, i.e. (255,0,0) for the color red.
-        The fourth component (alpha) is optional.
+        sets color for vehicle with the given ID.
+        i.e. (255,0,0,0) for the color red.
+        The fourth integer (alpha) is only used when drawing vehicles with raster images
         """
         self._connection._beginMessage(
             tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_COLOR, vehID, 1 + 1 + 1 + 1 + 1)
-        self._connection._string += struct.pack("!BBBBB", tc.TYPE_COLOR, int(color[0]), int(color[1]), int(color[2]),
-                                                int(color[3]) if len(color) > 3 else 255)
+        self._connection._string += struct.pack("!BBBBB", tc.TYPE_COLOR, int(
+            color[0]), int(color[1]), int(color[2]), int(color[3]))
         self._connection._sendExact()
 
     def setLength(self, vehID, length):
@@ -1422,22 +1074,6 @@ class VehicleDomain(Domain):
         self._connection._sendDoubleCmd(
             tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_APPARENT_DECEL, vehID, decel)
 
-    def setActionStepLength(self, vehID, actionStepLength, resetActionOffset=True):
-        """setActionStepLength(string, double, bool) -> None
-
-        Sets the action step length for this vehicle. If resetActionOffset == True (default), the
-        next action point is scheduled immediately. if If resetActionOffset == False, the interval
-        between the last and the next action point is updated to match the given value, or if the latter
-        is smaller than the time since the last action point, the next action follows immediately.
-        """
-        if actionStepLength < 0:
-            raise exceptions.TraCIException("Invalid value for actionStepLength. Given value must be non-negative.")
-        # Use negative value to indicate resetActionOffset == False
-        if not resetActionOffset:
-            actionStepLength *= -1
-        self._connection._sendDoubleCmd(
-            tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_ACTIONSTEPLENGTH, vehID, actionStepLength)
-
     def setImperfection(self, vehID, imperfection):
         """setImperfection(string, double) -> None
 
@@ -1449,8 +1085,7 @@ class VehicleDomain(Domain):
     def setTau(self, vehID, tau):
         """setTau(string, double) -> None
 
-        Sets the driver's tau-parameter (reaction time or anticipation time depending on the car-following model) in s
-        for this vehicle.
+        Sets the driver's reaction time in s for this vehicle.
         """
         self._connection._sendDoubleCmd(
             tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_TAU, vehID, tau)
@@ -1471,38 +1106,34 @@ class VehicleDomain(Domain):
         self._connection._sendIntCmd(
             tc.CMD_SET_VEHICLE_VARIABLE, tc.VAR_SPEEDSETMODE, vehID, sm)
 
-    def addLegacy(self, vehID, routeID, depart=tc.DEPARTFLAG_NOW, pos=0, speed=0,
-                  lane=tc.DEPARTFLAG_LANE_FIRST_ALLOWED, typeID="DEFAULT_VEHTYPE"):
+    def add(self, vehID, routeID, depart=tc.DEPARTFLAG_NOW, pos=0, speed=0,
+            lane=tc.DEPARTFLAG_LANE_FIRST_ALLOWED, typeID="DEFAULT_VEHTYPE"):
         """
         Add a new vehicle (old style)
         """
-        if depart == tc.DEPARTFLAG_NOW:
-            depart = "now"
-        elif depart == tc.DEPARTFLAG_TRIGGERED:
-            depart = "triggered"
-        else:
-            depart = str(depart)
-        if pos < 0:
-            print("Invalid departure position.")
-            return
-        if lane == tc.DEPARTFLAG_LANE_FIRST_ALLOWED:
-            lane = "first"
-        elif lane == tc.DEPARTFLAG_LANE_FREE:
-            lane = "free"
-        else:
-            lane = str(lane)
-        self.addFull(vehID, routeID, typeID, depart, lane, str(pos), str(speed))
+        self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.ADD, vehID,
+                                       1 + 4 + 1 + 4 + len(typeID) + 1 + 4 + len(routeID) + 1 + 4 + 1 + 8 + 1 + 8 + 1 + 1)
+        if depart > 0:
+            depart *= 1000
+        self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 6)
+        self._connection._packString(typeID)
+        self._connection._packString(routeID)
+        self._connection._string += struct.pack("!Bi", tc.TYPE_INTEGER, depart)
+        self._connection._string += struct.pack("!BdBd",
+                                                tc.TYPE_DOUBLE, pos, tc.TYPE_DOUBLE, speed)
+        self._connection._string += struct.pack("!Bb", tc.TYPE_BYTE, lane)
+        self._connection._sendExact()
 
-    def add(self, vehID, routeID, typeID="DEFAULT_VEHTYPE", depart=None,
-            departLane="first", departPos="base", departSpeed="0",
-            arrivalLane="current", arrivalPos="max", arrivalSpeed="current",
-            fromTaz="", toTaz="", line="", personCapacity=0, personNumber=0):
+    def addFull(self, vehID, routeID, typeID="DEFAULT_VEHTYPE", depart=None,
+                departLane="first", departPos="base", departSpeed="0",
+                arrivalLane="current", arrivalPos="max", arrivalSpeed="current",
+                fromTaz="", toTaz="", line="", personCapacity=0, personNumber=0):
         """
         Add a new vehicle (new style with all possible parameters)
         """
         messageString = struct.pack("!Bi", tc.TYPE_COMPOUND, 14)
         if depart is None:
-            depart = str(self._connection.simulation.getTime())
+            depart = str(self._connection.simulation.getCurrentTime() / 1000.)
         for val in (routeID, typeID, depart, departLane, departPos, departSpeed,
                     arrivalLane, arrivalPos, arrivalSpeed, fromTaz, toTaz, line):
             messageString += struct.pack("!Bi",
@@ -1514,8 +1145,6 @@ class VehicleDomain(Domain):
             tc.CMD_SET_VEHICLE_VARIABLE, tc.ADD_FULL, vehID, len(messageString))
         self._connection._string += messageString
         self._connection._sendExact()
-
-    addFull = add
 
     def remove(self, vehID, reason=tc.REMOVE_VAPORIZED):
         '''Remove vehicle with the given ID for the give reason.
@@ -1533,7 +1162,7 @@ class VehicleDomain(Domain):
         any edge in the network but it's route then only consists of that edge.
         If keepRoute is set to 2 the vehicle has all the freedom of keepRoute=0
         but in addition to that may even move outside the road network.
-        edgeID and lane are optional placement hints to resolve ambiguities'''
+        edgeID and lane are optional placement hints to resovle ambiguities'''
         self._connection._beginMessage(tc.CMD_SET_VEHICLE_VARIABLE, tc.MOVE_TO_XY,
                                        vehID, 1 + 4 + 1 + 4 + len(edgeID) + 1 + 4 + 1 + 8 + 1 + 8 + 1 + 8 + 1 + 1)
         self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 6)
@@ -1544,6 +1173,8 @@ class VehicleDomain(Domain):
         self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, angle)
         self._connection._string += struct.pack("!BB", tc.TYPE_BYTE, keepRoute)
         self._connection._sendExact()
+
+    moveToVTD = moveToXY  # deprecated method name for backwards compatibility
 
     def subscribe(self, objectID, varIDs=(tc.VAR_ROAD_ID, tc.VAR_LANEPOSITION), begin=0, end=2**31 - 1):
         """subscribe(string, list(integer), int, int) -> None
@@ -1561,120 +1192,5 @@ class VehicleDomain(Domain):
         """
         Domain.subscribeContext(
             self, objectID, domain, dist, varIDs, begin, end)
-
-    def addSubscriptionFilterLanes(self, lanes, noOpposite=False, downstreamDist=None, upstreamDist=None):
-        """addSubscriptionFilterLanes(list(integer), bool, double, double) -> None
-
-        Adds a lane-filter to the last modified vehicle context subscription (call it just after subscribing).
-        lanes is a list of relative lane indices (-1 -> right neighboring lane of the ego, 0 -> ego lane, etc.)
-        noOpposite specifies whether vehicles on opposite direction lanes shall be returned
-        downstreamDist and upstreamDist specify the range of the search for surrounding vehicles along the road net.
-        """
-        self._connection._addSubscriptionFilter(tc.FILTER_TYPE_LANES, lanes)
-        if noOpposite:
-            self.addSubscriptionFilterNoOpposite()
-        if downstreamDist is not None:
-            self.addSubscriptionFilterDownstreamDistance(downstreamDist)
-        if upstreamDist is not None:
-            self.addSubscriptionFilterUpstreamDistance(upstreamDist)
-
-    def addSubscriptionFilterNoOpposite(self):
-        """addSubscriptionFilterNoOpposite() -> None
-
-        Omits vehicles on other edges than the ego's for the last modified vehicle context subscription
-        (call it just after subscribing).
-        """
-        self._connection._addSubscriptionFilter(tc.FILTER_TYPE_NOOPPOSITE)
-
-    def addSubscriptionFilterDownstreamDistance(self, dist):
-        """addSubscriptionFilterDownstreamDist(float) -> None
-
-        Sets the downstream distance along the network for vehicles to be returned by the last modified
-        vehicle context subscription (call it just after subscribing).
-        """
-        self._connection._addSubscriptionFilter(tc.FILTER_TYPE_DOWNSTREAM_DIST, dist)
-
-    def addSubscriptionFilterUpstreamDistance(self, dist):
-        """addSubscriptionFilterUpstreamDist(float) -> None
-
-        Sets the upstream distance along the network for vehicles to be returned by the last modified
-        vehicle context subscription (call it just after subscribing).
-        """
-        self._connection._addSubscriptionFilter(tc.FILTER_TYPE_UPSTREAM_DIST, dist)
-
-    def addSubscriptionFilterCFManeuver(self, downstreamDist=None, upstreamDist=None):
-        """addSubscriptionFilterCFManeuver() -> None
-
-        Restricts vehicles returned by the last modified vehicle context subscription to leader and follower of the ego.
-        downstreamDist and upstreamDist specify the range of the search for leader and follower along the road net.
-        """
-        self.addSubscriptionFilterLeadFollow([0])
-        if downstreamDist is not None:
-            self.addSubscriptionFilterDownstreamDistance(downstreamDist)
-        if upstreamDist is not None:
-            self.addSubscriptionFilterUpstreamDistance(upstreamDist)
-
-    def addSubscriptionFilterLCManeuver(self, direction, noOpposite=False, downstreamDist=None, upstreamDist=None):
-        """addSubscriptionFilterLCManeuver(int) -> None
-
-        Restricts vehicles returned by the last modified vehicle context subscription to neighbor and ego-lane leader
-        and follower of the ego.
-        direction - lane change direction (in {-1=right, 1=left})
-        noOpposite specifies whether vehicles on opposite direction lanes shall be returned
-        downstreamDist and upstreamDist specify the range of the search for leader and follower along the road net.
-        Combine with: distance filters; vClass/vType filter.
-        """
-        if direction is None:
-            # Using default: both directions
-            lanes = [-1, 0, 1]
-        elif not (direction == -1 or direction == 1):
-            warnings.warn("Ignoring lane change subscription filter " +
-                          "with non-neighboring lane offset direction=%s." % direction)
-            return
-        else:
-            lanes = [0, direction]
-        self.addSubscriptionFilterLeadFollow(lanes)
-        if noOpposite:
-            self.addSubscriptionFilterNoOpposite()
-        if downstreamDist is not None:
-            self.addSubscriptionFilterDownstreamDistance(downstreamDist)
-        if upstreamDist is not None:
-            self.addSubscriptionFilterUpstreamDistance(upstreamDist)
-
-    def addSubscriptionFilterLeadFollow(self, lanes):
-        """addSubscriptionFilterLCManeuver() -> None
-
-        Restricts vehicles returned by the last modified vehicle context subscription to neighbor and ego-lane leader
-        and follower of the ego.
-        Combine with: lanes-filter to restrict to one direction; distance filters; vClass/vType filter.
-        """
-        self._connection._addSubscriptionFilter(tc.FILTER_TYPE_LEAD_FOLLOW)
-        self._connection._addSubscriptionFilter(tc.FILTER_TYPE_LANES, lanes)
-
-    def addSubscriptionFilterTurn(self, downstreamDist=None, upstreamDist=None):
-        """addSubscriptionFilterTurn() -> None
-
-        Restricts vehicles returned by the last modified vehicle context subscription to foes on an upcoming junction
-        """
-        self._connection._addSubscriptionFilter(tc.FILTER_TYPE_TURN)
-        if downstreamDist is not None:
-            self.addSubscriptionFilterDownstreamDistance(downstreamDist)
-        if upstreamDist is not None:
-            self.addSubscriptionFilterUpstreamDistance(upstreamDist)
-
-    def addSubscriptionFilterVClass(self, vClasses):
-        """addSubscriptionFilterVClass(list(String)) -> None
-
-        Restricts vehicles returned by the last modified vehicle context subscription to vehicles of the given classes
-        """
-        self._connection._addSubscriptionFilter(tc.FILTER_TYPE_VCLASS, vClasses)
-
-    def addSubscriptionFilterVType(self, vTypes):
-        """addSubscriptionFilterVType(list(String)) -> None
-
-        Restricts vehicles returned by the last modified vehicle context subscription to vehicles of the given types
-        """
-        self._connection._addSubscriptionFilter(tc.FILTER_TYPE_VTYPE, vTypes)
-
 
 VehicleDomain()

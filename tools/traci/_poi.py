@@ -1,33 +1,33 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    poi.py
+@author  Michael Behrisch
+@author  Lena Kalleske
+@date    2008-10-09
+@version $Id$
 
-# @file    _poi.py
-# @author  Michael Behrisch
-# @author  Lena Kalleske
-# @date    2008-10-09
-# @version $Id$
+Python implementation of the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import struct
 from .domain import Domain
 from .storage import Storage
 from . import constants as tc
 
-_RETURN_VALUE_FUNC = {tc.TRACI_ID_LIST: Storage.readStringList,
+_RETURN_VALUE_FUNC = {tc.ID_LIST: Storage.readStringList,
                       tc.ID_COUNT: Storage.readInt,
                       tc.VAR_TYPE: Storage.readString,
                       tc.VAR_POSITION: lambda result: result.read("!dd"),
-                      tc.VAR_COLOR: lambda result: result.read("!BBBB"),
-                      tc.VAR_WIDTH: Storage.readDouble,
-                      tc.VAR_HEIGHT: Storage.readDouble,
-                      tc.VAR_ANGLE: Storage.readDouble,
-                      tc.VAR_IMAGEFILE: Storage.readString}
+                      tc.VAR_COLOR: lambda result: result.read("!BBBB")}
 
 
 class PoiDomain(Domain):
@@ -59,34 +59,6 @@ class PoiDomain(Domain):
         """
         return self._getUniversal(tc.VAR_COLOR, poiID)
 
-    def getWidth(self, poiID):
-        """getWidth(string) -> double
-
-        Returns the width of the given poi.
-        """
-        return self._getUniversal(tc.VAR_WIDTH, poiID)
-
-    def getHeight(self, poiID):
-        """getHeight(string) -> double
-
-        Returns the height of the given poi.
-        """
-        return self._getUniversal(tc.VAR_HEIGHT, poiID)
-
-    def getAngle(self, poiID):
-        """getAngle(string) -> double
-
-        Returns the angle of the given poi.
-        """
-        return self._getUniversal(tc.VAR_ANGLE, poiID)
-
-    def getImageFile(self, poiID):
-        """getImageFile(string) -> string
-
-        Returns the image file of the given poi.
-        """
-        return self._getUniversal(tc.VAR_IMAGEFILE, poiID)
-
     def setType(self, poiID, poiType):
         """setType(string, string) -> None
 
@@ -110,71 +82,28 @@ class PoiDomain(Domain):
     def setColor(self, poiID, color):
         """setColor(string, (integer, integer, integer, integer)) -> None
 
-        Sets the rgba color of the poi, i.e. (255,0,0) for the color red.
-        The fourth component (alpha) is optional.
+        Sets the rgba color of the poi.
         """
         self._connection._beginMessage(
             tc.CMD_SET_POI_VARIABLE, tc.VAR_COLOR, poiID, 1 + 1 + 1 + 1 + 1)
-        self._connection._string += struct.pack("!BBBBB", tc.TYPE_COLOR, int(color[0]), int(color[1]), int(color[2]),
-                                                int(color[3]) if len(color) > 3 else 255)
+        self._connection._string += struct.pack("!BBBBB", tc.TYPE_COLOR, int(
+            color[0]), int(color[1]), int(color[2]), int(color[3]))
         self._connection._sendExact()
 
-    def setWidth(self, poiID, width):
-        """setWidth(string, double) -> None
-
-        Sets the width of the poi.
-        """
-        self._connection._beginMessage(
-            tc.CMD_SET_POI_VARIABLE, tc.VAR_WIDTH, poiID, 1 + 8)
-        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, width)
-        self._connection._sendExact()
-
-    def setHeight(self, poiID, height):
-        """setHeight(string, double) -> None
-
-        Sets the height of the poi.
-        """
-        self._connection._beginMessage(tc.CMD_SET_POI_VARIABLE, tc.VAR_HEIGHT, poiID, 1 + 8)
-        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, height)
-        self._connection._sendExact()
-
-    def setAngle(self, poiID, angle):
-        """setAngle(string, double) -> None
-
-        Sets the angle of the poi.
-        """
-        self._connection._beginMessage(tc.CMD_SET_POI_VARIABLE, tc.VAR_ANGLE, poiID, 1 + 8)
-        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, angle)
-        self._connection._sendExact()
-
-    def setImageFile(self, poiID, imageFile):
-        """setImageFile(string, string) -> None
-
-        Sets the image file of the poi.
-        """
-        self._connection._beginMessage(
-            tc.CMD_SET_POI_VARIABLE, tc.VAR_IMAGEFILE, poiID, 1 + 4 + len(imageFile))
-        self._connection._packString(imageFile)
-        self._connection._sendExact()
-
-    def add(self, poiID, x, y, color, poiType="", layer=0, imgFile="", width=1, height=1, angle=0):
-        self._connection._beginMessage(tc.CMD_SET_POI_VARIABLE, tc.ADD, poiID, 1 + 4 + 1 + 4 + len(poiType) +
-                                       1 + 1 + 1 + 1 + 1 + 1 + 4 + 1 + 8 + 8 + 1 + 4 + len(imgFile) + 
-                                       1 + 8 + 1 + 8 + 1 + 8)
-        self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 8)
+    def add(self, poiID, x, y, color, poiType="", layer=0):
+        self._connection._beginMessage(tc.CMD_SET_POI_VARIABLE, tc.ADD, poiID, 1 +
+                                       4 + 1 + 4 + len(poiType) + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 1 + 8 + 8)
+        self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 4)
         self._connection._packString(poiType)
-        self._connection._string += struct.pack("!BBBBB", tc.TYPE_COLOR, int(color[0]), int(color[1]), int(color[2]),
-                                                int(color[3]) if len(color) > 3 else 255)
+        self._connection._string += struct.pack("!BBBBB", tc.TYPE_COLOR, int(
+            color[0]), int(color[1]), int(color[2]), int(color[3]))
         self._connection._string += struct.pack("!Bi", tc.TYPE_INTEGER, layer)
         self._connection._string += struct.pack("!Bdd", tc.POSITION_2D, x, y)
-        self._connection._packString(imgFile)
-        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, width)
-        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, height)
-        self._connection._string += struct.pack("!Bd", tc.TYPE_DOUBLE, angle)
         self._connection._sendExact()
 
     def remove(self, poiID, layer=0):
-        self._connection._beginMessage(tc.CMD_SET_POI_VARIABLE, tc.REMOVE, poiID, 1 + 4)
+        self._connection._beginMessage(
+            tc.CMD_SET_POI_VARIABLE, tc.REMOVE, poiID, 1 + 4)
         self._connection._string += struct.pack("!Bi", tc.TYPE_INTEGER, layer)
         self._connection._sendExact()
 

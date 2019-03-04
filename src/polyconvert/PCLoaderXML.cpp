@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PCLoaderXML.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,30 +9,44 @@
 ///
 // A reader for polygons and pois stored in XML-format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
 #include <fstream>
 #include <utils/options/OptionsCont.h>
 #include <utils/options/Option.h>
-#include <utils/common/MsgHandler.h>
-#include <utils/common/FileHelpers.h>
-#include <utils/common/RGBColor.h>
 #include <utils/common/StdDefs.h>
-#include <utils/common/SysUtils.h>
 #include <polyconvert/PCPolyContainer.h>
+#include <utils/common/RGBColor.h>
 #include <utils/geom/GeomHelper.h>
 #include <utils/geom/Boundary.h>
 #include <utils/geom/Position.h>
 #include <utils/geom/GeoConvHelper.h>
 #include <utils/xml/XMLSubSys.h>
 #include <utils/geom/GeomConvHelper.h>
+#include <utils/common/MsgHandler.h>
+#include <utils/common/FileHelpers.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
 #include "PCLoaderXML.h"
 
@@ -64,12 +70,11 @@ PCLoaderXML::loadIfSet(OptionsCont& oc, PCPolyContainer& toFill,
         if (!FileHelpers::isReadable(*file)) {
             throw ProcessError("Could not open xml-file '" + *file + "'.");
         }
-        const long before = SysUtils::getCurrentMillis();
         PROGRESS_BEGIN_MESSAGE("Parsing XML from '" + *file + "'");
         if (!XMLSubSys::runParser(handler, *file)) {
             throw ProcessError();
         }
-        PROGRESS_TIME_MESSAGE(before);
+        PROGRESS_DONE_MESSAGE();
     }
 }
 
@@ -95,7 +100,7 @@ PCLoaderXML::myStartElement(int element,
     }
     bool ok = true;
     // get the id, report an error if not given or empty...
-    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
     std::string type = attrs.getOpt<std::string>(SUMO_ATTR_TYPE, id.c_str(), ok, myOptions.getString("type"));
     if (!ok) {
         return;

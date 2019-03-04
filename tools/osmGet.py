@@ -1,30 +1,30 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    osmGet.py
+@author  Daniel Krajzewicz
+@author  Jakob Erdmann
+@author  Michael Behrisch
+@date    2009-08-01
+@version $Id$
 
-# @file    osmGet.py
-# @author  Daniel Krajzewicz
-# @author  Jakob Erdmann
-# @author  Michael Behrisch
-# @date    2009-08-01
-# @version $Id$
+Retrieves an area from OpenStreetMap.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import os
 try:
     import httplib
-    import urlparse
 except ImportError:
-    # python3
     import http.client as httplib
-    import urllib.parse as urlparse
-
 import optparse
 from os import path
 
@@ -52,7 +52,6 @@ def readCompressed(conn, query, filename):
         out = open(path.join(os.getcwd(), filename), "wb")
         out.write(response.read())
         out.close()
-
 
 optParser = optparse.OptionParser()
 optParser.add_option("-p", "--prefix", default="osm", help="for output file")
@@ -114,18 +113,8 @@ def get(args=None):
             b = e
         conn.close()
     else:
-        host = 'www.overpass-api.de'
-        # host= 'overpass.osm.rambler.ru'
-        port = 443
-
-        if os.environ.get("https_proxy") is not None:
-            proxy_url = os.environ.get("https_proxy")
-            url = urlparse.urlparse(proxy_url)
-            conn = httplib.HTTPSConnection(url.hostname, url.port)
-            conn.set_tunnel(host, port, {})
-        else:
-            conn = httplib.HTTPConnection(host)
-
+        conn = httplib.HTTPConnection("www.overpass-api.de")
+        # conn = httplib.HTTPConnection("overpass.osm.rambler.ru")
         if options.area:
             if options.area < 3600000000:
                 options.area += 3600000000
@@ -145,7 +134,6 @@ def get(args=None):
                     b = e
 
         conn.close()
-
 
 if __name__ == "__main__":
     get()

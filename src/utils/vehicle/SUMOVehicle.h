@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOVehicle.h
 /// @author  Michael Behrisch
 /// @author  Daniel Krajzewicz
@@ -16,6 +8,17 @@
 ///
 // Abstract base class for vehicle representations
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef SUMOVehicle_h
 #define SUMOVehicle_h
 
@@ -23,13 +26,17 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <typeinfo>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/Named.h>
-#include <utils/router/SUMOAbstractRouter.h>
+#include <utils/vehicle/SUMOAbstractRouter.h>
 #include <utils/vehicle/SUMOVehicleParameter.h>
 #include <utils/iodevices/OutputDevice.h>
 
@@ -41,11 +48,10 @@ class MSVehicleType;
 class MSRoute;
 class MSEdge;
 class MSLane;
-class MSVehicleDevice;
+class MSDevice;
 class MSPerson;
 class MSTransportable;
 class MSParkingArea;
-class MSStoppingPlace;
 class SUMOSAXAttributes;
 
 typedef std::vector<const MSEdge*> ConstMSEdgeVector;
@@ -60,7 +66,6 @@ typedef std::vector<const MSEdge*> ConstMSEdgeVector;
  */
 class SUMOVehicle {
 public:
-    typedef long long int NumericalID;
 
     // XXX: This definition was introduced to make the MSVehicle's previousSpeed
     //      available in the context of MSMoveReminder::notifyMove(). Another solution
@@ -70,6 +75,9 @@ public:
      * @return The vehicle's speed
      */
     virtual double getPreviousSpeed() const = 0;
+
+
+    typedef Named::NamedLikeComparatorIdLess<SUMOVehicle> ComparatorIdLess;
 
     /// @brief Destructor
     virtual ~SUMOVehicle() {}
@@ -155,13 +163,12 @@ public:
      * @param[in] edges The new list of edges to pass
      * @param[in] onInit Whether the vehicle starts with this route
      * @param[in] check Whether the route should be checked for validity
-     * @param[in] removeStops Whether stops should be removed if they do not fit onto the new route
      * @return Whether the new route was accepted
      */
-    virtual bool replaceRouteEdges(ConstMSEdgeVector& edges, double cost, double savings, const std::string& info, bool onInit = false, bool check = false, bool removeStops = true) = 0;
+    virtual bool replaceRouteEdges(ConstMSEdgeVector& edges, bool onInit = false, bool check = false, bool addStops = true) = 0;
 
     /// Replaces the current route by the given one
-    virtual bool replaceRoute(const MSRoute* route, const std::string& info, bool onInit = false, int offset = 0, bool addStops = true, bool removeStops = true) = 0;
+    virtual bool replaceRoute(const MSRoute* route, bool onInit = false, int offset = 0, bool addStops = true) = 0;
 
     /** @brief Performs a rerouting using the given router
      *
@@ -172,7 +179,7 @@ public:
      * @param[in] router The router to use
      * @see replaceRoute
      */
-    virtual void reroute(SUMOTime t, const std::string& info, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router, const bool onInit = false, const bool withTaz = false, const bool silent = false) = 0;
+    virtual void reroute(SUMOTime t, SUMOAbstractRouter<MSEdge, SUMOVehicle>& router, const bool onInit = false, const bool withTaz = false) = 0;
 
     /** @brief Validates the current or given route
      * @param[out] msg Description why the route is not valid (if it is the case)
@@ -209,10 +216,6 @@ public:
      */
     virtual const SUMOVehicleParameter& getParameter() const = 0;
 
-    /** @brief Replaces the vehicle's parameter
-     */
-    virtual void replaceParameter(const SUMOVehicleParameter* newParameter) = 0;
-
     /** @brief Called when the vehicle is inserted into the network
      *
      * Sets optional information about departure time, informs the vehicle
@@ -240,12 +243,6 @@ public:
      * @return Whether the vehicle is remote-controlled
      */
     virtual bool isRemoteControlled() const = 0;
-
-    /** @brief Returns the information whether the vehicle is fully controlled
-     * via TraCI
-     * @return Whether the vehicle was remote-controlled within the given time range
-     */
-    virtual bool wasRemoteControlled(SUMOTime lookBack = DELTA_T) const = 0;
 
     /** @brief Returns this vehicle's real departure time
      * @return This vehicle's real departure time
@@ -283,7 +280,7 @@ public:
     /** @brief Returns this vehicle's devices
      * @return This vehicle's devices
      */
-    virtual const std::vector<MSVehicleDevice*>& getDevices() const = 0;
+    virtual const std::vector<MSDevice*>& getDevices() const = 0;
 
     /** @brief Adds a person to this vehicle
      *
@@ -301,30 +298,6 @@ public:
      */
     virtual void addContainer(MSTransportable* container) = 0;
 
-    /** @brief Returns the number of persons
-     * @return The number of passengers on-board
-     */
-    virtual int getPersonNumber() const = 0;
-
-    /** @brief Returns the list of persons
-     * @return The list of passengers on-board
-     */
-    virtual std::vector<std::string> getPersonIDList() const = 0;
-
-    /** @brief Returns the number of containers
-     * @return The number of contaiers on-board
-     */
-    virtual int getContainerNumber() const = 0;
-
-    /// @brief removes a person or container
-    virtual void removeTransportable(MSTransportable* t) = 0;
-
-    /// @brief retrieve riding persons
-    virtual const std::vector<MSTransportable*>& getPersons() const = 0;
-
-    /// @brief retrieve riding containers
-    virtual const std::vector<MSTransportable*>& getContainers() const = 0;
-
     /** @brief Adds a stop
      *
      * The stop is put into the sorted list.
@@ -333,9 +306,6 @@ public:
      */
     virtual bool addStop(const SUMOVehicleParameter::Stop& stopPar, std::string& errorMsg, SUMOTime untilOffset = 0, bool collision = false,
                          ConstMSEdgeVector::const_iterator* searchStart = 0) = 0;
-
-    /// @brief return list of route indices for the remaining stops
-    virtual std::vector<int> getStopIndices() const = 0;
 
 
     /**
@@ -357,8 +327,6 @@ public:
      */
     virtual bool isStopped() const = 0;
 
-    /// @brief Returns the remaining stop duration for a stopped vehicle or 0
-    virtual SUMOTime remainingStopDuration() const = 0;
 
     /** @brief Returns whether the vehicle is at a stop and waiting for a person or container to continue
      */
@@ -367,11 +335,8 @@ public:
     /** @brief Returns whether the vehicle is stoped in range of the given position */
     virtual bool isStoppedInRange(double pos) const = 0;
 
-    /** @brief Returns whether the vehicle stops at the given stopping place */
-    virtual bool stopsAt(MSStoppingPlace* stop) const = 0;
-
     /// @brief Returns a device of the given type if it exists or 0
-    virtual MSVehicleDevice* getDevice(const std::type_info& type) const = 0;
+    virtual MSDevice* getDevice(const std::type_info& type) const = 0;
 
 
     virtual double getChosenSpeedFactor() const = 0;
@@ -380,27 +345,10 @@ public:
 
     virtual SUMOTime getWaitingTime() const = 0;
 
-    virtual SUMOTime getAccumulatedWaitingTime() const = 0;
-
     virtual SUMOTime getDepartDelay() const = 0;
-
-    /// @brief get distance for coming to a stop (used for rerouting checks)
-    virtual double getBrakeGap() const = 0;
 
     /// @brief Returns this vehicles impatience
     virtual double getImpatience() const = 0;
-
-    /// @brief whether this vehicle is selected in the GUI
-    virtual bool isSelected() const = 0;
-
-    /** @brief Returns the associated RNG for this vehicle
-    * @return The vehicle's associated RNG
-    */
-    virtual std::mt19937* getRNG() const = 0;
-
-    /// @brief return the numerical ID which is only for internal usage
-    //  (especially fast comparison in maps which need vehicles as keys)
-    virtual NumericalID getNumericalID() const = 0;
 
     /// @name state io
     //@{

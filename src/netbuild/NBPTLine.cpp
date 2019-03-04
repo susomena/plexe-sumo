@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBPTLine.cpp
 /// @author  Gregor Laemmel
 /// @author  Nikita Cherednychek
@@ -15,76 +7,56 @@
 ///
 // The representation of one direction of a single pt line
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #include <utils/iodevices/OutputDevice.h>
 
 #include <utility>
-#include <utils/common/ToString.h>
-#include <utils/common/StringUtils.h>
-#include "NBEdgeCont.h"
 #include "NBPTLine.h"
 #include "NBPTStop.h"
 
-NBPTLine::NBPTLine(const std::string& name, const std::string& type, const std::string& ref, int interval, const std::string& nightService) :
-    myName(name),
-    myType(type),
-    myPTLineId(-1),
-    myRef(ref != "" ? ref : name),
-    myInterval(interval),
-    myNightService(nightService) {
-}
+NBPTLine::NBPTLine(std::string name)
+    : myName(std::move(name)), myPTLineId(-1), myRef(name) {
 
+}
 void NBPTLine::addPTStop(NBPTStop* pStop) {
     myPTStops.push_back(pStop);
 
 }
-const std::string& NBPTLine::getName() const {
+std::string NBPTLine::getName() {
     return myName;
 }
-
-long long int
-NBPTLine::getLineID() const {
-    return myPTLineId;
-}
-
 std::vector<NBPTStop*> NBPTLine::getStops() {
     return myPTStops;
 }
-void NBPTLine::write(OutputDevice& device, NBEdgeCont& ec) {
+void NBPTLine::write(OutputDevice& device) {
     device.openTag(SUMO_TAG_PT_LINE);
     device.writeAttr(SUMO_ATTR_ID, myPTLineId);
     if (!myName.empty()) {
-        device.writeAttr(SUMO_ATTR_NAME, StringUtils::escapeXML(myName));
+        device.writeAttr(SUMO_ATTR_NAME, myName);
     }
+    device.writeAttr(SUMO_ATTR_LINE, myRef);
+    device.writeAttr("completeness", toString((double)myPTStops.size()/(double)myNumOfStops));
 
-    device.writeAttr(SUMO_ATTR_LINE, StringUtils::escapeXML(myRef));
-    device.writeAttr(SUMO_ATTR_TYPE, myType);
-    if (myInterval > 0) {
-        // write seconds
-        device.writeAttr(SUMO_ATTR_PERIOD, 60 * myInterval);
-    }
-    if (myNightService != "") {
-        device.writeAttr("nightService", myNightService);
-    }
-    device.writeAttr("completeness", toString((double)myPTStops.size() / (double)myNumOfStops));
-
-    std::vector<std::string> validEdgeIDs;
-    // filter out edges that have been removed due to joining junctions
-    // (therest of the route is valid)
-    for (NBEdge* e : myRoute) {
-        if (ec.retrieve(e->getID())) {
-            validEdgeIDs.push_back(e->getID());
-        }
-    }
     if (!myRoute.empty()) {
         device.openTag(SUMO_TAG_ROUTE);
-        device.writeAttr(SUMO_ATTR_EDGES, validEdgeIDs);
+        device.writeAttr(SUMO_ATTR_EDGES, getRoute());
         device.closeTag();
     }
 
     for (auto& myPTStop : myPTStops) {
         device.openTag(SUMO_TAG_BUS_STOP);
         device.writeAttr(SUMO_ATTR_ID, myPTStop->getID());
-        device.writeAttr(SUMO_ATTR_NAME, StringUtils::escapeXML(myPTStop->getName()));
+        device.writeAttr(SUMO_ATTR_NAME, myPTStop->getName());
         device.closeTag();
     }
 //    device.writeAttr(SUMO_ATTR_LANE, myLaneId);
@@ -115,14 +87,22 @@ std::vector<long long int>* NBPTLine::getWaysNodes(std::string wayId) {
     }
     return nullptr;
 }
+void NBPTLine::setRef(std::string ref) {
+    myRef = std::move(ref);
+}
+
+std::string NBPTLine::getRoute() {
+    std::string route;
+    for (auto& it : myRoute) {
+        route += (" " + it->getID());
+    }
+    return route;
+}
 
 void NBPTLine::addEdgeVector(std::vector<NBEdge*>::iterator fr, std::vector<NBEdge*>::iterator to) {
     myRoute.insert(myRoute.end(), fr, to);
 
 }
-void NBPTLine::setMyNumOfStops(int numStops) {
+void NBPTLine::setMyNumOfStops(unsigned long numStops) {
     myNumOfStops = numStops;
-}
-const std::vector<NBEdge*>& NBPTLine::getRoute() const {
-    return myRoute;
 }

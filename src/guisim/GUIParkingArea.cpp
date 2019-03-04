@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIParkingArea.cpp
 /// @author  Mirco Sturari
 /// @author  Jakob Erdmann
@@ -15,12 +7,27 @@
 ///
 // A area where vehicles can park next to the road (gui version)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/MsgHandler.h>
@@ -42,12 +49,11 @@
 #include <gui/GUIApplicationWindow.h>
 #include <microsim/logging/FunctionBinding.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/geom/GeomHelper.h>
 #include <guisim/GUIParkingArea.h>
 #include <guisim/GUIVehicle.h>
 #include <utils/gui/globjects/GLIncludes.h>
-#include <foreign/fontstash/fontstash.h>
-
 
 
 // ===========================================================================
@@ -55,10 +61,9 @@
 // ===========================================================================
 GUIParkingArea::GUIParkingArea(const std::string& id, const std::vector<std::string>& lines, MSLane& lane,
                                double frompos, double topos, unsigned int capacity,
-                               double width, double length, double angle, const std::string& name,
-                               bool onRoad) :
-    MSParkingArea(id, lines, lane, frompos, topos, capacity, width, length, angle, name, onRoad),
-    GUIGlObject_AbstractAdd(GLO_PARKING_AREA, id) {
+                               double width, double length, double angle) :
+    MSParkingArea(id, lines, lane, frompos, topos, capacity, width, length, angle),
+    GUIGlObject_AbstractAdd("parkingArea", GLO_TRIGGER, id) {
     const double offsetSign = MSNet::getInstance()->lefthand() ? -1 : 1;
     myShapeRotations.reserve(myShape.size() - 1);
     myShapeLengths.reserve(myShape.size() - 1);
@@ -77,8 +82,6 @@ GUIParkingArea::GUIParkingArea(const std::string& id, const std::vector<std::str
         mySignRot = myShape.rotationDegreeAtOffset(double((myShape.length() / 2.)));
         mySignRot -= 90;
     }
-    myBoundary = myShape.getBoxBoundary();
-    myBoundary.grow(20);
 }
 
 GUIParkingArea::~GUIParkingArea() {}
@@ -102,9 +105,8 @@ GUIParameterTableWindow*
 GUIParkingArea::getParameterWindow(GUIMainWindow& app,
                                    GUISUMOAbstractView&) {
     GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 5);
+        new GUIParameterTableWindow(app, *this, 4);
     // add items
-    ret->mkItem("name", false, getMyName());
     ret->mkItem("begin position [m]", false, myBegPos);
     ret->mkItem("end position [m]", false, myEndPos);
     ret->mkItem("occupancy [#]", true, getOccupancy());
@@ -128,18 +130,19 @@ GUIParkingArea::drawGL(const GUIVisualizationSettings& s) const {
     GLHelper::setColor(blue);
     GLHelper::drawBoxLines(myShape, myShapeRotations, myShapeLengths, myWidth / 2.);
     // draw details unless zoomed out to far
-    const double exaggeration = s.addSize.getExaggeration(s, this);
-    if (s.scale * exaggeration >= 1) {
+    const double exaggeration = s.addSize.getExaggeration(s);
+    if (s.scale * exaggeration >= 10) {
         // draw the lots
         glTranslated(0, 0, .1);
-        for (const auto& lsd : mySpaceOccupancies) {
+        std::map<unsigned int, LotSpaceDefinition >::const_iterator i;
+        for (i = mySpaceOccupancies.begin(); i != mySpaceOccupancies.end(); i++) {
             glPushMatrix();
-            glTranslated(lsd.myPosition.x(), lsd.myPosition.y(), lsd.myPosition.z());
-            glRotated(lsd.myRotation, 0, 0, 1);
-            Position pos = lsd.myPosition;
+            glTranslated((*i).second.myPosition.x(), (*i).second.myPosition.y(), (*i).second.myPosition.z());
+            glRotated((*i).second.myRotation, 0, 0, 1);
+            Position pos = (*i).second.myPosition;
             PositionVector geom;
-            double w = lsd.myWidth / 2. - 0.1 * exaggeration;
-            double h = lsd.myLength;
+            double w = (*i).second.myWidth / 2.;
+            double h = (*i).second.myLength;
             geom.push_back(Position(- w, + 0, 0.));
             geom.push_back(Position(+ w, + 0, 0.));
             geom.push_back(Position(+ w, + h, 0.));
@@ -152,24 +155,24 @@ GUIParkingArea::drawGL(const GUIVisualizationSettings& s) const {
             geom.push_back(Position(pos.x(), pos.y() - (*l).second.myLength, pos.z()));
             geom.push_back(Position(pos.x(), pos.y(), pos.z()));
             */
-            GLHelper::setColor(lsd.vehicle == nullptr ? green : red);
-            GLHelper::drawBoxLines(geom, 0.1 * exaggeration);
+            GLHelper::setColor((*i).second.vehicle == 0 ? green : red);
+            GLHelper::drawBoxLines(geom, 0.1);
             glPopMatrix();
         }
         GLHelper::setColor(blue);
         // draw the lines
         for (size_t i = 0; i != myLines.size(); ++i) {
-            // push a new matrix for every line
             glPushMatrix();
-            // traslate and rotate
             glTranslated(mySignPos.x(), mySignPos.y(), 0);
             glRotated(180, 1, 0, 0);
             glRotated(mySignRot, 0, 0, 1);
-            // draw line
-            GLHelper::drawText(myLines[i].c_str(), Position(1.2, (double)i), .1, 1.f, RGBColor(76, 170, 50), 0, FONS_ALIGN_LEFT);
-            // pop matrix for every line
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            pfSetPosition(0, 0);
+            pfSetScale(1.f);
+            glScaled(exaggeration, exaggeration, 1);
+            glTranslated(1.2, -(double)i, 0);
+            pfDrawString(myLines[i].c_str());
             glPopMatrix();
-
         }
         // draw the sign
         glTranslated(mySignPos.x(), mySignPos.y(), 0);
@@ -183,15 +186,12 @@ GUIParkingArea::drawGL(const GUIVisualizationSettings& s) const {
         GLHelper::setColor(grey);
         GLHelper::drawFilledCircle((double) 0.9, noPoints);
         if (s.scale * exaggeration >= 4.5) {
-            GLHelper::drawText("P", Position(), .1, 1.6, blue, mySignRot);
+            GLHelper::drawText("P", Position(), .1, 1.6 * exaggeration, blue, mySignRot);
         }
     }
     glPopMatrix();
-    if (s.addFullName.show && getMyName() != "") {
-        GLHelper::drawTextSettings(s.addFullName, getMyName(), mySignPos, s.scale, s.getTextAngle(mySignRot), GLO_MAX - getType());
-    }
     glPopName();
-    drawName(getCenteringBoundary().getCenter(), s.scale, s.addName, s.angle);
+    drawName(getCenteringBoundary().getCenter(), s.scale, s.addName);
     for (std::vector<MSTransportable*>::const_iterator i = myWaitingTransportables.begin(); i != myWaitingTransportables.end(); ++i) {
         glTranslated(0, 1, 0); // make multiple containers viewable
         static_cast<GUIContainer*>(*i)->drawGL(s);
@@ -205,19 +205,15 @@ GUIParkingArea::drawGL(const GUIVisualizationSettings& s) const {
 
 }
 
-void
-GUIParkingArea::addLotEntry(double x, double y, double z,
-                            double width, double length, double angle) {
-    MSParkingArea::addLotEntry(x, y, z, width, length, angle);
-    Boundary b;
-    b.add(Position(x, y));
-    b.grow(MAX2(width, length) + 5);
-    myBoundary.add(b);
-}
 
 Boundary
 GUIParkingArea::getCenteringBoundary() const {
-    return myBoundary;
+    Boundary b = myShape.getBoxBoundary();
+    for (std::map<unsigned int, LotSpaceDefinition >::const_iterator i = mySpaceOccupancies.begin(); i != mySpaceOccupancies.end(); i++) {
+        b.add((*i).second.myPosition);
+    }
+    b.grow(20);
+    return b;
 }
 
 

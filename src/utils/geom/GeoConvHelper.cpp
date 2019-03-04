@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GeoConvHelper.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // static methods for processing the coordinates conversion for the current net
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include <cmath>
@@ -38,7 +45,6 @@
 // ===========================================================================
 // static member variables
 // ===========================================================================
-
 GeoConvHelper GeoConvHelper::myProcessing("!", Position(), Boundary(), Boundary());
 GeoConvHelper GeoConvHelper::myLoaded("!", Position(), Boundary(), Boundary());
 GeoConvHelper GeoConvHelper::myFinal("!", Position(), Boundary(), Boundary());
@@ -47,22 +53,18 @@ int GeoConvHelper::myNumLoaded = 0;
 // ===========================================================================
 // method definitions
 // ===========================================================================
-
 GeoConvHelper::GeoConvHelper(const std::string& proj, const Position& offset,
-                             const Boundary& orig, const Boundary& conv, double scale, double rot, bool inverse, bool flatten):
+                             const Boundary& orig, const Boundary& conv, double scale, bool inverse):
     myProjString(proj),
 #ifdef HAVE_PROJ
-    myProjection(nullptr),
-    myInverseProjection(nullptr),
-    myGeoProjection(nullptr),
+    myProjection(0),
+    myInverseProjection(0),
+    myGeoProjection(0),
 #endif
     myOffset(offset),
     myGeoScale(scale),
-    mySin(sin(DEG2RAD(-rot))), // rotate clockwise
-    myCos(cos(DEG2RAD(-rot))),
     myProjectionMethod(NONE),
     myUseInverseProjection(inverse),
-    myFlatten(flatten),
     myOrigBoundary(orig),
     myConvBoundary(conv) {
     if (proj == "!") {
@@ -79,7 +81,7 @@ GeoConvHelper::GeoConvHelper(const std::string& proj, const Position& offset,
     } else {
         myProjectionMethod = PROJ;
         myProjection = pj_init_plus(proj.c_str());
-        if (myProjection == nullptr) {
+        if (myProjection == 0) {
             // !!! check pj_errno
             throw ProcessError("Could not build projection!");
         }
@@ -90,33 +92,18 @@ GeoConvHelper::GeoConvHelper(const std::string& proj, const Position& offset,
 
 GeoConvHelper::~GeoConvHelper() {
 #ifdef HAVE_PROJ
-    if (myProjection != nullptr) {
+    if (myProjection != 0) {
         pj_free(myProjection);
     }
-    if (myInverseProjection != nullptr) {
+    if (myInverseProjection != 0) {
         pj_free(myInverseProjection);
     }
-    if (myGeoProjection != nullptr) {
+    if (myGeoProjection != 0) {
         pj_free(myInverseProjection);
     }
 #endif
 }
 
-bool
-GeoConvHelper::operator==(const GeoConvHelper& o) const {
-    return (
-               myProjString == o.myProjString &&
-               myOffset == o.myOffset &&
-               myProjectionMethod == o.myProjectionMethod &&
-               myOrigBoundary == o.myOrigBoundary &&
-               myConvBoundary == o.myConvBoundary &&
-               myGeoScale == o.myGeoScale &&
-               myCos == o.myCos &&
-               mySin == o.mySin &&
-               myUseInverseProjection == o.myUseInverseProjection &&
-               myFlatten == o.myFlatten
-           );
-}
 
 GeoConvHelper&
 GeoConvHelper::operator=(const GeoConvHelper& orig) {
@@ -126,30 +113,27 @@ GeoConvHelper::operator=(const GeoConvHelper& orig) {
     myOrigBoundary = orig.myOrigBoundary;
     myConvBoundary = orig.myConvBoundary;
     myGeoScale = orig.myGeoScale;
-    myCos = orig.myCos;
-    mySin = orig.mySin;
     myUseInverseProjection = orig.myUseInverseProjection;
-    myFlatten = orig.myFlatten;
 #ifdef HAVE_PROJ
-    if (myProjection != nullptr) {
+    if (myProjection != 0) {
         pj_free(myProjection);
-        myProjection = nullptr;
+        myProjection = 0;
     }
-    if (myInverseProjection != nullptr) {
+    if (myInverseProjection != 0) {
         pj_free(myInverseProjection);
-        myInverseProjection = nullptr;
+        myInverseProjection = 0;
     }
-    if (myGeoProjection != nullptr) {
+    if (myGeoProjection != 0) {
         pj_free(myGeoProjection);
-        myGeoProjection = nullptr;
+        myGeoProjection = 0;
     }
-    if (orig.myProjection != nullptr) {
+    if (orig.myProjection != 0) {
         myProjection = pj_init_plus(orig.myProjString.c_str());
     }
-    if (orig.myInverseProjection != nullptr) {
+    if (orig.myInverseProjection != 0) {
         myInverseProjection = pj_init_plus(pj_get_def(orig.myInverseProjection, 0));
     }
-    if (orig.myGeoProjection != nullptr) {
+    if (orig.myGeoProjection != 0) {
         myGeoProjection = pj_init_plus(pj_get_def(orig.myGeoProjection, 0));
     }
 #endif
@@ -161,10 +145,8 @@ bool
 GeoConvHelper::init(OptionsCont& oc) {
     std::string proj = "!"; // the default
     double scale = oc.getFloat("proj.scale");
-    double rot = oc.getFloat("proj.rotate");
     Position offset = Position(oc.getFloat("offset.x"), oc.getFloat("offset.y"));
     bool inverse = oc.exists("proj.inverse") && oc.getBool("proj.inverse");
-    bool flatten = oc.exists("flatten") && oc.getBool("flatten");
 
     if (oc.getBool("simple-projection")) {
         proj = "-";
@@ -191,15 +173,18 @@ GeoConvHelper::init(OptionsCont& oc) {
         proj = oc.getString("proj");
     }
 #endif
-    myProcessing = GeoConvHelper(proj, offset, Boundary(), Boundary(), scale, rot, inverse, flatten);
+    myProcessing = GeoConvHelper(proj, offset, Boundary(), Boundary(), scale, inverse);
     myFinal = myProcessing;
     return true;
 }
 
 
 void
-GeoConvHelper::init(const std::string& proj, const Position& offset, const Boundary& orig,
-                    const Boundary& conv, double scale) {
+GeoConvHelper::init(const std::string& proj,
+                    const Position& offset,
+                    const Boundary& orig,
+                    const Boundary& conv,
+                    double scale) {
     myProcessing = GeoConvHelper(proj, offset, orig, conv, scale);
     myFinal = myProcessing;
 }
@@ -215,9 +200,6 @@ GeoConvHelper::addProjectionOptions(OptionsCont& oc) {
 
     oc.doRegister("proj.scale", new Option_Float(1.0));
     oc.addDescription("proj.scale", "Projection", "Scaling factor for input coordinates");
-
-    oc.doRegister("proj.rotate", new Option_Float(0.0));
-    oc.addDescription("proj.rotate", "Projection", "Rotation (clockwise degrees) for input coordinates");
 
 #ifdef HAVE_PROJ
     oc.doRegister("proj.utm", new Option_Bool(false));
@@ -256,12 +238,6 @@ GeoConvHelper::cartesian2geo(Position& cartesian) const {
     if (myProjectionMethod == NONE) {
         return;
     }
-    if (myProjectionMethod == SIMPLE) {
-        const double y = cartesian.y() / 111136.;
-        const double x = cartesian.x() / 111320. / cos(DEG2RAD(y));
-        cartesian.set(x, y);
-        return;
-    }
 #ifdef HAVE_PROJ
     projUV p;
     p.u = cartesian.x();
@@ -282,7 +258,7 @@ GeoConvHelper::x2cartesian(Position& from, bool includeInBoundary) {
     }
     // init projection parameter on first use
 #ifdef HAVE_PROJ
-    if (myProjection == nullptr) {
+    if (myProjection == 0) {
         double x = from.x() * myGeoScale;
         switch (myProjectionMethod) {
             case DHDN_UTM: {
@@ -299,7 +275,6 @@ GeoConvHelper::x2cartesian(Position& from, bool includeInBoundary) {
                 //!!! check pj_errno
                 x = ((x - 500000.) / 1000000.) * 3; // continues with UTM
             }
-            FALLTHROUGH;
             case UTM: {
                 int zone = (int)(x + 180) / 6 + 1;
                 myProjString = "+proj=utm +zone=" + toString(zone) +
@@ -325,10 +300,10 @@ GeoConvHelper::x2cartesian(Position& from, bool includeInBoundary) {
                 break;
         }
     }
-    if (myInverseProjection != nullptr) {
+    if (myInverseProjection != 0) {
         double x = from.x();
         double y = from.y();
-        if (pj_transform(myInverseProjection, myGeoProjection, 1, 1, &x, &y, nullptr)) {
+        if (pj_transform(myInverseProjection, myGeoProjection, 1, 1, &x, &y, NULL)) {
             WRITE_WARNING("Could not transform (" + toString(x) + "," + toString(y) + ")");
         }
         from.set(double(x * RAD_TO_DEG), double(y * RAD_TO_DEG));
@@ -347,10 +322,8 @@ GeoConvHelper::x2cartesian(Position& from, bool includeInBoundary) {
 
 bool
 GeoConvHelper::x2cartesian_const(Position& from) const {
-    double x2 = from.x() * myGeoScale;
-    double y2 = from.y() * myGeoScale;
-    double x = x2 * myCos - y2 * mySin;
-    double y = x2 * mySin + y2 * myCos;
+    double x = from.x() * myGeoScale;
+    double y = from.y() * myGeoScale;
     if (myProjectionMethod == NONE) {
         from.add(myOffset);
     } else if (myUseInverseProjection) {
@@ -365,7 +338,7 @@ GeoConvHelper::x2cartesian_const(Position& from) const {
             return false;
         }
 #ifdef HAVE_PROJ
-        if (myProjection != nullptr) {
+        if (myProjection != 0) {
             projUV p;
             p.u = x * DEG_TO_RAD;
             p.v = y * DEG_TO_RAD;
@@ -376,19 +349,21 @@ GeoConvHelper::x2cartesian_const(Position& from) const {
         }
 #endif
         if (myProjectionMethod == SIMPLE) {
-            x *= 111320. * cos(DEG2RAD(y));
+            double ys = y;
+            x *= 111320. * cos(DEG2RAD(ys));
             y *= 111136.;
+            from.set((double)x, (double)y);
             //!!! recheck whether the axes are mirrored
+            from.add(myOffset);
         }
     }
     if (x > std::numeric_limits<double>::max() ||
             y > std::numeric_limits<double>::max()) {
         return false;
     }
-    from.set(x, y);
-    from.add(myOffset);
-    if (myFlatten) {
-        from.setz(0);
+    if (myProjectionMethod != SIMPLE) {
+        from.set((double)x, (double)y);
+        from.add(myOffset);
     }
     return true;
 }

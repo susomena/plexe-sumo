@@ -1,20 +1,24 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    one-shot.py
+@author  Daniel Krajzewicz
+@author  Jakob Erdmann
+@author  Yun-Pang Floetteroed
+@author  Michael Behrisch
+@date    2008-03-10
+@version $Id$
 
-# @file    one-shot.py
-# @author  Daniel Krajzewicz
-# @author  Jakob Erdmann
-# @author  Yun-Pang Floetteroed
-# @author  Michael Behrisch
-# @date    2008-03-10
-# @version $Id$
+This script does multiple sumo runs with different rerouting intervals.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 import os
@@ -82,15 +86,13 @@ def writeSUMOConf(step, options, files):
         <verbose value="True"/>
         <no-warnings value="%s"/>
     </reports>
-</configuration>""" % (step, options.updateInterval, options.withtaz, options.reroutingexplicit, options.lastRoutes,
-                       options.withexittime, options.routesorted, not options.withWarnings), file=fd)
+</configuration>""" % (step, options.updateInterval, options.withtaz, options.reroutingexplicit, options.lastRoutes, options.withexittime, options.routesorted, not options.withWarnings), file=fd)
     fd.close()
     if options.costmodifier != 'None':
         fd = open("%s_dump_%s.add.xml" % (options.costmodifier, step), "w")
         print("""<a>
         <edgeData id="%s_dump_%s_%s" freq="%s" file="%s_dump_%s_%s.xml" excludeEmpty="true"/>
-        </a>""" % (options.costmodifier, step, options.aggregation, options.aggregation, options.costmodifier, step,
-                   options.aggregation), file=fd)
+        </a>""" % (options.costmodifier, step, options.aggregation, options.aggregation, options.costmodifier, step, options.aggregation), file=fd)
         fd.close()
     else:
         fd = open("dump_%s.add.xml" % step, "w")
@@ -98,7 +100,6 @@ def writeSUMOConf(step, options, files):
         <edgeData id="dump_%s_%s" freq="%s" file="dump_%s_%s.xml" excludeEmpty="true"/>
         </a>""" % (step, options.aggregation, options.aggregation, step, options.aggregation), file=fd)
         fd.close()
-
 
 optParser = OptionParser()
 optParser.add_option("-W", "--with-warnings", action="store_true", dest="withWarnings",

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIGlObject.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,12 +9,27 @@
 ///
 // Base class for all objects that may be displayed within the openGL-gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <stack>
@@ -37,7 +44,6 @@
 #include <utils/gui/windows/GUIMainWindow.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
 #include <utils/gui/div/GLHelper.h>
-#include <utils/gui/div/GLObjectValuePassConnector.h>
 #include "GUIGlObject.h"
 #include "GUIGlObjectStorage.h"
 
@@ -46,47 +52,23 @@
 // ===========================================================================
 
 StringBijection<GUIGlObjectType>::Entry GUIGlObject::GUIGlObjectTypeNamesInitializer[] = {
-    {"network",             GLO_NETWORK},
-    {"netElement",          GLO_NETELEMENT},
-    {"edge",                GLO_EDGE},
-    {"lane",                GLO_LANE},
-    {"junction",            GLO_JUNCTION},
-    {"crossing",            GLO_CROSSING},
-    {"connection",          GLO_CONNECTION},
-    {"tlLogic",             GLO_TLLOGIC},
-    {"additional",          GLO_ADDITIONAL},
-    {"busStop",             GLO_BUS_STOP},
-    {"access",              GLO_ACCESS},
-    {"taz",                 GLO_TAZ},
-    {"containerStop",       GLO_CONTAINER_STOP},
-    {"chargingStation",     GLO_CHARGING_STATION},
-    {"parkingArea",         GLO_PARKING_AREA},
-    {"parkingSpace",        GLO_PARKING_SPACE},
-    {"e1Detector",          GLO_E1DETECTOR},
-    {"e1DetectorME",        GLO_E1DETECTOR_ME},
-    {"e1DetectorInstant",   GLO_E1DETECTOR_INSTANT},
-    {"e2Detector",          GLO_E2DETECTOR},
-    {"e3Detector",          GLO_E3DETECTOR},
-    {"entryDetector",       GLO_DET_ENTRY},
-    {"exitDetector",        GLO_DET_EXIT},
-    {"rerouter",            GLO_REROUTER},
-    {"rerouterEdge",        GLO_REROUTER_EDGE},
-    {"variableSpeedSign",   GLO_VSS},
-    {"calibrator",          GLO_CALIBRATOR},
-    {"routeProbe",          GLO_ROUTEPROBE},
-    {"vaporizer",           GLO_VAPORIZER},
-    {"shape",               GLO_SHAPE},
-    {"polygon",             GLO_POLYGON},
-    {"poi",                 GLO_POI},
-    {"routeElement",        GLO_ROUTEELEMENT},
-    {"vehicle",             GLO_VEHICLE},
-    {"person",              GLO_PERSON},
-    {"container",           GLO_CONTAINER},
-    {"route",               GLO_ROUTE},
-    {"vType",               GLO_VTYPE},
-    {"flow",                GLO_FLOW},
-    {"trip",                GLO_TRIP},
-    {"undefined",           GLO_MAX}
+    {"network",       GLO_NETWORK},
+    {"edge",          GLO_EDGE},
+    {"lane",          GLO_LANE},
+    {"junction",      GLO_JUNCTION},
+    {"crossing",      GLO_CROSSING},
+    {"connection",    GLO_CONNECTION},
+    {"prohibition",   GLO_PROHIBITION},
+    {"tlLogic",       GLO_TLLOGIC},
+    {"detector",      GLO_DETECTOR},
+    {"trigger",       GLO_TRIGGER},
+    {"additional",    GLO_ADDITIONAL},
+    {"polygon",       GLO_POLYGON},
+    {"poi",           GLO_POI},
+    {"vehicle",       GLO_VEHICLE},
+    {"person",        GLO_PERSON},
+    {"container",     GLO_CONTAINER},
+    {"undefined",     GLO_MAX}
 };
 
 
@@ -94,24 +76,31 @@ StringBijection<GUIGlObjectType> GUIGlObject::TypeNames(GUIGlObjectTypeNamesInit
 const GUIGlID GUIGlObject::INVALID_ID = 0;
 
 // ===========================================================================
-// method definitionsas
+// method definitions
 // ===========================================================================
 
 GUIGlObject::GUIGlObject(GUIGlObjectType type, const std::string& microsimID) :
     myGLObjectType(type),
-    myMicrosimID(microsimID) {
-    // make sure that reserved GLO_ADDITIONAL isn't used
-    assert(myGLObjectType != GLO_ADDITIONAL);
+    myMicrosimID(microsimID),
+    myPrefix(TypeNames.getString(type)) {
+    myFullName = createFullName();
+    myGlID = GUIGlObjectStorage::gIDStorage.registerObject(this, myFullName);
+}
+
+
+GUIGlObject::GUIGlObject(const std::string& prefix, GUIGlObjectType type, const std::string& microsimID) :
+    myGLObjectType(type),
+    myMicrosimID(microsimID),
+    myPrefix(prefix) {
     myFullName = createFullName();
     myGlID = GUIGlObjectStorage::gIDStorage.registerObject(this, myFullName);
 }
 
 
 GUIGlObject::~GUIGlObject() {
-    for (auto i : myParamWindows) {
-        i->removeObject(this);
+    for (std::set<GUIParameterTableWindow*>::iterator i = myParamWindows.begin(); i != myParamWindows.end(); ++i) {
+        (*i)->removeObject(this);
     }
-    GLObjectValuePassConnector<double>::removeObject(*this);
     GUIGlObjectStorage::gIDStorage.remove(getGlID());
 }
 
@@ -122,7 +111,7 @@ GUIGlObject::getFullName() const {
 }
 
 
-std::string
+const std::string&
 GUIGlObject::getParentName() const {
     return StringUtils::emptyString;
 }
@@ -138,7 +127,7 @@ GUIParameterTableWindow*
 GUIGlObject::getTypeParameterWindow(GUIMainWindow& app, GUISUMOAbstractView& parent) {
     UNUSED_PARAMETER(&app);
     UNUSED_PARAMETER(&parent);
-    return nullptr;
+    return 0;
 }
 
 
@@ -183,8 +172,9 @@ GUIGlObject::setNode(osg::Node* node) {
 #endif
 
 void
-GUIGlObject::buildPopupHeader(GUIGLObjectPopupMenu* ret, GUIMainWindow& app, bool addSeparator) {
-    new MFXMenuHeader(ret, app.getBoldFont(), getFullName().c_str(), nullptr, nullptr, 0);
+GUIGlObject::buildPopupHeader(GUIGLObjectPopupMenu* ret, GUIMainWindow& app,
+                              bool addSeparator) {
+    new MFXMenuHeader(ret, app.getBoldFont(), getFullName().c_str(), 0, 0, 0);
     if (addSeparator) {
         new FXMenuSeparator(ret);
     }
@@ -202,8 +192,8 @@ GUIGlObject::buildCenterPopupEntry(GUIGLObjectPopupMenu* ret, bool addSeparator)
 
 void
 GUIGlObject::buildNameCopyPopupEntry(GUIGLObjectPopupMenu* ret, bool addSeparator) {
-    new FXMenuCommand(ret, "Copy name to clipboard", nullptr, ret, MID_COPY_NAME);
-    new FXMenuCommand(ret, "Copy typed name to clipboard", nullptr, ret, MID_COPY_TYPED_NAME);
+    new FXMenuCommand(ret, "Copy name to clipboard", 0, ret, MID_COPY_NAME);
+    new FXMenuCommand(ret, "Copy typed name to clipboard", 0, ret, MID_COPY_TYPED_NAME);
     if (addSeparator) {
         new FXMenuSeparator(ret);
     }
@@ -243,9 +233,9 @@ GUIGlObject::buildShowTypeParamsPopupEntry(GUIGLObjectPopupMenu* ret, bool addSe
 
 void
 GUIGlObject::buildPositionCopyEntry(GUIGLObjectPopupMenu* ret, bool addSeparator) {
-    new FXMenuCommand(ret, "Copy cursor position to clipboard", nullptr, ret, MID_COPY_CURSOR_POSITION);
+    new FXMenuCommand(ret, "Copy cursor position to clipboard", 0, ret, MID_COPY_CURSOR_POSITION);
     if (GeoConvHelper::getFinal().usingGeoProjection()) {
-        new FXMenuCommand(ret, "Copy cursor geo-position to clipboard", nullptr, ret, MID_COPY_CURSOR_GEOPOSITION);
+        new FXMenuCommand(ret, "Copy cursor geo-position to clipboard", 0, ret, MID_COPY_CURSOR_GEOPOSITION);
     }
     if (addSeparator) {
         new FXMenuSeparator(ret);
@@ -278,61 +268,22 @@ GUIGlObject::removeParameterTable(GUIParameterTableWindow* t) {
 
 
 void
-GUIGlObject::buildShapePopupOptions(GUIMainWindow& app, GUIGLObjectPopupMenu* ret, const std::string& type) {
-    assert(ret);
-    // build header (<tag>:<ID>
-    buildPopupHeader(ret, app, false);
-    // build center
-    buildCenterPopupEntry(ret);
-    // build copy name
-    buildNameCopyPopupEntry(ret);
-    // build select/unselect
-    buildSelectionPopupEntry(ret);
-    // build show parameters
-    buildShowParamsPopupEntry(ret, false);
-    // build copy cursor position to clipboard
-    buildPositionCopyEntry(ret, false);
-    // only show type if isn't empty
-    if (type != "") {
-        new FXMenuCommand(ret, ("type: " + type + "").c_str(), nullptr, nullptr, 0);
-        new FXMenuSeparator(ret);
-    }
-}
-
-
-void
-GUIGlObject::buildAdditionalsPopupOptions(GUIMainWindow& app, GUIGLObjectPopupMenu* ret, const std::string& type) {
-    assert(ret);
-    // build header (<tag>:<ID>
-    buildPopupHeader(ret, app, false);
-    // build center
-    buildCenterPopupEntry(ret);
-    // build copy name
-    buildNameCopyPopupEntry(ret);
-    // build select/unselect
-    buildSelectionPopupEntry(ret);
-    // build show parameters
-    buildShowParamsPopupEntry(ret, false);
-    // build copy cursor position to clipboard
-    buildPositionCopyEntry(ret, false);
-    // only show type if isn't empty
-    if (type != "") {
-        new FXMenuCommand(ret, ("type: " + type + "").c_str(), nullptr, nullptr, 0);
-        new FXMenuSeparator(ret);
-    }
+GUIGlObject::setPrefix(const std::string& prefix) {
+    myPrefix = prefix;
+    myFullName = createFullName();
 }
 
 
 std::string
 GUIGlObject::createFullName() const {
-    return TypeNames.getString(myGLObjectType) + ":" + getMicrosimID();
+    return myPrefix + ":" + getMicrosimID();
 }
 
 
 void
 GUIGlObject::drawName(const Position& pos, const double scale, const GUIVisualizationTextSettings& settings, const double angle) const {
     if (settings.show) {
-        GLHelper::drawTextSettings(settings, getMicrosimID(), pos, scale, angle);
+        GLHelper::drawText(getMicrosimID(), pos, GLO_MAX, settings.size / scale, settings.color, angle);
     }
 }
 

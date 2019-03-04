@@ -1,19 +1,23 @@
 Loading configuration... done.
+Could not connect to TraCI server at localhost:56785 [Errno 111] Connection refused
  Retrying in 1 seconds
-step=2 road=SC lane=SC_0 pos=0.00 dist=0.00 simDist=0.00 simDistToEnd=198.05 distToInt=105.75 distToEnd=198.05 simDist2DToInt=105.75 simDist2DToEnd=198.05
-step=3 road=SC lane=SC_0 pos=2.60 dist=2.60 simDist=2.60 simDistToEnd=195.45 distToInt=103.15 distToEnd=195.45 simDist2DToInt=103.15 simDist2DToEnd=195.45
-step=4 road=SC lane=SC_0 pos=7.80 dist=7.80 simDist=7.80 simDistToEnd=190.25 distToInt=97.95 distToEnd=190.25 simDist2DToInt=97.95 simDist2DToEnd=190.25
-step=5 road=SC lane=SC_0 pos=15.60 dist=15.60 simDist=15.60 simDistToEnd=182.45 distToInt=90.15 distToEnd=182.45 simDist2DToInt=90.15 simDist2DToEnd=182.45
-step=6 road=SC lane=SC_0 pos=26.00 dist=26.00 simDist=26.00 simDistToEnd=172.05 distToInt=79.75 distToEnd=172.05 simDist2DToInt=79.75 simDist2DToEnd=172.05
-step=7 road=SC lane=SC_0 pos=39.00 dist=39.00 simDist=39.00 simDistToEnd=159.05 distToInt=66.75 distToEnd=159.05 simDist2DToInt=66.75 simDist2DToEnd=159.05
-step=8 road=SC lane=SC_0 pos=52.89 dist=52.89 simDist=52.89 simDistToEnd=145.16 distToInt=52.86 distToEnd=145.16 simDist2DToInt=52.86 simDist2DToEnd=145.16
-step=9 road=SC lane=SC_0 pos=66.78 dist=66.78 simDist=66.78 simDistToEnd=131.27 distToInt=38.97 distToEnd=131.27 simDist2DToInt=38.97 simDist2DToEnd=131.27
-step=10 road=SC lane=SC_0 pos=80.67 dist=80.67 simDist=80.67 simDistToEnd=117.38 distToInt=25.08 distToEnd=117.38 simDist2DToInt=25.08 simDist2DToEnd=117.38
-step=11 road=:C_10 lane=:C_10_0 pos=2.61 dist=94.56 simDist=94.56 simDistToEnd=103.49 distToInt=11.19 distToEnd=103.49 simDist2DToInt=11.19 simDist2DToEnd=103.49
-step=12 road=CN lane=CN_0 pos=0.40 dist=108.45 simDist=108.45 simDistToEnd=89.60 distToInt=-1073741824.00 distToEnd=89.60 simDist2DToInt=2.70 simDist2DToEnd=89.60
-step=13 road=CN lane=CN_0 pos=14.29 dist=122.34 simDist=122.34 simDistToEnd=75.71 distToInt=-1073741824.00 distToEnd=75.71 simDist2DToInt=16.59 simDist2DToEnd=75.71
-step=14 road=CN lane=CN_0 pos=28.18 dist=136.23 simDist=136.23 simDistToEnd=61.82 distToInt=-1073741824.00 distToEnd=61.82 simDist2DToInt=30.48 simDist2DToEnd=61.82
-step=15 road=CN lane=CN_0 pos=42.07 dist=150.12 simDist=150.12 simDistToEnd=47.93 distToInt=-1073741824.00 distToEnd=47.93 simDist2DToInt=44.37 simDist2DToEnd=47.93
-step=16 road=CN lane=CN_0 pos=55.96 dist=164.01 simDist=164.01 simDistToEnd=34.04 distToInt=-1073741824.00 distToEnd=34.04 simDist2DToInt=58.26 simDist2DToEnd=34.04
-step=17 road=CN lane=CN_0 pos=69.85 dist=177.90 simDist=177.90 simDistToEnd=20.15 distToInt=-1073741824.00 distToEnd=20.15 simDist2DToInt=72.15 simDist2DToEnd=20.15
-step=18 road=CN lane=CN_0 pos=83.74 dist=191.79 simDist=191.79 simDistToEnd=6.26 distToInt=-1073741824.00 distToEnd=6.26 simDist2DToInt=86.04 simDist2DToEnd=6.26
+distToInternal=105.75
+step=2 lane=SC_0 pos=0.00 dist=0.00 simDist=0.00
+step=3 lane=SC_0 pos=1.44 dist=1.44 simDist=1.44
+step=4 lane=SC_0 pos=4.56 dist=4.56 simDist=4.56
+step=5 lane=SC_0 pos=10.21 dist=10.21 simDist=10.21
+step=6 lane=SC_0 pos=17.83 dist=17.83 simDist=17.83
+step=7 lane=SC_0 pos=27.28 dist=27.28 simDist=27.28
+step=8 lane=SC_0 pos=39.28 dist=39.28 simDist=39.28
+step=9 lane=SC_0 pos=52.20 dist=52.20 simDist=52.20
+step=10 lane=SC_0 pos=65.77 dist=65.77 simDist=65.77
+step=11 lane=SC_0 pos=78.95 dist=78.95 simDist=78.95
+step=12 lane=SC_0 pos=91.87 dist=91.87 simDist=91.87
+step=13 lane=:C_10_0 pos=13.80 dist=105.75 simDist=179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.00
+step=14 lane=CN_0 pos=10.72 dist=118.77 simDist=118.77
+step=15 lane=CN_0 pos=24.00 dist=132.05 simDist=132.05
+step=16 lane=CN_0 pos=37.30 dist=145.35 simDist=145.35
+step=17 lane=CN_0 pos=50.46 dist=158.51 simDist=158.51
+step=18 lane=CN_0 pos=64.00 dist=172.05 simDist=172.05
+step=19 lane=CN_0 pos=77.81 dist=185.86 simDist=185.86
+step=20 lane=CN_0 pos=90.57 dist=198.62 simDist=198.62

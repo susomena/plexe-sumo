@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Fri Feb 15 12:50:56 2019 by Eclipse SUMO netconvert Version v1_0_1+0645-93703db
-This data file and the accompanying materials
-are made available under the terms of the Eclipse Public License v2.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v20.html
-SPDX-License-Identifier: EPL-2.0
+<!-- generated on Mon Jun 26 15:49:25 2017 by SUMO netconvert Version dev-SVN-r24896
+<?xml version="1.0" encoding="UTF-8"?>
+
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
@@ -15,7 +12,6 @@ SPDX-License-Identifier: EPL-2.0
     </input>
 
     <output>
-        <write-license value="true"/>
         <output-file value="net.net.xml"/>
         <plain-output-prefix value="plain"/>
     </output>
@@ -27,17 +23,16 @@ SPDX-License-Identifier: EPL-2.0
 </configuration>
 -->
 
-<tlLogics version="1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tllogic_file.xsd">
+<tlLogics version="0.27" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tllogic_file.xsd">
     <tlLogic id="K048" type="static" programID="0" offset="0">
-        <phase duration="22" state="gGGGGrrrrG"/>
-        <phase duration="5"  state="gGGGGrrrrr"/>
-        <phase duration="3"  state="yyyyyrrrrr"/>
-        <phase duration="22" state="rrrrrGrrGr"/>
-        <phase duration="5"  state="rrrrrGrrrr"/>
-        <phase duration="3"  state="rrrrryrrrr"/>
-        <phase duration="22" state="rrrrrrGgGr"/>
-        <phase duration="5"  state="rrrrrrGgrr"/>
-        <phase duration="3"  state="rrrrrryyrr"/>
+        <phase duration="33" state="gGGGGrrrrG"/>
+        <phase duration="5" state="gGGGGrrrrr"/>
+        <phase duration="3" state="yyyyyrrrrr"/>
+        <phase duration="32" state="rrrrrGGgGr"/>
+        <phase duration="5" state="rrrrrGGgrr"/>
+        <phase duration="3" state="rrrrryygrr"/>
+        <phase duration="6" state="rrrrrrrGrr"/>
+        <phase duration="3" state="rrrrrrryrr"/>
     </tlLogic>
 
     <connection from="-51812052" to="-51811895a" fromLane="1" toLane="1" tl="K048" linkIndex="6"/>

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIGlObjectStorage.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,17 +8,32 @@
 ///
 // A storage for displayed objects via their numerical id
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include <iostream>
 #include <cassert>
-#include <fx.h>
+#include <utils/foxtools/MFXMutex.h>
 #include "GUIGlObject.h"
 #include "GUIGlObjectStorage.h"
 
@@ -40,10 +47,8 @@ GUIGlObjectStorage GUIGlObjectStorage::gIDStorage;
 // ===========================================================================
 // method definitions
 // ===========================================================================
-GUIGlObjectStorage::GUIGlObjectStorage() :
-    myAktID(1),
-    myLock(true)
-{}
+GUIGlObjectStorage::GUIGlObjectStorage()
+    : myAktID(1) {}
 
 
 GUIGlObjectStorage::~GUIGlObjectStorage() {}
@@ -51,7 +56,7 @@ GUIGlObjectStorage::~GUIGlObjectStorage() {}
 
 GUIGlID
 GUIGlObjectStorage::registerObject(GUIGlObject* object, const std::string& fullName) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     GUIGlID id = myAktID++;
     myMap[id] = object;
     myFullNameMap[fullName] = object;
@@ -61,7 +66,7 @@ GUIGlObjectStorage::registerObject(GUIGlObject* object, const std::string& fullN
 
 GUIGlObject*
 GUIGlObjectStorage::getObjectBlocking(GUIGlID id) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     ObjectMap::iterator i = myMap.find(id);
     if (i == myMap.end()) {
         i = myBlocked.find(id);
@@ -69,7 +74,7 @@ GUIGlObjectStorage::getObjectBlocking(GUIGlID id) {
             GUIGlObject* o = (*i).second;
             return o;
         }
-        return nullptr;
+        return 0;
     }
     GUIGlObject* o = (*i).second;
     myMap.erase(id);
@@ -80,18 +85,18 @@ GUIGlObjectStorage::getObjectBlocking(GUIGlID id) {
 
 GUIGlObject*
 GUIGlObjectStorage::getObjectBlocking(const std::string& fullName) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     if (myFullNameMap.count(fullName)) {
         GUIGlID id = myFullNameMap[fullName]->getGlID();
         return getObjectBlocking(id);
     }
-    return nullptr;
+    return 0;
 }
 
 
 bool
 GUIGlObjectStorage::remove(GUIGlID id) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     ObjectMap::iterator i = myMap.find(id);
     if (i == myMap.end()) {
         i = myBlocked.find(id);
@@ -110,7 +115,7 @@ GUIGlObjectStorage::remove(GUIGlID id) {
 
 void
 GUIGlObjectStorage::clear() {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     myMap.clear();
     myAktID = 0;
 }
@@ -118,7 +123,7 @@ GUIGlObjectStorage::clear() {
 
 void
 GUIGlObjectStorage::unblockObject(GUIGlID id) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     ObjectMap::iterator i = myBlocked.find(id);
     if (i == myBlocked.end()) {
         return;
@@ -131,7 +136,7 @@ GUIGlObjectStorage::unblockObject(GUIGlID id) {
 
 std::set<GUIGlID>
 GUIGlObjectStorage::getAllIDs() const {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     std::set<GUIGlID> result;
     for (ObjectMap::const_iterator it = myMap.begin(); it != myMap.end(); it++) {
         result.insert(it->first);

@@ -1,23 +1,24 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    runner.py
-# @author  Jakob Erdmann
-# @author  Laura Bieker
-# @author  Michael Behrisch
-# @date    2011-05-27
-# @version $Id$
-
 """
-import osm network
+@file    runner.py
+@author  Jakob Erdmann
+@author  Laura Bieker
+@author  Michael Behrisch
+@date    2011-05-27
+@version $Id$
+
+import osm network 
 then import the built network again and check for idempotency
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2016 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 
@@ -34,7 +35,7 @@ sys.path.append(os.path.join(
 if 'SUMO_HOME' in os.environ:
     sys.path.append(os.path.join(os.environ['SUMO_HOME'], 'tools'))
 from sumolib import checkBinary  # noqa
-import texttestlib.default.fpdiff  # noqa
+import texttestlib.default.fpdiff
 
 osm_input = 'osm.xml'
 net_output = 'from_osm'
@@ -73,7 +74,6 @@ def get_filtered_lines(prefix):
         result += filter(open(prefix + suffix, 'U').readlines(), start_element)
     return result
 
-
 args1 = [netconvert,
          '--no-internal-links',
          '--osm-files',  osm_input, '--proj.utm',
@@ -95,8 +95,8 @@ subprocess.call(args2)
 
 fromlines = get_filtered_lines(net_output)
 tolines = get_filtered_lines(net_output2)
-# with open('fromlines','w') as f: f.write('\n'.join(fromlines))
-# with open('tolines','w') as f: f.write('\n'.join(tolines))
+#with open('fromlines','w') as f: f.write('\n'.join(fromlines))
+#with open('tolines','w') as f: f.write('\n'.join(tolines))
 out = StringIO.StringIO()
 texttestlib.default.fpdiff.fpfilter(fromlines, tolines, out, 0.0201)
 out.seek(0)

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    FXThreadEvent.cpp
 /// @author  Mathew Robertson
 /// @author  Daniel Krajzewicz
@@ -16,12 +8,27 @@
 ///
 //
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <fxver.h>
 #define NOMINMAX
@@ -76,7 +83,7 @@ FXThreadEvent::FXThreadEvent(FXObject* tgt, FXSelector sel) : FXBaseObject(tgt, 
     UNUSED_PARAMETER(res); // only used for assertion
     getApp()->addInput(event[PIPE_READ], INPUT_READ, this, ID_THREAD_EVENT);
 #else
-    event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    event = CreateEvent(NULL, FALSE, FALSE, NULL);
     FXASSERT(event != NULL);
     getApp()->addInput(event, INPUT_READ, this, ID_THREAD_EVENT);
 #endif
@@ -100,8 +107,7 @@ FXThreadEvent::~FXThreadEvent() {
 void FXThreadEvent::signal() {
 #ifndef WIN32
     FXuint seltype = SEL_THREAD;
-    FXint res = ::write(event[PIPE_WRITE], &seltype, sizeof(seltype));
-    UNUSED_PARAMETER(res); // to make the compiler happy
+    ::write(event[PIPE_WRITE], &seltype, sizeof(seltype));
 #else
     ::SetEvent(event);
 #endif
@@ -111,8 +117,7 @@ void FXThreadEvent::signal() {
 // this method is meant to be called from the worker thread
 void FXThreadEvent::signal(FXuint seltype) {
 #ifndef WIN32
-    FXint res = ::write(event[PIPE_WRITE], &seltype, sizeof(seltype));
-    UNUSED_PARAMETER(res); // to make the compiler happy
+    ::write(event[PIPE_WRITE], &seltype, sizeof(seltype));
 #else
     UNUSED_PARAMETER(seltype);
     ::SetEvent(event);
@@ -125,12 +130,11 @@ void FXThreadEvent::signal(FXuint seltype) {
 long FXThreadEvent::onThreadSignal(FXObject*, FXSelector, void*) {
     FXuint seltype = SEL_THREAD;
 #ifndef WIN32
-    FXint res = ::read(event[PIPE_READ], &seltype, sizeof(seltype));
-    UNUSED_PARAMETER(res); // to make the compiler happy
+    ::read(event[PIPE_READ], &seltype, sizeof(seltype));
 #else
     //FIXME need win32 support
 #endif
-    handle(this, FXSEL(seltype, 0), nullptr);
+    handle(this, FXSEL(seltype, 0), NULL);
     return 0;
 }
 
@@ -138,10 +142,12 @@ long FXThreadEvent::onThreadSignal(FXObject*, FXSelector, void*) {
 // which is now in the main thread (ie no longer in the worker thread)
 long FXThreadEvent::onThreadEvent(FXObject*, FXSelector sel, void*) {
     FXuint seltype = FXSELTYPE(sel);
-    return target && target->handle(this, FXSEL(seltype, message), nullptr);
+    return target && target->handle(this, FXSEL(seltype, message), NULL);
 }
 
 }
+
 
 
 /****************************************************************************/
+

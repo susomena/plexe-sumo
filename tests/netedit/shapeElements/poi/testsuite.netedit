@@ -5,20 +5,21 @@ create
 # delete poi
 delete
 
-# inspect poi
+# inspect shape
 inspect
 
-# inspect selected poi
-inspect_selected
+# inspect selection
+inspect_selection
 
 # load poi
 load
 
-# lock/unlock poi
-lock_unlock
-
 # move poi
 move
 
+# lock/unlock poi
+lock_unlock
+
 # volatile recomputing
 volatileRecomputing
+

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOPolygon.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -17,6 +9,17 @@
 ///
 // A 2D- or 3D-polygon
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef Polygon_h
 #define Polygon_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/geom/PositionVector.h>
 #include <utils/common/Parameterised.h>
@@ -54,22 +61,18 @@ public:
      * @param[in] angle The rotation of the polygon
      * @param[in] imgFile The raster image of the polygon
      * @param[in] shape The shape of the polygon
-     * @param[in] geo specifiy if shape was loaded as GEO
      * @param[in] fill Whether the polygon shall be filled
-     * @param[in] lineWidth The line with for drawing an unfilled polygon
-     * @param[in] relativePath set image file as relative path
      */
     SUMOPolygon(const std::string& id, const std::string& type,
-                const RGBColor& color, const PositionVector& shape,
-                bool geo, bool fill, double lineWidth,
+                const RGBColor& color, const PositionVector& shape, bool fill,
                 double layer = DEFAULT_LAYER,
                 double angle = DEFAULT_ANGLE,
-                const std::string& imgFile = DEFAULT_IMG_FILE,
-                bool relativePath = DEFAULT_RELATIVEPATH);
+                const std::string& imgFile = DEFAULT_IMG_FILE);
 
 
     /// @brief Destructor
     virtual ~SUMOPolygon();
+
 
 
     /// @name Getter
@@ -89,14 +92,8 @@ public:
     inline bool getFill() const {
         return myFill;
     }
-
-    /** @brief Returns whether the polygon is filled
-     * @return Whether the polygon is filled
-     */
-    inline double getLineWidth() const {
-        return myLineWidth;
-    }
     /// @}
+
 
 
     /// @name Setter
@@ -107,10 +104,6 @@ public:
      */
     inline void setFill(bool fill) {
         myFill = fill;
-    }
-
-    inline void setLineWidth(double lineWidth) {
-        myLineWidth = lineWidth;
     }
 
 
@@ -131,14 +124,9 @@ protected:
     /// @brief The positions of the polygon
     PositionVector myShape;
 
-    /// @brief specify if shape is handled as GEO coordinate (Main used in netedit)
-    bool myGEO;
-
     /// @brief Information whether the polygon has to be filled
     bool myFill;
 
-    /// @brief The line width for drawing an unfilled polygon
-    double myLineWidth;
 };
 
 

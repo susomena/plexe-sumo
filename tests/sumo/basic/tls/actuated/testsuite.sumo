@@ -9,24 +9,3 @@ parameters
 # check that the initialization can handle different begin times
 simstart_at_100
 minDur_too_short
-
-# test interaction of minDuration and detector position
-80kmh_highFlow
-
-# test interaction of minDuration and detector position
-80kmh_lowFlow
-
-# test detector assignment for a lane where not all links have the green light in in a particular phase (#5161)
-partialy_green_lane
-
-# test detector assignment for a lane where not all links have the green light in in a particular phase (#5161)
-partialy_green_lane_uncontrollable
-
-# joined traffic light with detectors on sequential lanes. prevent jamming (#5187)
-joined_sequential
-
-# links with green minor should not be used for actuation
-green_minor_uncontrolled
-
-# links with green minor should not be used for actuation (even if there is no dedicated green phase)
-green_minor_uncontrolled2

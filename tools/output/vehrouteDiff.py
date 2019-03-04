@@ -1,27 +1,31 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    vehrouteDiff.py
+@author  Jakob Erdmann
+@author  Michael Behrisch
+@date    2012-11-20
+@version $Id$
 
-# @file    vehrouteDiff.py
-# @author  Jakob Erdmann
-# @author  Michael Behrisch
-# @date    2012-11-20
-# @version $Id$
+Compute differences between two vehroute-output files
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
 from collections import defaultdict
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-from sumolib.output import parse  # noqa
-from sumolib.miscutils import uMax, Statistics, parseTime  # noqa
+from sumolib.output import parse
+from sumolib.miscutils import uMax, Statistics
 
 
 def update_earliest(earliest_diffs, diff, timestamp, tag):
@@ -30,29 +34,28 @@ def update_earliest(earliest_diffs, diff, timestamp, tag):
 
 
 def write_diff(orig, new, out, earliest_out=None):
-    attr_conversions = {"depart": parseTime, "arrival": parseTime}
     earliest_diffs = defaultdict(lambda: (uMax, None))  # diff -> (time, veh)
-    vehicles_orig = dict([(v.id, v) for v in parse(orig, 'vehicle',
-                                                   attr_conversions=attr_conversions)])
+    vehicles_orig = dict([(v.id, v) for v in parse(orig, 'vehicle')])
     origDurations = Statistics('original durations')
     durations = Statistics('new durations')
     durationDiffs = Statistics('duration differences')
     with open(out, 'w') as f:
         f.write("<routeDiff>\n")
-        for v in parse(new, 'vehicle', attr_conversions=attr_conversions):
+        for v in parse(new, 'vehicle'):
             if v.id in vehicles_orig:
                 vOrig = vehicles_orig[v.id]
-                departDiff = v.depart - vOrig.depart
-                arrivalDiff = v.arrival - vOrig.arrival
+                departDiff = float(v.depart) - float(vOrig.depart)
+                arrivalDiff = float(v.arrival) - float(vOrig.arrival)
                 if v.route[0].exitTimes is None:
                     sys.exit("Error: Need route input with 'exitTimes'\n")
-                exitTimes = map(parseTime, v.route[0].exitTimes.split())
-                origExitTimes = map(parseTime, vOrig.route[0].exitTimes.split())
+                exitTimes = map(float, v.route[0].exitTimes.split())
+                origExitTimes = map(float, vOrig.route[0].exitTimes.split())
                 exitTimesDiff = [
                     e - eOrig for e, eOrig in zip(exitTimes, origExitTimes)]
 
-                durations.add(v.arrival - v.depart, v.id)
-                origDurations.add(vOrig.arrival - vOrig.depart, v.id)
+                durations.add(float(v.arrival) - float(v.depart), v.id)
+                origDurations.add(
+                    float(vOrig.arrival) - float(vOrig.depart), v.id)
                 durationDiffs.add(arrivalDiff - departDiff, v.id)
 
                 update_earliest(
@@ -77,7 +80,6 @@ def write_diff(orig, new, out, earliest_out=None):
     print(origDurations)
     print(durations)
     print(durationDiffs)
-
 
 if __name__ == "__main__":
     write_diff(*sys.argv[1:])

@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Thu Oct 19 14:47:26 2017 by SUMO Version svn
-This data file and the accompanying materials
-are made available under the terms of the Eclipse Public License v2.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v20.html
-SPDX-License-Identifier: EPL-2.0
+<!-- generated on Fri Sep  9 15:30:29 2016 by SUMO Version dev-SVN-r21424
+<?xml version="1.0" encoding="UTF-8"?>
+
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
@@ -455,10 +452,10 @@ SPDX-License-Identifier: EPL-2.0
     </timestep>
     <timestep time="52.00">
         <edge id="1si">
-            <lane id="1si_0"/>
-            <lane id="1si_1">
+            <lane id="1si_0">
                 <vehicle id="veh0" pos="5.30" speed="2.60"/>
             </lane>
+            <lane id="1si_1"/>
             <lane id="1si_2"/>
         </edge>
     </timestep>

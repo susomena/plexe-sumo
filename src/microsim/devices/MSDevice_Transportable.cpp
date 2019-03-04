@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDevice_Transportable.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -19,11 +11,26 @@
 ///
 // A device which is used to keep track of persons and containers riding with a vehicle
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <microsim/output/MSStopOut.h>
 #include <microsim/MSNet.h>
@@ -41,7 +48,7 @@
 // static initialisation methods
 // ---------------------------------------------------------------------------
 MSDevice_Transportable*
-MSDevice_Transportable::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into, const bool isContainer) {
+MSDevice_Transportable::buildVehicleDevices(SUMOVehicle& v, std::vector<MSDevice*>& into, const bool isContainer) {
     MSDevice_Transportable* device = new MSDevice_Transportable(v, isContainer ? "container_" + v.getID() : "person_" + v.getID(), isContainer);
     into.push_back(device);
     return device;
@@ -52,23 +59,11 @@ MSDevice_Transportable::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicl
 // MSDevice_Transportable-methods
 // ---------------------------------------------------------------------------
 MSDevice_Transportable::MSDevice_Transportable(SUMOVehicle& holder, const std::string& id, const bool isContainer)
-    : MSVehicleDevice(holder, id), myAmContainer(isContainer), myTransportables(), myStopped(holder.isStopped()) {
+    : MSDevice(holder, id), myAmContainer(isContainer), myTransportables(), myStopped(holder.isStopped()) {
 }
 
 
 MSDevice_Transportable::~MSDevice_Transportable() {
-}
-
-void
-MSDevice_Transportable::notifyMoveInternal(const SUMOVehicle& veh,
-        const double /* frontOnLane */,
-        const double /* timeOnLane*/,
-        const double /* meanSpeedFrontOnLane */,
-        const double /*meanSpeedVehicleOnLane */,
-        const double /* travelledDistanceFrontOnLane */,
-        const double /* travelledDistanceVehicleOnLane */,
-        const double /* meanLengthOnLane */) {
-    notifyMove(const_cast<SUMOVehicle&>(veh), -1, -1, -1);
 }
 
 
@@ -85,7 +80,7 @@ MSDevice_Transportable::notifyMove(SUMOVehicle& veh, double /*oldPos*/, double /
         if (veh.isStopped()) {
             for (std::vector<MSTransportable*>::iterator i = myTransportables.begin(); i != myTransportables.end();) {
                 MSTransportable* transportable = *i;
-                if (transportable->getDestination() == veh.getEdge()) {
+                if (&(transportable->getDestination()) == veh.getEdge()) {
                     if (!transportable->proceed(MSNet::getInstance(), MSNet::getInstance()->getCurrentTimeStep())) {
                         if (myAmContainer) {
                             MSNet::getInstance()->getContainerControl().erase(transportable);
@@ -129,10 +124,10 @@ MSDevice_Transportable::notifyLeave(SUMOVehicle& veh, double /*lastPos*/,
     if (reason >= MSMoveReminder::NOTIFICATION_ARRIVED) {
         for (std::vector<MSTransportable*>::iterator i = myTransportables.begin(); i != myTransportables.end(); ++i) {
             MSTransportable* transportable = *i;
-            if (transportable->getDestination() != veh.getEdge()) {
+            if (&(transportable->getDestination()) != veh.getEdge()) {
                 WRITE_WARNING((myAmContainer ? "Teleporting container '" : "Teleporting person '") + transportable->getID() +
                               "' from vehicle destination edge '" + veh.getEdge()->getID() +
-                              "' to intended destination edge '" + transportable->getDestination()->getID() + "'");
+                              "' to intended destination edge '" + transportable->getDestination().getID() + "'");
             }
             if (!transportable->proceed(MSNet::getInstance(), MSNet::getInstance()->getCurrentTimeStep())) {
                 if (myAmContainer) {

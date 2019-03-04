@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDevice_SSM.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 // An SSM-device logs encounters / conflicts of the carrying vehicle with other surrounding vehicles.
 // XXX: Preliminary implementation. Use with care. Especially rerouting vehicles could be problematic.
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSDevice_SSM_h
 #define MSDevice_SSM_h
 
@@ -24,10 +27,14 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <queue>
-#include "MSVehicleDevice.h"
+#include "MSDevice.h"
 #include <utils/common/SUMOTime.h>
 #include <utils/iodevices/OutputDevice_File.h>
 #include <utils/geom/Position.h>
@@ -53,11 +60,11 @@ class SUMOVehicle;
 
 class MSCrossSection;
 
-class MSDevice_SSM : public MSVehicleDevice {
+class MSDevice_SSM : public MSDevice {
 
 private:
     /// All currently existing SSM devices
-    static std::set<MSDevice_SSM*>* instances;
+    static std::set<MSDevice*>* instances;
 
 public:
     /// @brief Different types of encounters corresponding to relative positions of the vehicles.
@@ -94,6 +101,7 @@ public:
         // Other vehicle is on an edge that has a sequence of successors leading to an internal edge that crosses the ego vehicle's edge at a junction
         // and the estimated arrival vehicle at the merge point is earlier for the foe than for the ego
         ENCOUNTER_TYPE_CROSSING_FOLLOWER = 11, //!< ENCOUNTER_TYPE_CROSSING_FOLLOWER
+        // TODO: use ENTERED types for indicating an ongoing conflict.
         // The encounter is a possible crossing conflict, and the ego vehicle has entered the conflict area
         ENCOUNTER_TYPE_EGO_ENTERED_CONFLICT_AREA = 12, //!< ENCOUNTER_TYPE_EGO_ENTERED_CONFLICT_AREA
         // The encounter is a possible crossing conflict, and the foe vehicle has entered the conflict area
@@ -119,6 +127,7 @@ private:
     /// @brief An encounter is an episode involving two vehicles,
     ///        which are closer to each other than some specified distance.
     class Encounter {
+        // TODO: Shouldn't the time lines for the conflict point locations be stored? YES!
     private:
         /// @brief A trajectory encloses a series of positions x and speeds v for one vehicle
         /// (the times are stored only once in the enclosing encounter)
@@ -127,23 +136,6 @@ private:
             PositionVector x;
             // momentary speeds
             PositionVector v;
-        };
-        /// @brief ConflictPointInfo stores some information on a specific conflict point
-        ///        (used to store information on ssm-extremal values)
-        struct ConflictPointInfo {
-            /// @brief time point of the conflict
-            double time;
-            /// @brief Predicted location of the conflict:
-            /// In case of MERGING and CROSSING: entry point to conflict area for follower
-            /// In case of FOLLOWING: position of leader's back
-            Position pos;
-            /// @brief Type of the conflict
-            EncounterType type;
-            /// @brief value of the corresponding SSM
-            double value;
-
-            ConflictPointInfo(double time, Position x, EncounterType type, double ssmValue) :
-                time(time), pos(x), type(type), value(ssmValue) {};
         };
 
     public:
@@ -217,15 +209,15 @@ private:
         /// @brief All values for DRAC
         std::vector<double> DRACspan;
 
-//        /// @brief Cross sections at which a PET shall be calculated for the corresponding vehicle
-//        std::vector<std::pair<std::pair<const MSLane*, double>, double> > egoPETCrossSections;
-//        std::vector<std::pair<std::pair<const MSLane*, double>, double> > foePETCrossSections;
+        /// @brief Cross sections at which a PET shall be calculated for the corresponding vehicle
+        std::vector<std::pair<std::pair<const MSLane*, double>, double> > egoPETCrossSections;
+        std::vector<std::pair<std::pair<const MSLane*, double>, double> > foePETCrossSections;
 
-        /// @name Extremal values for the SSMs
+        /// @name Extremal values for the SSMs (as < <time,value>,Position>-pairs)
         /// @{
-        ConflictPointInfo minTTC;
-        ConflictPointInfo maxDRAC;
-        ConflictPointInfo PET;
+        std::pair<std::pair<double, double>, Position> minTTC;
+        std::pair<std::pair<double, double>, Position> maxDRAC;
+        std::pair<std::pair<double, double>, Position> PET;
         /// @}
 
         /// @brief this flag is set by updateEncounter() or directly in processEncounters(), where encounters are closed if it is true.
@@ -277,8 +269,6 @@ private:
     //       plus a vehicle container to be used in findSurrounding vehicles.
     //       findSurroundingVehicles() would then deliver a vector of such foeCollectors
     //       (one for each possible egoConflictLane) instead of a map vehicle->foeInfo
-    //       This could be helpful to resolve the resolution for several different
-    //	 	 projected conflicts with the same foe.
 
 
     typedef std::priority_queue<Encounter*, std::vector<Encounter*>, Encounter::compare> EncounterQueue;
@@ -302,12 +292,12 @@ public:
      * @param[in] v The vehicle for which a device may be built
      * @param[filled] into The vector to store the built device in
      */
-    static void buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into);
+    static void buildVehicleDevices(SUMOVehicle& v, std::vector<MSDevice*>& into);
 
 
     /** @brief returns all currently existing SSM devices
      */
-    static const std::set<MSDevice_SSM*>& getInstances();
+    static const std::set<MSDevice*>& getInstances();
 
     /** @brief This is called once per time step in MSNet::writeOutput() and
      *         collects the surrounding vehicles, updates information on encounters
@@ -351,7 +341,7 @@ public:
 
     /** @brief Collects all vehicles within range 'range' upstream of the position 'pos' on the edge 'edge' into foeCollector
      */
-    static void getUpstreamVehicles(const MSEdge* edge, double pos, double range, double egoDistToConflictLane, const MSLane* const egoConflictLane, FoeInfoMap& foeCollector, std::set<const MSJunction*>& seenJunctions);
+    static void getUpstreamVehicles(const MSEdge* edge, double pos, double range, double egoDistToConflictLane, const MSLane* const egoConflictLane, FoeInfoMap& foeCollector, std::set<const MSJunction*> seenJunctions);
 
     /** @brief Collects all vehicles on the junction into foeCollector
      */
@@ -452,12 +442,6 @@ private:
     void createEncounters(FoeInfoMap& foes);
 
 
-    /** @brief Stores measures, that are not associated to a specific encounter as headways and brake rates
-     *  @todo  Manage as episodes (BR -> braking episode, SGAP/TGAP -> car-following episode) with invariant leader, and filtering applying the
-     *  corresponding thresholds.
-     */
-    void computeGlobalMeasures();
-
     /** @brief Closes all current Encounters and moves conflicts to myPastConflicts, @see processEncounters
      */
     void resetEncounters();
@@ -466,11 +450,6 @@ private:
      * @param[in] all Whether all conflicts should be flushed or only those for which no active encounters with earlier begin can exist
      */
     void flushConflicts(bool all = false);
-
-    /** @brief Write out all non-encounter specific measures as headways and braking rates.
-     *  @todo  Adapt accordingly if episode structure is implemented, @see computeGlobalMeasures()
-     */
-    void flushGlobalMeasures();
 
     /** @brief Updates the encounter (adds a new trajectory point) and deletes the foeInfo.
      */
@@ -574,24 +553,20 @@ private:
 
 
     /** @brief Computes the DRAC (deceleration to avoid a collision) for a lead/follow situation as defined,
-     *         e.g., in Guido et al. (2011, Safety performance measures:  a comparison between microsimulation and observational data)
-     *         for two vehicles with a given gap.
-     *         Returns 0.0 if no deceleration is required by the follower to avoid a crash, INVALID if collision is detected.
+     *         e.g., in Mahmud et al. (2016, Application of proximal surrogate indicators for safety evaluation)
+     *         for two vehicles with a given gap. Returns INVALID if no deceleration is required by the follower to avoid a crash.
      */
     static double computeDRAC(double gap, double followerSpeed, double leaderSpeed);
 
     /** @brief Computes the DRAC a crossing situation, determining the minimal constant deceleration needed
-     *         for one of the vehicles to reach the conflict area after the other has left.
-     *         for estimated leaving times, current deceleration is extrapolated, and acceleration is neglected.
-     *         Returns 0.0 if no deceleration is required by the follower to avoid a crash, INVALID if collision is detected.
-     *  @param[in] eInfo infos on the encounter. Used variables:
-     *  			 dEntry1,dEntry2 The distances to the conflict area entry
-     *  			 dExit1,dExit2 The distances to the conflict area exit
-     *  			 v1,v2 The current speeds
-     *  			 tEntry1,tEntry2 The estimated conflict entry times (including extrapolation of current acceleration)
-     *  		     tExit1,tExit2 The estimated conflict exit times (including extrapolation of current acceleration)
+     *         for one of the vehicles to reach the conflict area after the other if the latter continues with
+     *         constant speed.
+     *         Returns INVALID if no deceleration is required by the follower to avoid a crash.
+     *  @param[in] d1,d2 The dsitances to the conflict area entry
+     *  @param[in] v1,v2 The current speeds
+     *  @param[in] t1,t2 The estimated conflict exit times (including extrapolation of current deceleration)
      */
-    static double computeDRAC(const EncounterApproachInfo& eInfo);
+    static double computeDRAC(double d1, double d2, double v1, double v2, double t1, double t2);
 
     /** @brief make a string of a double vector and treat a special value as invalid ("NA")
      *
@@ -601,14 +576,13 @@ private:
      * @return String concatenation of the vector entries
      */
     static std::string makeStringWithNAs(std::vector<double> v, double NA, std::string sep = " ");
-    static std::string makeStringWithNAs(std::vector<double> v, std::vector<double> NAs, std::string sep = " ");
 
     /// @name parameter load helpers (introduced for readability of buildVehicleDevices())
     /// @{
     static std::string getOutputFilename(const SUMOVehicle& v, std::string deviceID);
     static double getDetectionRange(const SUMOVehicle& v);
     static double getExtraTime(const SUMOVehicle& v);
-    static bool useGeoCoords(const SUMOVehicle& v);
+    static bool useGeoCoords(const SUMOVehicle& v, std::string deviceID);
     static bool requestsTrajectories(const SUMOVehicle& v);
     static bool getMeasuresAndThresholds(const SUMOVehicle& v, std::string deviceID,
                                          std::map<std::string, double>& thresholds);
@@ -618,7 +592,7 @@ private:
     /// @name Device parameters
     /// @{
     /// @brief thresholds for the ssms, i.e., critical values above or below which a value indicates that a conflict
-    ///        has occurred. These are used in qualifiesAsConflict() and decide whether an encounter is saved.
+    ///        has occured. These are used in qualifiesAsConflict() and decide whether an encounter is saved.
     std::map<std::string, double> myThresholds;
     /// @brief This determines whether the whole trajectories of the vehicles (position, speed, ssms) shall be saved in the ssm-output
     ///        or only the most critical value shall be reported.
@@ -630,7 +604,7 @@ private:
     /// Whether to use the original coordinate system for output
     bool myUseGeoCoords;
     /// Flags for switching on / off comutation of different SSMs, derived from myMeasures
-    bool myComputeTTC, myComputeDRAC, myComputePET, myComputeBR, myComputeSGAP, myComputeTGAP;
+    bool myComputeTTC, myComputeDRAC, myComputePET;
     MSVehicle* myHolderMS;
     /// @}
 
@@ -645,45 +619,8 @@ private:
     EncounterQueue myPastConflicts;
     /// @}
 
-
-
-    /// @name Internal storage for global measures
-    /// @{
-    std::vector<double> myGlobalMeasuresTimeSpan;
-    /// @brief All values for brake rate
-    std::vector<double> myBRspan;
-    /// @brief All values for space gap
-    std::vector<double> mySGAPspan;
-    /// @brief All values for time gap
-    std::vector<double> myTGAPspan;
-    /// @brief Extremal values for the global measures (as <<<time, Position>, value>, [leaderID]>-pairs)
-    /// @{
-    std::pair<std::pair<double, Position>, double> myMaxBR;
-    std::pair<std::pair<std::pair<double, Position>, double>, std::string>  myMinSGAP;
-    std::pair<std::pair<std::pair<double, Position>, double>, std::string>  myMinTGAP;
-    /// @}
-    /// @}
-
     /// Output device
     OutputDevice* myOutputFile;
-
-    /// @brief remember which files were created already (don't duplicate xml root-elements)
-    static std::set<std::string> createdOutputFiles;
-
-
-    /// @brief bitset storing info whether warning has already been issued about unset parameter (warn only once!)
-    static int issuedParameterWarnFlags;
-    enum SSMParameterWarning {
-        SSM_WARN_MEASURES = 1,
-        SSM_WARN_THRESHOLDS = 1 << 1,
-        SSM_WARN_TRAJECTORIES = 1 << 2,
-        SSM_WARN_RANGE = 1 << 3,
-        SSM_WARN_EXTRATIME = 1 << 4,
-        SSM_WARN_FILE = 1 << 5,
-        SSM_WARN_GEO = 1 << 6
-    };
-
-
 
 private:
     /// @brief Invalidated copy constructor.

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PCLoaderOSM.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // A reader of pois and polygons stored in OSM-format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -32,8 +39,11 @@
 #include <utils/common/MsgHandler.h>
 #include <utils/common/ToString.h>
 #include <utils/common/StringUtils.h>
+#include <utils/options/OptionsCont.h>
+#include <utils/options/Option.h>
 #include <utils/common/StdDefs.h>
-#include <utils/common/SysUtils.h>
+#include <polyconvert/PCPolyContainer.h>
+#include "PCLoaderOSM.h"
 #include <utils/common/RGBColor.h>
 #include <utils/geom/GeomHelper.h>
 #include <utils/geom/Position.h>
@@ -41,10 +51,6 @@
 #include <utils/xml/XMLSubSys.h>
 #include <utils/geom/GeomConvHelper.h>
 #include <utils/common/FileHelpers.h>
-#include <utils/options/OptionsCont.h>
-#include <utils/options/Option.h>
-#include <polyconvert/PCPolyContainer.h>
-#include "PCLoaderOSM.h"
 
 // static members
 // ---------------------------------------------------------------------------
@@ -103,15 +109,14 @@ PCLoaderOSM::loadIfSet(OptionsCont& oc, PCPolyContainer& toFill,
             WRITE_ERROR("Could not open osm-file '" + *file + "'.");
             return;
         }
-        const long before = SysUtils::getCurrentMillis();
         PROGRESS_BEGIN_MESSAGE("Parsing nodes from osm-file '" + *file + "'");
         if (!XMLSubSys::runParser(nodesHandler, *file)) {
             for (std::map<long long int, PCOSMNode*>::const_iterator i = nodes.begin(); i != nodes.end(); ++i) {
-                delete (*i).second;
+                delete(*i).second;
             }
             throw ProcessError();
         }
-        PROGRESS_TIME_MESSAGE(before);
+        PROGRESS_DONE_MESSAGE();
     }
     // load relations to see which additional ways may be relevant
     Relations relations;
@@ -119,10 +124,9 @@ PCLoaderOSM::loadIfSet(OptionsCont& oc, PCPolyContainer& toFill,
     RelationsHandler relationsHandler(additionalWays, relations, withAttributes, *m);
     for (std::vector<std::string>::const_iterator file = files.begin(); file != files.end(); ++file) {
         // edges
-        const long before = SysUtils::getCurrentMillis();
         PROGRESS_BEGIN_MESSAGE("Parsing relations from osm-file '" + *file + "'");
         XMLSubSys::runParser(relationsHandler, *file);
-        PROGRESS_TIME_MESSAGE(before);
+        PROGRESS_DONE_MESSAGE();
     }
 
     // load ways
@@ -130,128 +134,18 @@ PCLoaderOSM::loadIfSet(OptionsCont& oc, PCPolyContainer& toFill,
     EdgesHandler edgesHandler(nodes, edges, additionalWays, withAttributes, *m);
     for (std::vector<std::string>::const_iterator file = files.begin(); file != files.end(); ++file) {
         // edges
-        const long before = SysUtils::getCurrentMillis();
         PROGRESS_BEGIN_MESSAGE("Parsing edges from osm-file '" + *file + "'");
         XMLSubSys::runParser(edgesHandler, *file);
-        PROGRESS_TIME_MESSAGE(before);
+        PROGRESS_DONE_MESSAGE();
     }
 
     // build all
     const bool useName = oc.getBool("osm.use-name");
-    const double mergeRelationsThreshold = OptionsCont::getOptions().getFloat("osm.merge-relations");
-    // create polygons from relations
-    if (mergeRelationsThreshold >= 0) {
-        for (PCOSMRelation* rel : relations) {
-            if (!rel->keep || rel->myWays.empty()) {
-                continue;
-            }
-            // filter unknown and empty ways
-            int numNodes = 0;
-            for (auto it = rel->myWays.begin(); it != rel->myWays.end();) {
-                if (edges.count(*it) == 0 || edges[*it]->myCurrentNodes.empty()) {
-                    it = rel->myWays.erase(it);
-                } else {
-                    numNodes += (int)edges[*it]->myCurrentNodes.size();
-                    it++;
-                }
-            }
-            if (numNodes == 0) {
-                WRITE_WARNING("Could not import polygon from relation '" + toString(rel->id) + "' (missing ways)");
-                continue;
-            }
-            PCOSMEdge* e = new PCOSMEdge();
-            e->id = rel->id;
-            e->name = rel->name;
-            e->myAttributes = rel->myAttributes;
-            e->myIsClosed = false;
-            e->standalone = true;
-
-            std::set<long long int> remaining(rel->myWays.begin(), rel->myWays.end());
-            PCOSMEdge* minEdge = edges[rel->myWays.front()];
-            e->myCurrentNodes.insert(e->myCurrentNodes.end(), minEdge->myCurrentNodes.begin(), minEdge->myCurrentNodes.end());
-            Position prev(convertNodePosition(nodes[minEdge->myCurrentNodes.back()]));
-            minEdge->standalone = false;
-            remaining.erase(minEdge->id);
-            bool ok = true;
-            while (!remaining.empty()) {
-                // assemble in an order that greedily reduces jump size
-                double minDist = std::numeric_limits<double>::max();
-                bool minFront = false;
-                for (long long int wayID : remaining) {
-                    PCOSMEdge* part = edges[wayID];
-                    Position frontPos(convertNodePosition(nodes.find(part->myCurrentNodes.front())->second));
-                    const double frontDist = prev.distanceTo2D(frontPos);
-                    Position backPos(convertNodePosition(nodes.find(part->myCurrentNodes.back())->second));
-                    const double backDist = prev.distanceTo2D(backPos);
-                    if (frontDist < minDist) {
-                        minDist = frontDist;
-                        minEdge = part;
-                        minFront = true;
-                    }
-                    if (backDist < minDist) {
-                        minDist = backDist;
-                        minEdge = part;
-                        minFront = false;
-                    }
-                }
-                if (minDist > mergeRelationsThreshold) {
-                    double length = 0.;
-                    for (long long int wayID : remaining) {
-                        PCOSMEdge* part = edges[wayID];
-                        Position last(Position::INVALID);
-                        for (long long int nodeID : part->myCurrentNodes) {
-                            Position nodePos(convertNodePosition(nodes[nodeID]));
-                            if (last != Position::INVALID) {
-                                length += last.distanceTo2D(nodePos);
-                            }
-                            last = nodePos;
-                        }
-                        if (part->myIsClosed) {
-                            length += last.distanceTo2D(convertNodePosition(nodes[part->myCurrentNodes.front()]));
-                        }
-                    }
-                    if (length > mergeRelationsThreshold) {
-                        WRITE_WARNING("Could not import polygon from relation '" + toString(rel->id) +
-                                      "' (name:" + e->name + " reason: found gap of " + toString(minDist) +
-                                      "m to way '" + toString(minEdge->id) +
-                                      "')\n Total length of remaining ways: " + toString(length) + "m.");
-                        ok = false;
-                    }
-                    break;
-                }
-                if (minFront) {
-                    e->myCurrentNodes.insert(e->myCurrentNodes.end(), minEdge->myCurrentNodes.begin(), minEdge->myCurrentNodes.end());
-                    prev = convertNodePosition(nodes[minEdge->myCurrentNodes.back()]);
-                } else {
-                    e->myCurrentNodes.insert(e->myCurrentNodes.end(), minEdge->myCurrentNodes.rbegin(), minEdge->myCurrentNodes.rend());
-                    prev = convertNodePosition(nodes[minEdge->myCurrentNodes.front()]);
-                }
-                minEdge->standalone = false;
-                remaining.erase(minEdge->id);
-            }
-            if (ok) {
-                edges[e->id] = e;
-                WRITE_MESSAGE("Assembled polygon from relation '" + toString(rel->id) + "' (name:" + e->name + ")");
-            } else {
-                delete e;
-                // export ways by themselves
-                for (long long int wayID : rel->myWays) {
-                    PCOSMEdge* part = edges[wayID];
-                    part->standalone = true;
-                }
-            }
-        }
-    }
-
     // instatiate polygons
     for (EdgeMap::iterator i = edges.begin(); i != edges.end(); ++i) {
         PCOSMEdge* e = (*i).second;
         if (e->myAttributes.size() == 0) {
             // cannot be relevant as a polygon
-            continue;
-        }
-        if (!e->standalone && mergeRelationsThreshold >= 0) {
-            // part of a relation
             continue;
         }
         if (e->myCurrentNodes.size() == 0) {
@@ -311,38 +205,30 @@ PCLoaderOSM::loadIfSet(OptionsCont& oc, PCPolyContainer& toFill,
             const std::string& value = it->second;
             const std::string fullType = key + "." + value;
             if (tm.has(key + "." + value)) {
-                index = addPOI(n, pos, tm.get(fullType), fullType, index, useName, toFill, ignorePruning, withAttributes);
+                index = addPOI(n, pos, tm.get(fullType), fullType, index, toFill, ignorePruning, withAttributes);
             } else if (tm.has(key)) {
-                index = addPOI(n, pos, tm.get(key), fullType, index, useName, toFill, ignorePruning, withAttributes);
+                index = addPOI(n, pos, tm.get(key), fullType, index, toFill, ignorePruning, withAttributes);
             } else if (MyKeysToInclude.count(key) > 0) {
                 unKnownPOIType = fullType;
             }
         }
         const PCTypeMap::TypeDef& def = tm.getDefault();
         if (index == 0 && !def.discard && unKnownPOIType != "") {
-            addPOI(n, pos, def, unKnownPOIType, index, useName, toFill, ignorePruning, withAttributes);
+            addPOI(n, pos, def, unKnownPOIType, index,  toFill, ignorePruning, withAttributes);
         }
     }
     // delete nodes
     for (std::map<long long int, PCOSMNode*>::const_iterator i = nodes.begin(); i != nodes.end(); ++i) {
-        delete (*i).second;
+        delete(*i).second;
     }
     // delete edges
     for (EdgeMap::iterator i = edges.begin(); i != edges.end(); ++i) {
-        delete (*i).second;
+        delete(*i).second;
     }
     // delete relations
     for (Relations::iterator i = relations.begin(); i != relations.end(); ++i) {
-        delete (*i);
+        delete(*i);
     }
-}
-
-
-Position
-PCLoaderOSM::convertNodePosition(PCOSMNode* n) {
-    Position pos(n->lon, n->lat);
-    GeoConvHelper::getProcessing().x2cartesian(pos);
-    return pos;
 }
 
 
@@ -357,9 +243,9 @@ PCLoaderOSM::addPolygon(const PCOSMEdge* edge, const PositionVector& vec, const 
         SUMOPolygon* poly = new SUMOPolygon(
             StringUtils::escapeXML(id),
             StringUtils::escapeXML(OptionsCont::getOptions().getBool("osm.keep-full-type") ? fullType : def.id),
-            def.color, vec, false, def.allowFill && closedShape, 1, def.layer);
+            def.color, vec, def.allowFill && closedShape, (double)def.layer);
         if (withAttributes) {
-            poly->updateParameter(edge->myAttributes);
+            poly->addParameter(edge->myAttributes);
         }
         if (!toFill.add(poly, ignorePruning)) {
             return index;
@@ -369,21 +255,20 @@ PCLoaderOSM::addPolygon(const PCOSMEdge* edge, const PositionVector& vec, const 
     }
 }
 
-
 int
 PCLoaderOSM::addPOI(const PCOSMNode* node, const Position& pos, const PCTypeMap::TypeDef& def, const std::string& fullType,
-                    int index, bool useName, PCPolyContainer& toFill, bool ignorePruning, bool withAttributes) {
+                    int index, PCPolyContainer& toFill, bool ignorePruning, bool withAttributes) {
     if (def.discard) {
         return index;
     } else {
         const std::string idSuffix = (index == 0 ? "" : "#" + toString(index));
-        const std::string id = def.prefix + (useName && node->name != "" ? node->name : toString(node->id)) + idSuffix;
+        const std::string id = def.prefix + toString(node->id) + idSuffix;
         PointOfInterest* poi = new PointOfInterest(
             StringUtils::escapeXML(id),
             StringUtils::escapeXML(OptionsCont::getOptions().getBool("osm.keep-full-type") ? fullType : def.id),
-            def.color, pos, false, "", 0, 0, (double)def.layer);
+            def.color, pos, (double)def.layer);
         if (withAttributes) {
-            poi->updateParameter(node->myAttributes);
+            poi->addParameter(node->myAttributes);
         }
         if (!toFill.add(poi, ignorePruning)) {
             return index;
@@ -411,7 +296,7 @@ PCLoaderOSM::NodesHandler::myStartElement(int element, const SUMOSAXAttributes& 
     myParentElements.push_back(element);
     if (element == SUMO_TAG_NODE) {
         bool ok = true;
-        long long int id = attrs.get<long long int>(SUMO_ATTR_ID, nullptr, ok);
+        long long int id = attrs.get<long long int>(SUMO_ATTR_ID, 0, ok);
         if (!ok) {
             return;
         }
@@ -437,10 +322,8 @@ PCLoaderOSM::NodesHandler::myStartElement(int element, const SUMOSAXAttributes& 
         bool ok = true;
         std::string key = attrs.getOpt<std::string>(SUMO_ATTR_K, toString(myLastNodeID).c_str(), ok, "", false);
         std::string value = attrs.getOpt<std::string>(SUMO_ATTR_V, toString(myLastNodeID).c_str(), ok, "", false);
-        if (key == "name") {
-            myToFill[myLastNodeID]->name = value;
-        } else if (key == "") {
-            myErrorHandler.inform("Empty key in a a tag while parsing node '" + toString(myLastNodeID) + "' occurred.");
+        if (key == "") {
+            myErrorHandler.inform("Empty key in a a tag while parsing node '" + toString(myLastNodeID) + "' occured.");
             ok = false;
         }
         if (!ok) {
@@ -472,7 +355,7 @@ PCLoaderOSM::RelationsHandler::RelationsHandler(RelationsMap& additionalWays,
     myRelations(relations),
     myWithAttributes(withAttributes),
     myErrorHandler(errorHandler),
-    myCurrentRelation(nullptr) {
+    myCurrentRelation(0) {
 }
 
 
@@ -485,28 +368,26 @@ PCLoaderOSM::RelationsHandler::myStartElement(int element, const SUMOSAXAttribut
     myParentElements.push_back(element);
     // parse "relation" elements
     if (element == SUMO_TAG_RELATION) {
+        bool ok = true;
         myCurrentWays.clear();
-        const std::string action = attrs.hasAttribute("action") ? attrs.getStringSecure("action", "") : "";
-        if (action == "delete") {
-            myCurrentRelation = nullptr;
-        } else {
-            myCurrentRelation = new PCOSMRelation();
-            myCurrentRelation->keep = false;
-            bool ok = true;
-            myCurrentRelation->id = attrs.get<long long int>(SUMO_ATTR_ID, nullptr, ok);
-            myRelations.push_back(myCurrentRelation);
+        std::string action = attrs.hasAttribute("action") ? attrs.getStringSecure("action", "") : "";
+        if (action == "delete" || !ok) {
+            myCurrentRelation = 0;
         }
+        myCurrentRelation = new PCOSMRelation();
+        myCurrentRelation->id = attrs.get<long long int>(SUMO_ATTR_ID, 0, ok);
+        myRelations.push_back(myCurrentRelation);
         return;
-    } else if (myCurrentRelation == nullptr) {
+    } else if (myCurrentRelation == 0) {
         return;
     }
     // parse member elements
     if (element == SUMO_TAG_MEMBER) {
         bool ok = true;
         std::string role = attrs.hasAttribute("role") ? attrs.getStringSecure("role", "") : "";
-        long long int ref = attrs.get<long long int>(SUMO_ATTR_REF, nullptr, ok);
+        long long int ref = attrs.get<long long int>(SUMO_ATTR_REF, 0, ok);
         if (role == "outer" || role == "inner") {
-            std::string memberType = attrs.get<std::string>(SUMO_ATTR_TYPE, nullptr, ok);
+            std::string memberType = attrs.get<std::string>(SUMO_ATTR_TYPE, 0, ok);
             if (memberType == "way") {
                 myCurrentWays.push_back(ref);
             }
@@ -515,12 +396,12 @@ PCLoaderOSM::RelationsHandler::myStartElement(int element, const SUMOSAXAttribut
     }
     // parse values
     if (element == SUMO_TAG_TAG && myParentElements.size() > 2 && myParentElements[myParentElements.size() - 2] == SUMO_TAG_RELATION
-            && myCurrentRelation != nullptr) {
+            && myCurrentRelation != 0) {
         bool ok = true;
         std::string key = attrs.getOpt<std::string>(SUMO_ATTR_K, toString(myCurrentRelation).c_str(), ok, "", false);
         std::string value = attrs.getOpt<std::string>(SUMO_ATTR_V, toString(myCurrentRelation).c_str(), ok, "", false);
         if (key == "") {
-            myErrorHandler.inform("Empty key in a a tag while parsing way '" + toString(myCurrentRelation) + "' occurred.");
+            myErrorHandler.inform("Empty key in a a tag while parsing way '" + toString(myCurrentRelation) + "' occured.");
             ok = false;
         }
         if (!ok) {
@@ -529,7 +410,6 @@ PCLoaderOSM::RelationsHandler::myStartElement(int element, const SUMOSAXAttribut
         if (key == "name") {
             myCurrentRelation->name = value;
         } else if (MyKeysToInclude.count(key) > 0) {
-            myCurrentRelation->keep = true;
             for (std::vector<long long int>::iterator it = myCurrentWays.begin(); it != myCurrentWays.end(); ++it) {
                 myAdditionalWays[*it] = myCurrentRelation;
             }
@@ -543,8 +423,7 @@ void
 PCLoaderOSM::RelationsHandler::myEndElement(int element) {
     myParentElements.pop_back();
     if (element == SUMO_TAG_RELATION) {
-        myCurrentRelation->myWays = myCurrentWays;
-        myCurrentRelation = nullptr;
+        myCurrentRelation = 0;
         myCurrentWays.clear();
     }
 }
@@ -576,22 +455,19 @@ PCLoaderOSM::EdgesHandler::myStartElement(int element, const SUMOSAXAttributes& 
     // parse "way" elements
     if (element == SUMO_TAG_WAY) {
         bool ok = true;
-        const long long int id = attrs.get<long long int>(SUMO_ATTR_ID, nullptr, ok);
-        const std::string action = attrs.hasAttribute("action") ? attrs.getStringSecure("action", "") : "";
-        if (action == "delete" || !ok) {
-            myCurrentEdge = nullptr;
+        long long int id = attrs.get<long long int>(SUMO_ATTR_ID, 0, ok);
+        if (!ok) {
             return;
         }
         myCurrentEdge = new PCOSMEdge();
         myCurrentEdge->id = id;
         myCurrentEdge->myIsClosed = false;
-        myCurrentEdge->standalone = false;
         myKeep = (myAdditionalWays.find(id) != myAdditionalWays.end());
     }
     // parse "nd" (node) elements
-    if (element == SUMO_TAG_ND && myCurrentEdge != nullptr) {
+    if (element == SUMO_TAG_ND) {
         bool ok = true;
-        const long long int ref = attrs.get<long long int>(SUMO_ATTR_REF, nullptr, ok);
+        long long int ref = attrs.get<long long int>(SUMO_ATTR_REF, 0, ok);
         if (ok) {
             if (myOSMNodes.find(ref) == myOSMNodes.end()) {
                 WRITE_WARNING("The referenced geometry information (ref='" + toString(ref) + "') is not known");
@@ -602,12 +478,12 @@ PCLoaderOSM::EdgesHandler::myStartElement(int element, const SUMOSAXAttributes& 
     }
     // parse values
     if (element == SUMO_TAG_TAG && myParentElements.size() > 2 && myParentElements[myParentElements.size() - 2] == SUMO_TAG_WAY
-            && myCurrentEdge != nullptr) {
+            && myCurrentEdge != 0) {
         bool ok = true;
         std::string key = attrs.getOpt<std::string>(SUMO_ATTR_K, toString(myCurrentEdge->id).c_str(), ok, "", false);
         std::string value = attrs.getOpt<std::string>(SUMO_ATTR_V, toString(myCurrentEdge->id).c_str(), ok, "", false);
         if (key == "") {
-            myErrorHandler.inform("Empty key in a a tag while parsing way '" + toString(myCurrentEdge->id) + "' occurred.");
+            myErrorHandler.inform("Empty key in a a tag while parsing way '" + toString(myCurrentEdge->id) + "' occured.");
             ok = false;
         }
         if (!ok) {
@@ -617,7 +493,6 @@ PCLoaderOSM::EdgesHandler::myStartElement(int element, const SUMOSAXAttributes& 
             myCurrentEdge->name = value;
         } else if (MyKeysToInclude.count(key) > 0) {
             myKeep = true;
-            myCurrentEdge->standalone = true;
         }
         myCurrentEdge->myAttributes[key] = value;
     }
@@ -627,7 +502,7 @@ PCLoaderOSM::EdgesHandler::myStartElement(int element, const SUMOSAXAttributes& 
 void
 PCLoaderOSM::EdgesHandler::myEndElement(int element) {
     myParentElements.pop_back();
-    if (element == SUMO_TAG_WAY && myCurrentEdge != nullptr) {
+    if (element == SUMO_TAG_WAY) {
         if (myKeep) {
             RelationsMap::const_iterator it = myAdditionalWays.find(myCurrentEdge->id);
             if (it != myAdditionalWays.end()) {
@@ -637,7 +512,7 @@ PCLoaderOSM::EdgesHandler::myEndElement(int element) {
         } else {
             delete myCurrentEdge;
         }
-        myCurrentEdge = nullptr;
+        myCurrentEdge = 0;
     }
 }
 

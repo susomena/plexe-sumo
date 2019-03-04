@@ -1,17 +1,21 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    tracemapper.py
+@author  Michael Behrisch
+@date    2013-10-23
+@version $Id$
 
-# @file    tracegenerator.py
-# @author  Michael Behrisch
-# @date    2013-10-23
-# @version $Id$
+This script tries to generate traces for routes in a sumo network.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 from __future__ import print_function
 from __future__ import absolute_import
@@ -23,13 +27,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import sumolib  # noqa
 
 
-def generateTrace(route, step, x=0., y=0.):
+def generateTrace(route, step):
     trace = []
     for edge in route:
         numSteps = int(edge.getLength() / step)
         for p in range(numSteps):
-            pos = sumolib.geomhelper.positionAtShapeOffset(edge.getShape(), p * step)
-            trace.append((pos[0] + x, pos[1] + y))
+            trace.append(
+                sumolib.geomhelper.positionAtShapeOffset(edge.getShape(), p * step))
     return trace
 
 
@@ -45,12 +49,8 @@ if __name__ == "__main__":
                          help="route file to use (mandatory)", metavar="FILE")
     optParser.add_option("-s", "--step", default="10",
                          type="float", help="distance between successive trace points")
-    optParser.add_option("-d", "--delta", default="1", type="float",
-                         help="maximum distance between edge and trace points when matching to the second net")
-    optParser.add_option("-x", "--x-offset", default=0.,
-                         type="float", help="offset to add to traces")
-    optParser.add_option("-y", "--y-offset", default=0.,
-                         type="float", help="offset to add to traces")
+    optParser.add_option("-d", "--delta", default="1",
+                         type="float", help="maximum distance between edge and trace points when matching to the second net")
     optParser.add_option("-o", "--output",
                          help="trace or route output (mandatory)", metavar="FILE")
     (options, args) = optParser.parse_args()
@@ -71,9 +71,9 @@ if __name__ == "__main__":
         print("Reading routes ...")
 
     f = open(options.output, "w")
-    for route in sumolib.output.parse_fast(options.routes, "route", ["id", "edges"]):
+    for route in sumolib.output.parse_fast(options.routes, "vehicle", ["id", "edges"]):
         edges = [net.getEdge(e) for e in route.edges.split()]
-        trace = generateTrace(edges, options.step, options.x_offset, options.y_offset)
+        trace = generateTrace(edges, options.step)
         if net2:
             path = sumolib.route.mapTrace(trace, net2, options.delta)
             if not path or path == ["*"]:

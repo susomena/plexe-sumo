@@ -1,23 +1,25 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSAbstractLaneChangeModel.h
 /// @author  Daniel Krajzewicz
 /// @author  Friedemann Wesner
 /// @author  Sascha Krieg
 /// @author  Michael Behrisch
 /// @author  Jakob Erdmann
-/// @author  Leonhard Luecken
 /// @date    Fri, 29.04.2005
 /// @version $Id$
 ///
 // Interface for lane-change models
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef MSAbstractLaneChangeModel_h
 #define MSAbstractLaneChangeModel_h
@@ -25,9 +27,12 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <microsim/MSGlobals.h>
 #include <microsim/MSVehicle.h>
 
 class MSLane;
@@ -111,17 +116,14 @@ public:
     struct StateAndDist {
         // @brief LaneChangeAction flags
         int state;
-        // @brief Lateral distance to be completed in the next step
+        // @brief lateralDistance
         double latDist;
-        // @brief Full lateral distance required for the completion of the envisioned maneuver
-        double maneuverDist;
         // @brief direction that was checked
         int dir;
 
-        StateAndDist(int _state, double _latDist, double _targetDist, int _dir) :
+        StateAndDist(int _state, double _latDist, int _dir) :
             state(_state),
             latDist(_latDist),
-            maneuverDist(_targetDist),
             dir(_dir) {}
 
         bool sameDirection(const StateAndDist& other) const {
@@ -138,29 +140,9 @@ public:
      */
     static MSAbstractLaneChangeModel* build(LaneChangeModel lcm, MSVehicle& vehicle);
 
-    /// @brief whether any kind of lateral dynamics is active
-    inline static bool haveLateralDynamics() {
-        return MSGlobals::gLateralResolution > 0 || MSGlobals::gLaneChangeDuration > 0;
-    }
-
-    /** @brief Returns the model's ID;
-     * @return The model's ID
-     */
-    virtual LaneChangeModel getModelID() const = 0;
-
     /// @brief whether lanechange-output is active
     static bool haveLCOutput() {
         return myLCOutput;
-    }
-
-    /// @brief whether start of maneuvers shall be recorede
-    static bool outputLCStarted() {
-        return myLCStartedOutput;
-    }
-
-    /// @brief whether start of maneuvers shall be recorede
-    static bool outputLCEnded() {
-        return myLCEndedOutput;
     }
 
     /** @brief Constructor
@@ -176,96 +158,31 @@ public:
         return myOwnState;
     }
 
-    inline int getPrevState() const {
-        /// at the time of this call myPreviousState already holds the new value
-        return myPreviousState2;
-    }
-
     virtual void setOwnState(const int state);
 
-    /// @brief Updates the remaining distance for the current maneuver while it is continued within non-action steps (only used by sublane model)
-    void setManeuverDist(const double dist);
-    /// @brief Returns the remaining unblocked distance for the current maneuver. (only used by sublane model)
-    double getManeuverDist() const;
-
-    /// @brief Updates the value of safe lateral distances (in SL2015) during maneuver continuation in non-action steps
-    virtual void updateSafeLatDist(const double travelledLatDist);
-
     const std::pair<int, int>& getSavedState(const int dir) const {
-        if (dir == -1) {
-            return mySavedStateRight;
-        } else if (dir == 0) {
-            return mySavedStateCenter;
-        } else {
-            return mySavedStateLeft;
-        }
+        return mySavedStates.find(dir)->second;
     }
 
-    void saveLCState(const int dir, const int stateWithoutTraCI, const int state) {
-        const auto pair = std::make_pair(stateWithoutTraCI | getCanceledState(dir), state);
-        if (dir == -1) {
-            mySavedStateRight = pair;
-        } else if (dir == 0) {
-            mySavedStateCenter = pair;
-        } else {
-            mySavedStateLeft = pair;
-        }
+    void saveState(const int dir, const int stateWithoutTraCI, const int state) {
+        mySavedStates[dir] = std::make_pair(stateWithoutTraCI, state);
     }
-
-    /// @brief Saves the lane change relevant vehicles, which are currently on neighboring lanes in the given direction
-    ///        (as detected in wantsChangeSublane()). -> SL2015 case
-    void saveNeighbors(const int dir, const MSLeaderDistanceInfo& followers, const MSLeaderDistanceInfo& leaders);
-
-    /// @brief Saves the lane change relevant vehicles, which are currently on neighboring lanes in the given direction
-    ///        (as detected in wantsChange()). -> LC2013 case
-    void saveNeighbors(const int dir, const std::pair<MSVehicle* const, double>& follower, const std::pair<MSVehicle* const, double>& leader);
-
-    /// @brief Clear info on neighboring vehicle from previous step
-    void clearNeighbors();
-
-    /// @brief Returns the neighboring, lc-relevant followers for the last step in the requested direction
-    const std::shared_ptr<MSLeaderDistanceInfo> getFollowers(const int dir);
-
-    /// @brief Returns the neighboring, lc-relevant leaders for the last step in the requested direction
-    const std::shared_ptr<MSLeaderDistanceInfo> getLeaders(const int dir);
-
-    int& getCanceledState(const int dir) {
-        if (dir == -1) {
-            return myCanceledStateRight;
-        } else if (dir == 0) {
-            return myCanceledStateCenter;
-        } else {
-            return myCanceledStateLeft;
-        }
-    }
-
-    /// @return whether this vehicle is blocked from performing a strategic change
-    bool isStrategicBlocked() const;
 
     void setFollowerGaps(CLeaderDist follower, double secGap);
     void setLeaderGaps(CLeaderDist, double secGap);
-    void setOrigLeaderGaps(CLeaderDist, double secGap);
     void setFollowerGaps(const MSLeaderDistanceInfo& vehicles);
     void setLeaderGaps(const MSLeaderDistanceInfo& vehicles);
-    void setOrigLeaderGaps(const MSLeaderDistanceInfo& vehicles);
 
     virtual void prepareStep() {
-        getCanceledState(-1) = LCA_NONE;
-        getCanceledState(0) = LCA_NONE;
-        getCanceledState(1) = LCA_NONE;
-        saveLCState(-1, LCA_UNKNOWN, LCA_UNKNOWN);
-        saveLCState(0, LCA_UNKNOWN, LCA_UNKNOWN);
-        saveLCState(1, LCA_UNKNOWN, LCA_UNKNOWN);
+        saveState(-1, LCA_UNKNOWN, LCA_UNKNOWN);
+        saveState(0, LCA_UNKNOWN, LCA_UNKNOWN);
+        saveState(1, LCA_UNKNOWN, LCA_UNKNOWN);
         myLastLateralGapRight = NO_NEIGHBOR;
         myLastLateralGapLeft = NO_NEIGHBOR;
-        if (!myDontResetLCGaps) {
-            myLastLeaderGap = NO_NEIGHBOR;
-            myLastLeaderSecureGap = NO_NEIGHBOR;
-            myLastFollowerGap = NO_NEIGHBOR;
-            myLastFollowerSecureGap = NO_NEIGHBOR;
-            myLastOrigLeaderGap = NO_NEIGHBOR;
-            myLastOrigLeaderSecureGap = NO_NEIGHBOR;
-        }
+        myLastLeaderGap = NO_NEIGHBOR;
+        myLastLeaderSecureGap = NO_NEIGHBOR;
+        myLastFollowerGap = NO_NEIGHBOR;
+        myLastFollowerSecureGap = NO_NEIGHBOR;
         myCommittedSpeed = 0;
     }
 
@@ -309,7 +226,7 @@ public:
         const std::vector<MSVehicle::LaneQ>& preb,
         MSVehicle** lastBlocked,
         MSVehicle** firstBlocked,
-        double& latDist, double& targetDistLat, int& blocked) {
+        double& latDist, int& blocked) {
         UNUSED_PARAMETER(laneOffset);
         UNUSED_PARAMETER(alternatives);
         UNUSED_PARAMETER(&leaders);
@@ -323,13 +240,12 @@ public:
         UNUSED_PARAMETER(lastBlocked);
         UNUSED_PARAMETER(firstBlocked);
         UNUSED_PARAMETER(latDist);
-        UNUSED_PARAMETER(targetDistLat);
         UNUSED_PARAMETER(blocked);
         throw ProcessError("Method not implemented by model " + toString(myModel));
     }
 
     /// @brief update expected speeds for each sublane of the current edge
-    virtual void updateExpectedSublaneSpeeds(const MSLeaderDistanceInfo& ahead, int sublaneOffset, int laneIndex) {
+    virtual void updateExpectedSublaneSpeeds(const MSLeaderInfo& ahead, int sublaneOffset, int laneIndex) {
         UNUSED_PARAMETER(&ahead);
         UNUSED_PARAMETER(sublaneOffset);
         UNUSED_PARAMETER(laneIndex);
@@ -346,8 +262,6 @@ public:
     virtual void* inform(void* info, MSVehicle* sender) = 0;
 
     /** @brief Called to adapt the speed in order to allow a lane change.
-     *         It uses information on LC-related desired speed-changes from
-     *         the call to wantsChange() at the end of the previous simulation step
      *
      * It is guaranteed that min<=wanted<=max, but the implementation needs
      * to make sure that the return value is between min and max.
@@ -366,16 +280,6 @@ public:
     virtual void changed() = 0;
 
 
-    /// @brief return factor for modifying the safety constraints of the car-following model
-    virtual double getSafetyFactor() const {
-        return 1.0;
-    }
-
-    /// @brief return factor for modifying the safety constraints for opposite-diretction overtaking of the car-following model
-    virtual double getOppositeSafetyFactor() const {
-        return 1.0;
-    }
-
     /// @brief whether the current vehicles shall be debugged
     virtual bool debugVehicle() const {
         return false;
@@ -392,7 +296,7 @@ public:
         }
     }
 
-    /** @brief Returns the lane the vehicle's shadow is on during continuous/sublane lane change
+    /** @brief Returns the lane the vehicles shadow is on during continuous/sublane lane change
      * @return The vehicle's shadow lane
      */
     MSLane* getShadowLane() const {
@@ -418,17 +322,6 @@ public:
         return myShadowFurtherLanesPosLat;
     }
 
-    /** @brief Returns the lane the vehicle has committed to enter during a sublane lane change
-     *  @return The vehicle's target lane.
-     */
-    MSLane* getTargetLane() const {
-        return myTargetLane;
-    }
-
-    const std::vector<MSLane*>& getFurtherTargetLanes() const {
-        return myFurtherTargetLanes;
-    }
-
     inline SUMOTime getLastLaneChangeOffset() const {
         return myLastLaneChangeOffset;
     }
@@ -439,30 +332,12 @@ public:
         return myLaneChangeCompletion >= 0.5;
     }
 
-    /// @brief Compute the remaining time until LC completion
+    /// @brief return whether the vehicle passed the midpoint of a continuous lane change maneuver
     SUMOTime remainingTime() const;
-
-    /// @brief Calculates the maximal time needed to complete a lane change maneuver
-    ///        if lcMaxSpeedLatFactor and lcMaxSpeedStanding are set and the vehicle breaks not harder than decel.
-    ///        LC when the vehicle starts breaking now. If lcMaxSpeedStanding==0 the completion may be impossible,
-    /// @param[in] speed Current longitudinal speed of the changing vehicle.
-    /// @param[in] remainingManeuverDist dist which is still to be covered until LC is completed
-    /// @param[in] decel Maximal assumed deceleration rate applied during the LC.
-    /// @return maximal LC duration (or -1) if it is possible that it can't be completed.
-    /// @note 1) For the calculation it is assumed that the vehicle starts breaking with decel (>=0) immediately.
-    ///       If lcMaxSpeedStanding==0 the completion may be impossible, and -1 is returned.
-    ///       2) In case that no maxSpeedLat is used to control lane changing, this is only called prior to a lane change,
-    ///          and the duration is MSGlobals::gLaneChangeDuration.
-    virtual double estimateLCDuration(const double speed, const double remainingManeuverDist, const double decel) const;
 
     /// @brief return true if the vehicle currently performs a lane change maneuver
     inline bool isChangingLanes() const {
         return myLaneChangeCompletion < (1 - NUMERICAL_EPS);
-    }
-
-    /// @brief Get the current lane change completion ratio
-    inline double getLaneChangeCompletion() const {
-        return myLaneChangeCompletion;
     }
 
     /// @brief return the direction of the current lane change maneuver
@@ -489,10 +364,6 @@ public:
     /// @brief start the lane change maneuver and return whether it continues
     bool startLaneChangeManeuver(MSLane* source, MSLane* target, int direction);
 
-    /// @brief Control for resetting the memorized values for LC relevant gaps until the LC output is triggered in the case of continuous LC.
-    void memorizeGapsAtLCInit();
-    void clearGapsAtLCInit();
-
     /* @brief continue the lane change maneuver and return whether the midpoint
      * was passed in this step
      */
@@ -500,14 +371,6 @@ public:
 
     /* @brief update lane change shadow after the vehicle moved to a new lane */
     void updateShadowLane();
-
-    /* @brief update lane change reservations after the vehicle moved to a new lane
-     * @note  The shadow lane should always be updated before updating the target lane. */
-    void updateTargetLane();
-
-    /* @brief Determines the lane which the vehicle intends to enter during its current action step.
-     *        targetDir is set to the offset of the returned lane with respect to the vehicle'a current lane. */
-    MSLane* determineTargetLane(int& targetDir) const;
 
     /* @brief finish the lane change maneuver
      */
@@ -517,14 +380,10 @@ public:
      */
     void cleanupShadowLane();
 
-    /* @brief clean up all references to the vehicle on its target lanes
-     */
-    void cleanupTargetLane();
-
     /// @brief reserve space at the end of the lane to avoid dead locks
     virtual void saveBlockerLength(double length) {
         UNUSED_PARAMETER(length);
-    }
+    };
 
     void setShadowPartialOccupator(MSLane* lane) {
         myPartiallyOccupatedByShadow.push_back(lane);
@@ -536,15 +395,6 @@ public:
 
     /// @brief called once when the vehicles primary lane changes
     void primaryLaneChanged(MSLane* source, MSLane* target, int direction);
-
-    /// @brief called once the vehicle ends a lane change manoeuvre (non-instant)
-    void laneChangeOutput(const std::string& tag, MSLane* source, MSLane* target, int direction, double maneuverDist = 0);
-
-    /// @brief whether the current change completes the manoeuvre
-    virtual bool sublaneChangeCompleted(const double latDist) const {
-        UNUSED_PARAMETER(latDist);
-        throw ProcessError("Method not implemented by model " + toString(myModel));
-    }
 
     /// @brief set approach information for the shadow vehicle
     void setShadowApproachingInformation(MSLink* link) const;
@@ -567,14 +417,6 @@ public:
         mySpeedLat = speedLat;
     }
 
-    /// @brief decides the next lateral speed depending on the remaining lane change distance to be covered
-    ///        and updates maneuverDist according to lateral safety constraints.
-    virtual double computeSpeedLat(double latDist, double& maneuverDist);
-
-    /// @brief Returns a deceleration value which is used for the estimation of the duration of a lane change.
-    /// @note  Effective only for continuous lane-changing when using attributes myMaxSpeedLatFactor and myMaxSpeedLatStanding. See #3771
-    virtual double getAssumedDecelForLaneChangeDuration() const;
-
     /// @brief try to retrieve the given parameter from this laneChangeModel. Throw exception for unsupported key
     virtual std::string getParameter(const std::string& key) const {
         throw InvalidArgument("Parameter '" + key + "' is not supported for laneChangeModel of type '" + toString(myModel) + "'");
@@ -586,11 +428,6 @@ public:
         throw InvalidArgument("Setting parameter '" + key + "' is not supported for laneChangeModel of type '" + toString(myModel) + "'");
     }
 
-
-    /// @brief Check for commands issued for the vehicle via TraCI and apply the appropriate state changes
-    ///        For the sublane case, this includes setting a new maneuver distance if appropriate.
-    void checkTraCICommands();
-
     static const double NO_NEIGHBOR;
 
 protected:
@@ -599,7 +436,7 @@ protected:
     virtual bool predInteraction(const std::pair<MSVehicle*, double>& leader);
 
     /// @brief whether the influencer cancels the given request
-    bool cancelRequest(int state, int laneOffset);
+    bool cancelRequest(int state);
 
 
 protected:
@@ -608,25 +445,7 @@ protected:
 
     /// @brief The current state of the vehicle
     int myOwnState;
-    /// @brief lane changing state from the previous simulation step
-    int myPreviousState;
-    /// @brief lane changing state from step before the previous simulation step
-    int myPreviousState2;
-
-    std::pair<int, int> mySavedStateRight;
-    std::pair<int, int> mySavedStateCenter;
-    std::pair<int, int> mySavedStateLeft;
-    int myCanceledStateRight;
-    int myCanceledStateCenter;
-    int myCanceledStateLeft;
-
-    /// @brief Cached info on lc-relevant neighboring vehicles
-    /// @{
-    std::shared_ptr<MSLeaderDistanceInfo> myLeftFollowers;
-    std::shared_ptr<MSLeaderDistanceInfo> myLeftLeaders;
-    std::shared_ptr<MSLeaderDistanceInfo> myRightFollowers;
-    std::shared_ptr<MSLeaderDistanceInfo> myRightLeaders;
-    /// @}
+    std::map<int, std::pair<int, int> > mySavedStates;
 
     /// @brief the current lateral speed
     double mySpeedLat;
@@ -640,37 +459,16 @@ protected:
     /// @brief direction of the lane change maneuver -1 means right, 1 means left
     int myLaneChangeDirection;
 
-    /// @brief The complete lateral distance the vehicle wants to travel to finish its maneuver
-    ///        Only used by sublane model, currently.
-    double myManeuverDist;
-
     /// @brief whether the vehicle has already moved this step
     bool myAlreadyChanged;
 
     /// @brief A lane that is partially occupied by the front of the vehicle but that is not the primary lane
     MSLane* myShadowLane;
-    /* @brief Lanes that are partially (laterally) occupied by the back of the
+
+    /* @brief Lanes that are parially (laterally) occupied by the back of the
      * vehicle (analogue to MSVehicle::myFurtherLanes) */
     std::vector<MSLane*> myShadowFurtherLanes;
     std::vector<double> myShadowFurtherLanesPosLat;
-
-
-    /// @brief The target lane for the vehicle's current maneuver
-    /// @note  This is used by the sublane model to register the vehicle at lanes,
-    ///        it will reach within the current action step, so vehicles on that lane
-    ///        may react to the started lc-maneuver during the car-following process.
-    ///        If the shadow lane is the same as the lc maneuver target, myTargetLane is
-    ///        set to nullptr.
-    ///        The current shadow lanes and further lanes should always be updated before updating the target lane.
-    MSLane* myTargetLane;
-
-    /* @brief Further upstream lanes that are affected by the vehicle's maneuver (analogue to MSVehicle::myFurtherLanes)
-     * @note  If myTargetLane==nullptr, we may assume myFurtherTargetLanes.size()==0, otherwise we have
-     *        myFurtherTargetLanes.size() == myVehicle.getFurtherLanes.size()
-     *        Here it may occur that an element myFurtherTargetLanes[i]==nullptr if myFurtherLanes[i] has
-     *        no parallel lane in the change direction.
-     *  */
-    std::vector<MSLane*> myFurtherTargetLanes;
 
     /// @brief The vehicle's car following model
     const MSCFModel& myCarFollowModel;
@@ -695,18 +493,6 @@ protected:
     /// @brief the minimum longitudinal distances to vehicles on the target lane that would be necessary for stringent security
     double myLastLeaderSecureGap;
     double myLastFollowerSecureGap;
-    /// @brief acutal and secure distance to closest leader vehicle on the original when performing lane change
-    double myLastOrigLeaderGap;
-    double myLastOrigLeaderSecureGap;
-
-    /// @brief Flag to prevent resetting the memorized values for LC relevant gaps until the LC output is triggered
-    ///        in the case of continuous LC.
-    bool myDontResetLCGaps;
-
-    // @brief the maximum lateral speed when standing
-    double myMaxSpeedLatStanding;
-    // @brief the factor of maximum lateral speed to longitudinal speed
-    double myMaxSpeedLatFactor;
 
     /* @brief to be called by derived classes in their changed() method.
      * If dir=0 is given, the current value remains unchanged */
@@ -717,8 +503,6 @@ protected:
 
     /// @brief whether to record lane-changing
     static bool myLCOutput;
-    static bool myLCStartedOutput;
-    static bool myLCEndedOutput;
 
 
 private:

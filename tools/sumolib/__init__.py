@@ -1,44 +1,51 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    __init__.py
+@author  Daniel Krajzewicz
+@author  Jakob Erdmann
+@author  Michael Behrisch
+@date    2011-06-23
+@version $Id$
 
-# @file    __init__.py
-# @author  Daniel Krajzewicz
-# @author  Jakob Erdmann
-# @author  Michael Behrisch
-# @date    2011-06-23
-# @version $Id$
+Python interface to SUMO especially for parsing xml input and output files.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2016 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import os
 import sys
 import subprocess
-import warnings
+import datetime
 from xml.sax import parseString, handler
 from optparse import OptionParser, OptionGroup, Option
 
 try:
-    from . import visualization  # noqa
+    from . import visualization
 except ImportError as e:
-    warnings.warn(str(e))
-from . import files, net, output, sensors, shapes  # noqa
-from . import color, geomhelper, miscutils, options, route  # noqa
-from .xml import writeHeader as writeXMLHeader  # noqa
+    class VisDummy:
+
+        def __getattr__(self, name):
+            raise e
+    visualization = VisDummy()
+from . import files, net, output, sensors, shapes
+from . import color, geomhelper, miscutils, options, route
 
 
 class ConfigurationReader(handler.ContentHandler):
 
     """Reads a configuration template, storing the options in an OptionParser"""
 
-    def __init__(self, optParse, groups, configoptions):
+    def __init__(self, optParse, groups, options):
         self._opts = optParse
         self._groups = groups
-        self._options = configoptions
+        self._options = options
         self._group = self._opts
 
     def startElement(self, name, attrs):
@@ -72,22 +79,22 @@ class ConfigurationReader(handler.ContentHandler):
             self._group = self._opts
 
 
-def pullOptions(executable, optParse, groups=None, configoptions=None):
-    optoutput = subprocess.Popen(
+def pullOptions(executable, optParse, groups=None, options=None):
+    output = subprocess.Popen(
         [executable, "--save-template", "-"], stdout=subprocess.PIPE).communicate()[0]
-    parseString(optoutput, ConfigurationReader(optParse, groups, configoptions))
+    parseString(output, ConfigurationReader(optParse, groups, options))
 
 
-def saveConfiguration(executable, configoptions, filename):
-    configoptions.save_configuration = filename
-    call(executable, configoptions)
+def saveConfiguration(executable, options, filename):
+    options.save_configuration = filename
+    call(executable, options)
 
 
-def call(executable, args):
+def call(executable, options):
     optParser = OptionParser()
     pullOptions(executable, optParser)
     cmd = [executable]
-    for option, value in args.__dict__.iteritems():
+    for option, value in options.__dict__.iteritems():
         o = "--" + option.replace("_", "-")
         opt = optParser.get_option(o)
         if opt is not None and value is not None and opt.default != value:
@@ -124,15 +131,10 @@ def checkBinary(name, bindir=None):
         binary = join(env.get("SUMO_HOME"), "bin", name)
         if exeExists(binary):
             return binary
-    if bindir is None:
-        binary = os.path.abspath(join(os.path.dirname(__file__), '..', '..', 'bin', name))
-        if exeExists(binary):
-            return binary
-    if name[-1] != "D" and name[-5:] != "D.exe":
-        binaryD = (name[:-4] if name[-4:] == ".exe" else name) + "D"
-        found = checkBinary(binaryD, bindir)
-        if found != binaryD:
-            return found
+    binary = os.path.abspath(
+        join(os.path.dirname(__file__), '..', '..', 'bin', name))
+    if exeExists(binary):
+        return binary
     return name
 
 
@@ -166,7 +168,7 @@ class _Running:
                 if self.warn:
                     try:
                         int(id)
-                    except ValueError:
+                    except:
                         sys.stderr.write(
                             'Warning: ID "%s" is not an integer.\n' % id)
                         self.warn = False
@@ -190,8 +192,8 @@ class TeeFile:
 
     """A helper class which allows simultaneous writes to several files"""
 
-    def __init__(self, *outputfiles):
-        self.files = outputfiles
+    def __init__(self, *files):
+        self.files = files
 
     def write(self, txt):
         """Writes the text to all files"""
@@ -218,3 +220,15 @@ def _intTime(tStr):
 
 def _laneID2edgeID(laneID):
     return laneID[:laneID.rfind("_")]
+
+
+def writeXMLHeader(outf, script, root=None):
+    outf.write("""<?xml version="1.0"?>
+<!-- generated on %s by %s
+  options: %s
+-->
+""" % (datetime.datetime.now(), script,
+       (' '.join(sys.argv[1:]).replace('--', '<doubleminus>'))))
+    if root is not None:
+        outf.write(
+            '<%s xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/%s_file.xsd">\n' % (root, root))

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSTransportable.h
 /// @author  Michael Behrisch
 /// @date    Tue, 21 Apr 2015
@@ -14,22 +6,35 @@
 ///
 // The common superclass for modelling transportable objects like persons and containers
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSTransportable_h
 #define MSTransportable_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <set>
 #include <cassert>
 #include <utils/common/SUMOTime.h>
-#include <utils/common/SUMOVehicleClass.h>
 #include <utils/geom/Position.h>
 #include <utils/geom/PositionVector.h>
 #include <utils/geom/Boundary.h>
-#include <utils/router/SUMOAbstractRouter.h>
 
 
 // ===========================================================================
@@ -60,9 +65,7 @@ public:
         WAITING_FOR_DEPART = 0,
         WAITING = 1,
         MOVING_WITHOUT_VEHICLE = 2, // walking for persons, tranship for containers
-        DRIVING = 3,
-        ACCESS = 4,
-        TRIP = 5
+        DRIVING = 3
     };
 
     /**
@@ -72,16 +75,16 @@ public:
     class Stage {
     public:
         /// constructor
-        Stage(const MSEdge* destination, MSStoppingPlace* toStop, const double arrivalPos, StageType type);
+        Stage(const MSEdge& destination, MSStoppingPlace* toStop, const double arrivalPos, StageType type);
 
         /// destructor
         virtual ~Stage();
 
         /// returns the destination edge
-        const MSEdge* getDestination() const;
+        const MSEdge& getDestination() const;
 
         /// returns the destination stop (if any)
-        MSStoppingPlace* getDestinationStop() const {
+        const MSStoppingPlace* getDestinationStop() const {
             return myDestinationStop;
         }
 
@@ -90,9 +93,9 @@ public:
         }
 
         /// Returns the current edge
-        virtual const MSEdge* getEdge() const;
-        virtual const MSEdge* getFromEdge() const;
-        virtual double getEdgePos(SUMOTime now) const;
+        virtual const MSEdge* getEdge() const = 0;
+        virtual const MSEdge* getFromEdge() const = 0;
+        virtual double getEdgePos(SUMOTime now) const = 0;
 
         /// returns the position of the transportable
         virtual Position getPosition(SUMOTime now) const = 0;
@@ -105,11 +108,8 @@ public:
             return myType;
         }
 
-        /// @brief return (brief) string representation of the current stage
+        /// @brief return string representation of the current stage
         virtual std::string getStageDescription() const = 0;
-
-        /// @brief return string summary of the current stage
-        virtual std::string getStageSummary() const = 0;
 
         /// proceeds to this stage
         virtual void proceed(MSNet* net, MSTransportable* transportable, SUMOTime now, Stage* previous) = 0;
@@ -120,14 +120,11 @@ public:
         /// sets the walking speed (ignored in other stages)
         virtual void setSpeed(double) {};
 
-        /// get departure time of stage
-        SUMOTime getDeparted() const;
-
         /// logs end of the step
         void setDeparted(SUMOTime now);
 
         /// logs end of the step
-        virtual void setArrived(MSNet* net, MSTransportable* transportable, SUMOTime now);
+        void setArrived(SUMOTime now);
 
         /// Whether the transportable waits for a vehicle of the line specified.
         virtual bool isWaitingFor(const std::string& line) const;
@@ -139,17 +136,17 @@ public:
 
         /// @brief Whether the transportable waits for a vehicle
         virtual SUMOVehicle* getVehicle() const {
-            return nullptr;
+            return 0;
         }
 
         /// @brief the time this transportable spent waiting
-        virtual SUMOTime getWaitingTime(SUMOTime now) const;
+        virtual SUMOTime getWaitingTime(SUMOTime now) const = 0;
 
         /// @brief the speed of the transportable
-        virtual double getSpeed() const;
+        virtual double getSpeed() const = 0;
 
         /// @brief the edges of the current stage
-        virtual ConstMSEdgeVector getEdges() const;
+        virtual ConstMSEdgeVector getEdges() const = 0;
 
         /// @brief get position on edge e at length at with orthogonal offset
         Position getEdgePosition(const MSEdge* e, double at, double offset) const;
@@ -160,21 +157,17 @@ public:
         /// @brief get angle of the edge at a certain position
         double getEdgeAngle(const MSEdge* e, double at) const;
 
-        void setDestination(const MSEdge* newDestination, MSStoppingPlace* newDestStop);
-
-
         /** @brief Called on writing tripinfo output
          * @param[in] os The stream to write the information into
          * @exception IOError not yet implemented
          */
-        virtual void tripInfoOutput(OutputDevice& os, const MSTransportable* const transportable) const = 0;
+        virtual void tripInfoOutput(OutputDevice& os) const = 0;
 
         /** @brief Called on writing vehroute output
          * @param[in] os The stream to write the information into
-         * @param[in] withRouteLength whether route length shall be written
          * @exception IOError not yet implemented
          */
-        virtual void routeOutput(OutputDevice& os, const bool withRouteLength) const = 0;
+        virtual void routeOutput(OutputDevice& os) const = 0;
 
         /** @brief Called for writing the events output (begin of an action)
          * @param[in] os The stream to write the information into
@@ -190,10 +183,10 @@ public:
 
     protected:
         /// the next edge to reach by getting transported
-        const MSEdge* myDestination;
+        const MSEdge& myDestination;
 
         /// the stop to reach by getting transported (if any)
-        MSStoppingPlace* myDestinationStop;
+        MSStoppingPlace* const myDestinationStop;
 
         /// the position at which we want to arrive
         double myArrivalPos;
@@ -217,112 +210,12 @@ public:
     };
 
     /**
-    * A "placeholder" stage storing routing info which will result in real stages when routed
-    */
-    class Stage_Trip : public Stage {
-    public:
-        /// constructor
-        Stage_Trip(const MSEdge* origin, const MSEdge* destination, MSStoppingPlace* toStop, const SUMOTime duration, const SVCPermissions modeSet,
-                   const std::string& vTypes, const double speed, const double walkFactor, const double departPosLat, const bool hasArrivalPos, const double arrivalPos);
-
-        /// destructor
-        virtual ~Stage_Trip();
-
-        const MSEdge* getEdge() const;
-
-        double getEdgePos(SUMOTime now) const;
-
-        Position getPosition(SUMOTime now) const;
-
-        double getAngle(SUMOTime now) const;
-
-        std::string getStageDescription() const {
-            return "trip";
-        }
-
-        std::string getStageSummary() const;
-
-        /// logs end of the step
-        virtual void setArrived(MSNet* net, MSTransportable* transportable, SUMOTime now);
-
-        /// change origin for parking area rerouting
-        void setOrigin(const MSEdge* origin) {
-            myOrigin = origin;
-        }
-
-        /// proceeds to the next step
-        virtual void proceed(MSNet* net, MSTransportable* transportable, SUMOTime now, Stage* previous);
-
-        /** @brief Called on writing tripinfo output
-        *
-        * @param[in] os The stream to write the information into
-        * @exception IOError not yet implemented
-        */
-        virtual void tripInfoOutput(OutputDevice& os, const MSTransportable* const transportable) const;
-
-        /** @brief Called on writing vehroute output
-        *
-        * @param[in] os The stream to write the information into
-        * @exception IOError not yet implemented
-        */
-        virtual void routeOutput(OutputDevice& os, const bool withRouteLength) const;
-
-        /** @brief Called for writing the events output
-        * @param[in] os The stream to write the information into
-        * @exception IOError not yet implemented
-        */
-        virtual void beginEventOutput(const MSTransportable& p, SUMOTime t, OutputDevice& os) const;
-
-        /** @brief Called for writing the events output (end of an action)
-        * @param[in] os The stream to write the information into
-        * @exception IOError not yet implemented
-        */
-        virtual void endEventOutput(const MSTransportable& p, SUMOTime t, OutputDevice& os) const;
-
-    private:
-        /// the origin edge
-        const MSEdge* myOrigin;
-
-        /// the time the trip should take (applies to only walking)
-        SUMOTime myDuration;
-
-        /// @brief The allowed modes of transportation
-        const SVCPermissions myModeSet;
-
-        /// @brief The possible vehicles to use
-        const std::string myVTypes;
-
-        /// @brief The walking speed
-        const double mySpeed;
-
-        /// @brief The factor to apply to walking durations
-        const double myWalkFactor;
-
-        /// @brief The depart position
-        double myDepartPos;
-
-        /// @brief The lateral depart position
-        const double myDepartPosLat;
-
-        /// @brief whether an arrivalPos was in the input
-        const bool myHaveArrivalPos;
-
-    private:
-        /// @brief Invalidated copy constructor.
-        Stage_Trip(const Stage_Trip&);
-
-        /// @brief Invalidated assignment operator.
-        Stage_Trip& operator=(const Stage_Trip&);
-
-    };
-
-    /**
     * A "real" stage performing a waiting over the specified time
     */
     class Stage_Waiting : public Stage {
     public:
         /// constructor
-        Stage_Waiting(const MSEdge* destination, SUMOTime duration, SUMOTime until,
+        Stage_Waiting(const MSEdge& destination, SUMOTime duration, SUMOTime until,
                       double pos, const std::string& actType, const bool initial);
 
         /// destructor
@@ -331,6 +224,10 @@ public:
         /// abort this stage (TraCI)
         void abort(MSTransportable*);
 
+        /// Returns the current edge
+        const MSEdge* getEdge() const;
+        const MSEdge* getFromEdge() const;
+        double getEdgePos(SUMOTime now) const;
         SUMOTime getUntil() const;
 
         ///
@@ -340,11 +237,13 @@ public:
 
         SUMOTime getWaitingTime(SUMOTime now) const;
 
+        double getSpeed() const;
+
+        ConstMSEdgeVector getEdges() const;
+
         std::string getStageDescription() const {
             return "waiting (" + myActType + ")";
         }
-
-        std::string getStageSummary() const;
 
         /// proceeds to the next step
         virtual void proceed(MSNet* net, MSTransportable* transportable, SUMOTime now, Stage* previous);
@@ -354,14 +253,14 @@ public:
         * @param[in] os The stream to write the information into
         * @exception IOError not yet implemented
         */
-        virtual void tripInfoOutput(OutputDevice& os, const MSTransportable* const transportable) const;
+        virtual void tripInfoOutput(OutputDevice& os) const;
 
         /** @brief Called on writing vehroute output
         *
         * @param[in] os The stream to write the information into
         * @exception IOError not yet implemented
         */
-        virtual void routeOutput(OutputDevice& os, const bool withRouteLength) const;
+        virtual void routeOutput(OutputDevice& os) const;
 
         /** @brief Called for writing the events output
         * @param[in] os The stream to write the information into
@@ -401,9 +300,8 @@ public:
     class Stage_Driving : public Stage {
     public:
         /// constructor
-        Stage_Driving(const MSEdge* destination, MSStoppingPlace* toStop,
-                      const double arrivalPos, const std::vector<std::string>& lines,
-                      const std::string& intendedVeh = "", SUMOTime intendedDepart = -1);
+        Stage_Driving(const MSEdge& destination, MSStoppingPlace* toStop,
+                      const double arrivalPos, const std::vector<std::string>& lines);
 
         /// destructor
         virtual ~Stage_Driving();
@@ -427,9 +325,7 @@ public:
         /// @brief Whether the person waits for a vehicle
         bool isWaiting4Vehicle() const;
 
-        /// @brief Return where the person waits and for what
-        std::string getWaitingDescription() const;
-
+        /// @brief The vehicle the person is riding or 0
         SUMOVehicle* getVehicle() const {
             return myVehicle;
         }
@@ -443,9 +339,6 @@ public:
 
         void setVehicle(SUMOVehicle* v);
 
-        /// @brief marks arrival time and records driven distance
-        void setArrived(MSNet* net, MSTransportable* transportable, SUMOTime now);
-
         /** @brief Called for writing the events output
         * @param[in] os The stream to write the information into
         * @exception IOError not yet implemented
@@ -458,31 +351,19 @@ public:
         */
         virtual void endEventOutput(const MSTransportable& p, SUMOTime t, OutputDevice& os) const;
 
-        const std::set<std::string>& getLines() const {
-            return myLines;
-        }
-
     protected:
         /// the lines  to choose from
         const std::set<std::string> myLines;
 
         /// @brief The taken vehicle
         SUMOVehicle* myVehicle;
-        /// @brief cached vehicle data for output after the vehicle has been removed
         std::string myVehicleID;
-        std::string myVehicleLine;
-
-        SUMOVehicleClass myVehicleVClass;
-        double myVehicleDistance;
 
         double myWaitingPos;
         /// @brief The time since which this person is waiting for a ride
         SUMOTime myWaitingSince;
         const MSEdge* myWaitingEdge;
         Position myStopWaitPos;
-
-        std::string myIntendedVehicleID;
-        SUMOTime myIntendedDepart;
 
     private:
         /// @brief Invalidated copy constructor.
@@ -524,12 +405,12 @@ public:
     void setDeparted(SUMOTime now);
 
     /// Returns the current destination.
-    const MSEdge* getDestination() const {
+    const MSEdge& getDestination() const {
         return (*myStep)->getDestination();
     }
 
     /// Returns the destination after the current destination.
-    const MSEdge* getNextDestination() const {
+    const MSEdge& getNextDestination() const {
         return (*(myStep + 1))->getDestination();
     }
 
@@ -575,9 +456,6 @@ public:
         return (*(myStep + next))->getStageType();
     }
 
-    /// @brief return textual summary for the given stage
-    std::string getStageSummary(int stageIndex) const;
-
     /// Returns the current stage description as a string
     std::string getCurrentStageDescription() const {
         return (*myStep)->getStageDescription();
@@ -586,13 +464,6 @@ public:
     /// @brief Return the current stage
     MSTransportable::Stage* getCurrentStage() const {
         return *myStep;
-    }
-
-    /// @brief Return the current stage
-    MSTransportable::Stage* getNextStage(int next) const {
-        assert(myStep + next >= myPlan->begin());
-        assert(myStep + next < myPlan->end());
-        return *(myStep + next);
     }
 
     /// @brief Return the edges of the nth next stage
@@ -620,7 +491,7 @@ public:
      * @param[in] os The stream to write the information into
      * @exception IOError not yet implemented
      */
-    virtual void routeOutput(OutputDevice& os, const bool withRouteLength) const = 0;
+    virtual void routeOutput(OutputDevice& os) const = 0;
 
     /// @brief Whether the transportable waits for a vehicle of the line specified.
     bool isWaitingFor(const std::string& line) const {
@@ -679,16 +550,6 @@ public:
 
     /// @brief return the bounding box of the person
     PositionVector getBoundingBox() const;
-
-    /// @brief return whether the person has reached the end of its plan
-    bool hasArrived() const;
-
-    /// @brief return whether the transportable has started it's plan
-    bool hasDeparted() const;
-
-    /// @brief adapt plan when the vehicle reroutes and now stops at replacement instead of orig
-    void rerouteParkingArea(MSStoppingPlace* orig, MSStoppingPlace* replacement);
-
 
 protected:
     /// @brief the offset for computing positions when standing at an edge

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PointOfInterest.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // A point-of-interest (2D)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2005-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef PointOfInterest_h
 #define PointOfInterest_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/common/Parameterised.h>
 #include <utils/common/StringUtils.h>
@@ -47,33 +54,22 @@ public:
      * @param[in] id The name of the POI
      * @param[in] type The (abstract) type of the POI
      * @param[in] color The color of the POI
-     * @param[in] pos The position of the POI
-     * @param[in[ geo use GEO coordinates (lon/lat)
-     * @param[in] lane The Lane in which this POI is placed
-     * @param[in] posOverLane The position over Lane
-     * @param[in] posLat The position lateral over Lane
      * @param[in] layer The layer of the POI
      * @param[in] angle The rotation of the POI
      * @param[in] imgFile The raster image of the shape
-     * @param[in] relativePath set image file as relative path
+     * @param[in] pos The position of the POI
      * @param[in] width The width of the POI image
      * @param[in] height The height of the POI image
      */
     PointOfInterest(const std::string& id, const std::string& type,
-                    const RGBColor& color, const Position& pos, bool geo,
-                    const std::string& lane, double posOverLane, double posLat,
+                    const RGBColor& color, const Position& pos,
                     double layer = DEFAULT_LAYER,
                     double angle = DEFAULT_ANGLE,
                     const std::string& imgFile = DEFAULT_IMG_FILE,
-                    bool relativePath = DEFAULT_RELATIVEPATH,
                     double width = DEFAULT_IMG_WIDTH,
                     double height = DEFAULT_IMG_HEIGHT) :
-        Shape(id, type, color, layer, angle, imgFile, relativePath),
+        Shape(id, type, color, layer, angle, imgFile),
         Position(pos),
-        myGeo(geo),
-        myLane(lane),
-        myPosOverLane(posOverLane),
-        myPosLat(posLat),
         myHalfImgWidth(width / 2.0),
         myHalfImgHeight(height / 2.0) {
     }
@@ -81,6 +77,7 @@ public:
 
     /// @brief Destructor
     virtual ~PointOfInterest() { }
+
 
 
     /// @name Getter
@@ -96,6 +93,7 @@ public:
         return myHalfImgHeight * 2.0;
     }
     /// @}
+
 
 
     /// @name Setter
@@ -119,11 +117,11 @@ public:
     void writeXML(OutputDevice& out, const bool geo = false, const double zOffset = 0., const std::string laneID = "", const double pos = 0., const double posLat = 0.) {
         out.openTag(SUMO_TAG_POI);
         out.writeAttr(SUMO_ATTR_ID, StringUtils::escapeXML(getID()));
-        if (getShapeType().size() > 0) {
-            out.writeAttr(SUMO_ATTR_TYPE, StringUtils::escapeXML(getShapeType()));
+        if (getType().size() > 0) {
+            out.writeAttr(SUMO_ATTR_TYPE, StringUtils::escapeXML(getType()));
         }
-        out.writeAttr(SUMO_ATTR_COLOR, getShapeColor());
-        out.writeAttr(SUMO_ATTR_LAYER, getShapeLayer() + zOffset);
+        out.writeAttr(SUMO_ATTR_COLOR, getColor());
+        out.writeAttr(SUMO_ATTR_LAYER, getLayer() + zOffset);
         if (laneID != "") {
             out.writeAttr(SUMO_ATTR_LANE, laneID);
             out.writeAttr(SUMO_ATTR_POSITION, pos);
@@ -134,27 +132,18 @@ public:
             if (geo) {
                 Position POICartesianPos(*this);
                 GeoConvHelper::getFinal().cartesian2geo(POICartesianPos);
-                out.setPrecision(gPrecisionGeo);
                 out.writeAttr(SUMO_ATTR_LON, POICartesianPos.x());
                 out.writeAttr(SUMO_ATTR_LAT, POICartesianPos.y());
-                out.setPrecision();
             } else {
                 out.writeAttr(SUMO_ATTR_X, x());
                 out.writeAttr(SUMO_ATTR_Y, y());
             }
         }
-        if (getShapeNaviDegree() != Shape::DEFAULT_ANGLE) {
-            out.writeAttr(SUMO_ATTR_ANGLE, getShapeNaviDegree());
+        if (getNaviDegree() != Shape::DEFAULT_ANGLE) {
+            out.writeAttr(SUMO_ATTR_ANGLE, getNaviDegree());
         }
-        if (getShapeImgFile() != Shape::DEFAULT_IMG_FILE) {
-            if (getShapeRelativePath()) {
-                // write only the file name, without file path
-                std::string file = getShapeImgFile();
-                file.erase(0, FileHelpers::getFilePath(getShapeImgFile()).size());
-                out.writeAttr(SUMO_ATTR_IMGFILE, file);
-            } else {
-                out.writeAttr(SUMO_ATTR_IMGFILE, getShapeImgFile());
-            }
+        if (getImgFile() != Shape::DEFAULT_IMG_FILE) {
+            out.writeAttr(SUMO_ATTR_IMGFILE, getImgFile());
         }
         if (getWidth() != Shape::DEFAULT_IMG_WIDTH) {
             out.writeAttr(SUMO_ATTR_WIDTH, getWidth());
@@ -162,28 +151,21 @@ public:
         if (getHeight() != Shape::DEFAULT_IMG_HEIGHT) {
             out.writeAttr(SUMO_ATTR_HEIGHT, getHeight());
         }
-        writeParams(out);
+        for (std::map<std::string, std::string>::const_iterator j = getMap().begin(); j != getMap().end(); ++j) {
+            out.openTag(SUMO_TAG_PARAM);
+            out.writeAttr(SUMO_ATTR_KEY, (*j).first);
+            out.writeAttr(SUMO_ATTR_VALUE, (*j).second);
+            out.closeTag();
+        }
         out.closeTag();
     }
 
 
 protected:
-    /// @brief flag to check if POI was loaded as GEO Position (main used by netedit)
-    bool myGeo;
-
-    /// @brief ID of lane in which this POI is placed (main used by netedit)
-    std::string myLane;
-
-    /// @brief position over lane in which this POI is placed (main used by netedit)
-    double myPosOverLane;
-
-    /// @brief latereal position over lane in which this POI is placed (main used by netedit)
-    double myPosLat;
-
-    /// @brief The half width of the image when rendering this POI
+    ///@brief The half width of the image when rendering this POI
     double myHalfImgWidth;
 
-    /// @brief The half height of the image when rendering this POI
+    ///@brief The half height of the image when rendering this POI
     double myHalfImgHeight;
 
 };

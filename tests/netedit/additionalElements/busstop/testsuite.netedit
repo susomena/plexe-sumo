@@ -14,11 +14,12 @@ inspect_selection
 # load additional
 load
 
-# lock/unlock additional
-lock_unlock
-
 # move additional
 move
 
+# lock/unlock additional
+lock_unlock
+
 # volatile recomputing
 volatileRecomputing
+

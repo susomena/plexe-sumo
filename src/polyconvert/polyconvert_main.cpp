@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2005-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    polyconvert_main.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // Main for POLYCONVERT
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2005-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
@@ -37,7 +44,7 @@
 #include <utils/common/StringTokenizer.h>
 #include <utils/common/SystemFrame.h>
 #include <utils/common/MsgHandler.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/ToString.h>
 #include <utils/iodevices/OutputDevice.h>
 #include <utils/importio/LineReader.h>
@@ -54,7 +61,7 @@
 #include <polyconvert/PCTypeMap.h>
 #include <polyconvert/PCTypeDefHandler.h>
 #include <polyconvert/PCNetProjectionLoader.h>
-#include <polyconvert/pc_typemap.h>
+#include "pc_typemap.h"
 
 
 // ===========================================================================
@@ -107,8 +114,6 @@ fillOptions() {
     oc.addDescription("osm.keep-full-type", "Input", "The type will be made of the key-value - pair");
     oc.doRegister("osm.use-name", new Option_Bool(false));
     oc.addDescription("osm.use-name", "Input", "The id will be set from the given 'name' attribute");
-    oc.doRegister("osm.merge-relations", new Option_Float(-1));
-    oc.addDescription("osm.merge-relations", "Input", "If FLOAT >= 0, assemble one polygon from all ways of a relation if they all connect with gaps below FLOAT");
 
     // arcview import
     oc.doRegister("shapefile-prefixes", new Option_FileName());
@@ -217,8 +222,8 @@ fillOptions() {
 int
 main(int argc, char** argv) {
     OptionsCont& oc = OptionsCont::getOptions();
-    oc.setApplicationDescription("Importer of polygons and POIs for the microscopic, multi-modal traffic simulation SUMO.");
-    oc.setApplicationName("polyconvert", "Eclipse SUMO polyconvert Version " VERSION_STRING);
+    oc.setApplicationDescription("Importer of polygons and POIs for the road traffic simulation SUMO.");
+    oc.setApplicationName("polyconvert", "SUMO polyconvert Version " VERSION_STRING);
     int ret = 0;
     try {
         // initialise subsystems
@@ -265,7 +270,7 @@ main(int argc, char** argv) {
             }
             bool ok = true;
             // !!! no proper error handling
-            Boundary offsets = GeomConvHelper::parseBoundaryReporting(oc.getString("prune.in-net.offsets"), "--prune.on-net.offsets", nullptr, ok);
+            Boundary offsets = GeomConvHelper::parseBoundaryReporting(oc.getString("prune.in-net.offsets"), "--prune.on-net.offsets", 0, ok);
             pruningBoundary = Boundary(
                                   pruningBoundary.xmin() + offsets.xmin(),
                                   pruningBoundary.ymin() + offsets.ymin(),
@@ -276,7 +281,7 @@ main(int argc, char** argv) {
         if (oc.isSet("prune.boundary")) {
             bool ok = true;
             // !!! no proper error handling
-            pruningBoundary = GeomConvHelper::parseBoundaryReporting(oc.getString("prune.boundary"), "--prune.boundary", nullptr, ok);
+            pruningBoundary = GeomConvHelper::parseBoundaryReporting(oc.getString("prune.boundary"), "--prune.boundary", 0, ok);
             prune = true;
         }
         if (oc.isSet("osm-files") && oc.isDefault("poi-layer-offset")) {
@@ -288,7 +293,7 @@ main(int argc, char** argv) {
         // read in the type defaults
         if (!oc.isSet("type-file")) {
             const char* sumoPath = std::getenv("SUMO_HOME");
-            if (sumoPath == nullptr) {
+            if (sumoPath == 0) {
                 WRITE_WARNING("Environment variable SUMO_HOME is not set, using built in type maps.");
             } else {
                 const std::string path = sumoPath + std::string("/data/typemap/");

@@ -1,18 +1,22 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    outputs.py
+@author  Yun-Pang Floetteroed
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2007-12-25
+@version $Id$
 
-# @file    outputs.py
-# @author  Yun-Pang Floetteroed
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2007-12-25
-# @version $Id$
+This script is for generating the outputs from the choosed traffic assignment.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2007-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -76,10 +80,8 @@ def outputStatistics(net, starttime, periods):
         if edge.estcapacity > 0.:
             totaltime += edge.flow * edge.actualtime
             totalflow += edge.flow
-            foutMOE.write(('\nedge:%s \t from:%s \t to:%s \t freeflowtime(s):%2.2f \t traveltime(s):%2.2f \t ' +
-                           'traffic flow(veh):%2.2f \t v/c:%2.2f') % (
-                          edge._id, edge._from, edge._to, edge.freeflowtime, edge.actualtime,
-                          edge.flow, (edge.flow / edge.estcapacity)))
+            foutMOE.write('\nedge:%s \t from:%s \t to:%s \t freeflowtime(s):%2.2f \t traveltime(s):%2.2f \t traffic flow(veh):%2.2f \t v/c:%2.2f'
+                          % (edge._id, edge._from, edge._to, edge.freeflowtime, edge.actualtime, edge.flow, (edge.flow / edge.estcapacity)))
         if edge.flow > edge.estcapacity and edge.connection == 0:
             foutMOE.write('****overflow!')
 
@@ -164,8 +166,7 @@ def linkChoicesOutput(net, startVertices, endVertices, matrixPshort, linkChoiceM
                         odIndex = odPairsMap[
                             startVertex.label][endVertex.label]
                         foutchoice.write('            <choice origin="%s" destination="%s" choiceprob="%.5f"/>\n'
-                                         % (startVertex.label, endVertex.label,
-                                            linkChoiceMap[e.detected][odIndex] / matrixPshort[start][end]))
+                                         % (startVertex.label, endVertex.label, linkChoiceMap[e.detected][odIndex] / matrixPshort[start][end]))
             foutchoice.write('        </choiceprobs>\n')
             foutchoice.write('    </edge>\n')
     foutchoice.write('</edgechoices>\n')

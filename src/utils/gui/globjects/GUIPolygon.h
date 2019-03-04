@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIPolygon.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // The GUI-version of a polygon
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIPolygon_h
 #define GUIPolygon_h
 
@@ -23,9 +26,14 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
+#include <utils/foxtools/MFXMutex.h>
 #include <utils/shapes/SUMOPolygon.h>
 #include <utils/gui/globjects/GUIGlObject_AbstractAdd.h>
 #include <utils/gui/globjects/GLIncludes.h>
@@ -48,18 +56,16 @@ public:
      * @param[in] layer The layer of the polygon
      * @param[in] angle The rotation of the polygon
      * @param[in] imgFile The raster image of the polygon
-     * @param[in] relativePath set image file as relative path
      * @param[in] shape The shape of the polygon
-     * @param[in] geo specifiy if shape was loaded as GEO
      * @param[in] fill Whether the polygon shall be filled
-     * @param[in] lineWidth Line width when drawing unfilled polygon
      */
     GUIPolygon(const std::string& id, const std::string& type,
-               const RGBColor& color, const PositionVector& shape, bool geo, bool fill, double lineWidth,
-               double layer = 0, double angle = 0, const std::string& imgFile = "", bool relativePath = false);
+               const RGBColor& color, const PositionVector& shape, bool fill,
+               double layer = 0, double angle = 0, const std::string& imgFile = "");
 
     /// @brief Destructor
     ~GUIPolygon();
+
 
 
     /// @name inherited from GUIGlObject
@@ -106,22 +112,20 @@ public:
     /// @brief set a new shape and update the tesselation
     virtual void setShape(const PositionVector& shape);
 
-protected:
-    /// @brief set color
-    void setColor(const GUIVisualizationSettings& s, bool disableSelectionColor) const;
-
-    /// @brief check if Polygon can be drawn
-    bool checkDraw(const GUIVisualizationSettings& s) const;
-
-    /// @brief draw inner Polygon (before pushName() )
-    void drawInnerPolygon(const GUIVisualizationSettings& s, bool disableSelectionColor) const;
+    /// @brief set a new shape and update the tesselation
+    void setLineWidth(double lineWidth) {
+        myLineWidth = lineWidth;
+    }
 
 private:
     /// The mutex used to avoid concurrent updates of the shape
-    mutable FXMutex myLock;
+    mutable MFXMutex myLock;
 
     /// @brief id of the display list for the cached tesselation
     mutable GLuint myDisplayList;
+
+    /// @brief the previous line width for deciding whether the display list must be refreshed
+    mutable double myLineWidth;
 
     /// @brief store the drawing commands in a display list
     void storeTesselation(double lineWidth) const;

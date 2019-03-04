@@ -1,18 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSStopOut.h
 /// @author  Jakob Erdmann
 /// @date    Wed, 21.12.2016
 /// @version $Id$
 ///
 // Ouput information about planned vehicle stop
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef MSStopOut_h
 #define MSStopOut_h
@@ -21,7 +24,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include <utils/common/SUMOTime.h>
@@ -58,8 +65,6 @@ public:
         return myInstance != 0;
     }
 
-    static void cleanup();
-
     static MSStopOut* getInstance() {
         return myInstance;
     }
@@ -70,7 +75,7 @@ public:
     /// @brief Destructor.
     virtual ~MSStopOut();
 
-    void stopStarted(const SUMOVehicle* veh, int numPersons, int numContainers, SUMOTime time);
+    void stopStarted(const SUMOVehicle* veh, int numPersons, int numContainers);
 
     void loadedPersons(const SUMOVehicle* veh, int n);
     void unloadedPersons(const SUMOVehicle* veh, int n);
@@ -78,7 +83,7 @@ public:
     void loadedContainers(const SUMOVehicle* veh, int n);
     void unloadedContainers(const SUMOVehicle* veh, int n);
 
-    void stopEnded(const SUMOVehicle* veh, const SUMOVehicleParameter::Stop& stop, const std::string& laneOrEdgeID);
+    void stopEnded(const SUMOVehicle* veh, const MSVehicle::Stop& stop);
 
 
 private:

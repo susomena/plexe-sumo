@@ -13,14 +13,8 @@ until_and_duration
 # Tests whether stops can be in wrong order
 out_of_order
 
-# Tests handling out-of-order busstops
-busstop_out_of_order_ignore
-
 # Tests whether stops can be on cyclic routes
 cyclic_route
-
-# Tests whether cyclical stops can be handled within a trip
-cyclic_trip
 
 # Tests whether max-depart-delay can be handled
 max_delay
@@ -47,9 +41,6 @@ parking_delay_insertion
 # (see ticket 420)
 triggered_defaults_to_parking
 
-# test behavior of a vehicle with triggered stop as well as stop duration
-triggered_duration
-
 # Tests whether stopped vehicles can be overtaken
 overtaking
 
@@ -67,9 +58,6 @@ simple_stop_expecting0
 simple_stop_expecting1
 simple_stop_expecting2
 
-# wait for 2 persons but also wait at least 250s
-simple_stop_expecting2_duration
-
 # teleport should remove stops from the list
 teleport
 teleport_multihop
@@ -81,7 +69,6 @@ bestLaneStop0
 # error handling
 not_allowed
 too_short
-too_close
 until_order
 
 # tests  defining a stop on an internal lane
@@ -98,21 +85,3 @@ looped_route
 
 # later stop is before previous stop edge and must be used on the second time it is reached
 looped_route2
-
-# public-transport-style stops:
-# - with until-attribute 
-# - inside a stand-alone route
-# - used within a flow
-flow_until
-
-# Tests for flexible assignment of stopping positions (#3937)
-busstop_stopping_position_assignment
-
-# Tests for flexible assignment of stopping positions (#3937)
-busstop_stopping_position_assignment_parking
-
-# check consistency of stop positions and depar/arrival position
-departPos_arrivalPos
-
-# long stopping times should not trigger teleport, but teleports should possible after the stop
-long_stop

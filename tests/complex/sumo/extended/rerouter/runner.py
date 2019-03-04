@@ -1,28 +1,32 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2012-08-10
+@version $Id$
 
-# @file    runner.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2012-08-10
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
 import os
 import subprocess
 import sys
+import time
 sys.path.append(os.path.join(
     os.path.dirname(sys.argv[0]), '..', '..', '..', '..', '..', "tools"))
-import traci  # noqa
+import traci
 import sumolib  # noqa
 
 
@@ -70,8 +74,7 @@ def writeRerouterDefinition(fdo, edge, t, rerouter):
 def writeRerouter(edge, t, rerouter, embedded):
     fdo = open("rerouter.xml", "w")
     fdo.write(
-        '<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation=' +
-        '"http://sumo.dlr.de/xsd/additional_file.xsd">\n\n')
+        '<additional xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/additional_file.xsd">\n\n')
     if embedded:
         fdo.write('<rerouter id="rerouter" edges="%s">\n' % (edge))
         writeRerouterDefinition(fdo, edge, t, rerouter)
@@ -92,8 +95,7 @@ def writeRerouter(edge, t, rerouter, embedded):
 def writeRoutes(routes, multiRef):
     fdo = open("input_routes.rou.xml", "w")
     fdo.write(
-        '<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation=' +
-        '"http://sumo.dlr.de/xsd/routes_file.xsd">\n\n')
+        '<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">\n\n')
     fdo.write(
         '    <vType id="DEFAULT_VEHTYPE" accel="2.6" decel="4.5" sigma="0" length="3" minGap="2" maxSpeed="70"/>\n')
     for r in routes:
@@ -182,6 +184,6 @@ for r in rerouter:
                     verify(vehroutes, edge[0])
                     try:
                         os.remove("vehroutes.xml")
-                    except OSError:
+                    except:
                         pass
     nd.close()

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSActuatedTrafficLightLogic.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Julia Ringel
@@ -18,12 +10,27 @@
 ///
 // An actuated (adaptive) traffic light logic
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <utility>
@@ -37,12 +44,9 @@
 #include "MSTrafficLightLogic.h"
 #include "MSActuatedTrafficLightLogic.h"
 #include <microsim/MSLane.h>
-#include <microsim/MSEdge.h>
 #include <netload/NLDetectorBuilder.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 
-//#define DEBUG_DETECTORS
-#define DEBUG_COND (getID()=="26121229")
 
 // ===========================================================================
 // parameter defaults definitions
@@ -63,14 +67,14 @@ MSActuatedTrafficLightLogic::MSActuatedTrafficLightLogic(MSTLLogicControl& tlcon
         int step, SUMOTime delay,
         const std::map<std::string, std::string>& parameter,
         const std::string& basePath) :
-    MSSimpleTrafficLightLogic(tlcontrol, id, programID, TLTYPE_ACTUATED, phases, step, delay, parameter) {
+    MSSimpleTrafficLightLogic(tlcontrol, id, programID, phases, step, delay, parameter) {
 
-    myMaxGap = StringUtils::toDouble(getParameter("max-gap", DEFAULT_MAX_GAP));
-    myPassingTime = StringUtils::toDouble(getParameter("passing-time", DEFAULT_PASSING_TIME)); // passing-time seems obsolete... (Leo)
-    myDetectorGap = StringUtils::toDouble(getParameter("detector-gap", DEFAULT_DETECTOR_GAP));
-    myShowDetectors = StringUtils::toBool(getParameter("show-detectors", toString(OptionsCont::getOptions().getBool("tls.actuated.show-detectors"))));
+    myMaxGap = TplConvert::_2double(getParameter("max-gap", DEFAULT_MAX_GAP).c_str());
+    myPassingTime = TplConvert::_2double(getParameter("passing-time", DEFAULT_PASSING_TIME).c_str()); // passing-time seems obsolete... (Leo)
+    myDetectorGap = TplConvert::_2double(getParameter("detector-gap", DEFAULT_DETECTOR_GAP).c_str());
+    myShowDetectors = TplConvert::_2bool(getParameter("show-detectors", "false").c_str());
     myFile = FileHelpers::checkForRelativity(getParameter("file", "NUL"), basePath);
-    myFreq = TIME2STEPS(StringUtils::toDouble(getParameter("freq", "300")));
+    myFreq = TIME2STEPS(TplConvert::_2double(getParameter("freq", "300").c_str()));
     myVehicleTypes = getParameter("vTypes", "");
 }
 
@@ -80,57 +84,19 @@ void
 MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
     MSTrafficLightLogic::init(nb);
     assert(myLanes.size() > 0);
-    bool warn = true; // warn only once
-    const int numLinks = (int)myLinks.size();
-
-    // Detector position should be computed based on road speed. If the position
-    // is quite far away and the minDur is short this may cause the following
-    // problems:
-    //
-    // 1)  high flow failure: 
-    // In a standing queue, no vehicle touches the detector. 
-    // By the time the queue advances, the detector gap has been exceeded and the phase terminates prematurely
-    //
-    // 2) low flow failure
-    // The standing queue is fully between stop line and detector and there are no further vehicles. 
-    // The minDur is too short to let all vehicles pass
-    //
-    // Problem 2) is not so critical because there is less potential for
-    // jamming in a low-flow situation. In contrast, problem 1) should be
-    // avoided as it has big jamming potential. We compute an upper bound for the
-    // detector disatnce to avoid it
-
-
     // change values for setting the loops and lanestate-detectors, here
     //SUMOTime inductLoopInterval = 1; //
     LaneVectorVector::const_iterator i2;
     LaneVector::const_iterator i;
     // build the induct loops
-    std::map<const MSLane*, MSInductLoop*> laneInductLoopMap;
     double maxDetectorGap = 0;
     for (i2 = myLanes.begin(); i2 != myLanes.end(); ++i2) {
         const LaneVector& lanes = *i2;
         for (i = lanes.begin(); i != lanes.end(); i++) {
             MSLane* lane = (*i);
-            if (noVehicles(lane->getPermissions())) {
-                // do not build detectors on green verges or sidewalks
-                continue;
-            }
-            if (laneInductLoopMap.find(lane) != laneInductLoopMap.end()) {
-                // only build one detector per lane
-                continue;
-            }
-            const SUMOTime minDur = getMinimumMinDuration(lane);
-            if (minDur == std::numeric_limits<SUMOTime>::max()) {
-                // only build detector if this lane is relevant for an actuated phase
-                continue;
-            }
             double length = lane->getLength();
             double speed = lane->getSpeedLimit();
-            double inductLoopPosition = MIN2(
-                    myDetectorGap * speed,
-                    (STEPS2TIME(minDur) - 1) * DEFAULT_LENGTH_WITH_GAP);
-
+            double inductLoopPosition = myDetectorGap * speed;
             // check whether the lane is long enough
             double ilpos = length - inductLoopPosition;
             if (ilpos < 0) {
@@ -138,211 +104,30 @@ MSActuatedTrafficLightLogic::init(NLDetectorBuilder& nb) {
             }
             // Build the induct loop and set it into the container
             std::string id = "TLS" + myID + "_" + myProgramID + "_InductLoopOn_" + lane->getID();
-            MSInductLoop* loop = static_cast<MSInductLoop*>(nb.createInductLoop(id, lane, ilpos, myVehicleTypes, myShowDetectors));
-            laneInductLoopMap[lane] = loop;
-            myInductLoops.push_back(loop);
-            MSNet::getInstance()->getDetectorControl().add(SUMO_TAG_INDUCTION_LOOP, loop, myFile, myFreq);
+            if (myInductLoops.find(lane) == myInductLoops.end()) {
+                myInductLoops[lane] = nb.createInductLoop(id, lane, ilpos, myVehicleTypes, myShowDetectors);
+                MSNet::getInstance()->getDetectorControl().add(SUMO_TAG_INDUCTION_LOOP, myInductLoops[lane], myFile, myFreq);
+            }
             maxDetectorGap = MAX2(maxDetectorGap, length - ilpos);
-
-            if (warn && floor(floor(inductLoopPosition / DEFAULT_LENGTH_WITH_GAP) * myPassingTime) > STEPS2TIME(minDur)) {
-                // warn if the minGap is insufficient to clear vehicles between stop line and detector
-                WRITE_WARNING("At actuated tlLogic '" + getID() + "', minDur " + time2string(minDur) + " is too short for a detector gap of " + toString(inductLoopPosition) + "m.");
-                warn = false;
-            }
         }
     }
-    // assign loops to phase index (myInductLoopsForPhase)
-    //  check1: loops may not be used for a phase if there are other connections from the same lane that may not drive in that phase
-    //            greenMinor is ambiguous as vehicles may not be able to drive
-    //            Under the following condition we allow actuation from minor link:
-    //              check1a : the minor link is minor in all phases
-    //              check1b : there is another major link from the same lane in the current phase
-    //            (Under these conditions we assume that the minor link is unimportant and traffic is mostly for the major link)
-    //
-    //              check1c: when the lane has only one edge, we treat greenMinor as green as there would be no actuation otherwise
-    //             
-    //  check2: if there are two loops on subsequent lanes (joined tls) and the second one has a red link, the first loop may not be used
-
-    // also assign loops to link index for validation:
-    // check if all links from actuated phases (minDur != maxDur) have an inductionloop in at least one phase
-    const SVCPermissions motorized = ~(SVC_PEDESTRIAN | SVC_BICYCLE);
-    std::map<int, std::set<MSInductLoop*> > linkToLoops;
-    std::set<int> actuatedLinks;
-
-    std::vector<bool> neverMajor(numLinks, true);
-    for (const MSPhaseDefinition* phase : myPhases) {
-        const std::string& state = phase->getState();
-        for (int i = 0; i < numLinks; i++)  {
-            if (state[i] == LINKSTATE_TL_GREEN_MAJOR) {
-                neverMajor[i] = false;
-            }
-        }
-    }
-    std::vector<bool> oneLane(numLinks, false);
-    for (int i = 0; i < numLinks; i++)  {
-        for (MSLane* lane : getLanesAt(i)) {
-            // only count motorized vehicle lanes
-            int numMotorized = 0;
-            for (MSLane* l : lane->getEdge().getLanes()) {
-                if ((l->getPermissions() & motorized) != 0) {
-                    numMotorized++;
-                }
-            }
-            if (numMotorized == 1) {
-                oneLane[i] = true;
-                break;
-            }
-        }
-    }
-
-
-    for (const MSPhaseDefinition* phase : myPhases) {
-        std::set<MSInductLoop*> loops;
-        if (phase->minDuration != phase->maxDuration) {
-            // actuated phase
-            const std::string& state = phase->getState();
-            // collect indices of all green links for the phase
-            std::set<int> greenLinks;
-            // collect green links for each induction loops (in this phase)
-            std::map<MSInductLoop*, std::set<int> > loopLinks;
-
-            for (int i = 0; i < (int)state.size(); i++)  {
-                if (state[i] == LINKSTATE_TL_GREEN_MAJOR 
-                        || (state[i] == LINKSTATE_TL_GREEN_MINOR 
-                            && ((neverMajor[i]  // check1a
-                                    && hasMajor(state, getLanesAt(i))) // check1b
-                                || oneLane[i])) // check1c
-                   ) {
-                    greenLinks.insert(i);
-                    actuatedLinks.insert(i);
-                }
-#ifdef DEBUG_DETECTORS
-               //if (DEBUG_COND) {
-               //    std::cout << " phase=" << myInductLoopsForPhase.size() << " i=" << i << " state=" << state[i] << " green=" << greenLinks.count(i) << " oneLane=" << oneLane[i] 
-               //        << " loopLanes="; 
-               //    for (MSLane* lane: getLanesAt(i)) {
-               //        if (laneInductLoopMap.count(lane) != 0) {
-               //            std::cout << lane->getID() << " ";
-               //        }
-               //    }
-               //    std::cout << "\n";
-               //}
-#endif
-                for (MSLane* lane: getLanesAt(i)) {
-                    if (laneInductLoopMap.count(lane) != 0) {
-                        loopLinks[laneInductLoopMap[lane]].insert(i);
-                    }
-                }
-            }
-            for (auto& item : loopLinks) {
-                bool usable = true;
-                // check1
-                for (int j : item.second) {
-                    if (greenLinks.count(j) == 0) {
-                        usable = false;
-#ifdef DEBUG_DETECTORS
-                        if (DEBUG_COND) std::cout << " phase=" << myInductLoopsForPhase.size() << " check1: loopLane=" << item.first->getLane()->getID() << " notGreen=" << j << " oneLane[j]=" << oneLane[j] << "\n";
-#endif
-                        break;
-                    }
-                }
-                // check2
-                if (usable) {
-                    const MSLane* loopLane = item.first->getLane();
-                    for (MSLink* link : loopLane->getLinkCont()) {
-                        const MSLane* next = link->getLane();
-                        if (laneInductLoopMap.count(next) != 0) {
-                            MSInductLoop* nextLoop = laneInductLoopMap[next];
-                            for (int j : loopLinks[nextLoop]) {
-                                if (greenLinks.count(j) == 0) {
-                                    usable = false;
-#ifdef DEBUG_DETECTORS
-                                    if (DEBUG_COND) std::cout << " phase=" << myInductLoopsForPhase.size() << " check2: loopLane=" << item.first->getLane()->getID() 
-                                        << " nextLane=" << next->getID() << " nextLink=" << j << " nextState=" << state[j] << "\n";
-#endif
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (usable) {
-                    loops.insert(item.first);
-#ifdef DEBUG_DETECTORS
-                    //if (DEBUG_COND) std::cout << " phase=" << myInductLoopsForPhase.size() << " usableLoops=" << item.first->getID() << " links=" << joinToString(item.second, " ") << "\n";
-#endif
-                    for (int j : item.second) {
-                        linkToLoops[j].insert(item.first);
-                    }
-                }
-            }
-            if (loops.size() == 0) {
-                WRITE_WARNING("At actuated tlLogic '" + getID() + "', actuated phase " + toString(myInductLoopsForPhase.size()) + " has no controlling detector");
-            }
-        }
-#ifdef DEBUG_DETECTORS
-        if (DEBUG_COND) std::cout << " phase=" << myInductLoopsForPhase.size() << " loops=" << joinNamedToString(loops, " ") << "\n";
-        //if (DEBUG_COND) {
-        //    std::cout << " linkToLoops:\n"; 
-        //    for (auto item : linkToLoops) {
-        //        std::cout << "   link=" << item.first << " loops=" << joinNamedToString(item.second, " ") << "\n";
-        //    }
-        //}
-#endif
-        myInductLoopsForPhase.push_back(std::vector<MSInductLoop*>(loops.begin(), loops.end()));
-    }
-#ifdef DEBUG_DETECTORS
-    //if (DEBUG_COND) {
-    //    std::cout << "final linkToLoops:\n"; 
-    //    for (auto item : linkToLoops) {
-    //        std::cout << "   link=" << item.first << " loops=" << joinNamedToString(item.second, " ") << "\n";
-    //    }
-    //}
-#endif
-    for (int i : actuatedLinks) {
-        if (linkToLoops[i].size() == 0 && myLinks[i].size() > 0 
-                && (myLinks[i].front()->getLaneBefore()->getPermissions() & motorized) != 0) {
-            WRITE_WARNING("At actuated tlLogic '" + getID() + "', linkIndex " + toString(i) + " has no controlling detector");
-        }
+    // warn if the minGap is insufficient to clear vehicles between stop line and detector
+    SUMOTime minMinDur = getMinimumMinDuration();
+    if (floor(floor(maxDetectorGap / DEFAULT_LENGTH_WITH_GAP) * myPassingTime) > STEPS2TIME(minMinDur)) {
+        WRITE_WARNING("At actuated traffic light '" + getID() + "', minDur " + time2string(minMinDur) + " is too short to short for detector gap of " + toString(maxDetectorGap) + "m.");
     }
 }
 
 
 SUMOTime
-MSActuatedTrafficLightLogic::getMinimumMinDuration(MSLane* lane) const {
-    SUMOTime result = std::numeric_limits<SUMOTime>::max();
-    for (const MSPhaseDefinition* phase : myPhases) {
-        const std::string& state = phase->getState();
-        for (int i = 0; i < (int)state.size(); i++)  {
-            if (state[i] == LINKSTATE_TL_GREEN_MAJOR || state[i] == LINKSTATE_TL_GREEN_MINOR) {
-                for (MSLane* cand: getLanesAt(i)) {
-                    if (lane == cand) {
-                        if (phase->minDuration != phase->maxDuration) {
-                            result = MIN2(result, phase->minDuration);
-                        }
-                    }
-                }
-            }
+MSActuatedTrafficLightLogic::getMinimumMinDuration() const {
+    SUMOTime result = SUMOTime_MAX;
+    for (auto phase : myPhases) {
+        if (phase->minDuration != phase->maxDuration) {
+            result = MIN2(result, phase->minDuration);
         }
     }
     return result;
-}
-
-bool 
-MSActuatedTrafficLightLogic::hasMajor(const std::string& state, const LaneVector& lanes) const {
-    for (int i = 0; i < (int)state.size(); i++) {
-        if (state[i] == LINKSTATE_TL_GREEN_MAJOR) {
-            for (MSLane* cand : getLanesAt(i)) {
-                for (MSLane* lane : lanes) {
-                    if (lane == cand) {
-                        return true;
-                    }
-                }
-            }
-        }
-    }
-    return false;
 }
 
 
@@ -364,13 +149,6 @@ MSActuatedTrafficLightLogic::trySwitch() {
     }
     //stores the time the phase started
     myPhases[myStep]->myLastSwitch = MSNet::getInstance()->getCurrentTimeStep();
-    // activate coloring
-    if (myShowDetectors && getCurrentPhaseDef().isGreenPhase()) {
-        for (MSInductLoop* loop : myInductLoopsForPhase[myStep]) {
-            loop->setSpecialColor(&RGBColor::GREEN);
-        }
-    }
-
     // set the next event
     return getCurrentPhaseDef().minDuration;
 }
@@ -402,15 +180,6 @@ MSActuatedTrafficLightLogic::gapControl() {
     //intergreen times should not be lenghtend
     assert((int)myPhases.size() > myStep);
     double result = std::numeric_limits<double>::max();
-    if (MSGlobals::gUseMesoSim) {
-        return result;
-    }
-    // switch off active colors
-    if (myShowDetectors) {
-        for (MSInductLoop* loop : myInductLoops) {
-            loop->setSpecialColor(nullptr);
-        }
-    }
     if (!getCurrentPhaseDef().isGreenPhase()) {
         return result; // end current phase
     }
@@ -422,11 +191,21 @@ MSActuatedTrafficLightLogic::gapControl() {
     }
 
     // now the gapcontrol starts
-    for (MSInductLoop* loop : myInductLoopsForPhase[myStep]) {
-        loop->setSpecialColor(&RGBColor::GREEN);
-        const double actualGap = loop->getTimeSinceLastDetection();
-        if (actualGap < myMaxGap) {
-            result = MIN2(result, actualGap);
+    const std::string& state = getCurrentPhaseDef().getState();
+    for (int i = 0; i < (int) state.size(); i++)  {
+        if (state[i] == LINKSTATE_TL_GREEN_MAJOR || state[i] == LINKSTATE_TL_GREEN_MINOR) {
+            const std::vector<MSLane*>& lanes = getLanesAt(i);
+            for (LaneVector::const_iterator j = lanes.begin(); j != lanes.end(); j++) {
+                if (myInductLoops.find(*j) == myInductLoops.end()) {
+                    continue;
+                }
+                if (!MSGlobals::gUseMesoSim) { // why not check outside the loop? (Leo)
+                    const double actualGap = static_cast<MSInductLoop*>(myInductLoops.find(*j)->second)->getTimeSinceLastDetection();
+                    if (actualGap < myMaxGap) {
+                        result = MIN2(result, actualGap);
+                    }
+                }
+            }
         }
     }
     return result;

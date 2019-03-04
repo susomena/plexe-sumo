@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ODAmitranHandler.cpp
 /// @author  Michael Behrisch
 /// @date    27.03.2014
@@ -14,12 +6,27 @@
 ///
 // An XML-Handler for Amitran OD matrices
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/common/MsgHandler.h>
 #include "ODMatrix.h"
@@ -41,7 +48,7 @@ ODAmitranHandler::myStartElement(int element, const SUMOSAXAttributes& attrs) {
     bool ok = true;
     switch (element) {
         case SUMO_TAG_ACTORCONFIG:
-            myVehicleType = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+            myVehicleType = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
             break;
         case SUMO_TAG_TIMESLICE:
             myBegin = attrs.get<int>(SUMO_ATTR_STARTTIME, myVehicleType.c_str(), ok);

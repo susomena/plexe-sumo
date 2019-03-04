@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RORoute.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,12 +8,27 @@
 ///
 // A complete router's route
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <iostream>
@@ -46,12 +53,12 @@ RORoute::RORoute(const std::string& id, double costs, double prop,
 
 RORoute::RORoute(const std::string& id, const ConstROEdgeVector& route)
     : Named(StringUtils::convertUmlaute(id)), myCosts(0.0),
-      myProbability(0.0), myRoute(route), myColor(nullptr), myStops() {}
+      myProbability(0.0), myRoute(route), myColor(0), myStops() {}
 
 RORoute::RORoute(const RORoute& src)
     : Named(src.myID), myCosts(src.myCosts),
-      myProbability(src.myProbability), myRoute(src.myRoute), myColor(nullptr) {
-    if (src.myColor != nullptr) {
+      myProbability(src.myProbability), myRoute(src.myRoute), myColor(0) {
+    if (src.myColor != 0) {
         myColor = new RGBColor(*src.myColor);
     }
 }
@@ -75,8 +82,8 @@ RORoute::setProbability(double prob) {
 
 
 void
-RORoute::recheckForLoops(const ConstROEdgeVector& mandatory) {
-    ROHelper::recheckForLoops(myRoute, mandatory);
+RORoute::recheckForLoops() {
+    ROHelper::recheckForLoops(myRoute);
 }
 
 void
@@ -96,24 +103,30 @@ RORoute::writeXMLDefinition(OutputDevice& dev, const ROVehicle* const veh,
         dev.writeAttr(SUMO_ATTR_PROB, myProbability);
         dev.setPrecision();
     }
-    if (myColor != nullptr) {
+    if (myColor != 0) {
         dev.writeAttr(SUMO_ATTR_COLOR, *myColor);
     }
-    ConstROEdgeVector tempRoute;
-    for (const ROEdge* roe : myRoute) {
-        if (!roe->isInternal() && !roe->isTazConnector()) {
-            tempRoute.push_back(roe);
+    if (!myRoute.empty()) {
+        const int frontOffset = myRoute.front()->isTazConnector() ? 1 : 0;
+        const int backOffset = myRoute.back()->isTazConnector() ? 1 : 0;
+        if (frontOffset + backOffset > 0) {
+            ConstROEdgeVector temp(myRoute.begin() + frontOffset, myRoute.end() - backOffset);
+            dev.writeAttr(SUMO_ATTR_EDGES, temp);
+        } else {
+            dev.writeAttr(SUMO_ATTR_EDGES, myRoute);
         }
+    } else {
+        dev.writeAttr(SUMO_ATTR_EDGES, myRoute);
     }
-    dev.writeAttr(SUMO_ATTR_EDGES, tempRoute);
     if (withExitTimes) {
-        std::vector<double> exitTimes;
+        std::string exitTimes;
         double time = STEPS2TIME(veh->getDepartureTime());
-        for (const ROEdge* roe : myRoute) {
-            time += roe->getTravelTime(veh, time);
-            if (!roe->isInternal() && !roe->isTazConnector()) {
-                exitTimes.push_back(time);
+        for (ConstROEdgeVector::const_iterator i = myRoute.begin(); i != myRoute.end(); ++i) {
+            if (i != myRoute.begin()) {
+                exitTimes += " ";
             }
+            time += (*i)->getTravelTime(veh, time);
+            exitTimes += toString(time);
         }
         dev.writeAttr("exitTimes", exitTimes);
     }

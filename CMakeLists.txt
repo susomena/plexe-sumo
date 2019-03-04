@@ -1,225 +1,130 @@
-# Options
-option(CHECK_OPTIONAL_LIBS "Try to download / enable all optional libraries (use only EPL clean libraries, if set to false)" true)
-option(MULTITHREADED_BUILD "Use all available cores for building (applies to Visual Studio only)" true)
-option(PROFILING "Enable output of profiling data (applies to gcc/clang builds only)" false)
-option(COVERAGE "Enable output of coverage data (applies to gcc/clang builds only)" false)
-option(SUMO_UTILS "Enable generation of a shared library for the utility functions for option handling, XML parsing etc." false)
-set(BINARY_SUFFIX "" CACHE STRING "Append the suffix to every generated binary")
-set(COMPILE_DEFINITIONS "" CACHE STRING "Macros or defines to add when compiling")
+#Options:
+# -DCMAKE_BUILD_TYPE:STRING=Release (default Debug)
 
-# Set a default build type if none was specified
-# you may use -DCMAKE_BUILD_TYPE:STRING=Debug from the command line
-set(default_build_type "Release")
-
-if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
-  set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
-      STRING "Choose the type of build." FORCE)
-  # Set the possible values of build type for cmake-gui
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
-endif()
+option(BUILD_GRPC "Build grpc interface" false)
+option(BUILD_GTEST_FROM_GIT "Build grpc interface" false)
 
 project(SUMO)
-set(PACKAGE_VERSION "git")
 cmake_minimum_required(VERSION 3.1)
 # do not expand quoted variables in if statements
 cmake_policy(SET CMP0054 NEW)
 
 set(CMAKE_COLOR_MAKEFILE ON)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/build/cmake_modules/")
-
-set(ENABLED_FEATURES "${CMAKE_SYSTEM} ${CMAKE_SYSTEM_PROCESSOR} ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
-
-if(COMPILE_DEFINITIONS)
-  add_compile_definitions(${COMPILE_DEFINITIONS})
-endif()
-
-# compiler specific flags
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
         "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -Wall -pedantic -Wextra")
-    set(ENABLED_FEATURES "${ENABLED_FEATURES} ${CMAKE_BUILD_TYPE}")
-    if (PROFILING)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
-        set(ENABLED_FEATURES "${ENABLED_FEATURES} Profiling")
-        set(BINARY_SUFFIX "${BINARY_SUFFIX}P")
-    endif ()
-    if (COVERAGE)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage -O0")
-        set(ENABLED_FEATURES "${ENABLED_FEATURES} Coverage")
-    endif ()
-elseif (MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /W3")
-    # set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W4 /WX /EHsc")
+    set(warnings "-Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    #  set(warnings "/W4 /WX /EHsc")
     # enabling /WX is not possible due to warnings in external headers
     # /Wall brings MSVC to complete halt
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /W4 /EHsc")
-    if (MULTITHREADED_BUILD)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-    endif ()
+    set(warnings "/W4 /EHsc")
 endif ()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${warnings}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${warnings}")
 
-# special debug flags
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined,address,integer,unsigned-integer-overflow -fno-omit-frame-pointer -fsanitize-blacklist=${CMAKE_SOURCE_DIR}/build/clang_sanitize_blacklist.txt")
-endif ()
-
-# we need to build position independent code when generating a shared library
-if (SUMO_UTILS)
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-    set(ENABLED_FEATURES "${ENABLED_FEATURES} SumoUtilsLibrary")
-endif ()
+if (NOT CMAKE_BUILD_TYPE)
+    #  set (CMAKE_BUILD_TYPE Release)
+    set(CMAKE_BUILD_TYPE Debug)
+endif (NOT CMAKE_BUILD_TYPE)
+message(STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
-# force Visual Studio to leave out the Release / Debug dirs
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin)
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/bin")
 # Debug messages
 message(STATUS "CMAKE_BINARY_DIR: " ${CMAKE_BINARY_DIR})
 message(STATUS "CMAKE_SOURCE_DIR: " ${CMAKE_SOURCE_DIR})
 message(STATUS "")
 message(STATUS "Platform: ")
-message(STATUS "    Host: " ${CMAKE_HOST_SYSTEM} " " ${CMAKE_HOST_SYSTEM_PROCESSOR})
-message(STATUS "    Target: " ${CMAKE_SYSTEM} " " ${CMAKE_SYSTEM_PROCESSOR})
+message(STATUS "    Host: " ${CMAKE_HOST_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_VERSION} ${CMAKE_HOST_SYSTEM_PROCESSOR})
+if (CMAKE_CROSSCOMPILING)
+    message(STATUS "    Target: " ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_VERSION} ${CMAKE_SYSTEM_PROCESSOR})
+endif ()
 message(STATUS "    CMake: " ${CMAKE_VERSION})
 message(STATUS "    CMake generator: " ${CMAKE_GENERATOR})
 message(STATUS "    CMake build tool: " ${CMAKE_BUILD_TOOL})
-message(STATUS "    Compiler: " ${CMAKE_CXX_COMPILER_ID} " " ${CMAKE_CXX_COMPILER_VERSION})
+if (MSVC)
+    message(STATUS "    MSVC: " ${MSVC_VERSION})
+endif ()
 if (CMAKE_GENERATOR MATCHES Xcode)
     message(STATUS "    Xcode: " ${XCODE_VERSION})
 endif ()
+if (NOT CMAKE_GENERATOR MATCHES "Xcode|Visual Studio")
+    message(STATUS "    Configuration: " ${CMAKE_BUILD_TYPE})
+endif ()
 message(STATUS "")
 
-#set(Python_ADDITIONAL_VERSIONS 3.7 3.6 3.5 3.4 3.3 2.7) # it may help in finding the correct python for libsumo
-find_package(PythonInterp REQUIRED)
-message(STATUS "Found Python: " ${PYTHON_EXECUTABLE})
+set(ENABLED_FEATURES "${CMAKE_HOST_SYSTEM}")
 
 #http://stackoverflow.com/questions/1487752/how-do-i-instruct-cmake-to-look-for-libraries-installed-by-macports
 if (APPLE)
-    link_directories(/opt/X11/lib)
-    include_directories(/opt/X11/include)
     # Detect if the "port" command is valid on this system; if so, return full path
     execute_process(COMMAND which port RESULT_VARIABLE DETECT_MACPORTS OUTPUT_VARIABLE MACPORTS_PREFIX ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
     if (${DETECT_MACPORTS} EQUAL 0)
-        # MACPORTS_PREFIX contains now something like "/opt/local/bin/port", so we get the parent directory
+        # "/opt/local/bin/port" doesn't have libs, so we get the parent directory
+        get_filename_component(MACPORTS_PREFIX ${MACPORTS_PREFIX} DIRECTORY)
+        # "/opt/local/bin" doesn't have libs, so we get the parent directory
         get_filename_component(MACPORTS_PREFIX ${MACPORTS_PREFIX} DIRECTORY)
         # "/opt/local" is where MacPorts lives, add `/lib` suffix and link
-        link_directories(${MACPORTS_PREFIX}/../lib)
-        include_directories(${MACPORTS_PREFIX}/../include)
-        message(STATUS "Macports detected: ${MACPORTS_PREFIX}")
-    endif ()
-    # Recommendation, also add a "brew --prefix" custom command to detect a homebrew build environment
-    execute_process(COMMAND brew --prefix RESULT_VARIABLE DETECT_BREW OUTPUT_VARIABLE BREW_PREFIX ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if (${DETECT_BREW} EQUAL 0)
-        link_directories(${BREW_PREFIX}/lib)
-        include_directories(${BREW_PREFIX}/include)
-        message(STATUS "Brew detected: ${BREW_PREFIX}")
+        link_directories(${MACPORTS_PREFIX}/lib)
+        message(STATUS "Macports detected: ${MACPORTS_PREFIX}/lib")
+        # SET(CMAKE_SYSTEM_NAME Darwin)
+        # # Add MacPorts
+        # INCLUDE_DIRECTORIES(/opt/local/include)
+
+        # LINK_DIRECTORIES(/opt/local/lib)
+
+    else ()
+        # Recommendation, also add a "brew --prefix" custom command to detect a homebrew build environment
+        execute_process(COMMAND brew --prefix RESULT_VARIABLE DETECT_BREW OUTPUT_VARIABLE BREW_PREFIX ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if (${DETECT_BREW} EQUAL 0)
+            link_directories(${BREW_PREFIX}/lib)
+            message(STATUS "Brew detected: ${BREW_PREFIX}")
+        endif ()
     endif ()
 endif (APPLE)
 
-#  Specifically define variable WIN32 for compilations under windows (due an error in Shawn)
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND WIN32)
-    option(USE_MINGW_64BITS "Use 64 bits libraries for the compilation with MinGW" true)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DWIN32 -D_WIN32_WINNT=0x0501")
-endif ()
-
-# Check if libraries have to be found, depending on SUMO_LIBRARIES
-set(SUMO_LIBRARIES "$ENV{SUMO_LIBRARIES}" CACHE PATH "Location of SUMOLibraries dependencies")
-if (NOT SUMO_LIBRARIES AND EXISTS "${CMAKE_SOURCE_DIR}/../SUMOLibraries")
-    set(SUMO_LIBRARIES "${CMAKE_SOURCE_DIR}/../SUMOLibraries")
-endif ()
-if (SUMO_LIBRARIES)
-    # Special option for MinGW32
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND WIN32)
-        if(USE_MINGW_64BITS)
-            message(STATUS "Using 64 bit libraries from SUMO_LIBRARIES placed in " ${SUMO_LIBRARIES} " for MinGW compilation")
-            set(LIB_VERSION "_64")
-        else()
-            message(STATUS "Using 32 bit libraries from SUMO_LIBRARIES placed in " ${SUMO_LIBRARIES} " for MinGW compilation")
-            set(CHECK_OPTIONAL_LIBS false)
-        endif()
-    elseif(${CMAKE_MODULE_LINKER_FLAGS} STREQUAL "/machine:x64")
-        message(STATUS "Using 64 bit libraries from SUMO_LIBRARIES placed in " ${SUMO_LIBRARIES})
-        set(LIB_VERSION "_64")
-    else()
-        message(STATUS "Using 32 bit libraries from SUMO_LIBRARIES placed in " ${SUMO_LIBRARIES})
-        set(CHECK_OPTIONAL_LIBS false)
-    endif()
-    if("${MSVC_VERSION}" STREQUAL "1800")
-        file(GLOB XERCES_PATH "${SUMO_LIBRARIES}/msvc12/xerces-c-3.?.?${LIB_VERSION}")
-    else()
-        file(GLOB XERCES_PATH "${SUMO_LIBRARIES}/xerces-c-3.?.?${LIB_VERSION}")
-    endif()
-    file(GLOB PROJ_PATH "${SUMO_LIBRARIES}/proj_gdal-????${LIB_VERSION}")
-    file(GLOB FOX_PATH "${SUMO_LIBRARIES}/fox-1.6.??${LIB_VERSION}")
-    set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${XERCES_PATH};${PROJ_PATH};${FOX_PATH}")
-    file(GLOB SUMO_LIBRARIES_DLL "${XERCES_PATH}/bin/*.dll"
-                                 "${PROJ_PATH}/bin/*.dll"
-                                 "${FOX_PATH}/lib/*.dll"
-                                 "${SUMO_LIBRARIES}/3rdPartyLibs/bzip2-?.?.?${LIB_VERSION}/*.dll"
-                                 "${SUMO_LIBRARIES}/3rdPartyLibs/libpng-?.?.??${LIB_VERSION}/*/*.dll"
-                                 "${SUMO_LIBRARIES}/3rdPartyLibs/tiff-?.?.?${LIB_VERSION}/libtiff/*/*.dll"
-                                 "${SUMO_LIBRARIES}/3rdPartyLibs/zlib-?.?.??${LIB_VERSION}/*/*.dll")
-    file(GLOB GTEST_ROOT "${SUMO_LIBRARIES}/googletest-?.?.?/googletest")
-    # set GoogleTest only if compiler isn't mingw32
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" AND WIN32 AND NOT USE_MINGW_64BITS)
-        message(STATUS "Disabled Google Test in Mingw32")
-    else()
-        # Prevent GoogleTest from overriding our compiler/linker options
-        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-        add_subdirectory("${GTEST_ROOT}" "${CMAKE_BINARY_DIR}/googletest-build")
-        include_directories("${GTEST_ROOT}/include")
-        set(GTEST_BOTH_LIBRARIES "gtest" "gtest_main")
-        set(GTEST_FOUND true)
-    endif()
-    file(GLOB FFMPEG_PATH "${SUMO_LIBRARIES}/FFMPEG-?.?.?${LIB_VERSION}")
-    file(GLOB OSG_PATH "${SUMO_LIBRARIES}/OSG-?.?.?${LIB_VERSION}")
-    if("${MSVC_VERSION}" STREQUAL "1800")
-        file(GLOB GL2PS_PATH "${SUMO_LIBRARIES}/msvc12/gl2ps-?.?.?${LIB_VERSION}")
-    else()
-        file(GLOB GL2PS_PATH "${SUMO_LIBRARIES}/gl2ps-?.?.?${LIB_VERSION}")
-    endif()
-    set(CMAKE_LIBRARY_PATH "${CMAKE_LIBRARY_PATH};${GL2PS_PATH}/Release")
-    set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${FFMPEG_PATH};${OSG_PATH};${GL2PS_PATH}")
-    file(GLOB SUMO_OPTIONAL_LIBRARIES_DLL "${FFMPEG_PATH}/bin/*.dll" "${GL2PS_PATH}/Release/*.dll")
-    # set SWIG
-    set(SWIG_EXECUTABLE "${SUMO_LIBRARIES}/swigwin-3.0.12/swig.exe")
-    # set GRPC
-    set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${SUMO_LIBRARIES}/grpc-1.10.0${LIB_VERSION}")
-    set(CMAKE_LIBRARY_PATH "${CMAKE_LIBRARY_PATH};${SUMO_LIBRARIES}/grpc-1.10.0${LIB_VERSION}/Debug")
-    set(CMAKE_LIBRARY_PATH "${CMAKE_LIBRARY_PATH};${SUMO_LIBRARIES}/grpc-1.10.0${LIB_VERSION}/Release")
-    set(GRPC_CPP_PLUGIN "${SUMO_LIBRARIES}/grpc-1.10.0${LIB_VERSION}/Release/grpc_cpp_plugin.exe")
-    # set protobuf
-    set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${SUMO_LIBRARIES}/3rdPartyLibs/protobuf-3.5.1${LIB_VERSION}")
-    set(Protobuf_PROTOC_EXECUTABLE "${SUMO_LIBRARIES}/3rdPartyLibs/protobuf-3.5.1${LIB_VERSION}/cmake/Release/protoc.exe")
-    set(Protobuf_LIBRARY_DEBUG "${CMAKE_LIBRARY_PATH};${SUMO_LIBRARIES}/protobuf-3.5.1${LIB_VERSION}/cmake/Debug/libprotobufd.lib")
-    set(Protobuf_LIBRARY "${CMAKE_LIBRARY_PATH};${SUMO_LIBRARIES}/protobuf-3.5.1${LIB_VERSION}/cmake/Release/libprotobuf.lib")
-else (SUMO_LIBRARIES)
-    # for Linux and Mac only
-    find_package(GTest)
-endif (SUMO_LIBRARIES)
-
 find_package(XercesC REQUIRED)
 if (XercesC_FOUND)
-    include_directories(${XercesC_INCLUDE_DIRS})
+    message(STATUS "Found xerces-c: " ${XercesC_VERSION})
+    message(STATUS "including: " ${XercesC_INCLUDE_DIR})
+    link_directories(${XercesC_LIBRARY})
+    include_directories(${XercesC_INCLUDE_DIR})
+    #set(libs "${libs}${XercesC_LIBRARY}")
 endif (XercesC_FOUND)
-
-find_package(Proj)
+#target_link_libraries ( ${PROJECT_NAME} ${XercesC_LIBRARY} )
+#
+find_package(Proj REQUIRED)
 if (PROJ_FOUND)
+    message(STATUS "including: " ${PROJ_INCLUDE_DIR})
+    #set(libs "${libs}${PROJ_LIBRARY}")
+    link_directories(${PROJ_LIBRARY})
     include_directories(${PROJ_INCLUDE_DIR})
+    #target_link_libraries ( ${PROJECT_NAME} ${PROJ_LIBRARY} )
     set(HAVE_PROJ 1)
     set(ENABLED_FEATURES "${ENABLED_FEATURES} Proj")
 endif (PROJ_FOUND)
 
-find_package(FOX)
+find_package(GDAL REQUIRED)
+if (GDAL_FOUND)
+    message(STATUS "Found GDAL")
+    #set(libs "${libs} GDAL")
+    message(STATUS "including: " ${GDAL_INCLUDE_DIR})
+    link_directories(${GDAL_LIBRARIES})
+    include_directories(${GDAL_INCLUDE_DIR})
+    #target_link_libraries ( ${PROJECT_NAME} ${GDAL_LIBRARY} )
+    set(HAVE_GDAL 1)
+    set(ENABLED_FEATURES "${ENABLED_FEATURES} GDAL")
+endif (GDAL_FOUND)
+
+
+find_package(FOX REQUIRED)
 if (FOX_FOUND)
+    message(STATUS "Found Fox Toolkit")
     include_directories(${FOX_INCLUDE_DIR})
     add_definitions(${FOX_CXX_FLAGS})
-    add_definitions(-DFLOAT_MATH_FUNCTIONS)
     set(HAVE_FOX 1)
     set(ENABLED_FEATURES "${ENABLED_FEATURES} GUI")
 endif (FOX_FOUND)
@@ -229,233 +134,107 @@ if (X11_FOUND)
     link_directories(${X11_LIBRARY_DIR})
     include_directories(${X11_INCLUDE_DIR})
 endif (X11_FOUND)
+#find_package(OpenGL REQUIRED)
 
-if (CHECK_OPTIONAL_LIBS)
-    find_package(GDAL)
-    if (GDAL_FOUND)
-        include_directories(${GDAL_INCLUDE_DIR})
-        set(HAVE_GDAL 1)
-        set(ENABLED_FEATURES "${ENABLED_FEATURES} GDAL")
-    endif (GDAL_FOUND)
+find_package(FFMPEG)
 
-    find_package(FFMPEG)
-    if (FFMPEG_FOUND)
-        include_directories(${FFMPEG_INCLUDE_DIR})
-        set(HAVE_FFMPEG 1)
-        set(ENABLED_FEATURES "${ENABLED_FEATURES} FFmpeg")
+
+if (BUILD_GTEST_FROM_GIT)
+    message("GTest not found building from scratch")
+
+    # Download and unpack googletest at configure time
+    configure_file(build/googletest/CMakeLists.txt.in googletest-download/CMakeLists.txt)
+    execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download")
+    execute_process(COMMAND "${CMAKE_COMMAND}" --build .
+            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download")
+
+    # Prevent GoogleTest from overriding our compiler/linker options
+    # when building with Visual Studio
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+    # Add googletest directly to our build. This adds
+    # the following targets: gtest, gtest_main, gmock
+    # and gmock_main
+    add_subdirectory("${CMAKE_BINARY_DIR}/googletest-src"
+            "${CMAKE_BINARY_DIR}/googletest-build")
+
+    # The gtest/gmock targets carry header search path
+    # dependencies automatically when using CMake 2.8.11 or
+    # later. Otherwise we have to add them here ourselves.
+    if (CMAKE_VERSION VERSION_LESS 2.8.11)
+        include_directories("${gtest_SOURCE_DIR}/include"
+                "${gmock_SOURCE_DIR}/include")
     endif ()
 
-    find_package(OpenSceneGraph 3.4.0 COMPONENTS osgGA osgViewer osgUtil osgDB osgText)
-    if (OPENSCENEGRAPH_FOUND)
-        include_directories(${OPENSCENEGRAPH_INCLUDE_DIRS})
-        set(HAVE_OSG 1)
-        set(ENABLED_FEATURES "${ENABLED_FEATURES} OSG")
+    if (APPLE)
+        include_directories("${CMAKE_BINARY_DIR}/googletest-src/googletest/include")
     endif ()
+    set(GTEST_BOTH_LIBRARIES "gtest" "gtest_main")
+    set(GTEST_FOUND "true")
+else ()
+    find_package(GTest)
+endif ()
+# Now simply link your own targets against gtest, gmock,
+# etc. as appropriate
 
-    find_package(GL2PS)
-    if (GL2PS_FOUND)
-        include_directories(${GL2PS_INCLUDE_DIR})
-        set(HAVE_GL2PS 1)
-        set(ENABLED_FEATURES "${ENABLED_FEATURES} GL2PS")
-    endif (GL2PS_FOUND)
+#find_package(PythonLibs REQUIRED)
+#if (PYTHONLIBS_FOUND)
+#    message(STATUS "Python: " ${PYTHONLIBS_VERSION_STRING})
+#    message(STATUS "Python include dirs:" ${PYTHON_INCLUDE_DIRS})
+#    message(STATUS "Python libs:" ${PYTHON_LIBRARIES})
+#    include_directories(${PYTHON_INCLUDE_DIRS})
+#link_directories(${PYTHON_LIBRARIES})
+#endif ()
 
-    find_package(SWIG 3.0)
-    if (SWIG_FOUND)
-		set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-        set(ENABLED_FEATURES "${ENABLED_FEATURES} SWIG")
+if (APPLE)
+    include_directories("/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7/")
+    set(PYTHON_LIBRARIES "/System/Library/Frameworks/Python.framework/Versions/2.7/lib/libpython2.7.dylib")
+else ()
+    find_package(PythonLibs REQUIRED)
+    if (PYTHONLIBS_FOUND)
+        message(STATUS "Python: " ${PYTHONLIBS_VERSION_STRING})
+        message(STATUS "Python include dirs:" ${PYTHON_INCLUDE_DIRS})
+        message(STATUS "Python libs:" ${PYTHON_LIBRARIES})
+        include_directories(${PYTHON_INCLUDE_DIRS})
     endif ()
+endif ()
 
-    if(NOT ${MSVC_VERSION} STREQUAL "1800")
-        find_package(GRPC)
-        find_package(Protobuf)
-        if (GRPC_FOUND AND Protobuf_FOUND)
-            include_directories(${Protobuf_INCLUDE_DIRS} ${GRPC_INCLUDE_DIRS})
-            set(ENABLED_FEATURES "${ENABLED_FEATURES} GRPC")
-        endif (GRPC_FOUND AND Protobuf_FOUND)
-    endif()
-    set(SUMO_LIBRARIES_DLL "${SUMO_LIBRARIES_DLL};${SUMO_OPTIONAL_LIBRARIES_DLL}")
-endif (CHECK_OPTIONAL_LIBS)
+if (BUILD_GRPC)
+    find_package(GRPC)
+    if (GRPC_FOUND)
+        find_package(Protobuf REQUIRED)
+        add_definitions(-DBUILD_GRPC)
+        add_definitions(${GRPC_DEFINITONS})
+        link_directories(${PC_GRPC_LIBRARY_DIRS})
+        set(GRPC_LIBS grpc++ grpc protobuf dl)
+    endif (GRPC_FOUND)
+endif (BUILD_GRPC)
+
+if (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    message(STATUS "configuring for OSX compiler flags")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined -std=gnu++11")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
+    SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++")
+    SET(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -stdlib=libc++")
+endif (APPLE AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 
 include_directories(${CMAKE_BINARY_DIR}/src)
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 set(commonlibs
         utils_distribution utils_shapes utils_options
-        utils_xml utils_geom utils_common utils_importio utils_iodevices foreign_tcpip ${XercesC_LIBRARIES} ${PROJ_LIBRARY})
-if (MSVC)
-    set(commonlibs ${commonlibs} ws2_32)
+        utils_xml utils_geom utils_common utils_importio utils_iodevices foreign_tcpip ${XercesC_LIBRARY_RELEASE} ${PROJ_LIBRARY})
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    set(commonlibs
+            ${commonlibs} ws2_32)
 endif ()
 set(commonvehiclelibs
         utils_emissions foreign_phemlight utils_vehicle ${commonlibs} ${FOX_LIBRARY})
 
-# set custom name and folder for ALL_BUILD and ZERO_CHECK in visual studio solutions
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMake")
-
 add_subdirectory(src)
-enable_testing()
 if (GTEST_FOUND)
     add_subdirectory(unittest)
 endif ()
 
-# installation
-install(DIRECTORY data/ DESTINATION share/sumo/data)
-install(DIRECTORY tools/ DESTINATION share/sumo/tools
-        USE_SOURCE_PERMISSIONS
-        PATTERN "calibration" EXCLUDE
-        PATTERN "lisum-core" EXCLUDE
-        PATTERN "lisum-gui" EXCLUDE
-        PATTERN "sumolib4matlab/src" EXCLUDE
-        PATTERN "traas" EXCLUDE
-        PATTERN "traci4matlab/src" EXCLUDE
-        PATTERN ".git" EXCLUDE)
-install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ../../bin $ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/share/sumo/bin)")
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/build/setup-sumolib.py clean --all install --prefix $ENV{DESTDIR}${CMAKE_INSTALL_PREFIX})"
-        COMPONENT pysumolib)
-install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/build/setup-traci.py clean --all install --prefix $ENV{DESTDIR}${CMAKE_INSTALL_PREFIX})"
-        COMPONENT pytraci)
-
-string(REPLACE "${SUMO_LIBRARIES}" "" SUMO_LIBRARIES_DLL "${SUMO_LIBRARIES_DLL}")
-add_custom_target(install_dll)
-add_custom_command(TARGET install_dll PRE_BUILD
-                   COMMAND ${PYTHON_EXECUTABLE} -c "import shutil;[shutil.copy('${SUMO_LIBRARIES}'+l, '${CMAKE_SOURCE_DIR}/bin') for l in '${SUMO_LIBRARIES_DLL}'.split(';')]")
-if (HAVE_OSG)
-    add_custom_command(TARGET install_dll PRE_BUILD
-                       COMMAND ${CMAKE_COMMAND} -E copy_directory ${OSG_PATH}/bin ${CMAKE_SOURCE_DIR}/bin)
-endif ()
-set_property(TARGET install_dll PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-set_property(TARGET install_dll PROPERTY FOLDER "CMake")
-
-# doc targets
-add_custom_target(doxygen
-    COMMAND rm -rf docs/doxygen
-    COMMAND mkdir docs/doxygen
-    COMMAND doxygen sumo.doxyconf &> doxygen.log
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-set_property(TARGET doxygen PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-set_property(TARGET doxygen PROPERTY FOLDER "doc")
-
-add_custom_target(userdoc
-    COMMAND tools/build/buildHTMLDocs.py -o docs/userdoc -i docs/wiki/index.html -p docs/pydoc -c -r ${PACKAGE_VERSION}
-    COMMAND cp docs/wiki/*.png docs/wiki/*.css docs/userdoc
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-set_property(TARGET userdoc PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-set_property(TARGET userdoc PROPERTY FOLDER "doc")
-
-add_custom_target(javadoc
-    COMMAND rm -rf docs/javadoc
-    COMMAND mkdir docs/javadoc
-    COMMAND ant -f tools/contributed/traas/build.xml javadoc
-    COMMAND mv tools/contributed/traas/javadoc docs/javadoc/traas
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-set_property(TARGET javadoc PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-set_property(TARGET javadoc PROPERTY FOLDER "doc")
-
-add_custom_target(man
-    COMMAND rm -rf docs/man
-    COMMAND mkdir docs/man
-    COMMAND help2man -N -n "A microscopic road traffic simulation" bin/sumo > docs/man/sumo.1
-    COMMAND help2man -N -n "GUI version of the simulation SUMO" bin/sumo-gui > docs/man/sumo-gui.1
-    COMMAND help2man -N -n "Builds vehicle routes for SUMO using detector values" bin/dfrouter > docs/man/dfrouter.1
-    COMMAND help2man -N -n "Shortest path router and DUE computer for the microscopic road traffic simulation SUMO" bin/duarouter > docs/man/duarouter.1
-    COMMAND help2man -N -n "Router for the microscopic road traffic simulation SUMO based on junction turning ratios" bin/jtrrouter > docs/man/jtrrouter.1
-    COMMAND help2man -N -n "Import O/D-matrices for macroscopic traffic assignment" bin/marouter > docs/man/marouter.1
-    COMMAND help2man -N -n "Generates routes of persons throughout a day for the microscopic road traffic simulation SUMO" bin/activitygen > docs/man/activitygen.1
-    COMMAND help2man -N -n "Importer of O/D-matrices for the road traffic simulation SUMO" bin/od2trips > docs/man/od2trips.1
-    COMMAND help2man -N -n "Road network importer / builder for the road traffic simulation SUMO" bin/netconvert > docs/man/netconvert.1
-    COMMAND help2man -N -n "Road network editor for the road traffic simulation SUMO" bin/netedit > docs/man/netedit.1
-    COMMAND help2man -N -n "Road network generator for the microscopic road traffic simulation SUMO" bin/netgenerate > docs/man/netgenerate.1
-    COMMAND help2man -N -n "Importer of polygons and POIs for the road traffic simulation SUMO" bin/polyconvert > docs/man/polyconvert.1
-    COMMAND help2man -N -n "TraCITestClient for the road traffic simulation SUMO" bin/TraCITestClient > docs/man/TraCITestClient.1
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-set_property(TARGET man PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-set_property(TARGET man PROPERTY FOLDER "doc")
-
-add_custom_target(doc DEPENDS doxygen userdoc javadoc man)
-set_property(TARGET doc PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-set_property(TARGET doc PROPERTY FOLDER "doc")
-
-# coverage targets
-if (COVERAGE)
-    add_custom_target(lcov
-    COMMAND rm -rf docs/lcov
-    COMMAND mkdir docs/lcov
-    COMMAND lcov -d . -c --no-external --output-file docs/lcov/lcov.info
-    COMMAND genhtml -o docs/lcov/html docs/lcov/lcov.info
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-
-    add_custom_target(lcov-reset
-    COMMAND lcov -d . -z
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endif()
-
-# java targets
-find_program(MVN_EXECUTABLE mvn)
-find_program(ANT_EXECUTABLE ant)
-if (MVN_EXECUTABLE AND ANT_EXECUTABLE)
-    add_custom_target(cadyts
-        COMMAND ${MVN_EXECUTABLE} --batch-mode -f tools/contributed/calibration/pom.xml clean install
-        COMMAND ${CMAKE_COMMAND} -E copy tools/contributed/calibration/utilities/target/floetteroed-utilities-1.0.0.jar bin
-        COMMAND ${CMAKE_COMMAND} -E copy tools/contributed/calibration/cadyts/target/cadyts-1.3.0-SNAPSHOT.jar bin
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-    add_custom_target(traas
-        COMMAND ${ANT_EXECUTABLE} -f tools/contributed/traas/build.xml clean release
-        COMMAND ${CMAKE_COMMAND} -E copy tools/contributed/traas/dist/TraaS.jar bin
-        COMMAND ${MVN_EXECUTABLE} install:install-file -Dfile=bin/TraaS.jar -DgroupId=de.tudresden -DartifactId=traas -Dversion=1.0 -Dpackaging=jar
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-    add_custom_target(lisum-core DEPENDS traas
-        COMMAND ${MVN_EXECUTABLE} --batch-mode -f tools/contributed/lisum-core/pom.xml clean install
-        COMMAND ${CMAKE_COMMAND} -E copy tools/contributed/lisum-core/target/lisum-core-1.0.1-SNAPSHOT.jar bin
-        COMMAND ${MVN_EXECUTABLE} install:install-file -Dfile=bin/lisum-core-1.0.1-SNAPSHOT.jar -DgroupId=de.dlr.ts -DartifactId=lisum-core -Dversion=1.0.1 -Dpackaging=jar
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-    add_custom_target(lisum-gui DEPENDS lisum-core
-        COMMAND ${MVN_EXECUTABLE} --batch-mode -f tools/contributed/lisum-gui/pom.xml clean install
-        COMMAND ${CMAKE_COMMAND} -E copy tools/contributed/lisum-gui/target/lisum-gui-1.0.jar bin
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-    set(JAVA_TARGETS cadyts lisum-gui)
-endif()
-
-# example and dist targets
-add_custom_target(examples DEPENDS sumo netconvert dfrouter duarouter jtrrouter
-    COMMAND ${PYTHON_EXECUTABLE} tools/extractTest.py -x -f tests/examples.txt -p docs/examples/runAll.py
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-set_property(TARGET examples PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-set_property(TARGET examples PROPERTY FOLDER "doc")
-add_test(exampletest ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/examples/runAll.py)
-find_package(Git)
-if (GIT_FOUND)
-    add_custom_target(dist DEPENDS examples doc ${JAVA_TARGETS}
-        COMMAND rm -rf sumo-${PACKAGE_VERSION} sumo-${PACKAGE_VERSION}.zip sumo-src-${PACKAGE_VERSION}.tar.gz sumo-src-${PACKAGE_VERSION}.zip sumo-all-${PACKAGE_VERSION}.tar.gz sumo-all-${PACKAGE_VERSION}.zip
-        COMMAND ${GIT_EXECUTABLE} archive --prefix sumo-${PACKAGE_VERSION}/ -o sumo-${PACKAGE_VERSION}.zip HEAD
-        COMMAND unzip sumo-${PACKAGE_VERSION}.zip
-        COMMAND cp -a docs/tutorial docs/examples docs/userdoc docs/pydoc docs/javadoc docs/man sumo-${PACKAGE_VERSION}/docs
-        COMMAND zip -r sumo-src-${PACKAGE_VERSION}.zip sumo-${PACKAGE_VERSION}
-        COMMAND tar czf sumo-src-${PACKAGE_VERSION}.tar.gz sumo-${PACKAGE_VERSION}
-        COMMAND cp -a docs/doxygen sumo-${PACKAGE_VERSION}/docs
-        COMMAND cp bin/*.jar bin/*.bat sumo-${PACKAGE_VERSION}/bin
-        COMMAND cp -a tests sumo-${PACKAGE_VERSION}
-        COMMAND zip -r sumo-all-${PACKAGE_VERSION}.zip sumo-${PACKAGE_VERSION}
-        COMMAND tar czf sumo-all-${PACKAGE_VERSION}.tar.gz sumo-${PACKAGE_VERSION}
-        COMMAND rm -rf sumo-${PACKAGE_VERSION} sumo-${PACKAGE_VERSION}.zip
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-    set_property(TARGET dist PROPERTY FOLDER "CMake")
-    set_property(TARGET dist PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-    # alias for backward compatibility
-    add_custom_target(dist-complete DEPENDS dist)
-    set_property(TARGET dist-complete PROPERTY FOLDER "CMake")
-    set_property(TARGET dist-complete PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-
-    add_custom_target(distcheck DEPENDS dist
-        COMMAND rm -rf sumo-${PACKAGE_VERSION}
-        COMMAND unzip sumo-src-${PACKAGE_VERSION}.zip
-        COMMAND cd sumo-${PACKAGE_VERSION} && mkdir _cmake_build _cmake_install && cd _cmake_build
-                && cmake -DCMAKE_INSTALL_PREFIX=../_cmake_install .. || (echo "ERROR: the cmake configuration failed." && false)
-                && make -j8 || (echo "ERROR: the compilation failed." && false)
-                && make test || (echo "ERROR: the test suite failed." && false)
-                && make install || (echo "ERROR: the install target failed." && false)
-        COMMAND rm -rf sumo-${PACKAGE_VERSION}
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-    set_property(TARGET distcheck PROPERTY FOLDER "CMake")
-    set_property(TARGET distcheck PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-endif ()
-message(STATUS "Enabled features: ${ENABLED_FEATURES}")

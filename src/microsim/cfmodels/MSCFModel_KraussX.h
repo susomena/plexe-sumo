@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_KraussX.h
 /// @author  Jakob Erdmann
 /// @date    27 Feb 2017
@@ -14,13 +6,28 @@
 ///
 // Experimental extensions to the Krauss car-following model
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSCFModel_KraussX_h
 #define MSCFModel_KraussX_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSCFModel_Krauss.h"
 #include <utils/xml/SUMOXMLDefinitions.h>
@@ -37,9 +44,17 @@
 class MSCFModel_KraussX : public MSCFModel_Krauss {
 public:
     /** @brief Constructor
-     *  @param[in] vtype the type for which this model is built and also the parameter object to configure this model
+     * @param[in] accel The maximum acceleration
+     * @param[in] decel The maximum deceleration
+     * @param[in] dawdle The driver imperfection
+     * @param[in] emergencyDecel The maximum emergency deceleration
+     * @param[in] apparentDecel The deceleration as expected by others
+     * @param[in] headwayTime The driver's desired headway
      */
-    MSCFModel_KraussX(const MSVehicleType* vtype);
+    MSCFModel_KraussX(const MSVehicleType* vtype, double accel, double decel,
+                      double emergencyDecel, double apparentDecel,
+                      double dawdle, double headwayTime,
+                      double tmp1, double tmp2);
 
 
     /// @brief Destructor
@@ -48,8 +63,14 @@ public:
 
     /// @name Implementations of the MSCFModel interface
     /// @{
-    /// @brief apply dawdling
-    double patchSpeedBeforeLC(const MSVehicle* veh, double vMin, double vMax) const;
+    /** @brief Applies interaction with stops and lane changing model influences
+     * @param[in] veh The ego vehicle
+     * @param[in] vPos The possible velocity
+     * @return The velocity after applying interactions with stops and lane change model influences
+     *
+     * @note: this is the exact duplicate of MSCFModel_KraussOrig1::moveHelper (also used by Krauss) except that dawdle is called with a second paramter
+     */
+    double moveHelper(MSVehicle* const veh, double vPos) const;
 
 
     /** @brief Returns the model's name
@@ -78,7 +99,7 @@ private:
      * @return The speed after dawdling
      *
      */
-    double dawdleX(double vOld, double vMin, double vMax, std::mt19937* rng) const;
+    double dawdleX(double vOld, double vMin, double vMax) const;
 
     /// @brief extension parameter nr1
     double myTmp1;

@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    costMemory.py
+@author  Jakob Erdmann
+@author  Michael Behrisch
+@date    2012-03-14
+@version $Id$
 
-# @file    costMemory.py
-# @author  Jakob Erdmann
-# @author  Michael Behrisch
-# @date    2012-03-14
-# @version $Id$
+Perform smoothing of edge costs across successive iterations of duaIterate
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import print_function
 from __future__ import absolute_import
 import os
@@ -21,7 +25,7 @@ from collections import defaultdict
 from xml.sax import make_parser, handler
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-from sumolib.net import readNet  # noqa
+from sumolib.net import readNet
 
 
 class EdgeMemory:
@@ -152,9 +156,9 @@ class CostMemory(handler.ContentHandler):
     def avg_error(self, values=None):
         if not values:
             values = self.errors
-        length = len(list(values))
-        if length > 0:
-            return (sum(list(values)) / length)
+        l = len(list(values))
+        if l > 0:
+            return (sum(list(values)) / l)
         else:
             return 0
 

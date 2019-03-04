@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBNodeShapeComputer.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // This class computes shapes of junctions
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <algorithm>
 #include <iterator>
@@ -37,17 +44,13 @@
 #include "NBNodeShapeComputer.h"
 
 //#define DEBUG_NODE_SHAPE
-//#define DEBUG_SMOOTH_CORNERS
-//#define DEBUG_RADIUS
-#define DEBUGCOND (myNode.getID() == "C")
+#define DEBUGCOND (myNode.getID() == "disabled")
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
-NBNodeShapeComputer::NBNodeShapeComputer(const NBNode& node) :
-    myNode(node),
-    myRadius(node.getRadius()) {
-}
+NBNodeShapeComputer::NBNodeShapeComputer(const NBNode& node)
+    : myNode(node) {}
 
 
 NBNodeShapeComputer::~NBNodeShapeComputer() {}
@@ -67,16 +70,6 @@ NBNodeShapeComputer::compute() {
             singleDirection = true;
         }
     }
-#ifdef DEBUG_NODE_SHAPE
-    if (DEBUGCOND) {
-        // annotate edges edges to make their ordering visible
-        int i = 0;
-        for (NBEdge* e : myNode.myAllEdges) {
-            e->setStreetName(toString(i));
-            i++;
-        }
-    }
-#endif
     if (singleDirection) {
         return computeNodeShapeSmall();
     }
@@ -146,8 +139,8 @@ NBNodeShapeComputer::computeNodeShapeDefault(bool simpleContinuation) {
     }
     // magic values
     const OptionsCont& oc = OptionsCont::getOptions();
-    const bool useDefaultRadius = myNode.getRadius() == NBNode::UNSPECIFIED_RADIUS;
-    myRadius = (useDefaultRadius ? getDefaultRadius(oc) : myNode.getRadius());
+    const bool defaultRadius = myNode.getRadius() == NBNode::UNSPECIFIED_RADIUS;
+    const double radius = (defaultRadius ? oc.getFloat("default.junctions.radius") : myNode.getRadius());
     const int cornerDetail = oc.getInt("junctions.corner-detail");
     const double sCurveStretch = oc.getFloat("junctions.scurve-stretch");
     const bool rectangularCut = oc.getBool("rectangular-lane-cut");
@@ -163,7 +156,7 @@ NBNodeShapeComputer::computeNodeShapeDefault(bool simpleContinuation) {
 
 #ifdef DEBUG_NODE_SHAPE
     if (DEBUGCOND) {
-        std::cout << "\ncomputeNodeShapeDefault node " << myNode.getID() << " simple=" << simpleContinuation << " radius=" << myRadius << "\n";
+        std::cout << "\ncomputeNodeShapeDefault node " << myNode.getID() << " simple=" << simpleContinuation << " radius=" << radius << "\n";
     }
 #endif
 
@@ -265,7 +258,7 @@ NBNodeShapeComputer::computeNodeShapeDefault(bool simpleContinuation) {
 #endif
             } else {
                 if (!simpleContinuation) {
-                    dist += myRadius;
+                    dist += radius;
                 } else {
                     // if the angles change, junction should have some size to avoid degenerate shape
                     double radius2 = fabs(ccad - cad) * (*i)->getNumLanes();
@@ -301,7 +294,7 @@ NBNodeShapeComputer::computeNodeShapeDefault(bool simpleContinuation) {
 #endif
             if (!simpleContinuation) {
                 if (currGeom.intersects(neighGeom)) {
-                    distances[*i] = myRadius + closestIntersection(currGeom, neighGeom, 100);
+                    distances[*i] = radius + closestIntersection(currGeom, neighGeom, 100);
 #ifdef DEBUG_NODE_SHAPE
                     if (DEBUGCOND) {
                         std::cout << "   neigh intersects dist=" << distances[*i] << " currGeom=" << currGeom << " neighGeom=" << neighGeom << "\n";
@@ -312,7 +305,7 @@ NBNodeShapeComputer::computeNodeShapeDefault(bool simpleContinuation) {
                         // but prevent very large node shapes
                         const double farAngleDist = ccwCloser ? cad : ccad;
                         double a1 = distances[*i];
-                        double a2 = myRadius + closestIntersection(currGeom2, neighGeom2, 100);
+                        double a2 = radius + closestIntersection(currGeom2, neighGeom2, 100);
 #ifdef DEBUG_NODE_SHAPE
                         if (DEBUGCOND) {
                             std::cout << "      neigh2 also intersects a1=" << a1 << " a2=" << a2 << " ccad=" << RAD2DEG(ccad) << " cad=" << RAD2DEG(cad) << " dist[cwi]=" << distances[*cwi] << " dist[ccwi]=" << distances[*ccwi] << " farAngleDist=" << RAD2DEG(farAngleDist) << " currGeom2=" << currGeom2 << " neighGeom2=" << neighGeom2 << "\n";
@@ -334,14 +327,14 @@ NBNodeShapeComputer::computeNodeShapeDefault(bool simpleContinuation) {
                     }
                 } else {
                     if (*cwi != *ccwi && currGeom2.intersects(neighGeom2)) {
-                        distances[*i] = myRadius + currGeom2.intersectsAtLengths2D(neighGeom2)[0];
+                        distances[*i] = radius + currGeom2.intersectsAtLengths2D(neighGeom2)[0];
 #ifdef DEBUG_NODE_SHAPE
                         if (DEBUGCOND) {
                             std::cout << "   neigh2 intersects dist=" << distances[*i] << " currGeom2=" << currGeom2 << " neighGeom2=" << neighGeom2 << "\n";
                         }
 #endif
                     } else {
-                        distances[*i] = 100 + myRadius;
+                        distances[*i] = 100 + radius;
 #ifdef DEBUG_NODE_SHAPE
                         if (DEBUGCOND) {
                             std::cout << "   no intersects dist=" << distances[*i]  << " currGeom=" << currGeom << " neighGeom=" << neighGeom << " currGeom2=" << currGeom2 << " neighGeom2=" << neighGeom2 << "\n";
@@ -357,10 +350,10 @@ NBNodeShapeComputer::computeNodeShapeDefault(bool simpleContinuation) {
                 }
             }
         }
-        if (useDefaultRadius && sCurveStretch > 0) {
+        if (defaultRadius && sCurveStretch > 0) {
             double sCurveWidth = myNode.getDisplacementError();
             if (sCurveWidth > 0) {
-                const double sCurveRadius = myRadius + sCurveWidth / SUMO_const_laneWidth * sCurveStretch * pow((*i)->getSpeed(), 2 + sCurveStretch) / 1000;
+                const double sCurveRadius = radius + sCurveWidth / SUMO_const_laneWidth * sCurveStretch * pow((*i)->getSpeed(), 2 + sCurveStretch) / 1000;
                 const double stretch = 100 + sCurveRadius - distances[*i];
                 if (stretch > 0) {
                     distances[*i] += stretch;
@@ -388,7 +381,7 @@ NBNodeShapeComputer::computeNodeShapeDefault(bool simpleContinuation) {
     }
     // prevent inverted node shapes
     // (may happen with near-parallel edges)
-    const double minDistSum = 2 * (100 + myRadius);
+    const double minDistSum = 2 * (100 + radius);
     for (i = newAll.begin(); i != newAll.end(); ++i) {
         if (distances[*i] < 100 && (*i)->hasDefaultGeometryEndpointAtNode(&myNode)) {
             for (EdgeVector::const_iterator j = newAll.begin(); j != newAll.end(); ++j) {
@@ -439,7 +432,7 @@ NBNodeShapeComputer::computeNodeShapeDefault(bool simpleContinuation) {
         Position p = ccwBound.positionAtOffset2D(offset);
         p.setz(myNode.getPosition().z());
         if (i != newAll.begin()) {
-            ret.append(getSmoothCorner(geomsCW[*(i - 1)], ccwBound, ret[-1], p, cornerDetail));
+            ret.append(getSmoothCorner(geomsCW[*(i - 1)].reverse(), ccwBound, ret[-1], p, cornerDetail));
         }
         ret.push_back_noDoublePos(p);
         //
@@ -480,68 +473,10 @@ NBNodeShapeComputer::getSmoothCorner(PositionVector begShape, PositionVector end
                                      const Position& begPoint, const Position& endPoint, int cornerDetail) {
     PositionVector ret;
     if (cornerDetail > 0) {
-        PositionVector begShape2 = begShape.reverse();
-        const double begSplit = begShape2.nearest_offset_to_point2D(begPoint, false);
-#ifdef DEBUG_SMOOTH_CORNERS
-        if (DEBUGCOND) {
-            std::cout << " begLength=" << begShape2.length2D() << " begSplit=" << begSplit << "\n";
-        }
-#endif
-        if (begSplit > POSITION_EPS && begSplit < begShape2.length2D() - POSITION_EPS) {
-            begShape2 = begShape2.splitAt(begSplit, true).first;
-        } else {
-            return ret;
-        }
-        PositionVector endShape2 = endShape;
-        const double endSplit = endShape2.nearest_offset_to_point2D(endPoint, false);
-#ifdef DEBUG_SMOOTH_CORNERS
-        if (DEBUGCOND) {
-            std::cout << " endLength=" << endShape2.length2D() << " endSplit=" << endSplit << "\n";
-        }
-#endif
-        if (endSplit > POSITION_EPS && endSplit < endShape2.length2D() - POSITION_EPS) {
-            endShape2 = endShape2.splitAt(endSplit, true).second;
-        } else {
-            return ret;
-        }
-        // flatten z to junction z level
-        begShape2 = begShape2.interpolateZ(myNode.getPosition().z(), myNode.getPosition().z());
-        endShape2 = endShape2.interpolateZ(myNode.getPosition().z(), myNode.getPosition().z());
-#ifdef DEBUG_SMOOTH_CORNERS
-        if (DEBUGCOND) {
-            std::cout << "getSmoothCorner begPoint=" << begPoint << " endPoint=" << endPoint
-                      << " begShape=" << begShape << " endShape=" << endShape
-                      << " begShape2=" << begShape2 << " endShape2=" << endShape2
-                      << "\n";
-        }
-#endif
-        if (begShape2.size() < 2 || endShape2.size() < 2) {
-            return ret;
-        }
-        const double angle = GeomHelper::angleDiff(begShape2.angleAt2D(-2), endShape2.angleAt2D(0));
-        NBNode* recordError = nullptr;
-#ifdef DEBUG_SMOOTH_CORNERS
-        if (DEBUGCOND) {
-            std::cout << "   angle=" << RAD2DEG(angle) << "\n";
-        }
-        recordError = const_cast<NBNode*>(&myNode);
-#endif
-        // fill highly acute corners
-        //if (fabs(angle) > DEG2RAD(135)) {
-        //    return ret;
-        //}
-        PositionVector curve = myNode.computeSmoothShape(begShape2, endShape2, cornerDetail + 2, false, 25, 25, recordError, NBNode::AVOID_WIDE_LEFT_TURN);
-        //PositionVector curve = myNode.computeSmoothShape(begShape2, endShape2, cornerDetail + 2, false, 25, 25, recordError, 0);
-        const double curvature = curve.length2D() / MAX2(NUMERICAL_EPS, begPoint.distanceTo2D(endPoint));
-#ifdef DEBUG_SMOOTH_CORNERS
-        if (DEBUGCOND) {
-            std::cout << "   curveLength=" << curve.length2D() << " dist=" << begPoint.distanceTo2D(endPoint) << " curvature=" << curvature << "\n";
-        }
-#endif
-        if (curvature > 2 && angle > DEG2RAD(85)) {
-            // simplify dubious inside corner shape
-            return ret;
-        }
+        begShape = begShape.reverse();
+        begShape[-1] = begPoint;
+        endShape[0] = endPoint;
+        PositionVector curve = myNode.computeSmoothShape(begShape, endShape, cornerDetail + 2, false, 25, 25);
         if (curve.size() > 2) {
             curve.erase(curve.begin());
             curve.pop_back();
@@ -555,38 +490,47 @@ void
 NBNodeShapeComputer::joinSameDirectionEdges(std::map<NBEdge*, std::set<NBEdge*> >& same,
         GeomsMap& geomsCCW,
         GeomsMap& geomsCW) {
+    EdgeVector::const_iterator i, j;
     // compute boundary lines and extend it by 100m
-    for (NBEdge* const edge : myNode.myAllEdges) {
+    for (i = myNode.myAllEdges.begin(); i != myNode.myAllEdges.end() - 1; i++) {
         // store current edge's boundary as current ccw/cw boundary
         try {
-            geomsCCW[edge] = edge->getCCWBoundaryLine(myNode);
+            geomsCCW[*i] = (*i)->getCCWBoundaryLine(myNode);
         } catch (InvalidArgument& e) {
-            WRITE_WARNING("While computing intersection geometry at junction '" + myNode.getID() + "': " + std::string(e.what()));
-            geomsCCW[edge] = edge->getGeometry();
+            WRITE_WARNING(std::string("While computing intersection geometry: ") + std::string(e.what()));
+            geomsCCW[*i] = (*i)->getGeometry();
         }
         try {
-            geomsCW[edge] = edge->getCWBoundaryLine(myNode);
+            geomsCW[*i] = (*i)->getCWBoundaryLine(myNode);
         } catch (InvalidArgument& e) {
-            WRITE_WARNING("While computing intersection geometry at junction '" + myNode.getID() + "': " + std::string(e.what()));
-            geomsCW[edge] = edge->getGeometry();
-        }
-        // ensure the boundary is valid
-        if (geomsCCW[edge].length2D() < NUMERICAL_EPS) {
-            geomsCCW[edge] = edge->getGeometry();
-        }
-        if (geomsCW[edge].length2D() < NUMERICAL_EPS) {
-            geomsCW[edge] = edge->getGeometry();
+            WRITE_WARNING(std::string("While computing intersection geometry: ") + std::string(e.what()));
+            geomsCW[*i] = (*i)->getGeometry();
         }
         // extend the boundary by extroplating it by 100m
-        geomsCCW[edge].extrapolate2D(100, true);
-        geomsCW[edge].extrapolate2D(100, true);
+        PositionVector g1 =
+            myNode.hasIncoming(*i)
+            ? (*i)->getCCWBoundaryLine(myNode)
+            : (*i)->getCWBoundaryLine(myNode);
+        geomsCCW[*i].extrapolate2D(100, true);
+        geomsCW[*i].extrapolate2D(100, true);
+        //
+        for (j = i + 1; j != myNode.myAllEdges.end(); j++) {
+            geomsCCW[*j] = (*j)->getCCWBoundaryLine(myNode);
+            geomsCW[*j] = (*j)->getCWBoundaryLine(myNode);
+            PositionVector g2 =
+                myNode.hasIncoming(*j)
+                ? (*j)->getCCWBoundaryLine(myNode)
+                : (*j)->getCWBoundaryLine(myNode);
+            geomsCCW[*j].extrapolate2D(100, true);
+            geomsCW[*j].extrapolate2D(100, true);
+        }
     }
     // compute same (edges where an intersection doesn't work well
     // (always check an edge and its cw neightbor)
     // distance to look ahead for a misleading angle
     const double angleChangeLookahead = 35;
     EdgeSet foundOpposite;
-    for (EdgeVector::const_iterator i = myNode.myAllEdges.begin(); i != myNode.myAllEdges.end(); i++) {
+    for (i = myNode.myAllEdges.begin(); i != myNode.myAllEdges.end(); i++) {
         EdgeVector::const_iterator j;
         if (i == myNode.myAllEdges.end() - 1) {
             j = myNode.myAllEdges.begin();
@@ -611,25 +555,13 @@ NBNodeShapeComputer::joinSameDirectionEdges(std::map<NBEdge*, std::set<NBEdge*> 
         //    @todo: this warning would be helpful in many cases. However, if angle and angleFurther jump between 179 and -179 it is misleading
         //    WRITE_WARNING("Ambigous angles at junction '" + myNode.getID() + "' for edges '" + (*i)->getID() + "' and '" + (*j)->getID() + "'.");
         //}
-#ifdef DEBUG_NODE_SHAPE
-        if (DEBUGCOND) {
-            std::cout << "   checkSameDirection " << (*i)->getID() << " " << (*j)->getID()
-                      << " diffDirs=" << differentDirs
-                      << " isOpposite=" << (differentDirs && foundOpposite.count(*i) == 0)
-                      << " angleDiff=" << angleDiff
-                      << " ambiguousGeometry=" << ambiguousGeometry
-                      << " badIntersect=" << badIntersection(*i, *j, 100)
-                      << "\n";
-
-        }
-#endif
         if (fabs(angleDiff) < DEG2RAD(20)) {
             const bool isOpposite = differentDirs && foundOpposite.count(*i) == 0;
             if (isOpposite) {
                 foundOpposite.insert(*i);
                 foundOpposite.insert(*j);
             }
-            if (isOpposite || ambiguousGeometry || badIntersection(*i, *j, 100)) {
+            if (isOpposite || ambiguousGeometry || badIntersection(*i, *j, geomsCW[*i], geomsCCW[*j], 100)) {
                 // maintain equivalence relation for all members of the equivalence class
                 for (std::set<NBEdge*>::iterator k = same[*i].begin(); k != same[*i].end(); ++k) {
                     if (*j != *k) {
@@ -657,7 +589,9 @@ NBNodeShapeComputer::joinSameDirectionEdges(std::map<NBEdge*, std::set<NBEdge*> 
 
 
 bool
-NBNodeShapeComputer::badIntersection(const NBEdge* e1, const NBEdge* e2, double distance) {
+NBNodeShapeComputer::badIntersection(const NBEdge* e1, const NBEdge* e2,
+                                     const PositionVector& e1cw, const PositionVector& e2ccw,
+                                     double distance) {
     // check whether the two edges are on top of each other. In that case they should be joined
     // also, if they never touch along their common length
     const double commonLength = MIN3(distance, e1->getGeometry().length(), e2->getGeometry().length());
@@ -679,24 +613,13 @@ NBNodeShapeComputer::badIntersection(const NBEdge* e1, const NBEdge* e2, double 
     }
     geom1 = geom1.getSubpart2D(0, commonLength);
     geom2 = geom2.getSubpart2D(0, commonLength);
-    const double minDistanceThreshold = (e1->getTotalWidth() + e2->getTotalWidth()) / 2 + POSITION_EPS;
     std::vector<double> distances = geom1.distances(geom2, true);
+    const double minDistanceThreshold = (e1->getTotalWidth() + e2->getTotalWidth()) / 2 + POSITION_EPS;
     const double minDist = VectorHelper<double>::minValue(distances);
     const double maxDist = VectorHelper<double>::maxValue(distances);
-    const bool curvingTowards = geom1[0].distanceTo2D(geom2[0]) > minDistanceThreshold && minDist < minDistanceThreshold;
     const bool onTop = maxDist - POSITION_EPS < minDistanceThreshold;
-    geom1.extrapolate2D(100);
-    geom2.extrapolate2D(100);
-    Position intersect = geom1.intersectionPosition2D(geom2);
-    const bool intersects = intersect != Position::INVALID && geom1.distance2D(intersect) < POSITION_EPS;
-#ifdef DEBUG_NODE_SHAPE
-    if (DEBUGCOND) {
-        std::cout << "    badIntersect: onTop=" << onTop << " curveTo=" << curvingTowards << " intersects=" << intersects
-                  << "  geom1=" << geom1 << " geom2=" << geom2
-                  << " intersectPos=" << intersect
-                  << "\n";
-    }
-#endif
+    const bool curvingTowards = geom1[0].distanceTo2D(geom2[0]) > minDistanceThreshold && minDist < minDistanceThreshold;
+    const bool intersects = e1cw.intersects(e2ccw);
     return onTop || curvingTowards || !intersects;
 }
 
@@ -707,75 +630,35 @@ NBNodeShapeComputer::computeUniqueDirectionList(
     GeomsMap& geomsCCW,
     GeomsMap& geomsCW) {
     // store relationships
-    const EdgeVector& all = myNode.myAllEdges;;
     EdgeVector newAll = myNode.myAllEdges;
-    for (NBEdge* e1 : all) {
-        // determine which of the edges marks the outer boundary
-        auto e2NewAll = std::find(newAll.begin(), newAll.end(), e1);
-#ifdef DEBUG_NODE_SHAPE
-        if (DEBUGCOND) std::cout << "computeUniqueDirectionList e1=" << e1->getID()
-                                     << " deleted=" << (e2NewAll == newAll.end())
-                                     << " same=" << joinNamedToStringSorting(same[e1], ',') << "\n";
-#endif
-        if (e2NewAll == newAll.end()) {
-            continue;
-        }
-        auto e1It = std::find(all.begin(), all.end(), e1);
-        auto bestCCW = e1It;
-        auto bestCW = e1It;
-        bool changed = true;
-        while (changed) {
-            changed = false;
-            for (NBEdge* e2 : same[e1]) {
-#ifdef DEBUG_NODE_SHAPE
-                if (DEBUGCOND) {
-                    std::cout << "  e2=" << e2->getID() << "\n";
-                }
-#endif
-                auto e2It = std::find(all.begin(), all.end(), e2);
-                if (e2It + 1 == bestCCW || (e2It == (all.end() - 1) && bestCCW == all.begin())) {
-                    bestCCW = e2It;
-                    changed = true;
-#ifdef DEBUG_NODE_SHAPE
-                    if (DEBUGCOND) {
-                        std::cout << "    bestCCW=" << e2->getID() << "\n";
+    bool changed = true;
+    while (changed) {
+        changed = false;
+        for (EdgeVector::iterator i2 = newAll.begin(); i2 != newAll.end(); ++i2) {
+            std::set<NBEdge*> other = same[*i2];
+            for (std::set<NBEdge*>::const_iterator j = other.begin(); j != other.end(); ++j) {
+                EdgeVector::iterator k = find(newAll.begin(), newAll.end(), *j);
+                if (k != newAll.end()) {
+                    if (myNode.hasIncoming(*i2)) {
+                        if (!myNode.hasIncoming(*j)) {
+                            geomsCW[*i2] = geomsCW[*j];
+                            computeSameEnd(geomsCW[*i2], geomsCCW[*i2]);
+                        }
+                    } else {
+                        if (myNode.hasIncoming(*j)) {
+                            geomsCCW[*i2] = geomsCCW[*j];
+                            computeSameEnd(geomsCW[*i2], geomsCCW[*i2]);
+                        }
                     }
-#endif
-                } else if (bestCW + 1 == e2It || (bestCW == (all.end() - 1) && e2It == all.begin())) {
-                    bestCW = e2It;
+                    newAll.erase(k);
                     changed = true;
-#ifdef DEBUG_NODE_SHAPE
-                    if (DEBUGCOND) {
-                        std::cout << "    bestCW=" << e2->getID() << "\n";
-                    }
-#endif
                 }
             }
-        }
-        if (bestCW != e1It) {
-            geomsCW[e1] = geomsCW[*bestCW];
-            computeSameEnd(geomsCW[e1], geomsCCW[e1]);
-        }
-        if (bestCCW != e1It) {
-            geomsCCW[e1] = geomsCCW[*bestCCW];
-            computeSameEnd(geomsCW[e1], geomsCCW[e1]);
-        }
-        // clean up
-        for (NBEdge* e2 : same[e1]) {
-            auto e2NewAll = std::find(newAll.begin(), newAll.end(), e2);
-            if (e2NewAll != newAll.end()) {
-                newAll.erase(e2NewAll);
+            if (changed) {
+                break;
             }
         }
     }
-#ifdef DEBUG_NODE_SHAPE
-    if (DEBUGCOND) {
-        std::cout << "  newAll:\n";
-        for (NBEdge* e : newAll) {
-            std::cout << "    " << e->getID() << " geomCCW=" << geomsCCW[e] << " geomsCW=" << geomsCW[e] << "\n";
-        }
-    }
-#endif
     return newAll;
 }
 
@@ -852,111 +735,5 @@ NBNodeShapeComputer::computeNodeShapeSmall() {
 }
 
 
-double
-NBNodeShapeComputer::getDefaultRadius(const OptionsCont& oc) {
-    // look for incoming/outgoing edge pairs that do not go straight and allow wide vehicles
-    // (connection information is not available yet)
-    // @TODO compute the radius for each pair of neighboring edge intersections in computeNodeShapeDefault rather than use the maximum
-    const double radius = oc.getFloat("default.junctions.radius");
-    const double smallRadius = oc.getFloat("junctions.small-radius");
-    // foot- and bicycle paths as well as pure service roads should not get larget junctions
-    // railways also do have have junctions with sharp turns so can be excluded
-    SVCPermissions small = (SVC_BICYCLE | SVC_PEDESTRIAN | SVC_DELIVERY | SVC_RAIL_CLASSES);
-    SVCPermissions large = SVCAll & ~small;
-    double maxRightAngle = 0; // rad
-    double extraWidthRight = 0; // m
-    double maxLeftAngle = 0; // rad
-    double extraWidthLeft = 0; // m
-    int laneDelta = 0;
-    for (NBEdge* in : myNode.getIncomingEdges()) {
-        int wideLanesIn = 0;
-        for (int i = 0; i < in->getNumLanes(); i++) {
-            if ((in->getPermissions(i) & large) != 0) {
-                wideLanesIn++;
-            }
-        }
-        for (NBEdge* out : myNode.getOutgoingEdges()) {
-            if ((in->getPermissions() & out->getPermissions() & large) != 0) {
-                if (myNode.getDirection(in, out) == LINKDIR_TURN) {
-                    continue;
-                };
-                const double angle = GeomHelper::angleDiff(
-                                         in->getGeometry().angleAt2D(-2),
-                                         out->getGeometry().angleAt2D(0));
-                if (angle < 0) {
-                    if (maxRightAngle < -angle) {
-                        maxRightAngle = -angle;
-                        extraWidthRight = MAX2(getExtraWidth(in, large), getExtraWidth(out, large));
-                    }
-                } else {
-                    if (maxLeftAngle < angle) {
-                        maxLeftAngle = angle;
-                        // all edges clockwise between in and out count as extra width
-                        extraWidthLeft = 0;
-                        EdgeVector::const_iterator pIn = std::find(myNode.getEdges().begin(), myNode.getEdges().end(), in);
-                        NBContHelper::nextCW(myNode.getEdges(), pIn);
-                        while (*pIn != out) {
-                            extraWidthLeft += (*pIn)->getTotalWidth();
-//#ifdef DEBUG_RADIUS
-//                            if (DEBUGCOND) {
-//                                std::cout << "   in=" << in->getID() << " out=" << out->getID() << " extra=" << (*pIn)->getID() << " extraWidthLeft=" << extraWidthLeft << "\n";
-//                            }
-//#endif
-                            NBContHelper::nextCW(myNode.getEdges(), pIn);
-                        }
-                    }
-                }
-                int wideLanesOut = 0;
-                for (int i = 0; i < out->getNumLanes(); i++) {
-                    if ((out->getPermissions(i) & large) != 0) {
-                        wideLanesOut++;
-                    }
-                }
-                laneDelta = MAX2(laneDelta, abs(wideLanesOut - wideLanesIn));
-            }
-        }
-    }
-    // changing the number of wide-vehicle lanes on a straight segment requires a larger junction to allow for smooth driving
-    // otherwise we can reduce the radius according to the angle
-    double result = radius;
-    // left turns are assumed to cross additional edges and thus du not determine the required radius in most cases
-    double maxTurnAngle = maxRightAngle;
-    double extraWidth = extraWidthRight;
-    if (maxRightAngle < DEG2RAD(5)) {
-        maxTurnAngle = maxLeftAngle;
-        extraWidth = extraWidthLeft;
-    }
-    if (laneDelta == 0 || maxTurnAngle >= DEG2RAD(30) || myNode.isConstantWidthTransition()) {
-        // subtract radius gained from extra lanes
-        // do not increase radius for turns that are sharper than a right angle
-        result = MAX2(smallRadius, radius * tan(0.5 * MIN2(0.5 * M_PI, maxTurnAngle)) - extraWidth);
-    }
-#ifdef DEBUG_RADIUS
-    if (DEBUGCOND) {
-        std::cout << "getDefaultRadius n=" << myNode.getID() << " laneDelta=" << laneDelta
-                  << " rightA=" << RAD2DEG(maxRightAngle)
-                  << " leftA=" << RAD2DEG(maxLeftAngle)
-                  << " maxA=" << RAD2DEG(maxTurnAngle)
-                  << " extraWidth=" << extraWidth
-                  << " result=" << result << "\n";
-    }
-#endif
-    return result;
-}
 
-
-double
-NBNodeShapeComputer::getExtraWidth(const NBEdge* e, SVCPermissions exclude) {
-    double result = 0;
-    int lane = 0;
-    while (lane < e->getNumLanes() && e->getPermissions(lane) == 0) {
-        // ignore forbidden lanes out the outside
-        lane++;
-    }
-    while (lane < e->getNumLanes() && (e->getPermissions(lane) & exclude) == 0) {
-        result += e->getLaneWidth(lane);
-        lane++;
-    }
-    return result;
-}
 /****************************************************************************/

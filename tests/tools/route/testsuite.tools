@@ -7,14 +7,14 @@ routecheck
 # Tests for <SUMO_DIST>/tools/route_tools/route2alts.py
 route2alts
 
-# test generating edge selections from a route file
-route2sel
-
 # Tests for <SUMO_DIST>/tools/route_tools/route_1htoDay.py
 route_1htoDay
 
 # sort routes and flows
 sort
+
+# test generating polygons from a route file
+route2poly
 
 # Cut down routes from a large scenario to a sub-scenario
 cut_routes
@@ -28,9 +28,3 @@ showDepartsAndArrivalsPerEdge
 
 # simple route reconstruction from gps trace
 tracemapper
-
-# tests for finding unusual routes
-implausibleRoutes
-
-# test generating polygons from route input
-route2poly

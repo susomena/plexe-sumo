@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    Position.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,11 +9,26 @@
 ///
 // A position in the 2D- or 3D-world
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <limits>
 #include "Position.h"
@@ -36,15 +43,3 @@ const Position Position::INVALID(
     - 1024 * 1024 * 1024,
     - 1024 * 1024 * 1024,
     - 1024 * 1024 * 1024);
-
-
-Position
-Position::rotateAround2D(double rad, const Position& origin) {
-    const double s = sin(rad);
-    const double c = cos(rad);
-    Position p = (*this) - origin;
-    return Position(
-               p.x() * c - p.y() * s,
-               p.x() * s + p.y() * c) + origin;
-
-}

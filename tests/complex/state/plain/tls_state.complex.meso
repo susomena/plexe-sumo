@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Sat Dec  8 23:30:33 2018 by Eclipse SUMO Version eeef47f
+<!-- generated on 06/16/17 10:37:11 by SUMO Version dev-SVN-r24706
+<?xml version="1.0" encoding="UTF-8"?>
+
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
 
     <input>
@@ -12,10 +14,6 @@
     <output>
         <vehroute-output value="vehroutes.xml"/>
     </output>
-
-    <processing>
-        <pedestrian.model value="nonInteracting"/>
-    </processing>
 
     <report>
         <duration-log.disable value="true"/>
@@ -146,14 +144,4 @@
     <tlsState time="163.00" id="0/0" programID="0" phase="0" state="GgGr"/>
     <tlsState time="164.00" id="0/0" programID="0" phase="0" state="GgGr"/>
     <tlsState time="165.00" id="0/0" programID="0" phase="0" state="GgGr"/>
-    <tlsState time="166.00" id="0/0" programID="0" phase="0" state="GgGr"/>
-    <tlsState time="167.00" id="0/0" programID="0" phase="1" state="yyyr"/>
-    <tlsState time="168.00" id="0/0" programID="0" phase="1" state="yyyr"/>
-    <tlsState time="169.00" id="0/0" programID="0" phase="1" state="yyyr"/>
-    <tlsState time="170.00" id="0/0" programID="0" phase="2" state="GrGg"/>
-    <tlsState time="171.00" id="0/0" programID="0" phase="2" state="GrGg"/>
-    <tlsState time="172.00" id="0/0" programID="0" phase="2" state="GrGg"/>
-    <tlsState time="173.00" id="0/0" programID="0" phase="2" state="GrGg"/>
-    <tlsState time="174.00" id="0/0" programID="0" phase="2" state="GrGg"/>
-    <tlsState time="175.00" id="0/0" programID="0" phase="2" state="GrGg"/>
 </tlsStates>

@@ -1,9 +1,6 @@
 walking_forward
 walking_backward
 
-# alternative networks with different geometry
-walking_backward2
-
 # test junction model parameter jmCrossingGap
 walking_backward_configureGap
 
@@ -31,6 +28,3 @@ blockage
 
 # when an unprioritized crossing is blocked by pedestrians, vehicles must yield their request
 blockage2
-
-# when an unprioritized crossing is blocked by pedestrians, vehicles must yield their request
-blockage3

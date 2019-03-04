@@ -1,23 +1,24 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    route2trips.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @date    2008-03-19
-# @version $Id$
-
 """
+@file    route2trips.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@date    2008-03-19
+@version $Id$
+
 This script converts SUMO routes back into SUMO trips which serve
 as input to one of the routing applications.
 It reads the routes from a file given as first parameter
 and outputs the trips to stdout.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import print_function
 from __future__ import absolute_import
@@ -62,18 +63,15 @@ class RouteReader(handler.ContentHandler):
                 self._routeString = attrs['edges']
         elif name == 'vType':
             # XXX does not handle child elements (for carFollowing, the next case copies the input)
-            print('    <vType %s>' % (' '.join(['%s="%s"' % (
-                  key, value) for key, value in sorted(dict(attrs).items())])),
+            print('    <vType %s>' % (' '.join(['%s="%s"' % (key, value) for key, value in sorted(dict(attrs).items())])),
                   file=self.outfile)
         elif name[0:12] == 'carFollowing':
-            print('        <%s %s />' % (name, ' '.join(['%s="%s"' % (
-                  key, value) for key, value in sorted(dict(attrs).items())])),
+            print('        <%s %s />' % (name, ' '.join(['%s="%s"' % (key, value) for key, value in sorted(dict(attrs).items())])),
                   file=self.outfile)
         elif name == 'routes':
             sumolib.writeXMLHeader(
                 self.outfile,
-                "$Id$%s" % self.calledBy,
-                "routes")
+                "$Id$%s" % self.calledBy, "routes")
 
     def endElement(self, name):
         if name == 'route':
@@ -88,8 +86,7 @@ class RouteReader(handler.ContentHandler):
             via = self.vias.get(self._vID, "")
             if self._attrList:
                 print('    <trip %s%s/>' % (' '.join(['%s="%s"' % (key,
-                                                                   self._vehicleAttrs[key]) for key in self._attrList]),
-                                            via),
+                                                                   self._vehicleAttrs[key]) for key in self._attrList]), via),
                       file=self.outfile)
             else:
                 del self._vehicleAttrs['id']

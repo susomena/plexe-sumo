@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIVehicle.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // A MSVehicle extended by some values for usage within the gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIVehicle_h
 #define GUIVehicle_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <string>
@@ -86,10 +93,11 @@ public:
     /** @brief Draws the route
      * @param[in] r The route to draw
      */
-    void drawRouteHelper(const GUIVisualizationSettings& s, const MSRoute& r, bool future) const;
+    void drawRouteHelper(const MSRoute& r, double exaggeration) const;
 
     void drawAction_drawVehicleBlinker(double length) const;
-    void drawAction_drawVehicleBrakeLight(double length, bool onlyOne = false) const;
+    void drawAction_drawVehicleBrakeLight(double length, bool onlyOne = 1) const;
+    void drawAction_drawPersonsAndContainers(const GUIVisualizationSettings& s) const;
     void drawAction_drawLinkItems(const GUIVisualizationSettings& s) const;
     void drawAction_drawVehicleBlueLight() const;
 
@@ -144,15 +152,6 @@ public:
     int getRightSublaneOnEdge() const;
     int getLeftSublaneOnEdge() const;
 
-
-    /// @brief return the lane-change maneuver distance
-    double getManeuverDist() const;
-
-    /// @brief handle route to accomodate to given stop
-    void rerouteDRTStop(MSStoppingPlace* busStop,
-            SUMOTime intermediateDuration=TIME2STEPS(20),
-            SUMOTime finalDuration=SUMOTime_MAX);
-
 protected:
     /// @brief register vehicle for drawing while outside the network
     void drawOutsideNetwork(bool add);
@@ -162,13 +161,18 @@ private:
     /* @brief draw train with individual carriages. The number of carriages is
      * determined from defaultLength of carriages and vehicle length
      * passengerSeats are computed beginning at firstPassengerCarriage */
-    void drawAction_drawCarriageClass(const GUIVisualizationSettings& s, bool asImage) const;
+    void drawAction_drawRailCarriages(const GUIVisualizationSettings& s, double defaultLength, double carriageGap,
+                                      int firstPassengerCarriage, bool asImage) const;
+    /// @}
+
+    /// @brief draws the given guiShape if it has distinct carriages/modules and returns true if so
+    bool drawAction_drawCarriageClass(const GUIVisualizationSettings& s, SUMOVehicleShape guiShape, bool asImage) const;
 
     /* @brief return the previous lane in this vehicles route including internal lanes
      * @param[in] current The lane of which the predecessor should be returned
      * @param[in,out] routeIndex The index of the current or previous non-internal edge in the route
      */
-    MSLane* getPreviousLane(MSLane* current, int& routeIndex) const;
+    MSLane* getPreviousLane(MSLane* current, int& furtherIndex) const;
 
     /// @brief return the number of passengers
     int getNumPassengers() const;

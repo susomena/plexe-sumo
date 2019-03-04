@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    TraCITestClient.h
 /// @author  Friedemann Wesner
 /// @author  Daniel Krajzewicz
@@ -17,13 +9,28 @@
 ///
 // A test execution class
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef TRACITESTCLIENT_H
 #define TRACITESTCLIENT_H
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <sstream>
@@ -69,17 +76,12 @@ protected:
     /** @brief Sends and validates a simulation step command
      * @param[in] time The time step to send
      */
-    void commandSimulationStep(double time);
+    void commandSimulationStep(SUMOTime time);
 
 
     /** @brief Sends and validates a Close command
      */
     void commandClose();
-
-
-    /** @brief Sends and validates a SetOrder command
-     */
-    void commandSetOrder(int order);
 
 
     /** @brief Sends and validates a GetVariable command
@@ -108,7 +110,7 @@ protected:
      * @param[in] varNo The number of subscribed variables
      * @param[in] defFile The stream to read variable values from
      */
-    void commandSubscribeObjectVariable(int domID, const std::string& objID, double beginTime, double endTime, int varNo, std::ifstream& defFile);
+    void commandSubscribeObjectVariable(int domID, const std::string& objID, SUMOTime beginTime, SUMOTime endTime, int varNo, std::ifstream& defFile);
 
 
     /** @brief Sends and validates a SubscribeContext command
@@ -121,7 +123,7 @@ protected:
      * @param[in] varNo The number of subscribed variables
      * @param[in] defFile The stream to read variable values from
      */
-    void commandSubscribeContextVariable(int domID, const std::string& objID, double beginTime, double endTime, int domain, double range, int varNo, std::ifstream& defFile);
+    void commandSubscribeContextVariable(int domID, const std::string& objID, SUMOTime beginTime, SUMOTime endTime, int domain, double range, int varNo, std::ifstream& defFile);
     /// @}
 
 

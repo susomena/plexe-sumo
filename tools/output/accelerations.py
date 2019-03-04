@@ -1,25 +1,29 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    accelerations.py
+@author  Jakob Erdmann
+@date    2012-11-20
+@version $Id$
 
-# @file    accelerations.py
-# @author  Jakob Erdmann
-# @date    2012-11-20
-# @version $Id$
+Compute acceleration statistics from a sumo netstate-dump
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-from sumolib.output import parse_fast  # noqa
-from sumolib.miscutils import Statistics  # noqa
+from sumolib.output import parse_fast
+from sumolib.miscutils import Statistics
 
 
 def accelStats(netstate):
@@ -32,7 +36,6 @@ def accelStats(netstate):
         stats.add(speed - prevSpeed, (vehicle.id, vehicle.speed))
         lastSpeed[vehicle.id] = speed
     print(stats)
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

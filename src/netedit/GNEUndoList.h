@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GNEUndoList.h
 /// @author  Jakob Erdmann
 /// @date    Mar 2011
@@ -20,6 +12,17 @@
 // GNEUndoList inherits from FXUndoList and patches some methods. these are
 // prefixed with p_
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GNEUndoList_h
 #define GNEUndoList_h
 
@@ -27,10 +30,14 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <fx.h>
 #include <stack>
+#include <fx.h>
 
 
 // ===========================================================================
@@ -74,9 +81,6 @@ public:
     /// @brief reverts and discards ALL active command groups
     void p_abort();
 
-    /// @brief reverts last command group
-    void p_abortLastCommandGroup();
-
     /// @brief undo the last command group
     void undo();
 
@@ -85,9 +89,6 @@ public:
 
     /// @brief special method, avoid empty changes, always execute
     void p_add(GNEChange_Attribute* cmd);
-
-    /// @brief get size of current CommandGroup
-    int currentCommandGroupSize() const;
 
     /// @name FOX-callbacks
     /// @{

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSRouteProbe.cpp
 /// @author  Michael Behrisch
 /// @author  Daniel Krajzewicz
@@ -17,12 +9,27 @@
 ///
 // Writes route distributions at a certain edge
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <microsim/MSEdge.h>
@@ -51,7 +58,7 @@ MSRouteProbe::MSRouteProbe(const std::string& id, const MSEdge* edge, const std:
     myLastRouteDistribution = std::make_pair(lastID, MSRoute::distDictionary(lastID));
     if (MSGlobals::gUseMesoSim) {
         MESegment* seg = MSGlobals::gMesoNet->getSegmentForEdge(*edge);
-        while (seg != nullptr) {
+        while (seg != 0) {
             seg->addDetector(this);
             seg = seg->getNextSegment();
         }
@@ -69,9 +76,6 @@ MSRouteProbe::~MSRouteProbe() {
 
 bool
 MSRouteProbe::notifyEnter(SUMOVehicle& veh, MSMoveReminder::Notification reason, const MSLane* /* enteredLane */) {
-    if (!vehicleApplies(veh)) {
-        return false;
-    }
     if (reason != MSMoveReminder::NOTIFICATION_SEGMENT && reason != MSMoveReminder::NOTIFICATION_LANE_CHANGE) {
         if (myCurrentRouteDistribution.second->add(&veh.getRoute(), 1.)) {
             veh.getRoute().addReference();
@@ -124,7 +128,7 @@ MSRouteProbe::getRoute() const {
         if (myCurrentRouteDistribution.second->getOverallProb() > 0) {
             return myCurrentRouteDistribution.second->get();
         }
-        return nullptr;
+        return 0;
     }
     return myLastRouteDistribution.second->get();
 }

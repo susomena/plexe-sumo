@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUINet.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // A MSNet extended by some values for usage within the gui
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUINet_h
 #define GUINet_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utility>
@@ -31,8 +38,6 @@
 #include <microsim/devices/MSDevice_Tripinfo.h>
 #include <utils/geom/Boundary.h>
 #include <utils/geom/Position.h>
-#include <utils/xml/SUMOSAXHandler.h>
-#include <utils/xml/SAXWeightsHandler.h>
 #include <foreign/rtree/SUMORTree.h>
 #include <foreign/rtree/LayeredRTree.h>
 #include <utils/geom/PositionVector.h>
@@ -59,6 +64,7 @@ class OutputDevice;
 class GUIVehicle;
 class GUIVehicleControl;
 class MSVehicleControl;
+class MFXMutex;
 class GUIMEVehicleControl;
 
 
@@ -93,8 +99,7 @@ public:
      * @exception ProcessError If a network was already constructed
      */
     GUINet(MSVehicleControl* vc, MSEventControl* beginOfTimestepEvents,
-           MSEventControl* endOfTimestepEvents,
-           MSEventControl* insertionEvents);
+           MSEventControl* endOfTimestepEvents, MSEventControl* insertionEvents);
 
 
     /// @brief Destructor
@@ -220,15 +225,6 @@ public:
     double getAvgTripSpeed() const {
         return MSDevice_Tripinfo::getAvgDuration() != 0 ? MSDevice_Tripinfo::getAvgRouteLength() / MSDevice_Tripinfo::getAvgDuration() : 0;
     }
-    double getAvgWalkRouteLength() const {
-        return MSDevice_Tripinfo::getAvgWalkRouteLength();
-    }
-    double getAvgWalkDuration() const {
-        return MSDevice_Tripinfo::getAvgWalkDuration();
-    }
-    double getAvgWalkTimeLoss() const {
-        return MSDevice_Tripinfo::getAvgWalkTimeLoss();
-    }
 
     /** @brief Returns the person control
      *
@@ -307,16 +303,6 @@ public:
      */
     GUIMEVehicleControl* getGUIMEVehicleControl();
 
-    /// @brief retrieve loaded edged weight for the given attribute and the current simulation time
-    double getEdgeData(const MSEdge* edge, const std::string& attr);
-
-    /// @brief load edgeData from file
-    bool loadEdgeData(const std::string& file);
-
-
-    /// @brief return list of loaded edgeData attributes
-    std::vector<std::string> getEdgeDataAttrs() const;
-
 #ifdef HAVE_OSG
     void updateColor(const GUIVisualizationSettings& s);
 #endif
@@ -333,15 +319,13 @@ public:
      */
     static GUINet* getGUIInstance();
 
-    /// @brief creates a wrapper for the given logic
-    void createTLWrapper(MSTrafficLightLogic* tll);
-
-    /// @brief return wheter the given logic (or rather it's wrapper) is selected in the GUI
-    bool isSelected(const MSTrafficLightLogic* tll) const;
 
 private:
     /// @brief Initialises the tl-logic map and wrappers
     void initTLMap();
+
+    /// @brief creates a wrapper for the given logic and returns the GlID
+    GUIGlID createTLWrapper(MSTrafficLightLogic* tll);
 
     friend class GUIOSGBuilder;
 
@@ -357,6 +341,9 @@ protected:
 
     /// @brief Wrapped MS-junctions
     std::vector<GUIJunctionWrapper*> myJunctionWrapper;
+
+    /// @brief Wrapped TL-Logics
+    std::vector<MSTrafficLightLogic*> myTLLogicWrapper;
 
     /// @brief A detector dictionary
     std::vector<GUIDetectorWrapper*> myDetectorWrapper;
@@ -380,49 +367,9 @@ protected:
     long myLastVehicleMovementCount, myOverallVehicleCount;
     long myOverallSimDuration;
 
-    /// @brief loaded edge data for visualization
-    std::map<std::string, MSEdgeWeightsStorage*> myLoadedEdgeData;
-
-    /// @brief class for discovering edge attributes
-    class DiscoverAttributes : public SUMOSAXHandler {
-    public:
-        DiscoverAttributes(const std::string& file):
-            SUMOSAXHandler(file), lastIntervalEnd(0) {};
-        ~DiscoverAttributes() {};
-        void myStartElement(int element, const SUMOSAXAttributes& attrs);
-        std::vector<std::string> getEdgeAttrs();
-        SUMOTime lastIntervalEnd;
-    private:
-        std::set<std::string> edgeAttrs;
-    };
-
-    class EdgeFloatTimeLineRetriever_GUI : public SAXWeightsHandler::EdgeFloatTimeLineRetriever {
-    public:
-        /// @brief Constructor
-        EdgeFloatTimeLineRetriever_GUI(MSEdgeWeightsStorage* weightStorage) : myWeightStorage(weightStorage) {}
-
-        /// @brief Destructor
-        ~EdgeFloatTimeLineRetriever_GUI() { }
-
-        /** @brief Adds an effort for a given edge and time period
-         *
-         * @param[in] id The id of the object to add a weight for
-         * @param[in] val The effort
-         * @param[in] beg The begin of the interval the weight is valid for
-         * @param[in] end The end of the interval the weight is valid for
-         * @see SAXWeightsHandler::EdgeFloatTimeLineRetriever::addEdgeWeight
-         */
-        void addEdgeWeight(const std::string& id, double val, double beg, double end) const;
-
-    private:
-        /// @brief The storage that  edges shall be added to
-        MSEdgeWeightsStorage* myWeightStorage;
-
-    };
-
 private:
     /// The mutex used to avoid concurrent updates of the vehicle buffer
-    mutable FXMutex myLock;
+    mutable MFXMutex myLock;
 
 };
 

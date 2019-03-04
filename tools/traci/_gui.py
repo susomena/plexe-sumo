@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    gui.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@date    2011-03-09
+@version $Id$
 
-# @file    _gui.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @date    2011-03-09
-# @version $Id$
+Python implementation of the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import struct
 from .domain import Domain
@@ -22,8 +26,7 @@ from . import constants as tc
 _RETURN_VALUE_FUNC = {tc.VAR_VIEW_ZOOM: Storage.readDouble,
                       tc.VAR_VIEW_OFFSET: lambda result: result.read("!dd"),
                       tc.VAR_VIEW_SCHEMA: Storage.readString,
-                      tc.VAR_VIEW_BOUNDARY: Storage.readShape,
-                      tc.VAR_HAS_VIEW: lambda result: bool(result.read("!i")[0]),
+                      tc.VAR_VIEW_BOUNDARY: lambda result: (result.read("!dd"), result.read("!dd")),
                       tc.VAR_TRACK_VEHICLE: Storage.readString}
 
 
@@ -96,25 +99,21 @@ class GuiDomain(Domain):
         Set the current boundary for the given view (see getBoundary()).
         """
         self._connection._beginMessage(
-            tc.CMD_SET_GUI_VARIABLE, tc.VAR_VIEW_BOUNDARY, viewID, 1 + 1 + 8 + 8 + 8 + 8)
-        self._connection._string += struct.pack("!BBdddd", tc.TYPE_POLYGON, 2, xmin, ymin, xmax, ymax)
+            tc.CMD_SET_GUI_VARIABLE, tc.VAR_VIEW_BOUNDARY, viewID, 1 + 8 + 8 + 8 + 8)
+        self._connection._string += struct.pack("!Bdddd",
+                                                tc.TYPE_BOUNDINGBOX, xmin, ymin, xmax, ymax)
         self._connection._sendExact()
 
-    def screenshot(self, viewID, filename, width=-1, height=-1):
-        """screenshot(string, string, int, int) -> None
+    def screenshot(self, viewID, filename):
+        """screenshot(string, string) -> None
 
         Save a screenshot for the given view to the given filename.
         The fileformat is guessed from the extension, the available
         formats differ from platform to platform but should at least
         include ps, svg and pdf, on linux probably gif, png and jpg as well.
-        Width and height of the image can be given as optional parameters.
         """
-        self._connection._beginMessage(
-            tc.CMD_SET_GUI_VARIABLE, tc.VAR_SCREENSHOT, viewID, 1 + 4 + 1 + 4 + len(filename) + 1 + 4 + 1 + 4)
-        self._connection._string += struct.pack("!Bi", tc.TYPE_COMPOUND, 3)
-        self._connection._packString(filename)
-        self._connection._string += struct.pack("!BiBi", tc.TYPE_INTEGER, width, tc.TYPE_INTEGER, height)
-        self._connection._sendExact()
+        self._connection._sendStringCmd(
+            tc.CMD_SET_GUI_VARIABLE, tc.VAR_SCREENSHOT, viewID, filename)
 
     def trackVehicle(self, viewID, vehID):
         """trackVehicle(string, string) -> None
@@ -124,19 +123,11 @@ class GuiDomain(Domain):
         self._connection._sendStringCmd(
             tc.CMD_SET_GUI_VARIABLE, tc.VAR_TRACK_VEHICLE, viewID, vehID)
 
-    def hasView(self, viewID=DEFAULT_VIEW):
-        """hasView(string): -> bool
-
-        Check whether the given view exists.
-        """
-        return self._getUniversal(tc.VAR_HAS_VIEW, viewID)
-
     def getTrackedVehicle(self, viewID=DEFAULT_VIEW):
         """getTrackedVehicle(string): -> string
 
         Returns the id of the currently tracked vehicle
         """
         return self._getUniversal(tc.VAR_TRACK_VEHICLE, viewID)
-
 
 GuiDomain()

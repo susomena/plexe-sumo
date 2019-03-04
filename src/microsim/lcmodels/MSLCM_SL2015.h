@@ -1,19 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSLCM_SL2015.h
 /// @author  Jakob Erdmann
-/// @author  Leonhard Luecken
 /// @date    Tue, 06.10.2015
 /// @version $Id$
 ///
 // A lane change model for heterogeneous traffic (based on sub-lanes)
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef MSLCM_SL2015_h
 #define MSLCM_SL2015_h
@@ -22,7 +24,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSAbstractLaneChangeModel.h"
 #include <vector>
@@ -38,14 +44,26 @@
 class MSLCM_SL2015 : public MSAbstractLaneChangeModel {
 public:
 
+    enum MyLCAEnum {
+        LCA_MNone = 0,
+        LCA_AMBLOCKINGLEADER = 1 << 16,
+        LCA_AMBLOCKINGFOLLOWER = 1 << 17,
+        LCA_MRIGHT = 1 << 18,
+        LCA_MLEFT = 1 << 19,
+        // !!! never set LCA_UNBLOCK = 1 << 20,
+        LCA_AMBLOCKINGFOLLOWER_DONTBRAKE = 1 << 21,
+        // !!! never used LCA_AMBLOCKINGSECONDFOLLOWER = 1 << 22,
+        LCA_CHANGE_TO_HELP = 1 << 23,
+        // !!! never read LCA_KEEP1 = 1 << 24,
+        // !!! never used LCA_KEEP2 = 1 << 25,
+        LCA_AMBACKBLOCKER = 1 << 26,
+        LCA_AMBACKBLOCKER_STANDING = 1 << 27
+    };
+
+
     MSLCM_SL2015(MSVehicle& v);
 
     virtual ~MSLCM_SL2015();
-
-    /// @brief Returns the model's id
-    LaneChangeModel getModelID() const {
-        return LCM_SL2015;
-    }
 
     /// @brief init cached parameters derived directly from model parameters
     void initDerivedParameters();
@@ -53,11 +71,7 @@ public:
     /** @brief Called to examine whether the vehicle wants to change
      * with the given laneOffset (using the sublane model)
      * This method gets the information about the surrounding vehicles
-     * and whether another lane may be more preferable
-     *
-     * TODO better documentation. Refs #2
-     * A.o.: When is this called (as a wantsChange() exists as well!? What's the difference?)
-     * */
+     * and whether another lane may be more preferable */
     int wantsChangeSublane(int laneOffset,
                            LaneChangeAction alternatives,
                            const MSLeaderDistanceInfo& leaders,
@@ -70,15 +84,12 @@ public:
                            const std::vector<MSVehicle::LaneQ>& preb,
                            MSVehicle** lastBlocked,
                            MSVehicle** firstBlocked,
-                           double& latDist, double& maneuverDist, int& blocked);
+                           double& latDist, int& blocked);
 
     /** @brief Called to examine whether the vehicle wants to change
-     * using the given laneOffset (this is a wrapper around wantsChangeSublane). XXX: no, it wraps _wantsChangeSublane
+     * using the given laneOffset (this is a wrapper around wantsChangeSublane).
      * This method gets the information about the surrounding vehicles
-     * and whether another lane may be more preferable
-     *
-     * TODO: better documentation. Refs #2
-     * */
+     * and whether another lane may be more preferable */
     int wantsChange(
         int laneOffset,
         MSAbstractLaneChangeModel::MSLCMessager& msgPass, int blocked,
@@ -93,8 +104,6 @@ public:
     void* inform(void* info, MSVehicle* sender);
 
     /** @brief Called to adapt the speed in order to allow a lane change.
-     *         It uses information on LC-related desired speed-changes from
-     *         the call to wantsChange() at the end of the previous simulation step
      *
      * @param min The minimum resulting speed
      * @param wanted The aspired speed of the car following model
@@ -110,8 +119,6 @@ public:
 
     void changed();
 
-    double getSafetyFactor() const;
-
     void prepareStep();
 
     /// @brief whether the current vehicles shall be debugged
@@ -119,19 +126,11 @@ public:
 
     void setOwnState(const int state);
 
-    /// @brief Updates the value of safe lateral distances (mySafeLatDistLeft and mySafeLatDistRight)
-    ///        during maneuver continuation in non-action steps.
-    virtual void updateSafeLatDist(const double travelledLatDist);
-
     /// @brief try to retrieve the given parameter from this device. Throw exception for unsupported key
     std::string getParameter(const std::string& key) const;
 
     /// @brief try to set the given parameter for this laneChangeModel. Throw exception for unsupported key
     void setParameter(const std::string& key, const std::string& value);
-
-    /// @brief decides the next lateral speed depending on the remaining lane change distance to be covered
-    ///        and updates maneuverDist according to lateral safety constraints.
-    double computeSpeedLat(double latDist, double& maneuverDist);
 
 protected:
 
@@ -149,7 +148,7 @@ protected:
         const std::vector<MSVehicle::LaneQ>& preb,
         MSVehicle** lastBlocked,
         MSVehicle** firstBlocked,
-        double& latDist, double& maneuverDist, int& blocked);
+        double& latDist, int& blocked);
 
 
     /* @brief decide whether we will overtake or follow blocking leaders
@@ -211,24 +210,15 @@ protected:
         return dist / abs(laneOffset) > lookForwardDist;
     }
 
-
     /// @brief information regarding save velocity (unused) and state flags of the ego vehicle
     typedef std::pair<double, int> Info;
 
-    /** @brief Takes a vSafe (speed advice for speed in the next simulation step), converts it into an acceleration
-     *         and stores it into myLCAccelerationAdvices.
-     *  @note  This construction was introduced to deal with action step lengths,
-     *         where operation on the speed in the next sim step had to be replaced by acceleration
-     *         throughout the next action step.
-     */
-    void addLCSpeedAdvice(const double vSafe);
 
     /// @brief update expected speeds for each sublane of the current edge
-    void updateExpectedSublaneSpeeds(const MSLeaderDistanceInfo& ahead, int sublaneOffset, int laneIndex);
+    void updateExpectedSublaneSpeeds(const MSLeaderInfo& ahead, int sublaneOffset, int laneIndex);
 
     /// @brief decide in which direction to move in case both directions are desirable
     StateAndDist decideDirection(StateAndDist sd1, StateAndDist sd2) const;
-
 
 protected:
 
@@ -245,7 +235,7 @@ protected:
     static CLeaderDist getSlowest(const MSLeaderDistanceInfo& ldi);
 
     /// @brief restrict latDist to permissible speed and determine blocking state depending on that distance
-    int checkBlocking(const MSLane& neighLane, double& latDist, double& maneuverDist, int laneOffset,
+    int checkBlocking(const MSLane& neighLane, double& latDist, int laneOffset,
                       const MSLeaderDistanceInfo& leaders,
                       const MSLeaderDistanceInfo& followers,
                       const MSLeaderDistanceInfo& blockers,
@@ -261,7 +251,6 @@ protected:
     /// @brief check whether any of the vehicles overlaps with ego
     int checkBlockingVehicles(const MSVehicle* ego, const MSLeaderDistanceInfo& vehicles,
                               double latDist, double foeOffset, bool leaders, LaneChangeAction blockType,
-                              double& safeLatGapRight, double& safeLatGapLeft,
                               std::vector<CLeaderDist>* collectBlockers = 0) const;
 
     /// @brief return whether the given intervals overlap
@@ -271,7 +260,6 @@ protected:
     static LaneChangeAction getLCA(int state, double latDist);
 
     /// @brief compute strategic lane change actions
-    /// TODO: Better documentation, refs #2
     int checkStrategicChange(int ret,
                              int laneOffset,
                              const std::vector<MSVehicle::LaneQ>& preb,
@@ -280,6 +268,7 @@ protected:
                              int currIdx,
                              int bestLaneOffset,
                              bool changeToBest,
+                             int lcaCounter,
                              double currentDist,
                              double neighDist,
                              double laDist,
@@ -300,7 +289,6 @@ protected:
                    const MSLane& neighLane,
                    int laneOffset,
                    double& latDist,
-                   double& maneuverDist,
                    int& blocked);
 
 
@@ -313,11 +301,14 @@ protected:
     /// @brief compute the gap factor for the given state
     double computeGapFactor(int state) const;
 
+    /// @brief decides the next lateral speed depending on the remaining lane change distance to be covered
+    double computeSpeedLat(double latDist);
+
     /// @brief return the widht of this vehicle (padded for numerical stability)
     double getWidth() const;
 
     /// @brief find leaders/followers that are already in a car-following relationship with ego
-    void updateCFRelated(const MSLeaderDistanceInfo& vehicles, double foeOffset, bool leaders);
+    void updateCFRelated(const MSLeaderDistanceInfo& vehicles, double foeOffset);
 
     /// @brief return the current sublane width (and return a sensible value when running without sublanes)
     double getSublaneWidth() {
@@ -328,8 +319,7 @@ protected:
     void commitManoeuvre(int blocked, int blockedFully,
                          const MSLeaderDistanceInfo& leaders,
                          const MSLeaderDistanceInfo& neighLeaders,
-                         const MSLane& neighLane,
-                         double maneuverDist);
+                         const MSLane& neighLane);
 
     /// @brief compute speed when committing to an urgent change that is safe in regard to leading vehicles
     double commitFollowSpeed(double speed, double latDist, double secondsToLeaveLane, const MSLeaderDistanceInfo& leaders, double foeOffset) const;
@@ -355,9 +345,8 @@ protected:
      * determining urgency of strategic lane changes */
     double myLookAheadSpeed;
 
-    /// @brief vector of LC-related acceleration recommendations
-    ///        Filled in wantsChange() and applied in patchSpeed()
-    std::vector<double> myLCAccelerationAdvices;
+    /// @brief speed adaptation requests by ego and surrounding vehicles
+    std::vector<double> myVSafes;
 
     /// @brief expected travel speeds on all sublanes on the current edge(!)
     std::vector<double> myExpectedSublaneSpeeds;
@@ -368,12 +357,14 @@ protected:
     /// @brief flag to prevent speed adaptation by slowing down
     bool myDontBrake;
 
-    /// @brief whether the current lane changing maneuver can be finished in a single step
+    /// @brief whether the current lane changing meneuver can be finished in a single step
     bool myCanChangeFully;
 
-    /// @brief the lateral distance the vehicle can safely move in the currently considered direction
-    double mySafeLatDistRight;
-    double mySafeLatDistLeft;
+    /// @brief lane changing state from the previous simulation step
+    int myPreviousState;
+
+    /// @brief the complete lateral distance the vehicle wants to travel to finish its maneuver
+    double myOrigLatDist;
 
     /// @brief set of vehicles that are in a car-following relationship with ego (leader of followers)
     std::set<const MSVehicle*> myCFRelated;
@@ -392,17 +383,10 @@ protected:
     double myAssertive;
     // @brief dynamic component of willingness for longitudinal gap reduction
     double myImpatience;
-    double myMinImpatience;
     // @brief time to reach maximum impatience in seconds
     double myTimeToImpatience;
     // @brief lateral acceleration
     double myAccelLat;
-    // @brief distance to turn at which alignment should be adjusted to the turn direction
-    double myTurnAlignmentDist;
-    // @brief the factor by which the lookahead distance to the left differs from the lookahead to the right
-    double myLookaheadLeft;
-    // @brief the factor by which the speedGain-threshold for the leftdiffers from the threshold for the right
-    double mySpeedGainRight;
     //@}
 
     /// @name derived parameters

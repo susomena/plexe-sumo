@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    Distribution_Parameterized.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,18 +7,33 @@
 ///
 // A distribution described by parameters such as the mean value and std-dev
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <utils/common/RandHelper.h>
 #include <utils/common/StringTokenizer.h>
 #include <utils/common/ToString.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include "Distribution_Parameterized.h"
 
 
@@ -60,10 +67,10 @@ Distribution_Parameterized::parse(const std::string& description) {
     if (distName == "norm" || distName == "normc") {
         std::vector<std::string> params = StringTokenizer(description.substr(distName.size() + 1, description.size() - distName.size() - 2), ',').getVector();
         myParameter.resize(params.size());
-        std::transform(params.begin(), params.end(), myParameter.begin(), StringUtils::toDouble);
+        std::transform(params.begin(), params.end(), myParameter.begin(), TplConvert::_str2double);
         setID(distName);
     } else {
-        myParameter[0] = StringUtils::toDouble(description);
+        myParameter[0] = TplConvert::_str2double(description);
     }
     assert(!myParameter.empty());
     if (myParameter.size() == 1) {
@@ -100,31 +107,9 @@ Distribution_Parameterized::getMax() const {
 
 std::string
 Distribution_Parameterized::toStr(std::streamsize accuracy) const {
-    if (myParameter[1] < 0) {
-        // only write simple speedFactor
-        return toString(myParameter[0]);
-    } else {
-        return (myParameter[1] == 0. 
-                ? myID + "(" + toString(myParameter[0], accuracy) + "," + toString(myParameter[1], accuracy) + ")"
-                : myID + "(" + joinToString(myParameter, ",", accuracy) + ")");
-    }
+    return myParameter[1] == 0. ? toString(myParameter[0]) : myID + "(" + joinToString(myParameter, ",", accuracy) + ")";
 }
 
-
-bool
-Distribution_Parameterized::isValid(std::string& error) {
-    if (myParameter.size() > 2) {
-        if (myParameter[0] > getMax()) {
-            error = "distribution mean " + toString(myParameter[0]) + " is larger than upper boundary " + toString(getMax());
-            return false;
-        }
-        if (myParameter[0] < myParameter[2]) {
-            error = "distribution mean " + toString(myParameter[0]) + " is smaller than lower boundary " + toString(myParameter[2]);
-            return false;
-        }
-    }
-    return true;
-}
 
 /****************************************************************************/
 

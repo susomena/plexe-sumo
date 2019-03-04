@@ -1,21 +1,22 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    inputs.py
-# @author  Yun-Pang Floetteroed
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2007-10-25
-# @version $Id$
-
 """
+@file    inputs.py
+@author  Yun-Pang Floetteroed
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2007-10-25
+@version $Id$
+
 This script is to retrieve the assignment parameters, the OD districts and the matrix from the input files.
 Moreover, the link travel time for district connectors will be estimated.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2007-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import print_function
 
@@ -92,8 +93,7 @@ def getMatrix(net, verbose, matrix, matrixSum, demandscale=None):
         print('number of end Vertices):', net.getendCounts())
         print('smallDemandRatio):', smallDemandRatio)
 
-    return matrixPshort, startVertices, endVertices, currentMatrixSum, begintime, assignPeriod, \
-        Pshort_EffCells, matrixSum, smallDemandRatio
+    return matrixPshort, startVertices, endVertices, currentMatrixSum, begintime, assignPeriod, Pshort_EffCells, matrixSum, smallDemandRatio
 
 # estimate the travel times on the district connectors
 # assumption: all vehilces can reach the access links within 20 min (1200

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    Boundary.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // A class that stores a 2D geometrical boundary
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef Boundary_h
 #define Boundary_h
 
@@ -23,11 +26,14 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <utility>
-
 #include "AbstractPoly.h"
 #include "Position.h"
 
@@ -39,79 +45,73 @@
  * @class Boundary
  * @brief A class that stores a 2D geometrical boundary
  */
-class Boundary : public AbstractPoly {
+class Boundary
+    : public AbstractPoly {
 public:
-    /// @brief Constructor - the boundary is unset
+    /// Constructor - the boundary is unset
     Boundary();
 
-    /// @brief Constructor - the boundary will be build using the given values
+    /// Constructor - the boundary will be build using the given values
     Boundary(double x1, double y1, double x2, double y2);
 
-    /// @brief Constructor - the boundary will be build using the given values including Z
     Boundary(double x1, double y1, double z1, double x2, double y2, double z2);
 
-    /// @brief Destructor
+    /// Destructor
     ~Boundary();
 
-    /// @brief Resets the boundary
+    /// Resets the boundary
     void reset();
 
-    /// @brief Makes the boundary include the given coordinate
+    /// Makes the boundary include the given coordinate
     void add(double x, double y, double z = 0);
 
-    /// @brief Makes the boundary include the given coordinate
+    /// Makes the boundary include the given coordinate
     void add(const Position& p);
 
-    /// @brief Makes the boundary include the given boundary
+    /// Makes the boundary include the given boundary
     void add(const Boundary& p);
 
-    /// @brief Returns the center of the boundary
+    /// Returns the center of the boundary
     Position getCenter() const;
 
-    /// @brief Returns minimum x-coordinate
+    /// Returns minimum x-coordinate
     double xmin() const;
 
-    /// @brief Returns maximum x-coordinate
+    /// Returns maximum x-coordinate
     double xmax() const;
 
-    /// @brief Returns minimum y-coordinate
+    /// Returns minimum y-coordinate
     double ymin() const;
 
-    /// @brief Returns maximum y-coordinate
+    /// Returns maximum y-coordinate
     double ymax() const;
 
-    /// @brief Returns minimum z-coordinate
+    /// Returns minimum z-coordinate
     double zmin() const;
 
-    /// @brief Returns maximum z-coordinate
+    /// Returns maximum z-coordinate
     double zmax() const;
 
-    /// @brief Returns the width of the boudary (x-axis)
+    /// Returns the width of the boudary (x-axis)
     double getWidth() const;
 
-    /// @brief Returns the height of the boundary (y-axis)
+    /// Returns the height of the boundary (y-axis)
     double getHeight() const;
 
-    /// @brief Returns the elevation range of the boundary (z-axis)
+    /// Returns the elevation range of the boundary (z-axis)
     double getZRange() const;
 
-    /// @name inherited from AbstractPoly
-    /// @{
-    /// @brief Returns whether the boundary contains the given coordinate
+    /// Returns whether the boundary contains the given coordinate
     bool around(const Position& p, double offset = 0) const;
 
-    /// @brief Returns whether the boundary overlaps with the given polygon
+    /// Returns whether the boundary overlaps with the given polygon
     bool overlapsWith(const AbstractPoly& poly, double offset = 0) const;
 
-    /// @brief Returns whether the boundary is partially within the given polygon
+    /// Returns whether the boundary is partially within the given polygon
     bool partialWithin(const AbstractPoly& poly, double offset = 0) const;
 
-    /// @brief Returns whether the boundary crosses the given line
+    /// Returns whether the boundary crosses the given line
     bool crosses(const Position& p1, const Position& p2) const;
-    /// @}
-
-    /// @brief check if Boundary is Initialised
-    bool isInitialised() const;
 
     /// @brief returns the euclidean distance in the x-y-plane
     double distanceTo2D(const Position& p) const;
@@ -119,41 +119,37 @@ public:
     /// @brief returns the euclidean distance in the x-y-plane
     double distanceTo2D(const Boundary& b) const;
 
-    /**@brief extends the boundary by the given amount
-     * @return a reference to the instance for further use
-     */
+
+    /** @brief extends the boundary by the given amount
+     *
+     * The method returns a reference to the instance for further use */
     Boundary& grow(double by);
 
-    /// @brief Increases the width of the boundary (x-axis)
+    /// Increases the width of the boundary (x-axis)
     void growWidth(double by);
 
-    /// @brief Increases the height of the boundary (y-axis)
+    /// Increases the height of the boundary (y-axis)
     void growHeight(double by);
 
-    /// @brief flips ymin and ymax
+    /// flips ymin and ymax
     void flipY();
 
-    /// @brief Sets the boundary to the given values
+    /// Sets the boundary to the given values
     void set(double xmin, double ymin, double xmax, double ymax);
 
-    /// @brief Moves the boundary by the given amount
+    /// Moves the boundary by the given amount
     void moveby(double x, double y, double z = 0);
 
-    /// @brief Output operator
+    /// Output operator
     friend std::ostream& operator<<(std::ostream& os, const Boundary& b);
 
-    /// @brief Comparison operator equal
-    bool operator==(const Boundary& b) const;
-
-    /// @brief Comparison operator not equal
-    bool operator!=(const Boundary& b) const;
-
 private:
-    /// @brief The boundaries
+    /// The boundaries
     double myXmin, myXmax, myYmin, myYmax, myZmin, myZmax;
 
-    /// @brief Information whether the boundary was initialised
+    /// Information whether the boundary was initialised
     bool myWasInitialised;
+
 };
 
 

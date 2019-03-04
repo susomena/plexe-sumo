@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_Wiedemann.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -20,12 +12,27 @@
 // Werner - Integration von Fahrzeugfolge- und Fahrstreifenwechselmodellen in die Nachtfahrsimulation LucidDrive
 // Olstam, Tapani - Comparison of Car-following models
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cmath>
 #include "MSCFModel_Wiedemann.h"
@@ -45,12 +52,14 @@ const double MSCFModel_Wiedemann::D_MAX = 150;
 // ===========================================================================
 // method definitions
 // ===========================================================================
-MSCFModel_Wiedemann::MSCFModel_Wiedemann(const MSVehicleType* vtype) :
-    MSCFModel(vtype),
-    mySecurity(vtype->getParameter().getCFParam(SUMO_ATTR_CF_WIEDEMANN_SECURITY, 0.5)),
-    myEstimation(vtype->getParameter().getCFParam(SUMO_ATTR_CF_WIEDEMANN_ESTIMATION, 0.5)),
-    myAX(vtype->getLength() + 1. + 2. * mySecurity),
-    myCX(25. *(1. + mySecurity + myEstimation)),
+MSCFModel_Wiedemann::MSCFModel_Wiedemann(const MSVehicleType* vtype,
+        double accel, double decel, double emergencyDecel, double apparentDecel,
+        double security, double estimation) :
+    MSCFModel(vtype, accel, decel, emergencyDecel, apparentDecel, 1.0),
+    mySecurity(security),
+    myEstimation(estimation),
+    myAX(vtype->getLength() + 1. + 2. * security),
+    myCX(25. *(1. + security + estimation)),
     myMinAccel(0.2 * myAccel) { // +noise?
 }
 
@@ -59,8 +68,8 @@ MSCFModel_Wiedemann::~MSCFModel_Wiedemann() {}
 
 
 double
-MSCFModel_Wiedemann::finalizeSpeed(MSVehicle* const veh, double vPos) const {
-    const double vNext = MSCFModel::finalizeSpeed(veh, vPos);
+MSCFModel_Wiedemann::moveHelper(MSVehicle* const veh, double vPos) const {
+    const double vNext = MSCFModel::moveHelper(veh, vPos);
     VehicleVariables* vars = (VehicleVariables*)veh->getCarFollowVariables();
     vars->accelSign = vNext > veh->getSpeed() ? 1. : -1.;
     return vNext;
@@ -68,7 +77,7 @@ MSCFModel_Wiedemann::finalizeSpeed(MSVehicle* const veh, double vPos) const {
 
 
 double
-MSCFModel_Wiedemann::followSpeed(const MSVehicle* const veh, double /* speed */, double gap2pred, double predSpeed, double /*predMaxDecel*/, const MSVehicle* const /*pred*/) const {
+MSCFModel_Wiedemann::followSpeed(const MSVehicle* const veh, double /* speed */, double gap2pred, double predSpeed, double /*predMaxDecel*/) const {
     return _v(veh, predSpeed, gap2pred);
 }
 
@@ -81,12 +90,12 @@ MSCFModel_Wiedemann::stopSpeed(const MSVehicle* const veh, const double speed, d
      * does a lousy job of closing in on a stop / junction
      * hence we borrow from Krauss here
      */
-    return MIN2(maximumSafeStopSpeed(gap, speed, false, veh->getActionStepLengthSecs()), maxNextSpeed(speed, veh));
+    return MAX2(getSpeedAfterMaxDecel(speed), MIN2(krauss_vsafe(gap, 0), maxNextSpeed(speed, veh)));
 }
 
 
 double
-MSCFModel_Wiedemann::interactionGap(const MSVehicle* const, double vL) const {
+MSCFModel_Wiedemann::interactionGap(const MSVehicle* const , double vL) const {
     UNUSED_PARAMETER(vL);
     return D_MAX;
 }
@@ -94,7 +103,7 @@ MSCFModel_Wiedemann::interactionGap(const MSVehicle* const, double vL) const {
 
 MSCFModel*
 MSCFModel_Wiedemann::duplicate(const MSVehicleType* vtype) const {
-    return new MSCFModel_Wiedemann(vtype);
+    return new MSCFModel_Wiedemann(vtype, myAccel, myDecel, myEmergencyDecel, myApparentDecel, mySecurity, myEstimation);
 }
 
 
@@ -105,47 +114,44 @@ MSCFModel_Wiedemann::_v(const MSVehicle* veh, double predSpeed, double gap) cons
     const double v = veh->getSpeed();
     const double vpref = veh->getMaxSpeed();
     const double dv = v - predSpeed;
-    // desired minimum following distance at low speed difference
-    const double bx = (1 + 7 * mySecurity) * sqrt(v); // Harding propose a factor of  *.8 here
-    const double abx = myAX + bx; // Harding propose a factor of  *.8 here
+    const double bx = myAX + (1 + 7 * mySecurity) * sqrt(v); // Harding propose a factor of  *.8 here
     const double ex = 2 - myEstimation; // + RandHelper::randNorm(0.5, 0.15)
-    const double sdx = myAX + ex * bx; /// the distance at which we drift out of following
+    const double sdx = myAX + ex * (bx - myAX); /// the distance at which we drift out of following
     const double sdv_root = (dx - myAX) / myCX;
     const double sdv = sdv_root * sdv_root;
     const double cldv = sdv * ex * ex;
-    const double opdv = cldv * (-1 - 2 * RandHelper::randNorm(0.5, 0.15, veh->getRNG()));
+    const double opdv = cldv * (-1 - 2 * RandHelper::randNorm(0.5, 0.15));
     // select the regime, get new acceleration, compute new speed based
     double accel;
-    if (dx <= abx) {
+    if (dx <= bx) {
         accel = emergency(dv, dx);
     } else if (dx < sdx) {
         if (dv > cldv) {
-            accel = approaching(dv, dx, abx);
+            accel = approaching(dv, dx, bx);
         } else if (dv > opdv) {
             accel = following(vars->accelSign);
         } else {
-            accel = fullspeed(v, vpref, dx, abx);
+            accel = fullspeed(v, vpref, dx, bx);
         }
     } else {
         if (dv > sdv && dx < D_MAX) { //@note other versions have an disjunction instead of conjunction
-            accel = approaching(dv, dx, abx);
+            accel = approaching(dv, dx, bx);
         } else {
-            accel = fullspeed(v, vpref, dx, abx);
+            accel = fullspeed(v, vpref, dx, bx);
         }
     }
     // since we have hard constrainst on accel we may as well use them here
-    accel = MAX2(MIN2(accel, myAccel), -myEmergencyDecel);
+    accel = MAX2(MIN2(accel, myAccel), -myDecel);
     const double vNew = MAX2(0., v + ACCEL2SPEED(accel)); // don't allow negative speeds
     return vNew;
 }
 
 
 double
-MSCFModel_Wiedemann::fullspeed(double v, double vpref, double dx, double abx) const {
-    // maximum acceleration is reduced with increasing speed
+MSCFModel_Wiedemann::fullspeed(double v, double vpref, double dx, double bx) const {
     double bmax = 0.2 + 0.8 * myAccel * (7 - sqrt(v));
     // if veh just drifted out of a 'following' process the acceleration is reduced
-    double accel = dx <= 2 * abx ? MIN2(myMinAccel, bmax * (dx - abx) / abx) : bmax;
+    double accel = dx <= 2 * bx ? MIN2(myMinAccel, bmax * (dx - bx) / bx) : bmax;
     if (v > vpref) {
         accel = - accel;
     }
@@ -160,15 +166,16 @@ MSCFModel_Wiedemann::following(double sign) const {
 
 
 double
-MSCFModel_Wiedemann::approaching(double dv, double dx, double abx) const {
+MSCFModel_Wiedemann::approaching(double dv, double dx, double bx) const {
     // there is singularity in the formula. we do the sanity check outside
-    assert(abx < dx);
-    return 0.5 * dv * dv / (abx - dx); // + predAccel at t-reaction_time if this is value is above a treshold
+    assert(bx < dx);
+    return 0.5 * dv * dv / (bx - dx); // + predAccel at t-reaction_time if this is value is above a treshold
 }
 
 
 double
-MSCFModel_Wiedemann::emergency(double dv, double  dx) const {
+MSCFModel_Wiedemann::emergency(double /* dv */, double /* dx */) const {
+    /* emergency according to A.Stebens
     // wiedemann assumes that dx will always be larger than myAX (sumo may
     // violate this assumption when crashing (-:
     if (dx > myAX) {
@@ -178,9 +185,25 @@ MSCFModel_Wiedemann::emergency(double dv, double  dx) const {
         assert(accel <= 0);
         return accel;
     } else {
-        return -myEmergencyDecel;
+        return = -myDecel;
     }
+    */
 
     // emergency according to C.Werner
-    //return -myEmergencyDecel;
+    return -myDecel;
+}
+
+
+
+// XXX: This could be replaced by maximumSafeStopSpeed(), refs. #2575
+double
+MSCFModel_Wiedemann::krauss_vsafe(double gap, double predSpeed) const {
+    if (predSpeed == 0 && gap < 0.01) {
+        return 0;
+    }
+    const double tauDecel = myDecel * myHeadwayTime;
+    const double speedReduction = ACCEL2SPEED(myDecel);
+    const int predSteps = int(predSpeed / speedReduction);
+    const double leaderContrib = 2. * myDecel * (gap + SPEED2DIST(predSteps * predSpeed - speedReduction * predSteps * (predSteps + 1) / 2));
+    return (double)(-tauDecel + sqrt(tauDecel * tauDecel + leaderContrib));
 }

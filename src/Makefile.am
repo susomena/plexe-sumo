@@ -5,6 +5,10 @@ GUI_APPS = sumo-gui
 GUI_DIRS = gui guinetload guisim netedit mesogui osgview
 endif
 
+if TRACI
+TRACI_LIBS = ./traci-server/libtraciserver.a ./traci-server/lib/libtraci.a ./utils/traci/libtraciclient.a  
+TRACI_DIRS = traci-server traci_testclient
+endif
 
 bin_PROGRAMS = od2trips sumo netconvert $(GUI_APPS)
 
@@ -33,7 +37,6 @@ sumo_SOURCES = sumo_main.cpp
 sumo_LDADD   = ./netload/libnetload.a \
 ./microsim/libmicrosim.a \
 ./microsim/cfmodels/libmicrosimcfmodels.a \
-./microsim/engine/libmicrosimengine.a \
 ./microsim/lcmodels/libmicrosimlcmodels.a \
 ./microsim/devices/libmicrosimdevs.a \
 ./microsim/output/libmicrosimoutput.a \
@@ -46,9 +49,7 @@ sumo_LDADD   = ./netload/libnetload.a \
 ./utils/vehicle/libvehicle.a \
 ./utils/shapes/libshapes.a \
 ./utils/emissions/libemissions.a \
-./traci-server/libtraciserver.a \
-./libsumo/libsumostatic.a \
-./utils/traci/libtraciclient.a \
+$(TRACI_LIBS) \
 $(COMMON_LIBS) \
 $(PYTHON_LIBS) \
 $(FOX_LDFLAGS) $(XERCES_LDFLAGS) $(PROJ_LDFLAGS)
@@ -60,9 +61,8 @@ netconvert_LDADD   = ./netimport/libnetimport.a \
 ./netimport/vissim/libvissimimport.a \
 ./netimport/vissim/typeloader/libvissimtypeload.a \
 ./netimport/vissim/tempstructs/libvissimtmpstr.a \
-./netwrite/libnetwrite.a \
 ./netbuild/libnetbuild.a \
-./utils/shapes/libshapes.a \
+./netwrite/libnetwrite.a \
 ./foreign/eulerspiral/libeulerspiral.a \
 $(COMMON_LIBS) \
 $(XERCES_LDFLAGS) $(GDAL_LDFLAGS) $(PROJ_LDFLAGS)
@@ -80,13 +80,13 @@ sumo_gui_LDADD =  ./gui/libgui.a \
 ./utils/gui/div/libguiutilsdiv.a \
 ./utils/gui/settings/libguiutilssettings.a \
 ./utils/gui/images/libguiutilsimages.a \
-./utils/gui/cursors/libguiutilscursors.a \
-./utils/gui/shortcuts/libguiutilsshortcuts.a \
 ./utils/gui/tracker/libguiutilstracker.a \
 ./utils/foxtools/libfoxtools.a \
 ./mesogui/libmesogui.a \
 ./osgview/libosgview.a \
 $(sumo_LDADD) \
+./foreign/gl2ps/libgl2ps.a \
+./foreign/polyfonts/libpolyfonts.a \
 ./gui/GUIManipulator.o \
 ./gui/GUITLLogicPhasesTrackerWindow.o \
 $(OSG_LIBS) $(FFMPEG_LIBS) \
@@ -97,13 +97,15 @@ endif
 SUBDIRS = foreign utils microsim router od marouter mesosim \
 netbuild netwrite netgen netimport netload \
 polyconvert dfrouter duarouter jtrrouter activitygen tools \
-libsumo traci-server traci_testclient $(GUI_DIRS)
+$(TRACI_DIRS) $(GUI_DIRS)
 
 if WITH_VERSION_H
 VERSION_H = version.h
 all: $(VERSION_H)
-$(VERSION_H): ../.git
+$(VERSION_H): ../.svn
 	../tools/build/version.py $(CURDIR)
 endif
 
-EXTRA_DIST = config.h.in $(VERSION_H) sumo-gui.rc
+EXTRA_DIST = config.h config.h.in \
+$(VERSION_H) guisim.rc \
+windows_config.h

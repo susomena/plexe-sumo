@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSChargingStation.h
 /// @author  Daniel Krajzewicz
 /// @author  Tamas Kurczveil
@@ -16,13 +8,28 @@
 ///
 // Chargin Station for Electric vehicles
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSChargingStation_h
 #define MSChargingStation_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <list>
 #include <string>
@@ -53,8 +60,7 @@ public:
 
     /// @brief constructor
     MSChargingStation(const std::string& chargingStationID, MSLane& lane, double startPos, double endPos,
-                      const std::string& name,
-                      double chargingPower, double efficency, bool chargeInTransit, double chargeDelay);
+                      double chargingPower, double efficency, bool chargeInTransit, int chargeDelay);
 
     /// @brief destructor
     ~MSChargingStation();
@@ -81,7 +87,7 @@ public:
     void setChargeInTransit(bool chargeInTransit);
 
     /// @brief Set charge delay of the charging station
-    void setChargeDelay(double chargeDelay);
+    void setChargeDelay(int chargeDelay);
 
     /// @brief enable or disable charging vehicle
     void setChargingVehicle(bool value);
@@ -94,10 +100,6 @@ public:
 
     /// @brief Return true if in the current time step charging station is charging a vehicle
     bool isCharging() const;
-
-    double getTotalCharged() const {
-        return myTotalCharge;
-    }
 
     /// @brief add charge value for output
     void addChargeValueForOutput(double WCharged, MSDevice_Battery* battery);
@@ -156,7 +158,7 @@ protected:
     bool myChargeInTransit;
 
     /// @brief Charge Delay
-    double myChargeDelay;
+    int myChargeDelay;
 
     /// @brief Check if in the current TimeStep chargingStation is charging a vehicle
     bool myChargingVehicle;

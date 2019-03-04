@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDevice_BTsender.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,13 +7,28 @@
 ///
 // A BT sender
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/iodevices/OutputDevice.h>
 #include <utils/vehicle/SUMOVehicle.h>
@@ -53,8 +60,8 @@ MSDevice_BTsender::insertOptions(OptionsCont& oc) {
 
 
 void
-MSDevice_BTsender::buildVehicleDevices(SUMOVehicle& v, std::vector<MSVehicleDevice*>& into) {
-    if (equippedByDefaultAssignmentOptions(OptionsCont::getOptions(), "btsender", v, false)) {
+MSDevice_BTsender::buildVehicleDevices(SUMOVehicle& v, std::vector<MSDevice*>& into) {
+    if (equippedByDefaultAssignmentOptions(OptionsCont::getOptions(), "btsender", v)) {
         MSDevice_BTsender* device = new MSDevice_BTsender(v, "btsender_" + v.getID());
         into.push_back(device);
     }
@@ -73,7 +80,7 @@ MSDevice_BTsender::cleanup() {
 // MSDevice_BTsender-methods
 // ---------------------------------------------------------------------------
 MSDevice_BTsender::MSDevice_BTsender(SUMOVehicle& holder, const std::string& id)
-    : MSVehicleDevice(holder, id) {
+    : MSDevice(holder, id) {
 }
 
 

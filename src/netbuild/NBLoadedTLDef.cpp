@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBLoadedTLDef.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,11 +9,26 @@
 ///
 // A loaded (complete) traffic light logic
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <set>
@@ -275,7 +282,7 @@ NBLoadedTLDef::NBLoadedTLDef(const NBEdgeCont& ec, const std::string& id, SUMOTi
 
 NBLoadedTLDef::~NBLoadedTLDef() {
     for (SignalGroupCont::iterator i = mySignalGroups.begin(); i != mySignalGroups.end(); ++i) {
-        delete (*i).second;
+        delete(*i).second;
     }
 }
 
@@ -340,7 +347,7 @@ NBLoadedTLDef::myCompute(int brakingTimeSeconds) {
         for (NBConnectionVector::const_iterator it1 = myControlledLinks.begin(); it1 != myControlledLinks.end(); it1++) {
             const NBConnection& c1 = *it1;
             const int i1 = c1.getTLIndex();
-            if (i1 == NBConnection::InvalidTlIndex || state[i1] != 'g' || c1.getFrom() == nullptr || c1.getTo() == nullptr) {
+            if (i1 == NBConnection::InvalidTlIndex || state[i1] != 'g' || c1.getFrom() == 0 || c1.getTo() == 0) {
                 continue;
             }
             for (NBConnectionVector::const_iterator it2 = myControlledLinks.begin(); it2 != myControlledLinks.end(); it2++) {
@@ -349,7 +356,7 @@ NBLoadedTLDef::myCompute(int brakingTimeSeconds) {
                 if (i2 != NBConnection::InvalidTlIndex
                         && i2 != i1
                         && (state[i2] == 'G' || state[i2] == 'g')
-                        && c2.getFrom() != nullptr && c2.getTo() != nullptr) {
+                        && c2.getFrom() != 0 && c2.getTo() != 0) {
                     const bool rightTurnConflict = NBNode::rightTurnConflict(
                                                        c1.getFrom(), c1.getTo(), c1.getFromLane(), c2.getFrom(), c2.getTo(), c2.getFromLane());
                     if (forbids(c2.getFrom(), c2.getTo(), c1.getFrom(), c1.getTo(), true, controlledWithin) || rightTurnConflict) {
@@ -509,7 +516,7 @@ NBLoadedTLDef::collectLinks() {
             std::vector<NBEdge::Connection> elv = incoming->getConnectionsFromLane(j);
             for (std::vector<NBEdge::Connection>::iterator k = elv.begin(); k != elv.end(); k++) {
                 NBEdge::Connection el = *k;
-                if (el.toEdge != nullptr) {
+                if (el.toEdge != 0) {
                     myControlledLinks.push_back(NBConnection(incoming, j, el.toEdge, el.toLane));
                 }
             }
@@ -555,7 +562,7 @@ NBLoadedTLDef::findGroup(NBEdge* from, NBEdge* to) const {
             return (*i).second;
         }
     }
-    return nullptr;
+    return 0;
 }
 
 
@@ -567,12 +574,12 @@ NBLoadedTLDef::addToSignalGroup(const std::string& groupid,
     }
     mySignalGroups[groupid]->addConnection(connection);
     NBNode* n1 = connection.getFrom()->getToNode();
-    if (n1 != nullptr) {
+    if (n1 != 0) {
         addNode(n1);
         n1->addTrafficLight(this);
     }
     NBNode* n2 = connection.getTo()->getFromNode();
-    if (n2 != nullptr) {
+    if (n2 != 0) {
         addNode(n2);
         n2->addTrafficLight(this);
     }
@@ -654,17 +661,6 @@ NBLoadedTLDef::initNeedsContRelation() const {
     }
 }
 
-
-int
-NBLoadedTLDef::getMaxIndex() {
-    setParticipantsInformation();
-    NBTrafficLightLogic* logic = compute(OptionsCont::getOptions());
-    if (logic != nullptr) {
-        return logic->getNumLinks() - 1;
-    } else {
-        return -1;
-    }
-}
 
 /****************************************************************************/
 

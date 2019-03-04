@@ -1,34 +1,40 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@date    2011-03-04
+@version $Id$
 
-# @file    runner.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @date    2011-03-04
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 from __future__ import print_function
 from __future__ import absolute_import
 import os
+import subprocess
 import sys
-
-SUMO_HOME = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..")
-sys.path.append(os.path.join(os.environ.get("SUMO_HOME", SUMO_HOME), "tools"))
-if len(sys.argv) > 1:
-    import libsumo as traci  # noqa
-else:
-    import traci  # noqa
+import random
+sys.path.append(os.path.join(
+    os.path.dirname(sys.argv[0]), "..", "..", "..", "..", "..", "tools"))
+import traci
 import sumolib  # noqa
 
-traci.start([sumolib.checkBinary('sumo'), "-c", "sumo.sumocfg"])
+sumoBinary = sumolib.checkBinary('sumo-gui')
+
+PORT = sumolib.miscutils.getFreeSocketPort()
+sumoProcess = subprocess.Popen(
+    "%s -S -Q -c sumo.sumocfg --remote-port %s" % (sumoBinary, PORT), shell=True, stdout=sys.stdout)
+traci.init(PORT)
 for step in range(3):
     print("step", step)
     traci.simulationStep()
@@ -36,11 +42,7 @@ polygonID = "0"
 print("adding", polygonID)
 traci.polygon.add(
     polygonID, ((1, 1), (1, 10), (10, 10)), (1, 2, 3, 4), True, "test")
-try:
-    traci.polygon.add(
-        "invalidShape", ((1, 1), (float('nan'), 42), (1, 10), (10, 10)), (1, 2, 3, 4), True, "test")
-except traci.TraCIException:
-    pass
+traci.polygon.setFilled(polygonID, False)
 
 print("polygons", traci.polygon.getIDList())
 print("polygon count", traci.polygon.getIDCount())
@@ -49,20 +51,6 @@ print("shape", traci.polygon.getShape(polygonID))
 print("type", traci.polygon.getType(polygonID))
 print("color", traci.polygon.getColor(polygonID))
 print("filled", traci.polygon.getFilled(polygonID))
-traci.polygon.setShape(polygonID, ((11, 11), (11, 101), (101, 101)))
-print("shape modified", traci.polygon.getShape(polygonID))
-traci.polygon.setType(polygonID, "blub")
-print("type modified", traci.polygon.getType(polygonID))
-traci.polygon.setColor(polygonID, (5, 6, 7, 8))
-print("color modified", traci.polygon.getColor(polygonID))
-traci.polygon.setColor(polygonID, (5, 6, 7))
-print("color modified2", traci.polygon.getColor(polygonID))
-traci.polygon.setFilled(polygonID, False)
-print("filled modified", traci.polygon.getFilled(polygonID))
-
-print("getParameter='%s' (unset)" % (traci.polygon.getParameter(polygonID, "foo")))
-traci.polygon.setParameter(polygonID, "foo", "42")
-print("getParameter='%s' (after setting)" % (traci.polygon.getParameter(polygonID, "foo")))
 
 traci.polygon.subscribe(polygonID)
 print(traci.polygon.getSubscriptionResults(polygonID))
@@ -70,12 +58,5 @@ for step in range(3, 6):
     print("step", step)
     traci.simulationStep()
     print(traci.polygon.getSubscriptionResults(polygonID))
-
-polygonID2 = "poly2"
-traci.polygon.add(
-    polygonID2, ((1, 1), (1, 10), (10, 10)), (1, 2, 3, 4), True, "test", lineWidth=3)
-print("new polygon lineWidth", traci.polygon.getLineWidth(polygonID2))
-traci.polygon.setLineWidth(polygonID2, 0.5)
-print("lineWidth modified", traci.polygon.getLineWidth(polygonID2))
-
 traci.close()
+sumoProcess.wait()

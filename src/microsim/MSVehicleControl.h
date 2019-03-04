@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSVehicleControl.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // The class responsible for building and deletion of vehicles
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSVehicleControl_h
 #define MSVehicleControl_h
 
@@ -23,20 +26,19 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cmath>
 #include <string>
 #include <map>
 #include <set>
-#ifdef HAVE_FOX
-#include <fx.h>
-#include <utils/foxtools/FXSynchQue.h>
-#endif
 #include <utils/distribution/RandomDistributor.h>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/SUMOVehicleClass.h>
-#include "MSNet.h"
 
 
 // ===========================================================================
@@ -111,9 +113,8 @@ public:
     /** @brief Tries to insert the vehicle into the internal vehicle container
      *
      * Checks whether another vehicle with the same id exists; returns false
-     *  if so. Otherwise, the vehicle is added to "myVehicleDict".
-     *  It also checks whether the vehicle has a "triggered" departure
-     *  and registers it accordingly.
+     *  if so. Otherwise, the vehicle is added to "myVehicleDict" and
+     *  true is returned.
      *
      * The vehicle control gets responsible for vehicle deletion.
      *
@@ -156,20 +157,6 @@ public:
      * @param[in] veh The vehicle to remove
      */
     void scheduleVehicleRemoval(SUMOVehicle* veh);
-
-
-    /** @brief Removes a vehicle after it has ended
-     *
-     * Writes output to tripinfos and vehroutes if wished; decrements
-     *  the number of running vehicles and increments the number of ended
-     *  vehicles. Then deletes the vehicle using "deleteVehicle".
-     *
-     * This method should be called for each vehicle that was inserted
-     *  into the network and quits its ride.
-     *
-     * @param[in] veh The vehicle to remove
-     */
-    void removePending();
 
 
     /** @brief Returns the begin of the internal vehicle map
@@ -216,39 +203,11 @@ public:
     }
 
 
-    /** @brief Returns the number of halting vehicles
-     * @return The number of halting vehicles
-     */
-    virtual int getHaltingVehicleNo() const;
-
-    /// @brief get current absolute and relative mean vehicle speed in the network
-    virtual std::pair<double, double> getVehicleMeanSpeeds() const;
-    double getVehicleMeanSpeed() const {
-        return getVehicleMeanSpeeds().first;
-    }
-    double getVehicleMeanSpeedRelative() const {
-        return getVehicleMeanSpeeds().second;
-    }
-
     /** @brief Returns the number of removed vehicles
      * @return The number of vehicles that have left the simulation
      */
     int getEndedVehicleNo() const {
         return myEndedVehNo;
-    }
-
-    /** @brief Returns the number of arrived vehicles
-     * @return The number of vehicles that have arrived at their destination
-     */
-    int getArrivedVehicleNo() const {
-        return myEndedVehNo - myDiscarded;
-    }
-
-    /** @brief Returns the number of discarded vehicles
-     * @return The number of vehicles that could not be inserted and were permantently discarded
-     */
-    int getDiscardedVehicleNo() const {
-        return myDiscarded;
     }
 
 
@@ -314,6 +273,7 @@ public:
         return myEmergencyStops;
     }
 
+
     /** @brief Returns the total departure delay
      * @return Sum of steps vehicles had to wait until being inserted
      */
@@ -372,16 +332,6 @@ public:
     bool addVTypeDistribution(const std::string& id, RandomDistributor<MSVehicleType*>* vehTypeDistribution);
 
 
-    /** @brief Asks for existence of a vehicle type
-     *
-     * If vehicle type or distribution with the id exists, true is returned, false otherwise.
-     *
-     * @param[in] id The id of the type or distribution
-     * @return Whether the vehicle type or distribution exists
-     */
-    bool hasVType(const std::string& id) const;
-
-
     /** @brief Asks for a vehicle type distribution
      *
      * If vehicle type distribution with the id exists, true is returned, false otherwise.
@@ -403,20 +353,13 @@ public:
      * @param[in] into The vector to fill with ids
      */
     void insertVTypeIDs(std::vector<std::string>& into) const;
-
-
-    /** @brief Return the distribution IDs the vehicle type is a member of
-    * @param[in] vehType The vehicle type to look for membership in distributions
-    */
-    std::set<std::string> getVTypeDistributionMembership(const std::string& id) const;
-
     /// @}
 
     /// @brief Adds a vehicle to the list of waiting vehiclse to a given edge
     void addWaiting(const MSEdge* const edge, SUMOVehicle* vehicle);
 
     /// @brief Removes a vehicle from the list of waiting vehicles to a given edge
-    void removeWaiting(const MSEdge* const edge, const SUMOVehicle* vehicle);
+    void removeWaiting(const MSEdge* const edge, SUMOVehicle* vehicle);
 
     /* @brief returns a vehicle of the given lines that is waiting for a for a person or a container at this edge at the given positions
      * @param[in] edge The edge at which the vehicle is positioned.
@@ -426,24 +369,28 @@ public:
      */
     SUMOVehicle* getWaitingVehicle(const MSEdge* const edge, const std::set<std::string>& lines, const double position, const std::string ridingID);
 
-    /** @brief increases the count of vehicles waiting for a transport to allow recognition of person / container related deadlocks
+    /** @brief increases the count of vehicles waiting for a person to allow recogniztion of person related deadlocks
      */
-    void registerOneWaiting(const bool isPerson) {
-        if (isPerson) {
-            myWaitingForPerson++;
-        } else {
-            myWaitingForContainer++;
-        }
+    void registerOneWaitingForPerson() {
+        myWaitingForPerson++;
     }
 
-    /** @brief decreases the count of vehicles waiting for a transport to allow recognition of person / container related deadlocks
+    /** @brief decreases the count of vehicles waiting for a person to allow recogniztion of person related deadlocks
      */
-    void unregisterOneWaiting(const bool isPerson) {
-        if (isPerson) {
-            myWaitingForPerson--;
-        } else {
-            myWaitingForContainer--;
-        }
+    void unregisterOneWaitingForPerson() {
+        myWaitingForPerson--;
+    }
+
+    /** @brief increases the count of vehicles waiting for a container to allow recogniztion of container related deadlocks
+     */
+    void registerOneWaitingForContainer() {
+        myWaitingForContainer++;
+    }
+
+    /** @brief decreases the count of vehicles waiting for a container to allow recogniztion of container related deadlocks
+     */
+    void unregisterOneWaitingForContainer() {
+        myWaitingForContainer--;
     }
 
     /// @brief registers one collision-related teleport
@@ -499,6 +446,9 @@ public:
      */
     void abortWaiting();
 
+    /// @brief compute (optional) random offset to the departure time
+    SUMOTime computeRandomDepartOffset() const;
+
     /// @brief return the maximum speed factor for all vehicles that ever entered the network
     double getMaxSpeedFactor() const {
         return myMaxSpeedFactor;
@@ -507,13 +457,6 @@ public:
     /// @brief return the minimum deceleration capability for all vehicles that ever entered the network
     double getMinDeceleration() const {
         return myMinDeceleration;
-    }
-
-    void adaptIntermodalRouter(MSNet::MSIntermodalRouter& router) const;
-
-    /// @brief sets the demand scaling factor
-    void setScale(double scale) {
-        myScale = scale;
     }
 
 private:
@@ -526,13 +469,12 @@ private:
     bool checkVType(const std::string& id);
 
 protected:
-    /// @name Vehicle statistics (always accessible)
+    /// @name Vehicle statistics (always accessable)
     /// @{
 
     /// @brief The number of build vehicles
     int myLoadedVehNo;
 
-private:
     /// @brief The number of vehicles within the network (build and inserted but not removed)
     int myRunningVehNo;
 
@@ -571,7 +513,6 @@ private:
     /// @}
 
 
-protected:
     /// @name Vehicle container
     /// @{
 
@@ -582,7 +523,6 @@ protected:
     /// @}
 
 
-private:
     /// @name Vehicle type container
     /// @{
 
@@ -596,17 +536,11 @@ private:
     /// @brief A distribution of vehicle types (probability->vehicle type)
     VTypeDistDictType myVTypeDistDict;
 
-    /// @brief Inverse lookup from vehicle type to distributions it is a member of
-    std::map<std::string, std::set<std::string>> myVTypeToDist;
-
-    /// @brief Whether the default vehicle type was already used or can still be replaced
+    /// @brief Whether no vehicle type was loaded
     bool myDefaultVTypeMayBeDeleted;
 
-    /// @brief Whether the default pedestrian type was already used or can still be replaced
+    /// @brief Whether no pedestrian type was loaded
     bool myDefaultPedTypeMayBeDeleted;
-
-    /// @brief Whether the default bicycle type was already used or can still be replaced
-    bool myDefaultBikeTypeMayBeDeleted;
 
     /// the lists of waiting vehicles to a given edge
     std::map<const MSEdge* const, std::vector<SUMOVehicle*> > myWaiting;
@@ -620,21 +554,14 @@ private:
     /// @brief The scaling factor (especially for inc-dua)
     double myScale;
 
+    /// @brief The maximum random offset to be added to vehicles departure times (non-negative)
+    SUMOTime myMaxRandomDepartOffset;
+
     /// @brief The maximum speed factor for all vehicles in the network
     double myMaxSpeedFactor;
 
     /// @brief The minimum deceleration capability for all vehicles in the network
     double myMinDeceleration;
-
-    /// @brief List of vehicles which belong to public transport
-    std::vector<SUMOVehicle*> myPTVehicles;
-
-    /// @brief List of vehicles which are going to be removed
-#ifdef HAVE_FOX
-    FXSynchQue<SUMOVehicle*, std::vector<SUMOVehicle*> > myPendingRemovals;
-#else
-    std::vector<SUMOVehicle*> myPendingRemovals;
-#endif
 
 private:
     /// @brief invalidated copy constructor

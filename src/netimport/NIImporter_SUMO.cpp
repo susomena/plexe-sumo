@@ -1,36 +1,42 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIImporter_SUMO.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
-/// @author  Leonhard Luecken
 /// @date    Mon, 14.04.2008
 /// @version $Id$
 ///
 // Importer for networks stored in SUMO format
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 #include <string>
 #include <utils/common/UtilExceptions.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/StringTokenizer.h>
 #include <utils/common/FileHelpers.h>
 #include <utils/common/ToString.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
 #include <utils/xml/SUMOSAXHandler.h>
 #include <utils/xml/XMLSubSys.h>
@@ -69,20 +75,16 @@ NIImporter_SUMO::NIImporter_SUMO(NBNetBuilder& nb)
       myNetBuilder(nb),
       myNodeCont(nb.getNodeCont()),
       myTLLCont(nb.getTLLogicCont()),
-      myTypesHandler(nb.getTypeCont()),
-      myCurrentEdge(nullptr),
-      myCurrentLane(nullptr),
-      myCurrentTL(nullptr),
-      myLocation(nullptr),
+      myCurrentEdge(0),
+      myCurrentLane(0),
+      myCurrentTL(0),
+      myLocation(0),
       myHaveSeenInternalEdge(false),
       myAmLefthand(false),
       myCornerDetail(0),
       myLinkDetail(-1),
       myRectLaneCut(false),
-      myWalkingAreas(false),
-      myLimitTurnSpeed(-1),
-      myCheckLaneFoesAll(false),
-      myCheckLaneFoesRoundabout(true) {
+      myWalkingAreas(false) {
 }
 
 
@@ -95,7 +97,6 @@ NIImporter_SUMO::~NIImporter_SUMO() {
         delete ed;
     }
     delete myLocation;
-
 }
 
 
@@ -106,6 +107,7 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
         return;
     }
     // parse file(s)
+    NIXMLTypesHandler* typesHandler = new NIXMLTypesHandler(myNetBuilder.getTypeCont());
     std::vector<std::string> files = oc.getStringVector("sumo-net-file");
     for (std::vector<std::string>::const_iterator file = files.begin(); file != files.end(); ++file) {
         if (!FileHelpers::isReadable(*file)) {
@@ -115,6 +117,7 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
         setFileName(*file);
         PROGRESS_BEGIN_MESSAGE("Parsing sumo-net from '" + *file + "'");
         XMLSubSys::runParser(*this, *file, true);
+        XMLSubSys::runParser(*typesHandler, *file, true);
         PROGRESS_DONE_MESSAGE();
     }
     // build edges
@@ -127,11 +130,11 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
         // get and check the nodes
         NBNode* from = myNodeCont.retrieve(ed->fromNode);
         NBNode* to = myNodeCont.retrieve(ed->toNode);
-        if (from == nullptr) {
+        if (from == 0) {
             WRITE_ERROR("Edge's '" + ed->id + "' from-node '" + ed->fromNode + "' is not known.");
             continue;
         }
-        if (to == nullptr) {
+        if (to == 0) {
             WRITE_ERROR("Edge's '" + ed->id + "' to-node '" + ed->toNode + "' is not known.");
             continue;
         }
@@ -155,53 +158,41 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
                                ed->priority, NBEdge::UNSPECIFIED_WIDTH, NBEdge::UNSPECIFIED_OFFSET,
                                geom, ed->streetName, "", ed->lsf, true); // always use tryIgnoreNodePositions to keep original shape
         e->setLoadedLength(ed->length);
-        e->updateParameter(ed->getParametersMap());
         if (!myNetBuilder.getEdgeCont().insert(e)) {
             WRITE_ERROR("Could not insert edge '" + ed->id + "'.");
             delete e;
             continue;
         }
         ed->builtEdge = myNetBuilder.getEdgeCont().retrieve(ed->id);
-        if (ed->builtEdge != nullptr) {
-            ed->builtEdge->setStopOffsets(-1, ed->stopOffsets);
-        }
     }
     // assign further lane attributes (edges are built)
     EdgeVector toRemove;
-    const bool dismissVclasses = oc.getBool("dismiss-vclasses");
     for (std::map<std::string, EdgeAttrs*>::const_iterator i = myEdges.begin(); i != myEdges.end(); ++i) {
         EdgeAttrs* ed = (*i).second;
         NBEdge* nbe = ed->builtEdge;
-        if (nbe == nullptr) { // inner edge or removed by explicit list, vclass, ...
+        if (nbe == 0) { // inner edge or removed by explicit list, vclass, ...
             continue;
         }
-        const SumoXMLNodeType toType = nbe->getToNode()->getType();
         for (int fromLaneIndex = 0; fromLaneIndex < (int) ed->lanes.size(); ++fromLaneIndex) {
             LaneAttrs* lane = ed->lanes[fromLaneIndex];
             // connections
             const std::vector<Connection>& connections = lane->connections;
-            for (const Connection& c : connections) {
+            for (std::vector<Connection>::const_iterator c_it = connections.begin(); c_it != connections.end(); c_it++) {
+                const Connection& c = *c_it;
                 if (myEdges.count(c.toEdgeID) == 0) {
                     WRITE_ERROR("Unknown edge '" + c.toEdgeID + "' given in connection.");
                     continue;
                 }
                 NBEdge* toEdge = myEdges[c.toEdgeID]->builtEdge;
-                if (toEdge == nullptr) { // removed by explicit list, vclass, ...
+                if (toEdge == 0) { // removed by explicit list, vclass, ...
                     continue;
                 }
                 if (nbe->hasConnectionTo(toEdge, c.toLaneIdx)) {
                     WRITE_WARNING("Target lane '" + toEdge->getLaneID(c.toLaneIdx) + "' has multiple connections from '" + nbe->getID() + "'.");
                 }
-                // patch attribute uncontrolled for legacy networks where it is not set explicitly
-                bool uncontrolled = c.uncontrolled;
-
-                if ((NBNode::isTrafficLight(toType) || toType == NODETYPE_RAIL_SIGNAL)
-                        && c.tlLinkIndex == NBConnection::InvalidTlIndex) {
-                    uncontrolled = true;
-                }
                 nbe->addLane2LaneConnection(
                     fromLaneIndex, toEdge, c.toLaneIdx, NBEdge::L2L_VALIDATED,
-                    true, c.mayDefinitelyPass, c.keepClear, c.contPos, c.visibility, c.speed, c.customShape, uncontrolled);
+                    true, c.mayDefinitelyPass, c.keepClear, c.contPos, c.visibility);
 
                 // maybe we have a tls-controlled connection
                 if (c.tlID != "" && myRailSignals.count(c.tlID) == 0) {
@@ -211,7 +202,7 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
                         for (it = programs.begin(); it != programs.end(); it++) {
                             NBLoadedSUMOTLDef* tlDef = dynamic_cast<NBLoadedSUMOTLDef*>(it->second);
                             if (tlDef) {
-                                tlDef->addConnection(nbe, toEdge, fromLaneIndex, c.toLaneIdx, c.tlLinkIndex, false);
+                                tlDef->addConnection(nbe, toEdge, fromLaneIndex, c.toLaneIdx, c.tlLinkNo, false);
                             } else {
                                 throw ProcessError("Corrupt traffic light definition '" + c.tlID + "' (program '" + it->first + "')");
                             }
@@ -222,28 +213,15 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
                 }
             }
             // allow/disallow XXX preferred
-            if (!dismissVclasses) {
-                nbe->setPermissions(parseVehicleClasses(lane->allow, lane->disallow), fromLaneIndex);
-            }
+            nbe->setPermissions(parseVehicleClasses(lane->allow, lane->disallow), fromLaneIndex);
             // width, offset
             nbe->setLaneWidth(fromLaneIndex, lane->width);
             nbe->setEndOffset(fromLaneIndex, lane->endOffset);
             nbe->setSpeed(fromLaneIndex, lane->maxSpeed);
             nbe->setAcceleration(fromLaneIndex, lane->accelRamp);
             nbe->getLaneStruct(fromLaneIndex).oppositeID = lane->oppositeID;
-            nbe->getLaneStruct(fromLaneIndex).updateParameter(lane->getParametersMap());
             if (lane->customShape) {
                 nbe->setLaneShape(fromLaneIndex, lane->shape);
-            }
-            // stop offset for lane
-            bool stopOffsetSet = false;
-            if (lane->stopOffsets.size() != 0 || nbe->getStopOffsets().size() == 0) {
-                // apply lane-specific stopOffset (might be none as well)
-                stopOffsetSet = nbe->setStopOffsets(fromLaneIndex, lane->stopOffsets);
-            }
-            if (!stopOffsetSet) {
-                // apply default stop offset to lane
-                nbe->setStopOffsets(fromLaneIndex, nbe->getStopOffsets());
             }
         }
         nbe->declareConnectionsAsLoaded();
@@ -252,9 +230,6 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
         }
         if (!nbe->hasLaneSpecificEndOffset() && nbe->getEndOffset(0) != NBEdge::UNSPECIFIED_OFFSET) {
             nbe->setEndOffset(-1, nbe->getEndOffset(0));
-        }
-        if (!nbe->hasLaneSpecificStopOffsets() && nbe->getStopOffsets().size() != 0) {
-            nbe->setStopOffsets(-1, nbe->getStopOffsets());
         }
         // check again after permissions are set
         if (myNetBuilder.getEdgeCont().ignoreFilterMatch(nbe)) {
@@ -271,13 +246,13 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
         NBEdge* prohibitedTo = myEdges[it->prohibitedTo]->builtEdge;
         NBEdge* prohibitorFrom = myEdges[it->prohibitorFrom]->builtEdge;
         NBEdge* prohibitorTo = myEdges[it->prohibitorTo]->builtEdge;
-        if (prohibitedFrom == nullptr) {
+        if (prohibitedFrom == 0) {
             WRITE_WARNING("Edge '" + it->prohibitedFrom + "' in prohibition was not built");
-        } else if (prohibitedTo == nullptr) {
+        } else if (prohibitedTo == 0) {
             WRITE_WARNING("Edge '" + it->prohibitedTo + "' in prohibition was not built");
-        } else if (prohibitorFrom == nullptr) {
+        } else if (prohibitorFrom == 0) {
             WRITE_WARNING("Edge '" + it->prohibitorFrom + "' in prohibition was not built");
-        } else if (prohibitorTo == nullptr) {
+        } else if (prohibitorTo == 0) {
             WRITE_WARNING("Edge '" + it->prohibitorTo + "' in prohibition was not built");
         } else {
             NBNode* n = prohibitedFrom->getToNode();
@@ -286,8 +261,8 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
                 NBConnection(prohibitedFrom, prohibitedTo));
         }
     }
-    if (!myHaveSeenInternalEdge && oc.isDefault("no-internal-links")) {
-        oc.set("no-internal-links", "true");
+    if (!myHaveSeenInternalEdge) {
+        myNetBuilder.haveLoadedNetworkWithoutInternalEdges();
     }
     if (oc.isDefault("lefthand")) {
         oc.set("lefthand", toString(myAmLefthand));
@@ -304,21 +279,12 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
     if (oc.isDefault("walkingareas")) {
         oc.set("walkingareas", toString(myWalkingAreas));
     }
-    if (oc.isDefault("junctions.limit-turn-speed")) {
-        oc.set("junctions.limit-turn-speed", toString(myLimitTurnSpeed));
-    }
-    if (oc.isDefault("check-lane-foes.all") && oc.getBool("check-lane-foes.all") != myCheckLaneFoesAll) {
-        oc.set("check-lane-foes.all", toString(myCheckLaneFoesAll));
-    }
-    if (oc.isDefault("check-lane-foes.roundabout") && oc.getBool("check-lane-foes.roundabout") != myCheckLaneFoesRoundabout) {
-        oc.set("check-lane-foes.roundabout", toString(myCheckLaneFoesRoundabout));
-    }
     if (!deprecatedVehicleClassesSeen.empty()) {
         WRITE_WARNING("Deprecated vehicle class(es) '" + toString(deprecatedVehicleClassesSeen) + "' in input network.");
         deprecatedVehicleClassesSeen.clear();
     }
+    // add loaded crossings
     if (!oc.getBool("no-internal-links")) {
-        // add loaded crossings
         for (std::map<std::string, std::vector<Crossing> >::const_iterator it = myPedestrianCrossings.begin(); it != myPedestrianCrossings.end(); ++it) {
             NBNode* node = myNodeCont.retrieve((*it).first);
             for (std::vector<Crossing>::const_iterator it_c = (*it).second.begin(); it_c != (*it).second.end(); ++it_c) {
@@ -327,41 +293,13 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
                 for (std::vector<std::string>::const_iterator it_e = crossing.crossingEdges.begin(); it_e != crossing.crossingEdges.end(); ++it_e) {
                     NBEdge* edge = myNetBuilder.getEdgeCont().retrieve(*it_e);
                     // edge might have been removed due to options
-                    if (edge != nullptr) {
+                    if (edge != 0) {
                         edges.push_back(edge);
                     }
                 }
                 if (edges.size() > 0) {
-                    node->addCrossing(edges, crossing.width, crossing.priority, crossing.customTLIndex, crossing.customTLIndex2, crossing.customShape, true);
+                    node->addCrossing(edges, crossing.width, crossing.priority, true);
                 }
-            }
-        }
-        // add walking area custom shapes
-        for (auto item : myWACustomShapes) {
-            std::string nodeID = SUMOXMLDefinitions::getJunctionIDFromInternalEdge(item.first);
-            NBNode* node = myNodeCont.retrieve(nodeID);
-            std::vector<std::string> edgeIDs;
-            if (item.second.fromEdges.size() + item.second.toEdges.size() == 0) {
-                // must be a split crossing
-                assert(item.second.fromCrossed.size() > 0);
-                assert(item.second.toCrossed.size() > 0);
-                edgeIDs = item.second.fromCrossed;
-                edgeIDs.insert(edgeIDs.end(), item.second.toCrossed.begin(), item.second.toCrossed.end());
-            } else if (item.second.fromEdges.size() > 0) {
-                edgeIDs = item.second.fromEdges;
-            } else {
-                edgeIDs = item.second.toEdges;
-            }
-            EdgeVector edges;
-            for (std::string edgeID : edgeIDs) {
-                NBEdge* edge = myNetBuilder.getEdgeCont().retrieve(edgeID);
-                // edge might have been removed due to options
-                if (edge != nullptr) {
-                    edges.push_back(edge);
-                }
-            }
-            if (edges.size() > 0) {
-                node->addWalkingAreaShape(edges, item.second.shape);
             }
         }
     }
@@ -370,7 +308,7 @@ NIImporter_SUMO::_loadNetwork(OptionsCont& oc) {
         EdgeSet roundabout;
         for (std::vector<std::string>::const_iterator it_r = it->begin(); it_r != it->end(); ++it_r) {
             NBEdge* edge = myNetBuilder.getEdgeCont().retrieve(*it_r);
-            if (edge == nullptr) {
+            if (edge == 0) {
                 if (!myNetBuilder.getEdgeCont().wasIgnored(*it_r)) {
                     WRITE_ERROR("Unknown edge '" + (*it_r) + "' in roundabout");
                 }
@@ -404,15 +342,11 @@ NIImporter_SUMO::myStartElement(int element,
     switch (element) {
         case SUMO_TAG_NET: {
             bool ok;
-            myAmLefthand = attrs.getOpt<bool>(SUMO_ATTR_LEFTHAND, nullptr, ok, false);
-            myCornerDetail = attrs.getOpt<int>(SUMO_ATTR_CORNERDETAIL, nullptr, ok, 0);
-            myLinkDetail = attrs.getOpt<int>(SUMO_ATTR_LINKDETAIL, nullptr, ok, -1);
-            myRectLaneCut = attrs.getOpt<bool>(SUMO_ATTR_RECTANGULAR_LANE_CUT, nullptr, ok, false);
-            myWalkingAreas = attrs.getOpt<bool>(SUMO_ATTR_WALKINGAREAS, nullptr, ok, false);
-            myLimitTurnSpeed = attrs.getOpt<double>(SUMO_ATTR_LIMIT_TURN_SPEED, nullptr, ok, -1);
-            myWalkingAreas = attrs.getOpt<bool>(SUMO_ATTR_WALKINGAREAS, nullptr, ok, false);
-            myCheckLaneFoesAll = attrs.getOpt<bool>(SUMO_ATTR_CHECKLANEFOES_ALL, nullptr, ok, false);
-            myCheckLaneFoesRoundabout = attrs.getOpt<bool>(SUMO_ATTR_CHECKLANEFOES_ALL, nullptr, ok, true);
+            myAmLefthand = attrs.getOpt<bool>(SUMO_ATTR_LEFTHAND, 0, ok, false);
+            myCornerDetail = attrs.getOpt<int>(SUMO_ATTR_CORNERDETAIL, 0, ok, 0);
+            myLinkDetail = attrs.getOpt<int>(SUMO_ATTR_LINKDETAIL, 0, ok, -1);
+            myRectLaneCut = attrs.getOpt<bool>(SUMO_ATTR_RECTANGULAR_LANE_CUT, 0, ok, false);
+            myWalkingAreas = attrs.getOpt<bool>(SUMO_ATTR_WALKINGAREAS, 0, ok, false);
             break;
         }
         case SUMO_TAG_EDGE:
@@ -421,11 +355,6 @@ NIImporter_SUMO::myStartElement(int element,
         case SUMO_TAG_LANE:
             addLane(attrs);
             break;
-        case SUMO_TAG_STOPOFFSET: {
-            bool ok = true;
-            addStopOffsets(attrs, ok);
-        }
-        break;
         case SUMO_TAG_NEIGH:
             myCurrentLane->oppositeID = attrs.getString(SUMO_ATTR_LANE);
             break;
@@ -440,9 +369,6 @@ NIImporter_SUMO::myStartElement(int element,
             break;
         case SUMO_TAG_TLLOGIC:
             myCurrentTL = initTrafficLightLogic(attrs, myCurrentTL);
-            if (myCurrentTL) {
-                myLastParameterised.push_back(myCurrentTL);
-            }
             break;
         case SUMO_TAG_PHASE:
             addPhase(attrs, myCurrentTL);
@@ -456,17 +382,7 @@ NIImporter_SUMO::myStartElement(int element,
         case SUMO_TAG_ROUNDABOUT:
             addRoundabout(attrs);
             break;
-        case SUMO_TAG_PARAM:
-            if (myLastParameterised.size() != 0) {
-                bool ok = true;
-                const std::string key = attrs.get<std::string>(SUMO_ATTR_KEY, nullptr, ok);
-                // circumventing empty string test
-                const std::string val = attrs.hasAttribute(SUMO_ATTR_VALUE) ? attrs.getString(SUMO_ATTR_VALUE) : "";
-                myLastParameterised.back()->setParameter(key, val);
-            }
-            break;
         default:
-            myTypesHandler.myStartElement(element, attrs);
             break;
     }
 }
@@ -477,20 +393,18 @@ NIImporter_SUMO::myEndElement(int element) {
     switch (element) {
         case SUMO_TAG_EDGE:
             if (myEdges.find(myCurrentEdge->id) != myEdges.end()) {
-                WRITE_ERROR("Edge '" + myCurrentEdge->id + "' occurred at least twice in the input.");
+                WRITE_ERROR("Edge '" + myCurrentEdge->id + "' occured at least twice in the input.");
             } else {
                 myEdges[myCurrentEdge->id] = myCurrentEdge;
             }
-            myCurrentEdge = nullptr;
-            myLastParameterised.pop_back();
+            myCurrentEdge = 0;
             break;
         case SUMO_TAG_LANE:
-            if (myCurrentEdge != nullptr) {
+            if (myCurrentEdge != 0) {
                 myCurrentEdge->maxSpeed = MAX2(myCurrentEdge->maxSpeed, myCurrentLane->maxSpeed);
                 myCurrentEdge->lanes.push_back(myCurrentLane);
             }
-            myCurrentLane = nullptr;
-            myLastParameterised.pop_back();
+            myCurrentLane = 0;
             break;
         case SUMO_TAG_TLLOGIC:
             if (!myCurrentTL) {
@@ -500,16 +414,8 @@ NIImporter_SUMO::myEndElement(int element) {
                     WRITE_WARNING("Could not add program '" + myCurrentTL->getProgramID() + "' for traffic light '" + myCurrentTL->getID() + "'");
                     delete myCurrentTL;
                 }
-                myCurrentTL = nullptr;
-                myLastParameterised.pop_back();
+                myCurrentTL = 0;
             }
-            break;
-        case SUMO_TAG_JUNCTION:
-            if (myCurrentJunction.node != nullptr) {
-                myLastParameterised.pop_back();
-            }
-            break;
-        case SUMO_TAG_CONNECTION:
             break;
         default:
             break;
@@ -521,24 +427,23 @@ void
 NIImporter_SUMO::addEdge(const SUMOSAXAttributes& attrs) {
     // get the id, report an error if not given or empty...
     bool ok = true;
-    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
     if (!ok) {
         return;
     }
     myCurrentEdge = new EdgeAttrs();
-    myLastParameterised.push_back(myCurrentEdge);
-    myCurrentEdge->builtEdge = nullptr;
+    myCurrentEdge->builtEdge = 0;
     myCurrentEdge->id = id;
     // get the function
     myCurrentEdge->func = attrs.getEdgeFunc(ok);
     if (myCurrentEdge->func == EDGEFUNC_CROSSING) {
         // add the crossing but don't do anything else
-        Crossing c(id);
-        c.crossingEdges = attrs.get<std::vector<std::string> >(SUMO_ATTR_CROSSING_EDGES, nullptr, ok);
+        Crossing c;
+        c.edgeID = id;
+        SUMOSAXAttributes::parseStringVector(attrs.get<std::string>(SUMO_ATTR_CROSSING_EDGES, 0, ok), c.crossingEdges);
         myPedestrianCrossings[SUMOXMLDefinitions::getJunctionIDFromInternalEdge(id)].push_back(c);
         return;
     } else if (myCurrentEdge->func == EDGEFUNC_INTERNAL || myCurrentEdge->func == EDGEFUNC_WALKINGAREA) {
-        myHaveSeenInternalEdge = true;
         return; // skip internal edges
     }
     // get the type
@@ -570,42 +475,33 @@ NIImporter_SUMO::addEdge(const SUMOSAXAttributes& attrs) {
 void
 NIImporter_SUMO::addLane(const SUMOSAXAttributes& attrs) {
     bool ok = true;
-    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
     if (!ok) {
         return;
     }
     if (!myCurrentEdge) {
-        WRITE_ERROR("Found lane '" + id  + "' not within edge element.");
+        WRITE_ERROR("Found lane '" + id  + "' not within edge element");
         return;
     }
-    const std::string expectedID = myCurrentEdge->id + "_" + toString(myCurrentEdge->lanes.size());
-    if (id != expectedID) {
-        WRITE_WARNING("Renaming lane '" + id  + "' to '" + expectedID + "'.");
-    }
     myCurrentLane = new LaneAttrs();
-    myLastParameterised.push_back(myCurrentLane);
-    myCurrentLane->customShape = attrs.getOpt<bool>(SUMO_ATTR_CUSTOMSHAPE, nullptr, ok, false);
-    myCurrentLane->shape = attrs.get<PositionVector>(SUMO_ATTR_SHAPE, id.c_str(), ok);
+    if (attrs.getOpt<bool>(SUMO_ATTR_CUSTOMSHAPE, 0, ok, false)) {
+        myCurrentLane->customShape = true;
+        if (id[0] == ':') {
+            const std::string nodeID = NBNode::getNodeIDFromInternalLane(id);
+            myCustomShapeMaps[nodeID][id] = attrs.get<PositionVector>(SUMO_ATTR_SHAPE, id.c_str(), ok);
+        }
+    } else {
+        myCurrentLane->customShape = false;
+    }
     if (myCurrentEdge->func == EDGEFUNC_CROSSING) {
         // save the width and the lane id of the crossing but don't do anything else
         std::vector<Crossing>& crossings = myPedestrianCrossings[SUMOXMLDefinitions::getJunctionIDFromInternalEdge(myCurrentEdge->id)];
         assert(crossings.size() > 0);
         crossings.back().width = attrs.get<double>(SUMO_ATTR_WIDTH, id.c_str(), ok);
-        if (myCurrentLane->customShape) {
-            crossings.back().customShape = myCurrentLane->shape;
-            NBNetBuilder::transformCoordinates(crossings.back().customShape, true, myLocation);
-        }
-    } else if (myCurrentEdge->func == EDGEFUNC_WALKINGAREA) {
-        // save custom shape if needed but don't do anything else
-        if (myCurrentLane->customShape) {
-            WalkingAreaParsedCustomShape wacs;
-            wacs.shape = myCurrentLane->shape;
-            NBNetBuilder::transformCoordinates(wacs.shape, true, myLocation);
-            myWACustomShapes[myCurrentEdge->id] = wacs;
-        }
         return;
-    } else if (myCurrentEdge->func == EDGEFUNC_INTERNAL) {
-        return; // skip internal edges
+    } else if (myCurrentEdge->func == EDGEFUNC_INTERNAL || myCurrentEdge->func == EDGEFUNC_WALKINGAREA) {
+        myHaveSeenInternalEdge = true;
+        return; // skip internal lanes
     }
     if (attrs.hasAttribute("maxspeed")) {
         // !!! deprecated
@@ -615,13 +511,14 @@ NIImporter_SUMO::addLane(const SUMOSAXAttributes& attrs) {
     }
     try {
         myCurrentLane->allow = attrs.getOpt<std::string>(SUMO_ATTR_ALLOW, id.c_str(), ok, "", false);
-    } catch (EmptyData&) {
+    } catch (EmptyData e) {
         // !!! deprecated
         myCurrentLane->allow = "";
     }
     myCurrentLane->disallow = attrs.getOpt<std::string>(SUMO_ATTR_DISALLOW, id.c_str(), ok, "");
     myCurrentLane->width = attrs.getOpt<double>(SUMO_ATTR_WIDTH, id.c_str(), ok, (double) NBEdge::UNSPECIFIED_WIDTH);
     myCurrentLane->endOffset = attrs.getOpt<double>(SUMO_ATTR_ENDOFFSET, id.c_str(), ok, (double) NBEdge::UNSPECIFIED_OFFSET);
+    myCurrentLane->shape = attrs.get<PositionVector>(SUMO_ATTR_SHAPE, id.c_str(), ok);
     myCurrentLane->accelRamp = attrs.getOpt<bool>(SUMO_ATTR_ACCELERATION, id.c_str(), ok, false);
     // lane coordinates are derived (via lane spread) do not include them in convex boundary
     NBNetBuilder::transformCoordinates(myCurrentLane->shape, false, myLocation);
@@ -629,43 +526,13 @@ NIImporter_SUMO::addLane(const SUMOSAXAttributes& attrs) {
 
 
 void
-NIImporter_SUMO::addStopOffsets(const SUMOSAXAttributes& attrs, bool& ok) {
-    std::map<SVCPermissions, double> offsets = parseStopOffsets(attrs, ok);
-    if (!ok) {
-        return;
-    }
-    assert(offsets.size() == 1);
-    // Admissibility of value will be checked in _loadNetwork(), when lengths are known
-    if (myCurrentLane == nullptr) {
-        if (myCurrentEdge->stopOffsets.size() != 0) {
-            std::stringstream ss;
-            ss << "Duplicate definition of stopOffset for edge " << myCurrentEdge->id << ".\nIgnoring duplicate specification.";
-            WRITE_WARNING(ss.str());
-            return;
-        } else {
-            myCurrentEdge->stopOffsets = offsets;
-        }
-    } else {
-        if (myCurrentLane->stopOffsets.size() != 0) {
-            std::stringstream ss;
-            ss << "Duplicate definition of lane's stopOffset on edge " << myCurrentEdge->id << ".\nIgnoring duplicate specifications.";
-            WRITE_WARNING(ss.str());
-            return;
-        } else {
-            myCurrentLane->stopOffsets = offsets;
-        }
-    }
-}
-
-
-void
 NIImporter_SUMO::addJunction(const SUMOSAXAttributes& attrs) {
     // get the id, report an error if not given or empty...
-    myCurrentJunction.node = nullptr;
+    myCurrentJunction.node = 0;
     myCurrentJunction.intLanes.clear();
     myCurrentJunction.response.clear();
     bool ok = true;
-    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
     if (!ok) {
         return;
     }
@@ -685,39 +552,39 @@ NIImporter_SUMO::addJunction(const SUMOSAXAttributes& attrs) {
     Position pos = readPosition(attrs, id, ok);
     NBNetBuilder::transformCoordinate(pos, true, myLocation);
     NBNode* node = new NBNode(id, pos, type);
-    myLastParameterised.push_back(node);
     if (!myNodeCont.insert(node)) {
         WRITE_ERROR("Problems on adding junction '" + id + "'.");
         delete node;
         return;
     }
     myCurrentJunction.node = node;
-    myCurrentJunction.intLanes = attrs.get<std::vector<std::string> >(SUMO_ATTR_INTLANES, nullptr, ok, false);
+    SUMOSAXAttributes::parseStringVector(attrs.get<std::string>(SUMO_ATTR_INTLANES, 0, ok, false), myCurrentJunction.intLanes);
     // set optional radius
     if (attrs.hasAttribute(SUMO_ATTR_RADIUS)) {
         node->setRadius(attrs.get<double>(SUMO_ATTR_RADIUS, id.c_str(), ok));
     }
     // handle custom shape
-    if (attrs.getOpt<bool>(SUMO_ATTR_CUSTOMSHAPE, nullptr, ok, false)) {
-        PositionVector shape = attrs.get<PositionVector>(SUMO_ATTR_SHAPE, id.c_str(), ok);
-        NBNetBuilder::transformCoordinates(shape);
-        node->setCustomShape(shape);
+    if (attrs.getOpt<bool>(SUMO_ATTR_CUSTOMSHAPE, 0, ok, false)) {
+        node->setCustomShape(attrs.get<PositionVector>(SUMO_ATTR_SHAPE, id.c_str(), ok));
+    }
+    if (myCustomShapeMaps.count(id) > 0) {
+        NBNode::CustomShapeMap customShapes = myCustomShapeMaps[id];
+        for (NBNode::CustomShapeMap::const_iterator it = customShapes.begin(); it != customShapes.end(); ++it) {
+            node->setCustomLaneShape(it->first, it->second);
+        }
     }
     if (type == NODETYPE_RAIL_SIGNAL || type == NODETYPE_RAIL_CROSSING) {
         // both types of nodes come without a tlLogic
         myRailSignals.insert(id);
-    }
-    if (attrs.hasAttribute(SUMO_ATTR_RIGHT_OF_WAY)) {
-        node->setRightOfWay(attrs.getRightOfWay(ok));
     }
 }
 
 
 void
 NIImporter_SUMO::addRequest(const SUMOSAXAttributes& attrs) {
-    if (myCurrentJunction.node != nullptr) {
+    if (myCurrentJunction.node != 0) {
         bool ok = true;
-        myCurrentJunction.response.push_back(attrs.get<std::string>(SUMO_ATTR_RESPONSE, nullptr, ok));
+        myCurrentJunction.response.push_back(attrs.get<std::string>(SUMO_ATTR_RESPONSE, 0, ok));
     }
 }
 
@@ -725,28 +592,23 @@ NIImporter_SUMO::addRequest(const SUMOSAXAttributes& attrs) {
 void
 NIImporter_SUMO::addConnection(const SUMOSAXAttributes& attrs) {
     bool ok = true;
-    std::string fromID = attrs.get<std::string>(SUMO_ATTR_FROM, nullptr, ok);
+    std::string fromID = attrs.get<std::string>(SUMO_ATTR_FROM, 0, ok);
     if (myEdges.count(fromID) == 0) {
         WRITE_ERROR("Unknown edge '" + fromID + "' given in connection.");
         return;
     }
     EdgeAttrs* from = myEdges[fromID];
     Connection conn;
-    conn.toEdgeID = attrs.get<std::string>(SUMO_ATTR_TO, nullptr, ok);
-    int fromLaneIdx = attrs.get<int>(SUMO_ATTR_FROM_LANE, nullptr, ok);
-    conn.toLaneIdx = attrs.get<int>(SUMO_ATTR_TO_LANE, nullptr, ok);
-    conn.tlID = attrs.getOpt<std::string>(SUMO_ATTR_TLID, nullptr, ok, "");
-    conn.mayDefinitelyPass = attrs.getOpt<bool>(SUMO_ATTR_PASS, nullptr, ok, false);
-    conn.keepClear = attrs.getOpt<bool>(SUMO_ATTR_KEEP_CLEAR, nullptr, ok, true);
-    conn.contPos = attrs.getOpt<double>(SUMO_ATTR_CONTPOS, nullptr, ok, NBEdge::UNSPECIFIED_CONTPOS);
-    conn.visibility = attrs.getOpt<double>(SUMO_ATTR_VISIBILITY_DISTANCE, nullptr, ok, NBEdge::UNSPECIFIED_VISIBILITY_DISTANCE);
-    conn.speed = attrs.getOpt<double>(SUMO_ATTR_SPEED, nullptr, ok, NBEdge::UNSPECIFIED_SPEED);
-    conn.customShape = attrs.getOpt<PositionVector>(SUMO_ATTR_SHAPE, nullptr, ok, PositionVector::EMPTY);
-    conn.uncontrolled = attrs.getOpt<bool>(SUMO_ATTR_UNCONTROLLED, nullptr, ok, NBEdge::UNSPECIFIED_CONNECTION_UNCONTROLLED, false);
+    conn.toEdgeID = attrs.get<std::string>(SUMO_ATTR_TO, 0, ok);
+    int fromLaneIdx = attrs.get<int>(SUMO_ATTR_FROM_LANE, 0, ok);
+    conn.toLaneIdx = attrs.get<int>(SUMO_ATTR_TO_LANE, 0, ok);
+    conn.tlID = attrs.getOpt<std::string>(SUMO_ATTR_TLID, 0, ok, "");
+    conn.mayDefinitelyPass = attrs.getOpt<bool>(SUMO_ATTR_PASS, 0, ok, false);
+    conn.keepClear = attrs.getOpt<bool>(SUMO_ATTR_KEEP_CLEAR, 0, ok, true);
+    conn.contPos = attrs.getOpt<double>(SUMO_ATTR_CONTPOS, 0, ok, NBEdge::UNSPECIFIED_CONTPOS);
+    conn.visibility = attrs.getOpt<double>(SUMO_ATTR_VISIBILITY_DISTANCE, 0, ok, NBEdge::UNSPECIFIED_VISIBILITY_DISTANCE);
     if (conn.tlID != "") {
-        conn.tlLinkIndex = attrs.get<int>(SUMO_ATTR_TLLINKINDEX, nullptr, ok);
-    } else {
-        conn.tlLinkIndex = NBConnection::InvalidTlIndex;
+        conn.tlLinkNo = attrs.get<int>(SUMO_ATTR_TLLINKINDEX, 0, ok);
     }
     if ((int)from->lanes.size() <= fromLaneIdx) {
         WRITE_ERROR("Invalid lane index '" + toString(fromLaneIdx) + "' for connection from '" + fromID + "'.");
@@ -754,62 +616,18 @@ NIImporter_SUMO::addConnection(const SUMOSAXAttributes& attrs) {
     }
     from->lanes[fromLaneIdx]->connections.push_back(conn);
 
-    // determine crossing priority and tlIndex
-    if (myPedestrianCrossings.size() > 0) {
-        if (from->func == EDGEFUNC_WALKINGAREA && myEdges[conn.toEdgeID]->func == EDGEFUNC_CROSSING) {
-            // connection from walkingArea to crossing
-            std::vector<Crossing>& crossings = myPedestrianCrossings[SUMOXMLDefinitions::getJunctionIDFromInternalEdge(fromID)];
-            for (std::vector<Crossing>::iterator it = crossings.begin(); it != crossings.end(); ++it) {
-                if (conn.toEdgeID == (*it).edgeID) {
-                    if (conn.tlID != "") {
-                        (*it).priority = true;
-                        (*it).customTLIndex = conn.tlLinkIndex;
-                    } else {
-                        LinkState state = SUMOXMLDefinitions::LinkStates.get(attrs.get<std::string>(SUMO_ATTR_STATE, nullptr, ok));
-                        (*it).priority = state == LINKSTATE_MAJOR;
-                    }
-                }
-            }
-        } else if (from->func == EDGEFUNC_CROSSING && myEdges[conn.toEdgeID]->func == EDGEFUNC_WALKINGAREA) {
-            // connection from crossing to walkingArea (set optional linkIndex2)
-            for (Crossing& c : myPedestrianCrossings[SUMOXMLDefinitions::getJunctionIDFromInternalEdge(fromID)]) {
-                if (fromID == c.edgeID) {
-                    c.customTLIndex2 = attrs.getOpt<int>(SUMO_ATTR_TLLINKINDEX, nullptr, ok, -1);
-                }
-            }
-        }
-    }
-    // determine walking area reference edges
-    if (myWACustomShapes.size() > 0) {
-        EdgeAttrs* to = myEdges[conn.toEdgeID];
-        if (from->func == EDGEFUNC_WALKINGAREA) {
-            std::map<std::string, WalkingAreaParsedCustomShape>::iterator it = myWACustomShapes.find(fromID);
-            if (it != myWACustomShapes.end()) {
-                if (to->func == EDGEFUNC_NORMAL) {
-                    // add target sidewalk as reference
-                    it->second.toEdges.push_back(conn.toEdgeID);
-                } else if (to->func == EDGEFUNC_CROSSING) {
-                    // add target crossing edges as reference
-                    for (Crossing crossing : myPedestrianCrossings[SUMOXMLDefinitions::getJunctionIDFromInternalEdge(fromID)]) {
-                        if (conn.toEdgeID == crossing.edgeID) {
-                            it->second.toCrossed.insert(it->second.toCrossed.end(), crossing.crossingEdges.begin(), crossing.crossingEdges.end());
-                        }
-                    }
-                }
-            }
-        } else if (to->func == EDGEFUNC_WALKINGAREA) {
-            std::map<std::string, WalkingAreaParsedCustomShape>::iterator it = myWACustomShapes.find(conn.toEdgeID);
-            if (it != myWACustomShapes.end()) {
-                if (from->func == EDGEFUNC_NORMAL) {
-                    // add origin sidewalk as reference
-                    it->second.fromEdges.push_back(fromID);
-                } else if (from->func == EDGEFUNC_CROSSING) {
-                    // add origin crossing edges as reference
-                    for (Crossing crossing : myPedestrianCrossings[SUMOXMLDefinitions::getJunctionIDFromInternalEdge(fromID)]) {
-                        if (fromID == crossing.edgeID) {
-                            it->second.fromCrossed.insert(it->second.fromCrossed.end(), crossing.crossingEdges.begin(), crossing.crossingEdges.end());
-                        }
-                    }
+    // determine crossing priority
+    if (myPedestrianCrossings.size() > 0
+            && from->func == EDGEFUNC_WALKINGAREA
+            && myEdges[conn.toEdgeID]->func == EDGEFUNC_CROSSING) {
+        std::vector<Crossing>& crossings = myPedestrianCrossings[SUMOXMLDefinitions::getJunctionIDFromInternalEdge(fromID)];
+        for (std::vector<Crossing>::iterator it = crossings.begin(); it != crossings.end(); ++it) {
+            if (conn.toEdgeID == (*it).edgeID) {
+                if (conn.tlID != "") {
+                    (*it).priority = true;
+                } else {
+                    LinkState state = SUMOXMLDefinitions::LinkStates.get(attrs.get<std::string>(SUMO_ATTR_STATE, 0, ok));
+                    (*it).priority = state == LINKSTATE_MAJOR;
                 }
             }
         }
@@ -820,8 +638,8 @@ NIImporter_SUMO::addConnection(const SUMOSAXAttributes& attrs) {
 void
 NIImporter_SUMO::addProhibition(const SUMOSAXAttributes& attrs) {
     bool ok = true;
-    std::string prohibitor = attrs.getOpt<std::string>(SUMO_ATTR_PROHIBITOR, nullptr, ok, "");
-    std::string prohibited = attrs.getOpt<std::string>(SUMO_ATTR_PROHIBITED, nullptr, ok, "");
+    std::string prohibitor = attrs.getOpt<std::string>(SUMO_ATTR_PROHIBITOR, 0, ok, "");
+    std::string prohibited = attrs.getOpt<std::string>(SUMO_ATTR_PROHIBITED, 0, ok, "");
     if (!ok) {
         return;
     }
@@ -839,13 +657,30 @@ NIImporter_SUMO::LaneAttrs*
 NIImporter_SUMO::getLaneAttrsFromID(EdgeAttrs* edge, std::string lane_id) {
     std::string edge_id;
     int index;
-    NBHelpers::interpretLaneID(lane_id, edge_id, index);
+    interpretLaneID(lane_id, edge_id, index);
     assert(edge->id == edge_id);
     if ((int)edge->lanes.size() <= index) {
         WRITE_ERROR("Unknown lane '" + lane_id + "' given in succedge.");
-        return nullptr;
+        return 0;
     } else {
         return edge->lanes[index];
+    }
+}
+
+
+void
+NIImporter_SUMO::interpretLaneID(const std::string& lane_id, std::string& edge_id, int& index) {
+    // assume lane_id = edge_id + '_' + index
+    const std::string::size_type sep_index = lane_id.rfind('_');
+    if (sep_index == std::string::npos) {
+        WRITE_ERROR("Invalid lane id '" + lane_id + "' (missing '_').");
+    }
+    edge_id = lane_id.substr(0, sep_index);
+    std::string index_string = lane_id.substr(sep_index + 1);
+    try {
+        index = TplConvert::_2int(index_string.c_str());
+    } catch (NumberFormatException) {
+        WRITE_ERROR("Invalid lane index '" + index_string + "' for lane '" + lane_id + "'.");
     }
 }
 
@@ -854,24 +689,24 @@ NBLoadedSUMOTLDef*
 NIImporter_SUMO::initTrafficLightLogic(const SUMOSAXAttributes& attrs, NBLoadedSUMOTLDef* currentTL) {
     if (currentTL) {
         WRITE_ERROR("Definition of tl-logic '" + currentTL->getID() + "' was not finished.");
-        return nullptr;
+        return 0;
     }
     bool ok = true;
-    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, nullptr, ok);
+    std::string id = attrs.get<std::string>(SUMO_ATTR_ID, 0, ok);
     SUMOTime offset = TIME2STEPS(attrs.get<double>(SUMO_ATTR_OFFSET, id.c_str(), ok));
     std::string programID = attrs.getOpt<std::string>(SUMO_ATTR_PROGRAMID, id.c_str(), ok, "<unknown>");
-    std::string typeS = attrs.get<std::string>(SUMO_ATTR_TYPE, nullptr, ok);
+    std::string typeS = attrs.get<std::string>(SUMO_ATTR_TYPE, 0, ok);
     TrafficLightType type;
     if (SUMOXMLDefinitions::TrafficLightTypes.hasString(typeS)) {
         type = SUMOXMLDefinitions::TrafficLightTypes.get(typeS);
     } else {
         WRITE_ERROR("Unknown traffic light type '" + typeS + "' for tlLogic '" + id + "'.");
-        return nullptr;
+        return 0;
     }
     if (ok) {
         return new NBLoadedSUMOTLDef(id, programID, offset, type);
     } else {
-        return nullptr;
+        return 0;
     }
 }
 
@@ -894,10 +729,8 @@ NIImporter_SUMO::addPhase(const SUMOSAXAttributes& attrs, NBLoadedSUMOTLDef* cur
     //  the minimum and maximum durations
     SUMOTime minDuration = attrs.getOptSUMOTimeReporting(SUMO_ATTR_MINDURATION, id.c_str(), ok, NBTrafficLightDefinition::UNSPECIFIED_DURATION);
     SUMOTime maxDuration = attrs.getOptSUMOTimeReporting(SUMO_ATTR_MAXDURATION, id.c_str(), ok, NBTrafficLightDefinition::UNSPECIFIED_DURATION);
-    int nextPhase = attrs.getOpt<int>(SUMO_ATTR_NEXT, nullptr, ok, -1);
-    const std::string name = attrs.getOpt<std::string>(SUMO_ATTR_NAME, nullptr, ok, "");
     if (ok) {
-        currentTL->addPhase(duration, state, minDuration, maxDuration, nextPhase, name);
+        currentTL->addPhase(duration, state, minDuration, maxDuration);
     }
 }
 
@@ -950,11 +783,11 @@ GeoConvHelper*
 NIImporter_SUMO::loadLocation(const SUMOSAXAttributes& attrs) {
     // @todo refactor parsing of location since its duplicated in NLHandler and PCNetProjectionLoader
     bool ok = true;
-    GeoConvHelper* result = nullptr;
-    PositionVector s = attrs.get<PositionVector>(SUMO_ATTR_NET_OFFSET, nullptr, ok);
-    Boundary convBoundary = attrs.get<Boundary>(SUMO_ATTR_CONV_BOUNDARY, nullptr, ok);
-    Boundary origBoundary = attrs.get<Boundary>(SUMO_ATTR_ORIG_BOUNDARY, nullptr, ok);
-    std::string proj = attrs.get<std::string>(SUMO_ATTR_ORIG_PROJ, nullptr, ok);
+    GeoConvHelper* result = 0;
+    PositionVector s = attrs.get<PositionVector>(SUMO_ATTR_NET_OFFSET, 0, ok);
+    Boundary convBoundary = attrs.get<Boundary>(SUMO_ATTR_CONV_BOUNDARY, 0, ok);
+    Boundary origBoundary = attrs.get<Boundary>(SUMO_ATTR_ORIG_BOUNDARY, 0, ok);
+    std::string proj = attrs.get<std::string>(SUMO_ATTR_ORIG_PROJ, 0, ok);
     if (ok) {
         Position networkOffset = s[0];
         result = new GeoConvHelper(proj, networkOffset, origBoundary, convBoundary);

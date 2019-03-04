@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIDetectorWrapper.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -15,12 +7,27 @@
 ///
 // The base class for detector wrapper
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "GUIDetectorWrapper.h"
 #include <gui/GUIApplicationWindow.h>
@@ -35,15 +42,18 @@
 // ===========================================================================
 // member method definitions
 // ===========================================================================
-GUIDetectorWrapper::GUIDetectorWrapper(GUIGlObjectType type, const std::string& id) :
-    GUIGlObject_AbstractAdd(type, id) {}
+GUIDetectorWrapper::GUIDetectorWrapper(
+    const std::string& prefix,
+    const std::string& id) :
+    GUIGlObject_AbstractAdd(prefix, GLO_DETECTOR, id) {}
 
 
 GUIDetectorWrapper::~GUIDetectorWrapper() {}
 
 
 GUIGLObjectPopupMenu*
-GUIDetectorWrapper::getPopUpMenu(GUIMainWindow& app, GUISUMOAbstractView& parent) {
+GUIDetectorWrapper::getPopUpMenu(GUIMainWindow& app,
+                                 GUISUMOAbstractView& parent) {
     GUIGLObjectPopupMenu* ret = new GUIGLObjectPopupMenu(app, parent, *this);
     buildPopupHeader(ret, app);
     buildCenterPopupEntry(ret);

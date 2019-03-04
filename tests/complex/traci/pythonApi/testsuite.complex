@@ -1,6 +1,3 @@
-# Change different vType and vehicle parameters via traci, save the state and load it again should yield the same parameters.
-save_and_load_vtype_params
-
 # Tests the lane API
 lane
 
@@ -13,23 +10,15 @@ vehicle
 # Tests the vehicle API for the sublane-case. This uses the same runner as the 'vehicle' test case
 vehicle_sublane
 
-# Test traci advices while action-step > simstep. The second command is triggered in between actionsteps and should take effect immediately.
-vehicle_asl
-
-# Test traci advices while action-step > simstep. The second command is triggered in between actionsteps and should take effect immediately.
-vehicle_sublane_asl
-
 # Tests the vehicletype API
 vehicletype
-
-# Tests the person API
 person
 
 # Tests the junction API
 junction
 
-# Tests the trafficlight API
-trafficlight
+# Tests the trafficlights API
+trafficlights
 
 # Tests the simulation API
 simulation
@@ -70,21 +59,9 @@ multiconnect
 # test loading a simulation
 load
 
-# test retrieval of upcoming traffic lights
-nextTLS
-
-# Tests traci.vehicle.getNeighbors() method
-getNeighbors
-
-# Tests traci.vehicle.getNeighbors() method in presence of multiple leaders/followers
-getNeighborsSublane
-
 # test various functions and options for influencing the behavior of rerouting functions
 rerouting
 
 # tests for vehicle mapping
 moveToXY
-
-# Tests for lateral collisions
-lateralCollision
 bugs

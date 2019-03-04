@@ -1,23 +1,24 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    visum_mapDistricts.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2007-10-25
-# @version $Id$
-
 """
+@file    visum_mapDistricts.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2007-10-25
+@version $Id$
+
 
 This script reads a network and a dump file and
  draws the network, coloring it by the values
  found within the dump-file.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -28,8 +29,8 @@ import math
 from optparse import OptionParser
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import sumolib.net  # noqa
-import netshiftadaptor  # noqa
+import sumolib.net
+import netshiftadaptor
 
 
 def computeDistance(n1, n2):
@@ -428,8 +429,7 @@ for d in nmap1to2:
                 for i in range(0, outgoingLaneNo):
                     net1.addLane(e2, 18, 100.)
                     fdd.write('    <connection from="' + dn1i._incoming[
-                              0]._id + '" to="' + "i" + d + "#" + n2._id + '" lane="' + str(runningInLaneNumber) +
-                              ':' + str(i) + '"/>\n')
+                              0]._id + '" to="' + "i" + d + "#" + n2._id + '" lane="' + str(runningInLaneNumber) + ':' + str(i) + '"/>\n')
                     runningInLaneNumber = runningInLaneNumber + 1
                 if outgoingLaneNo == 0:
                     net1.addLane(e2, 18, 100.)
@@ -493,7 +493,6 @@ def writeEdges(net):
             writeEdge(fd, edge)
     fd.write("</edges>\n")
     fd.close()
-
 
 fdd.write("</connections>\n")
 writeNodes(net1)

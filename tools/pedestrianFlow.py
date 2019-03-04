@@ -1,17 +1,21 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+A script for generating a flow of pedestrians (a long list of person-walks)
 
-# @file    pedestrianFlow.py
-# @author  Jakob Erdmann
-# @date    2014-01-16
-# @version $Id$
+@file    pedestrianFlow.py
+@author  Jakob Erdmann
+@date    2014-01-16
+@version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2014-2014 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 import os
 import sys
@@ -30,17 +34,13 @@ else:
 def get_options():
     optParser = OptionParser()
     optParser.add_option(
-        "-w", "--width", type="float", default=0.7, help="pedestrian width, negative numbers denote the center " +
-        "of a uniform distribution [x-0.2, x+0.2]")
+        "-w", "--width", type="float", default=0.7, help="pedestrian width, negative numbers denote the center of a uniform distribution [x-0.2, x+0.2]")
     optParser.add_option(
-        "-l", "--length", type="float", default=0.5, help="pedestrian length, negative numbers denote the center " +
-        "of a uniform distribution [x-0.2, x+0.2]")
+        "-l", "--length", type="float", default=0.5, help="pedestrian length, negative numbers denote the center of a uniform distribution [x-0.2, x+0.2]")
     optParser.add_option(
-        "-m", "--minGap", type="float", default=0.2, help="pedestrian min gap, negative numbers denote the center " +
-        "of a uniform distribution [x-0.2, x+0.2]")
+        "-m", "--minGap", type="float", default=0.2, help="pedestrian min gap, negative numbers denote the center of a uniform distribution [x-0.2, x+0.2]")
     optParser.add_option(
-        "-s", "--maxSpeed", type="float", default=1.2, help="pedestrian max speed, negative numbers denote the " +
-        "center of a uniform distribution [x-0.4, x+0.4]")
+        "-s", "--maxSpeed", type="float", default=1.2, help="pedestrian max speed, negative numbers denote the center of a uniform distribution [x-0.4, x+0.4]")
     optParser.add_option(
         "-d", "--departPos", type="float", default=0, help="depart position")
     optParser.add_option(
@@ -48,7 +48,6 @@ def get_options():
     optParser.add_option(
         "-p", "--prob", type="float", default=0.1, help="depart probability per second")
     optParser.add_option("-r", "--route", help="edge list")
-    optParser.add_option("-t", "--trip", help="Define walking trip as FROM_EDGE,TO_EDGE")
     optParser.add_option("-c", "--color", help="the color to use or 'random'")
     optParser.add_option(
         "-b", "--begin", type="int", default=0, help="begin time")
@@ -60,20 +59,7 @@ def get_options():
         "-n", "--name", default="p", help="base name for pedestrians")
     (options, args) = optParser.parse_args()
 
-    if len(args) != 1:
-        sys.exit("Output file argument missing")
     options.output = args[0]
-
-    if ((options.route is None and options.trip is None) or
-            (options.route is not None and options.trip is not None)):
-        sys.exit("Either --route or --trip must be given")
-    if options.route is not None:
-        options.route = options.route.split(',')
-    if options.trip is not None:
-        options.trip = tuple(options.trip.split(','))
-        if len(options.trip) != 2:
-            sys.exit("trip must contain of exactly two edges")
-
     return options
 
 
@@ -83,7 +69,7 @@ def randomOrFixed(value, offset=0.2):
     return random.uniform(-value - offset, -value + offset)
 
 
-def write_ped(f, index, options, depart):
+def write_ped(f, index, options, depart, edges):
     if options.color is None:
         color = ''
     elif options.color == "random":
@@ -91,37 +77,31 @@ def write_ped(f, index, options, depart):
     else:
         color = ' color="%s"' % options.color
 
-    if options.trip is not None:
-        edges = 'from="%s" to="%s"' % options.trip
-    else:
-        edges = 'edges="%s"' % ' '.join(options.route)
-
-    f.write(('    <vType id="%s%s" vClass="pedestrian" width="%s" length="%s" minGap="%s" maxSpeed="%s" ' +
-             'guiShape="pedestrian"%s/>\n') % (
+    f.write('    <vType id="%s%s" vClass="pedestrian" width="%s" length="%s" minGap="%s" maxSpeed="%s" guiShape="pedestrian"%s/>\n' % (
         options.name, index,
         randomOrFixed(options.width),
         randomOrFixed(options.length),
         randomOrFixed(options.minGap),
         randomOrFixed(options.maxSpeed, 0.4), color))
-    f.write('    <person id="%s%s" type="%s%s" depart="%s" departPos="%s">\n' %
-            (options.name, index, options.name, index, depart, options.departPos))
-    f.write('        <walk %s arrivalPos="%s"/>\n' %
-            (edges, options.arrivalPos))
+    f.write('    <person id="%s%s" type="%s%s" depart="%s">\n' %
+            (options.name, index, options.name, index, depart))
+    f.write('        <walk edges="%s" departPos="%s" arrivalPos="%s"/>\n' %
+            (edges, options.departPos, options.arrivalPos))
     f.write('    </person>\n')
 
 
 def main():
     options = get_options()
     with open(options.output, 'w') as f:
-        sumolib.writeXMLHeader(f, "$Id$", "routes")  # noqa
+        sumolib.writeXMLHeader(
+            fouttrips, "$Id$", "routes")
         index = options.index
         for depart in range(options.begin, options.end):
             if random.random() < options.prob:
                 write_ped(
-                    f, index, options, depart)
+                    f, index, options, depart, ' '.join(options.route.split(',')))
                 index += 1
         f.write('</routes>')
-
 
 if __name__ == "__main__":
     main()

@@ -1,21 +1,23 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIXMLEdgesHandler.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
-/// @author  Leonhard Luecken
 /// @date    Tue, 20 Nov 2001
 /// @version $Id$
 ///
 // Importer for network edges stored in XML
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef NIXMLEdgesHandler_h
 #define NIXMLEdgesHandler_h
@@ -24,13 +26,16 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <utils/common/SUMOVehicleClass.h>
 #include <utils/geom/PositionVector.h>
 #include <utils/xml/SUMOSAXHandler.h>
 #include <netbuild/NBEdge.h>
-#include <netbuild/NBEdgeCont.h>
 
 
 // ===========================================================================
@@ -40,9 +45,10 @@ class OptionsCont;
 class NBNode;
 class NBEdge;
 class NBNodeCont;
+class NBEdgeCont;
 class NBTypeCont;
 class NBDistrictCont;
-class NBTrafficLightLogicCont;
+
 
 // ===========================================================================
 // class definitions
@@ -109,7 +115,7 @@ private:
     /** @brief Tries to parse the shape definition
      *
      * Returns the edge's geometry (may be empty if no one was defined).
-     * Writes an error message if an error occurred.
+     * Writes an error message if an error occured.
      * @param[in] attrs The attributes to read the shape from
      * @return The edge's shape
      */
@@ -218,11 +224,44 @@ private:
     /// @brief The currently processed edge
     NBEdge* myCurrentEdge;
 
-    /// @brief The currently processed lane index
-    int myCurrentLaneIndex;
+    /** @struct Split
+     * @brief A structure which describes changes of lane number or speed along the road
+     */
+    struct Split {
+        /// @brief The lanes after this change
+        std::vector<int> lanes;
+        /// @brief The position of this change
+        double pos;
+        /// @brief The speed after this change
+        double speed;
+        /// @brief The new node that is created for this split
+        NBNode* node;
+        /// @brief The id for the edge before the split
+        std::string idBefore;
+        /// @brief The id for the edge after the split
+        std::string idAfter;
+        /// @brief the default node id
+        std::string nameID;
+    };
 
     /// @brief The list of this edge's splits
-    std::vector<NBEdgeCont::Split> mySplits;
+    std::vector<Split> mySplits;
+
+
+    /** @class split_sorter
+     * @brief Sorts splits by their position (increasing)
+     */
+    class split_sorter {
+    public:
+        /// @brief Constructor
+        explicit split_sorter() { }
+
+        /// @brief Comparing operator
+        int operator()(const Split& e1, const Split& e2) const {
+            return e1.pos < e2.pos;
+        }
+    };
+
 
     /** @class split_by_pos_finder
      * @brief Finds a split at the given position
@@ -234,7 +273,7 @@ private:
             : myPosition(pos) { }
 
         /// @brief Comparing operator
-        bool operator()(const NBEdgeCont::Split& e) {
+        bool operator()(const Split& e) {
             return e.pos == myPosition;
         }
 
@@ -256,8 +295,6 @@ private:
     /// @brief Whether the edge shape shall be kept generally
     const bool myKeepEdgeShape;
 
-    /// @brief element to receive parameters
-    std::vector<Parameterised*> myLastParameterised;
 
 private:
 

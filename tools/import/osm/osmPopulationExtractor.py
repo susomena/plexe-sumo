@@ -1,25 +1,26 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    osmPopulationExtractor.py
-# @author  Yun-Pang Floetteroed
-# @author  Melanie Knocke
-# @author  Michael Behrisch
-# @date    2013-02-08
-# @version $Id$
-
 """
+@file    osmPopulationExactor.py
+@author  Yun-Pang Floetteroed
+@author  Melanie Knocke
+@author  Michael Behrisch
+@date    2013-02-08
+@version $Id$
+
 This script is to
 - extract the popoulation data from a given Open Street Map (OSM).
 - match the population data from OSM and BSA (with csv format)
 The redundant information is removed and saved in the output file *_redundantOSMData.txt.
 If there are data entries without names, they will be saved in *_nameNone.txt.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -157,15 +158,14 @@ class PopulationReader(handler.ContentHandler):
         if name == 'node' and self._population:
             newInput = True
             for n in self._net._nodes:
-                # diffLat = abs(float(self._nodeLat) - float(n.lat))
-                # diffLon = abs(float(self._nodeLon) - float(n.lon))
+                diffLat = abs(float(self._nodeLat) - float(n.lat))
+                diffLon = abs(float(self._nodeLon) - float(n.lon))
                 # and diffLat < 0.003 and diffLon < 0.003 and
                 # int(self._population) == int(n.population):
                 if self._name and self._name == n.name and self._population == n.population:
                     newInput = False
                     self._fout.write(('node\t%s\t%s\t%s\t%s\t%s\n' % (
-                        self._name, self._nodeId, self._nodeLat, self._nodeLon,
-                        self._population)).encode(self._encoding))
+                        self._name, self._nodeId, self._nodeLat, self._nodeLon, self._population)).encode(self._encoding))
                     break
             if newInput:
                 self._nodeObj = self._net.addNode(
@@ -282,6 +282,7 @@ def main():
         print('compare the data with the data from BSA')
         bsaTotalCount = 0
         matchedCount = 0
+        bsaNamesList = []
 
         fout = open("%s_matchedAreas.txt" % prefix, 'w')
         fout.write(
@@ -305,8 +306,7 @@ def main():
                     elif n.name is not None and name == n.name:
                         matchedCount += 1
                         fout.write(("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (
-                            name, area, pop, lat, lon, n.name, n.attribute, n.population,
-                            n.lat, n.lon)).encode(options.encoding))
+                            name, area, pop, lat, lon, n.name, n.attribute, n.population, n.lat, n.lon)).encode(options.encoding))
 
                 for r in net._relations:
                     if r.name is None and r not in noneList:
@@ -330,13 +330,11 @@ def main():
         print('Number of entries in the BSA data:', bsaTotalCount)
         print('Number of entries in the OSM data:', osmTotalCount)
 
-
 optParser = OptionParser()
 optParser.add_option("-s", "--osm-file", dest="osmfile",
                      help="read OSM file from FILE (mandatory)", metavar="FILE")
 optParser.add_option("-b", "--bsa-file", dest="bsafile",
-                     help="read population (in csv form) provided by German federal statistic authority " +
-                          "(Bundesstatistikamt) from FILE", metavar="FILE")
+                     help="read population (in csv form) provided by German federal statistic authority (Bundesstatistikamt) from FILE", metavar="FILE")
 optParser.add_option("-o", "--output-file", dest="outputfile",
                      help="define the prefix name of the output file")
 optParser.add_option(

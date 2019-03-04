@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    TrajectoriesHandler.cpp
 /// @author  Michael Behrisch
 /// @date    14.03.2014
@@ -14,12 +6,27 @@
 ///
 // An XML-Handler for amitran and netstate trajectories
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utility>
@@ -57,7 +64,7 @@ TrajectoriesHandler::myStartElement(int element,
             myStepSize = attrs.getFloat("timeStepSize") / 1000.;
             break;
         case SUMO_TAG_TIMESTEP:
-            myCurrentTime = attrs.getSUMOTimeReporting(SUMO_ATTR_TIME, nullptr, ok);
+            myCurrentTime = attrs.getSUMOTimeReporting(SUMO_ATTR_TIME, 0, ok);
             break;
         case SUMO_TAG_VEHICLE:
             if (attrs.hasAttribute(SUMO_ATTR_SPEED)) {
@@ -95,10 +102,10 @@ TrajectoriesHandler::myStartElement(int element,
             double a = attrs.hasAttribute(SUMO_ATTR_ACCELERATION) ? attrs.get<double>(SUMO_ATTR_ACCELERATION, id.c_str(), ok) / 1000. : INVALID_VALUE;
             double s = attrs.hasAttribute(SUMO_ATTR_SLOPE) ? RAD2DEG(asin(attrs.get<double>(SUMO_ATTR_SLOPE, id.c_str(), ok) / 10000.)) : INVALID_VALUE;
             const SUMOTime time = attrs.getOpt<int>(SUMO_ATTR_TIME, id.c_str(), ok, INVALID_VALUE);
-            if (myXMLOut != nullptr) {
+            if (myXMLOut != 0) {
                 writeXMLEmissions(id, c, time, v, a, s);
             }
-            if (myStdOut != nullptr) {
+            if (myStdOut != 0) {
                 writeEmissions(*myStdOut, id, c, STEPS2TIME(time), v, a, s);
             }
             break;
@@ -124,8 +131,8 @@ TrajectoriesHandler::computeEmissions(const std::string id, const SUMOEmissionCl
             v -= a;
         }
     }
-    if (myAccelZeroCorrection) {
-        a = PollutantsInterface::getModifiedAccel(c, v, a, s);
+    if (myAccelZeroCorrection && v == 0.) {
+        a = 0.;
     }
     if (a == INVALID_VALUE) {
         throw ProcessError("Acceleration information is missing; try running with --compute-a.");
@@ -149,14 +156,10 @@ TrajectoriesHandler::writeEmissions(std::ostream& o, const std::string id,
                                     double& a, double& s) {
     if (myComputeA && myLastV.count(id) == 0) {
         myLastV[id] = v;
-        myLastSlope[id] = s;
         return false;
     }
     if (myComputeAForward) {
         t -= TS;
-        const double nextS = s;
-        s = myLastSlope[id];
-        myLastSlope[id] = nextS;
     }
     const PollutantsInterface::Emissions e = computeEmissions(id, c, v, a, s);
     o << t << ";" << v << ";" << a << ";" << s << ";"

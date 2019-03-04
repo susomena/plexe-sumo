@@ -9,7 +9,6 @@ copy_test_path:input_net.net.xml
 copy_test_path:input_net2.net.xml
 copy_test_path:input_districts.taz.xml
 copy_test_path:input_additional.add.xml
-copy_test_path:input_additional2.add.xml
 copy_test_path:lookuptable
 
 [collate_file]
@@ -19,9 +18,6 @@ vtypes:vtypes.rou.xml
 cfg:config.cfg
 log:log.txt
 landmarks:landmarks.csv
-weights:weights.xml
-edges:edges.xml
-additional:additional.xml
 
 [run_dependent_text]
 errors:The length does not include*{LINES 1}
@@ -29,15 +25,9 @@ log:The length does not include*{LINES 1}
 routes:<!--{[->]}-->
 alts:<!--{[->]}-->
 vtypes:<!--{[->]}-->
-weights:<!--{[->]}-->
-edges:<!--{[->]}-->
-additional:<!--{[->]}-->
 output:ms answering queries
 log:ms answering queries
 
 [floating_point_tolerance]
 routes:0.0101
 alts:0.0101
-
-[batch_filter_file]
-msvc12x64D:debug_filter

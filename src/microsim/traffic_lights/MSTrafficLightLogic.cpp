@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSTrafficLightLogic.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // The parent class for traffic light logics
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <string>
@@ -99,11 +106,9 @@ MSTrafficLightLogic::SwitchCommand::deschedule(MSTrafficLightLogic* tlLogic) {
  * member method definitions
  * ----------------------------------------------------------------------- */
 MSTrafficLightLogic::MSTrafficLightLogic(MSTLLogicControl& tlcontrol, const std::string& id,
-        const std::string& programID, const TrafficLightType logicType, const SUMOTime delay,
-        const std::map<std::string, std::string>& parameters) :
+        const std::string& programID, SUMOTime delay, const std::map<std::string, std::string>& parameters) :
     Named(id), Parameterised(parameters),
     myProgramID(programID),
-    myLogicType(logicType),
     myCurrentDurationIncrement(-1),
     myDefaultCycleTime(0) {
     mySwitchCommand = new SwitchCommand(tlcontrol, this, delay);
@@ -121,27 +126,16 @@ MSTrafficLightLogic::init(NLDetectorBuilder&) {
         bool haveWarnedAboutUnusedStates = false;
         std::vector<bool> foundGreen(phases.front()->getState().size(), false);
         for (int i = 0; i < (int)phases.size(); ++i) {
-            // warn about unused states
-            const int iNext = phases[i]->nextPhase < 0 ? (i + 1) % phases.size() : phases[i]->nextPhase;
-            if (iNext < 0 || iNext >= (int)phases.size()) {
-                throw ProcessError("Invalid nextPhase " + toString(iNext) + " in tlLogic '" + getID()
-                                   + "', program '" + getProgramID() + "' with " + toString(phases.size()) + " phases");
-            }
-            const std::string optionalFrom = phases[i]->nextPhase < 0 ? "" : " from phase " + toString(i);
+            // warn about unused stats
+            const int iNext = (i + 1) % phases.size();
             const std::string& state1 = phases[i]->getState();
             const std::string& state2 = phases[iNext]->getState();
             assert(state1.size() == state2.size());
-            if (!haveWarnedAboutUnusedStates && state1.size() > myLanes.size() + myIgnoredIndices.size()) {
+            if (!haveWarnedAboutUnusedStates && state1.size() > myLanes.size()) {
                 WRITE_WARNING("Unused states in tlLogic '" + getID()
                               + "', program '" + getProgramID() + "' in phase " + toString(i)
                               + " after tl-index " + toString((int)myLanes.size() - 1));
                 haveWarnedAboutUnusedStates = true;
-            }
-            // detect illegal states
-            const std::string::size_type illegal = state1.find_first_not_of(SUMOXMLDefinitions::ALLOWED_TLS_LINKSTATES);
-            if (std::string::npos != illegal) {
-                throw ProcessError("Illegal character '" + toString(state1[illegal]) + "' in tlLogic '" + getID()
-                                   + "', program '" + getProgramID() + "' in phase " + toString(i));
             }
             // warn about transitions from green to red without intermediate yellow
             for (int j = 0; j < (int)MIN3(state1.size(), state2.size(), myLanes.size()); ++j) {
@@ -152,7 +146,7 @@ MSTrafficLightLogic::init(NLDetectorBuilder&) {
                         if ((*it)->getPermissions() != SVC_PEDESTRIAN) {
                             WRITE_WARNING("Missing yellow phase in tlLogic '" + getID()
                                           + "', program '" + getProgramID() + "' for tl-index " + toString(j)
-                                          + " when switching" + optionalFrom + " to phase " + toString(iNext));
+                                          + " when switching to phase " + toString(iNext));
                             return; // one warning per program is enough
                         }
                     }
@@ -206,7 +200,6 @@ void
 MSTrafficLightLogic::adaptLinkInformationFrom(const MSTrafficLightLogic& logic) {
     myLinks = logic.myLinks;
     myLanes = logic.myLanes;
-    myIgnoredIndices = logic.myIgnoredIndices;
 }
 
 
@@ -271,7 +264,7 @@ MSTrafficLightLogic::getLinkIndex(const MSLink* const link) const {
 // ----------- Dynamic Information Retrieval
 SUMOTime
 MSTrafficLightLogic::getNextSwitchTime() const {
-    return mySwitchCommand != nullptr ? mySwitchCommand->getNextSwitchTime() : -1;
+    return mySwitchCommand != 0 ? mySwitchCommand->getNextSwitchTime() : -1;
 }
 
 
@@ -351,18 +344,6 @@ void MSTrafficLightLogic::initMesoTLSPenalties() {
         }
     }
 
-}
-
-
-void
-MSTrafficLightLogic::ignoreLinkIndex(int pos) {
-    myIgnoredIndices.insert(pos);
-}
-
-
-bool 
-MSTrafficLightLogic::isSelected() const {
-    return MSNet::getInstance()->isSelected(this);
 }
 
 /****************************************************************************/

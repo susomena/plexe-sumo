@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOSAXAttributesImpl_Binary.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,17 +8,32 @@
 ///
 // Encapsulated xml-attributes that are retrieved from the sumo-binary-xml format (already typed)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <sstream>
 #include <utils/common/RGBColor.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/geom/Boundary.h>
 #include <utils/geom/PositionVector.h>
 #include <utils/iodevices/BinaryFormatter.h>
@@ -183,8 +190,8 @@ SUMOSAXAttributesImpl_Binary::getInt(int id) const {
 
 
 long long int
-SUMOSAXAttributesImpl_Binary::getLong(int id) const {
-    return StringUtils::toLong(getString(id));
+SUMOSAXAttributesImpl_Binary::getLong(int /* id */) const {
+    throw NumberFormatException();
 }
 
 
@@ -213,7 +220,7 @@ double
 SUMOSAXAttributesImpl_Binary::getFloat(int id) const {
     const std::map<int, double>::const_iterator i = myFloatValues.find(id);
     if (i == myFloatValues.end()) {
-        return StringUtils::toDouble(getString(id));
+        return TplConvert::_2double(getString(id).c_str());
     }
     return i->second;
 }
@@ -266,19 +273,6 @@ SUMOSAXAttributesImpl_Binary::getNodeType(bool& ok) const {
 }
 
 
-RightOfWay
-SUMOSAXAttributesImpl_Binary::getRightOfWay(bool& ok) const {
-    try {
-        return SUMOXMLDefinitions::RightOfWayValues.get(getString(SUMO_ATTR_RIGHT_OF_WAY));
-    } catch (InvalidArgument) {
-        ok = false;
-        return RIGHT_OF_WAY_DEFAULT;
-    } catch (EmptyData) {
-        return RIGHT_OF_WAY_DEFAULT;
-    }
-}
-
-
 RGBColor
 SUMOSAXAttributesImpl_Binary::getColor() const {
     const std::map<int, int>::const_iterator i = myIntValues.find(SUMO_ATTR_COLOR);
@@ -313,6 +307,15 @@ SUMOSAXAttributesImpl_Binary::getBoundary(int attr) const {
 }
 
 
+std::vector<std::string>
+SUMOSAXAttributesImpl_Binary::getStringVector(int attr) const {
+    std::string def = getString(attr);
+    std::vector<std::string> ret;
+    parseStringVector(def, ret);
+    return ret;
+}
+
+
 std::string
 SUMOSAXAttributesImpl_Binary::getName(int attr) const {
     if (myAttrIds.find(attr) == myAttrIds.end()) {
@@ -328,15 +331,6 @@ SUMOSAXAttributesImpl_Binary::serialize(std::ostream& os) const {
         os << " " << getName(*i);
         os << "=\"" << getStringSecure(*i, "?") << "\"";
     }
-}
-
-std::vector<std::string>
-SUMOSAXAttributesImpl_Binary::getAttributeNames() const {
-    std::vector<std::string> result;
-    for (std::set<int>::const_iterator i = myAttrs.begin(); i != myAttrs.end(); ++i) {
-        result.push_back(getName(*i));
-    }
-    return result;
 }
 
 

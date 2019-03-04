@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIImporter_SUMO.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Importer for networks stored in SUMO format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NIImporter_SUMO_h
 #define NIImporter_SUMO_h
 
@@ -23,15 +26,17 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
 #include <utils/xml/SUMOSAXHandler.h>
 #include <utils/geom/GeoConvHelper.h>
-#include <utils/common/Parameterised.h>
 #include <netbuild/NBLoadedSUMOTLDef.h>
-#include "NIXMLTypesHandler.h"
 
 
 // ===========================================================================
@@ -78,14 +83,24 @@ public:
     /// Parses network location description and registers it with GeoConveHelper::setLoaded
     static GeoConvHelper* loadLocation(const SUMOSAXAttributes& attrs);
 
+    /** @brief parses edge-id and index from lane-id
+     * @param[in] lane_id The lane-id
+     * @param[out] edge_id ID of this lane's edge
+     * @param[out] index Index of this lane
+     */
+    static void interpretLaneID(const std::string& lane_id, std::string& edge_id, int& index);
+
 protected:
     /** @brief Constructor
      * @param[in] nc The network builder to fill
      */
     NIImporter_SUMO(NBNetBuilder& nb);
 
+
     /// @brief Destructor
     ~NIImporter_SUMO();
+
+
 
     /// @name inherited from GenericSAXHandler
     //@{
@@ -132,10 +147,6 @@ private:
      */
     void addLane(const SUMOSAXAttributes& attrs);
 
-    /** @brief parses stop offsets for the current lane or edge
-     * @param[in] attrs The attributes to get the stop offset sepcifics from
-     */
-    void addStopOffsets(const SUMOSAXAttributes& attrs, bool& ok);
 
     /** @brief Parses a junction and saves it in the node control
      * @param[in] attrs The attributes to get the junction's values from
@@ -174,7 +185,7 @@ private:
      * @struct Connection
      * @brief A connection description.
      */
-    struct Connection : public Parameterised {
+    struct Connection {
         /// @brief The id of the target edge
         std::string toEdgeID;
         /// @brief The index of the target lane
@@ -182,7 +193,7 @@ private:
         /// @brief The id of the traffic light that controls this connection
         std::string tlID;
         /// @brief The index of this connection within the controlling traffic light
-        int tlLinkIndex;
+        int tlLinkNo;
         /// @brief Information about being definitely free to drive (on-ramps)
         bool mayDefinitelyPass;
         /// @brief Whether the junction must be kept clear coming from this connection
@@ -191,19 +202,13 @@ private:
         double contPos;
         /// @brief custom foe visibility for connection
         double visibility;
-        /// @brief custom speed for connection
-        double speed;
-        /// @brief custom shape connection
-        PositionVector customShape;
-        /// @brief if set to true, This connection will not be TLS-controlled despite its node being controlled.
-        bool uncontrolled;
     };
 
 
     /** @struct LaneAttrs
      * @brief Describes the values found in a lane's definition
      */
-    struct LaneAttrs : public Parameterised {
+    struct LaneAttrs {
         /// @brief The maximum velocity allowed on this lane
         double maxSpeed;
         /// @brief This lane's shape (needed to reconstruct edge shape for legacy networks)
@@ -218,8 +223,6 @@ private:
         double width;
         /// @brief This lane's offset from the intersection
         double endOffset;
-        /// @brief This lane's vehicle specific stop offsets
-        std::map<SVCPermissions, double> stopOffsets;
         /// @brief Whether this lane is an acceleration lane
         bool accelRamp;
         /// @brief This lane's opposite lane
@@ -232,7 +235,7 @@ private:
     /** @struct EdgeAttrs
      * @brief Describes the values found in an edge's definition and this edge's lanes
      */
-    struct EdgeAttrs : public Parameterised {
+    struct EdgeAttrs {
         /// @brief This edge's id
         std::string id;
         /// @brief This edge's street name
@@ -259,8 +262,6 @@ private:
         NBEdge* builtEdge;
         /// @brief The lane spread function
         LaneSpreadFunction lsf;
-        /// @brief This edge's vehicle specific stop offsets (used for lanes, that do not have a specified stopOffset)
-        std::map<SVCPermissions, double> stopOffsets;
     };
 
 
@@ -278,27 +279,10 @@ private:
      * @brief Describes a pedestrian crossing
      */
     struct Crossing {
-        Crossing(const std::string& _edgeID) :
-            edgeID(_edgeID), customTLIndex(-1), customTLIndex2(-1) {}
-
         std::string edgeID;
         std::vector<std::string> crossingEdges;
         double width;
         bool priority;
-        PositionVector customShape;
-        int customTLIndex;
-        int customTLIndex2;
-    };
-
-    /** @struct WalkingAreaParsedCustomShape
-     * @brief Describes custom shape for a walking area during parsing
-     */
-    struct WalkingAreaParsedCustomShape {
-        PositionVector shape;
-        std::vector<std::string> fromEdges;
-        std::vector<std::string> toEdges;
-        std::vector<std::string> fromCrossed;
-        std::vector<std::string> toCrossed;
     };
 
     /** @struct JunctionAttrs
@@ -327,9 +311,6 @@ private:
     /// @brief The node container to fill
     NBTrafficLightLogicCont& myTLLCont;
 
-    /// @brief The handler for parsing edge types and restrictions
-    NIXMLTypesHandler myTypesHandler;
-
     /// @brief The currently parsed edge's definition (to add loaded lanes to)
     EdgeAttrs* myCurrentEdge;
 
@@ -347,12 +328,6 @@ private:
 
     /// @brief The pedestrian crossings found in the network
     std::map<std::string, std::vector<Crossing> > myPedestrianCrossings;
-
-    /// @brief Map from walkingArea edge IDs to custom shapes
-    std::map<std::string, WalkingAreaParsedCustomShape> myWACustomShapes;
-
-    /// @brief element to receive parameters
-    std::vector<Parameterised*> myLastParameterised;
 
     /// @brief whether the loaded network contains internal lanes
     bool myHaveSeenInternalEdge;
@@ -372,15 +347,11 @@ private:
     /// @brief whether walkingareas must be built
     bool myWalkingAreas;
 
-    /// @brief whether turning speed was limited in the network
-    double myLimitTurnSpeed;
-
-    /// @brief whether foe-relationships where checked at lane-level
-    bool myCheckLaneFoesAll;
-    bool myCheckLaneFoesRoundabout;
-
     /// @brief loaded roundabout edges
     std::vector<std::vector<std::string> > myRoundabouts;
+
+    /// @brief customLaneShape (cannot be added to the NBNode when parsed since the node doesn't yet exist
+    std::map<std::string, NBNode::CustomShapeMap> myCustomShapeMaps;
 
     /// @brief list of node id with rail signals (no NBTrafficLightDefinition exists)
     std::set<std::string> myRailSignals;

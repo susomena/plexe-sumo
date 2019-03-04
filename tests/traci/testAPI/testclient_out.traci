@@ -1,8 +1,5 @@
-TraCITestClient output file. Date: Mon Feb 11 18:55:40 2019
+TraCITestClient output file. Date: Tue Sep 12 10:53:52 2017
 
-
--> Command sent: <SetOrder>:
-.. Command acknowledged (3), [description: ]
 
 -> Command sent: <SimulationStep>:
 .. Command acknowledged (2), [description: ]
@@ -14,8 +11,6 @@ testAPI:
     currentTraveltime: 8.33
     adaptedTravelTime: 42.00
     effort: 420.00
-    laneNumber: 3
-    streetName: exampleStreetName1
   lane:
     getIDList: :n_m1_0_0 :n_m1_0_1 :n_m1_0_2 :n_m2_0_0 :n_m2_0_1 :n_m2_0_2 :n_m3_0_0 :n_m3_0_1 :n_m3_0_2 :n_m4_0_0 :n_m4_0_1 :n_m4_2_0 :n_m4_2_1 :n_m4_4_0 :n_m4_4_1 :n_m4_4_2 :n_m4_7_0 :n_m5_0_0 :n_m5_0_1 :n_m5_2_0 :n_m5_2_1 :n_m5_4_0 :n_m5_4_1 :n_m5_4_2 :n_m6_0_0 :n_m6_0_1 :n_m6_2_0 :n_m6_2_1 :n_m6_4_0 :n_m6_4_1 :n_m6_4_2 :n_m7_0_0 :n_m7_0_1 :n_m7_0_2 :n_m7_3_0 :n_m7_3_1 :n_m7_3_2 :n_o0_0_0 :n_o0_0_1 :n_o1_0_0 :n_o1_0_1 :n_o1_0_2 :n_o1_3_0 :n_o1_3_1 :n_o2_0_0 :n_o2_0_1 :n_o2_0_2 :n_o2_3_0 :n_o2_3_1 :n_u0_0_0 :n_u0_0_1 :n_u1_0_0 :n_u1_0_1 :n_u1_2_0 :n_u1_2_1 :n_u1_2_2 :n_u2_0_0 :n_u2_0_1 :n_u2_2_0 :n_u2_2_1 :n_u2_2_2 :n_x1_0_0 :n_x1_0_1 e_m0_0 e_m0_1 e_m0_2 e_m1_0 e_m1_1 e_m1_2 e_m2_0 e_m2_1 e_m2_2 e_m3_0 e_m3_1 e_m3_2 e_m4_0 e_m4_1 e_m4_2 e_m5_0 e_m5_1 e_m5_2 e_m6_0 e_m6_1 e_m6_2 e_o0_0 e_o0_1 e_o0_2 e_o1_0 e_o1_1 e_o1_2 e_shape0_0 e_shape0_1 e_shape0_2 e_shape1_0 e_shape1_1 e_shape1_2 e_u0_0 e_u0_1 e_u0_2 e_u1_0 e_u1_1 e_u1_2 e_vo0_0 e_vo0_1 e_vo1_0 e_vo1_1 e_vo2_0 e_vo2_1 e_vu0_0 e_vu0_1 e_vu1_0 e_vu1_1 e_vu2_0 e_vu2_1 e_x0_0 e_x0_1 e_x1_0 e_x1_1
     getIDCount: 118
@@ -25,27 +20,11 @@ testAPI:
     approachedLane=e_shape1_1 hasPrio=1 isOpen=1 hasFoe=0 approachedInternal=:n_m7_0_1 state=M direction=r length=7.91
     approachedLane=e_shape1_2 hasPrio=1 isOpen=1 hasFoe=0 approachedInternal=:n_m7_0_2 state=M direction=r length=7.91
     approachedLane=e_shape0_0 hasPrio=1 isOpen=1 hasFoe=0 approachedInternal=:n_m7_3_0 state=M direction=l length=19.06
-    getFoes: e_m3_0 e_m3_1 e_m3_2
-    getFoes (invalid):     caught TraCIException(.. Answered with error to command (163), [description: No connection from lane 'e_vu0_0' to lane 'e_m4_1'])
-    getInternalFoes: :n_m4_7_0 :n_m4_0_1 :n_m4_4_0 :n_m4_4_1 :n_m4_4_2
-    getInternalFoes (invalid):     caught TraCIException(.. Answered with error to command (163), [description: Lane 'dummy' is not known])
-  POI:
-    getIDList: poi0 poi1
-    getIDCount: 2
-    getPosition: TraCIPosition(1000,100,0)
-    getColor: TraCIColor(0,255,0,255)
-  polygon:
-    getIDList: poly0
-    getIDCount: 1
-    getLineWidth: 0.60
-    getShape: TraCIPosition(800,1000,0) TraCIPosition(1200,1000,0) TraCIPosition(1200,900,0) TraCIPosition(800,900,0) 
-    getColor: TraCIColor(0,255,255,255)
-    getShape after modification: TraCIPosition(42,1000,0) TraCIPosition(1200,1000,0) TraCIPosition(1200,900,0) TraCIPosition(800,900,0) 
   route:
     add:
     getIDList: e_m4 e_u1 r1
   vehicleType:
-    getIDList: DEFAULT_BIKETYPE DEFAULT_PEDTYPE DEFAULT_VEHTYPE stilts t1
+    getIDList: DEFAULT_PEDTYPE DEFAULT_VEHTYPE stilts t1
     getEmergencyDecel: 9.90
     getApparentDecel: 99.90
     getWidth: 1.90
@@ -54,28 +33,23 @@ testAPI:
     setMaxSpeedLat: 1.20
     getLateralAlignment: compact
     copy type 't1' to 't1_copy' and set accel to 100.
-    getIDList: DEFAULT_BIKETYPE DEFAULT_PEDTYPE DEFAULT_VEHTYPE stilts t1 t1_copy
+    getIDList: DEFAULT_PEDTYPE DEFAULT_VEHTYPE stilts t1 t1_copy
     getAccel('t1'): 0.80
     getAccel('t1_copy'): 100.00
   vehicle:
-    getTypeID: t1_copy
+    getTypeID: t1
     getRoadID: e_m3
     getRouteID: r1
     getLaneID: e_m3_0
     getLanePosition: 140.00
     getLateralLanePosition: 0.00
-    getSpeed: 10.00
-    getAcceleration: 0.00
     getSpeedMode: 31
     getSlope: 0.00
     getLine: S42
     getVia: e_shape1
     getMaxSpeed: 30.00
     isRouteValid: 1
-    param: 42
     getColor:  r=255 g=255 b=0 a=128
-    getSignals: 0
-    getRoutingMode: 1
     getNextTLS:
       tls=n_m4 tlIndex=4 dist=351.95 state=r
     moveToXY, simStep:
@@ -89,29 +63,21 @@ testAPI:
     getWaitingTime: 0.00
     getAccumulatedWaitingTime: 0.00
     getShapeClass: bicycle
-    getLeader: 2, 493.85
-    getLaneChangeState (left): 1073741824, 1073741824
-    getLaneChangeState (right): 1073741824, 1073741824
+    getLeader: 2, 494.88
     remove:
     getIDCount: 2
   inductionloop:
     getIDList: det1
     getVehicleData:
   simulation:
-    getDistance2D_air: 500.00
-    getDistance2D_driving: 3368.41
-    getDistanceRoad_air: 500.00
-    getDistanceRoad_driving: 3370.76
     getCurrentTime: 7000
-    getDeltaT: 1.00
-    parkingArea param: 5
     subscribe to road and pos of vehicle '1':
     subscription results:
-      roadID=e_u1 pos=7.34774
+      roadID=e_u1 pos=7.38
     subscribe to vehicles around edge 'e_u1':
     context subscription results:
-      vehicle=1 pos=11.4581
-      vehicle=2 pos=16.3564
+      vehicle=1 pos=11.29
+      vehicle=2 pos=19.00
   person:
     getIDList: p0
     getRoadID: e_m3
@@ -122,15 +88,7 @@ testAPI:
     getRemainingStages: 1
     getVehicle: 
     getEdges: e_m3 e_m4
-    getPosition: TraCIPosition(1500,490.47,0)
-    getPosition3D: TraCIPosition(1500,490.47,0)
-    getAngle: 90.00
-    getSlope: 0.00
-    getLanePosition: 0.00
-    getLength: 0.21
-    getColor: TraCIColor(255,255,0,128)
-    param: bar
-    getSpeed: 2.47
+    getSpeed: 2.60
     getRemainingStages: 4
     getRemainingStages: 3
     getRemainingStages: 1
@@ -138,40 +96,28 @@ testAPI:
     getEdges after rerouting: e_u1 e_vu2 e_m5
   trafficlights:
     getIDList: n_m4
-    getIDCount: 1
     state: ggGGrrr
     program: 0
     phase: 0
-    phaseName: nameSetByTraCI
-    phaseDuration: 12.00
-    nextSwitch: 23.00
+    nextSwitch: 12000
     controlledLanes: e_vo0_0 e_vo0_1 e_vu0_0 e_vu0_1 e_m3_0 e_m3_1 e_m3_2
     controlledLinks:
-      index=0 link=0 fromLane=e_vo0_0 viaLane=:n_m4_0_0 toLane=e_m4_1
-      index=1 link=0 fromLane=e_vo0_1 viaLane=:n_m4_0_1 toLane=e_m4_2
-      index=2 link=0 fromLane=e_vu0_0 viaLane=:n_m4_2_0 toLane=e_m4_0
-      index=3 link=0 fromLane=e_vu0_1 viaLane=:n_m4_2_1 toLane=e_m4_1
-      index=4 link=0 fromLane=e_m3_0 viaLane=:n_m4_4_0 toLane=e_m4_0
-      index=5 link=0 fromLane=e_m3_1 viaLane=:n_m4_4_1 toLane=e_m4_1
-      index=6 link=0 fromLane=e_m3_2 viaLane=:n_m4_4_2 toLane=e_m4_2
+      index=0 from=e_vo0_0 via=:n_m4_0_0 to=e_m4_1
+      index=1 from=e_vo0_1 via=:n_m4_0_1 to=e_m4_2
+      index=2 from=e_vu0_0 via=:n_m4_2_0 to=e_m4_0
+      index=3 from=e_vu0_1 via=:n_m4_2_1 to=e_m4_1
+      index=4 from=e_m3_0 via=:n_m4_4_0 to=e_m4_0
+      index=5 from=e_m3_1 via=:n_m4_4_1 to=e_m4_1
+      index=6 from=e_m3_2 via=:n_m4_4_2 to=e_m4_2
     completeDefinition:
       subID=0 type=0 phase=0
       params=
-         phase=ggGGrrr dur=12.00 minDur=12.00 maxDur=12.00
-         phase=ggyyrrr dur=20.00 minDur=20.00 maxDur=20.00
-         phase=GGrrrrr dur=6.00 minDur=6.00 maxDur=6.00
-         phase=yyrrrrr dur=20.00 minDur=20.00 maxDur=20.00
-         phase=rrrrGGG dur=12.00 minDur=12.00 maxDur=12.00
-         phase=rrrryyy dur=20.00 minDur=20.00 maxDur=20.00
-      subID=custom type=0 phase=3
-      params=
-         phase=rrrrrrr dur=5.00 minDur=5.00 maxDur=5.00
-         phase=ggggggg dur=10.00 minDur=5.00 maxDur=15.00
-         phase=GGGGGGG dur=3.00 minDur=3.00 maxDur=3.00
-         phase=yyyyyyy dur=3.00 minDur=3.00 maxDur=3.00
-    state=ggggggg
-    stateSet=gGyruoO
-    program: online
+         phase=ggGGrrr dur=12000 minDur=12000 maxDur=12000
+         phase=ggyyrrr dur=20000 minDur=20000 maxDur=20000
+         phase=GGrrrrr dur=6000 minDur=6000 maxDur=6000
+         phase=yyrrrrr dur=20000 minDur=20000 maxDur=20000
+         phase=rrrrGGG dur=12000 minDur=12000 maxDur=12000
+         phase=rrrryyy dur=20000 minDur=20000 maxDur=20000
   load:
     getCurrentTime: 1000
   gui:

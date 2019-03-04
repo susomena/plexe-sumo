@@ -37,6 +37,11 @@
      extern "C" void init_tcpip( shawn::SimulationController& );
 #endif
 
+// Disable exception handling warnings
+#ifdef _MSC_VER
+	#pragma warning( disable : 4290 )
+#endif
+
 #include <string>
 #include <map>
 #include <vector>
@@ -51,10 +56,23 @@ struct sockaddr_in;
 namespace tcpip
 {
 
-	class SocketException: public std::runtime_error
+	class SocketException: public std::exception
 	{
+	private:
+		std::string what_;
 	public:
-        SocketException(std::string what) : std::runtime_error(what.c_str()) {}
+		SocketException( std::string what ) throw() 
+		{
+			what_ = what;
+			//std::cerr << "tcpip::SocketException: " << what << std::endl << std::flush;
+		}
+
+		virtual const char* what() const throw()
+		{
+			return what_.c_str();
+		}
+
+		~SocketException() throw() {}
 	};
 
 	class Socket
@@ -70,26 +88,22 @@ namespace tcpip
 		/// Destructor
 		~Socket();
 
-		/// @brief Returns an free port on the system
-		/// @note This is done by binding a socket with port=0, getting the assigned port, and closing the socket again
-		static int getFreeSocketPort();
-
 		/// Connects to host_:port_
-		void connect();
+		void connect() throw( SocketException );
 
 		/// Wait for a incoming connection to port_
-        Socket* accept(const bool create = false);
+        Socket* accept(const bool create = false) throw(SocketException);
 
-		void send( const std::vector<unsigned char> &buffer);
-		void sendExact( const Storage & );
+		void send( const std::vector<unsigned char> &buffer) throw( SocketException );
+		void sendExact( const Storage & ) throw( SocketException );
 		/// Receive up to \p bufSize available bytes from Socket::socket_
-		std::vector<unsigned char> receive( int bufSize = 2048 );
+		std::vector<unsigned char> receive( int bufSize = 2048 ) throw( SocketException );
 		/// Receive a complete TraCI message from Socket::socket_
-		bool receiveExact( Storage &);
+		bool receiveExact( Storage &) throw( SocketException );
 		void close();
 		int port();
-		void set_blocking(bool);
-		bool is_blocking();
+		void set_blocking(bool) throw( SocketException );
+		bool is_blocking() throw();
 		bool has_client_connection() const;
 
 		// If verbose, each send and received data is written to stderr
@@ -109,12 +123,12 @@ namespace tcpip
 
 	private:
 		void init();
-		static void BailOnSocketError(std::string context);
+		void BailOnSocketError( std::string ) const throw( SocketException );
 #ifdef WIN32
-		static std::string GetWinsockErrorString(int err);
+		std::string GetWinsockErrorString(int err) const;
 #endif
 		bool atoaddr(std::string, struct sockaddr_in& addr);
-		bool datawaiting(int sock) const;
+		bool datawaiting(int sock) const throw();
 
 		std::string host_;
 		int port_;

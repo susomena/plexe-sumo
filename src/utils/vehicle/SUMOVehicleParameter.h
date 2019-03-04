@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOVehicleParameter.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // Structure representing possible vehicle parameter
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef SUMOVehicleParameter_h
 #define SUMOVehicleParameter_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/Parameterised.h>
@@ -48,25 +55,22 @@ const int VEHPARS_VTYPE_SET = 2;
 const int VEHPARS_DEPARTLANE_SET = 2 << 1;
 const int VEHPARS_DEPARTPOS_SET = 2 << 2;
 const int VEHPARS_DEPARTSPEED_SET = 2 << 3;
-const int VEHPARS_END_SET = 2 << 4;
-const int VEHPARS_NUMBER_SET = 2 << 5;
-const int VEHPARS_PERIOD_SET = 2 << 6;
-const int VEHPARS_VPH_SET = 2 << 7;
-const int VEHPARS_PROB_SET = 2 << 8;
-const int VEHPARS_ROUTE_SET = 2 << 9;
-const int VEHPARS_ARRIVALLANE_SET = 2 << 10;
-const int VEHPARS_ARRIVALPOS_SET = 2 << 11;
-const int VEHPARS_ARRIVALSPEED_SET = 2 << 12;
-const int VEHPARS_LINE_SET = 2 << 13;
-const int VEHPARS_FROM_TAZ_SET = 2 << 14;
-const int VEHPARS_TO_TAZ_SET = 2 << 15;
-const int VEHPARS_FORCE_REROUTE = 2 << 16;
-const int VEHPARS_PERSON_CAPACITY_SET = 2 << 17;
-const int VEHPARS_PERSON_NUMBER_SET = 2 << 18;
-const int VEHPARS_CONTAINER_NUMBER_SET = 2 << 19;
-const int VEHPARS_DEPARTPOSLAT_SET = 2 << 20;
-const int VEHPARS_ARRIVALPOSLAT_SET = 2 << 21;
-const int VEHPARS_VIA_SET = 2 << 22;
+const int VEHPARS_PERIODNUM_SET = 2 << 4;
+const int VEHPARS_PERIODFREQ_SET = 2 << 5;
+const int VEHPARS_ROUTE_SET = 2 << 6;
+const int VEHPARS_ARRIVALLANE_SET = 2 << 7;
+const int VEHPARS_ARRIVALPOS_SET = 2 << 8;
+const int VEHPARS_ARRIVALSPEED_SET = 2 << 9;
+const int VEHPARS_LINE_SET = 2 << 10;
+const int VEHPARS_FROM_TAZ_SET = 2 << 11;
+const int VEHPARS_TO_TAZ_SET = 2 << 12;
+const int VEHPARS_FORCE_REROUTE = 2 << 13;
+const int VEHPARS_PERSON_CAPACITY_SET = 2 << 14;
+const int VEHPARS_PERSON_NUMBER_SET = 2 << 15;
+const int VEHPARS_CONTAINER_NUMBER_SET = 2 << 16;
+const int VEHPARS_DEPARTPOSLAT_SET = 2 << 17;
+const int VEHPARS_ARRIVALPOSLAT_SET = 2 << 18;
+const int VEHPARS_VIA_SET = 2 << 19;
 
 const int STOP_INDEX_END = -1;
 const int STOP_INDEX_FIT = -2;
@@ -220,8 +224,6 @@ enum ArrivalPosDefinition {
     ARRIVAL_POS_GIVEN,
     /// @brief The arrival position is chosen randomly
     ARRIVAL_POS_RANDOM,
-    /// @brief Half the road length
-    ARRIVAL_POS_CENTER,
     /// @brief The maximum arrival position is used
     ARRIVAL_POS_MAX,
     /// @brief Tag for the last element in the enum for safe int casting
@@ -296,7 +298,7 @@ public:
      * @return Whether the given parameter was set
      */
     bool wasSet(int what) const {
-        return (parametersSet & what) != 0;
+        return (setParameter & what) != 0;
     }
 
 
@@ -455,12 +457,11 @@ public:
 
     /// @brief The vehicle's route id
     std::string routeid;
-
     /// @brief The vehicle's type id
     std::string vtypeid;
-
     /// @brief The vehicle's color, TraCI may change this
     mutable RGBColor color;
+
 
     /// @name Departure definition
     /// @{
@@ -487,6 +488,7 @@ public:
     DepartSpeedDefinition departSpeedProcedure;
     /// @}
 
+
     /// @name Arrival definition
     /// @{
 
@@ -508,6 +510,7 @@ public:
     ArrivalSpeedDefinition arrivalSpeedProcedure;
     /// @}
 
+
     /// @name Repetition definition
     /// @{
 
@@ -522,6 +525,7 @@ public:
     /// @brief The time at which the flow ends (only needed when using repetitionProbability)
     SUMOTime repetitionEnd;
     /// @}
+
 
     /// @brief The vehicle's line (mainly for public transport)
     mutable std::string line;
@@ -565,11 +569,11 @@ public:
         /// @brief IDs of containers the vehicle has to wait for until departing
         std::set<std::string> awaitedContainers;
         /// @brief lanes and positions connected to this stop
-        std::vector<std::tuple<std::string, double, double> > accessPos;
+        std::multimap<std::string, double> accessPos;
         /// @brief at which position in the stops list
         int index;
         /// @brief Information for the output which parameter were set
-        int parametersSet = 0;
+        int setParameter;
 
         /** @brief Writes the stop as XML
          *
@@ -592,35 +596,9 @@ public:
     int containerNumber;
 
     /// @brief Information for the router which parameter were set, TraCI may modify this (whe changing color)
-    mutable int parametersSet;
+    mutable int setParameter;
 
-protected:
-    /// @brief obtain depart parameter in string format
-    std::string getDepart() const;
 
-    /// @brief obtain depart lane parameter in string format
-    std::string getDepartLane() const;
-
-    /// @brief obtain depart pos parameter in string format
-    std::string getDepartPos() const;
-
-    /// @brief obtain depart pos lat parameter in string format
-    std::string getDepartPosLat() const;
-
-    /// @brief obtain depart speed parameter in string format
-    std::string getDepartSpeed() const;
-
-    /// @brief obtain arrival lane parameter in string format
-    std::string getArrivalLane() const;
-
-    /// @brief obtain arrival pos parameter in string format
-    std::string getArrivalPos() const;
-
-    /// @brief obtain arrival pos lat parameter in string format
-    std::string getArrivalPosLat() const;
-
-    /// @brief obtain arrival speed parameter in string format
-    std::string getArrivalSpeed() const;
 };
 
 #endif

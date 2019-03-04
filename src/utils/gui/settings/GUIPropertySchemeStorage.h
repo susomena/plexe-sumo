@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIPropertySchemeStorage.h
 /// @author  Michael Behrisch
 /// @author  Daniel Krajzewicz
@@ -17,6 +9,17 @@
 ///
 //
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIPropertySchemeStorage_h
 #define GUIPropertySchemeStorage_h
 
@@ -24,13 +27,14 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <fx.h>
-#include <utils/gui/images/GUIIconSubSys.h>
-#include <utils/foxtools/MFXIconComboBox.h>
-#include <utils/foxtools/MFXUtils.h>
 #include "GUIPropertyScheme.h"
 
 
@@ -58,11 +62,9 @@ public:
     virtual ~GUIPropertySchemeStorage() { }
 
     /// @brief Fills the given combobox with the names of available colorings
-    void fill(MFXIconComboBox& cb) {
-        for (const auto& scheme : mySchemes) {
-            cb.appendIconItem(scheme.getName().c_str(),
-                              scheme.getIcon() == ICON_EMPTY ? nullptr : GUIIconSubSys::getIcon(scheme.getIcon()),
-                              MFXUtils::getFXColor(scheme.getBackgroundColor()));
+    void fill(FXComboBox& cb) {
+        for (typename std::vector<T>::iterator i = mySchemes.begin(); i != mySchemes.end(); ++i) {
+            cb.appendItem((*i).getName().c_str());
         }
         cb.setCurrentItem((FXint)myActiveScheme);
     }

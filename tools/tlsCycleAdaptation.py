@@ -1,18 +1,10 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    tlsCycleAdaptation.py
-# @author  Yun-Pang Floetteroed
-# @date    2017-05-10
-# @version $Id: tlsCycleAdaptation.py
-
 """
+@file    tlsCycleAdaptation.py
+@author  Yun-Pang Floetteroed
+@date    2017-05-10
+@version $Id: tlsCycleAdaptation.py
+
 - The Webster's equation is used to optimize the cycle length
   and the green times of the traffic lights in a sumo network
   with a given route file.
@@ -24,8 +16,17 @@
   the respective flows will be equally divided into the corresponding
   phases for calculating the green splits.
 
-- If the critical flow or the sum of the critical flows is larger than 1,
+- If the critial flow or the sum of the critial flows is larger than 1,
  the optimal cycle length will be set to 120 sec.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -73,8 +74,6 @@ def get_options(args=None):
                          default=2, help=" saturation headway in seconds for calcuating hourly saturation flows")
     optParser.add_option("-R", "--restrict-cyclelength", dest="restrict", action="store_true",
                          default=False, help=" restrict the max. cycle length as the given one")
-    optParser.add_option("-u", "--unified-cycle", dest="unicycle", action="store_true",
-                         default=False, help=" use the calculated max cycle length as the cycle length for all intersections")
     optParser.add_option("-v", "--verbose", dest="verbose", action="store_true",
                          default=False, help="tell me what you are doing")
     (options, args) = optParser.parse_args(args=args)
@@ -93,7 +92,7 @@ def getFlows(net, routeFiles, tlsList, begin, verbose):
         tlsFlowsMap[tls._id] = collections.defaultdict(lambda: collections.defaultdict(int))
     for file in routeFiles.split(','):
         if verbose:
-            print("route file:%s" % file)
+            print ("route file:%s" % file)
         for veh in sumolib.output.parse(file, 'vehicle'):
             if float(veh.depart) >= end:
                 break
@@ -138,7 +137,7 @@ def getEffectiveTlsList(tlsList, connFlowsMap, verbose):
         valid = True
         for program in tl.getPrograms().values():
             for phase in program.getPhases():
-                if len(phase.state) > len(tl.getConnections()):
+                if len(phase) > len(tl.getConnections()):
                     print("Skipping TLS '%s' due to unused states" % tl.getID())
                     valid = False
                     break
@@ -161,7 +160,7 @@ def removeRedundantFlows(t, connFlowsMap):
         for c2 in connsList:
             if c1[2] != c2[2]:
                 if c1[1]._edge == c2[0]._edge:
-                    identical = identityCheck(c1[0]._edge, c2[0]._edge._incoming, identical)
+                    indentical = identityCheck(c1[0]._edge, c2[0]._edge._incoming, identical)
                     if identical:
                         for toEdge in c2[0]._edge._outgoing:
                             for c in c2[0]._edge._outgoing[toEdge]:
@@ -196,7 +195,8 @@ def getLaneGroupFlows(tl, connFlowsMap, phases):
     # check if there are shared lane groups, i.e. some lane groups have only "g" (no "G")
     ownGreenConnsList = []
     for i, p in enumerate(phases):
-        for j, control in enumerate(p.state):
+        totalConns = len(p[0])
+        for j, control in enumerate(p[0]):
             if control == "G" and j not in ownGreenConnsList:
                 ownGreenConnsList.append(j)
     yellowRedTime = 0
@@ -204,24 +204,23 @@ def getLaneGroupFlows(tl, connFlowsMap, phases):
     currentLength = 0
     phaseLaneIndexMap = collections.defaultdict(list)
     for i, p in enumerate(phases):
-        currentLength += p.duration
-        if 'G' in p.state:
-            greenTime += p.duration
-            groupFlowsMap[i] = [p.duration]
+        currentLength += p[1]
+        if 'G' in p[0]:
+            greenTime += p[1]
+            groupFlowsMap[i] = [p[1]]
             groupFlows = 0
             laneIndexList = []
-            for j, control in enumerate(p.state):
+            for j, control in enumerate(p[0]):
                 inEdge = connsList[j][0]._edge._id
                 if j == 0:
                     exEdge = inEdge
-                if (inEdge == exEdge and control == 'G') or (inEdge == exEdge and
-                                                             control == 'g' and j not in ownGreenConnsList):
+                if (inEdge == exEdge and control == 'G') or (inEdge == exEdge and control == 'g' and j not in ownGreenConnsList):
                     if j in connFlowsMap[tl._id]:
                         groupFlows += connFlowsMap[tl._id][j]
                     if connsList[j][0].getIndex() not in laneIndexList:
                         laneIndexList.append(connsList[j][0].getIndex())
 
-                if exEdge != inEdge or j == len(p.state) - 1:
+                if exEdge != inEdge or j == len(p[0]) - 1:
                     if laneIndexList:
                         phaseLaneIndexMap[i].append(laneIndexList)
                         groupFlowsMap[i].append(groupFlows)
@@ -234,61 +233,23 @@ def getLaneGroupFlows(tl, connFlowsMap, phases):
                             if connsList[j][0].getIndex() not in laneIndexList:
                                 laneIndexList.append(connsList[j][0].getIndex())
                 exEdge = inEdge
-        elif 'G' not in p.state and 'g' in p.state and 'y' not in p.state and 'r' not in p.state:
-            print("Check: only g for all connections:%s in phase %s" % (tl._id, i))
-        elif ('G' not in p.state and 'g' not in p.state) or ('G' not in p.state and 'y' in p.state and 'r' in p.state):
-            yellowRedTime += int(p.duration)
+        elif 'G' not in p[0] and 'g' in p[0] and 'y' not in p[0] and 'r' not in p[0]:
+            print ("Check: only g for all connections:%s in phase %s" % (tl._id, i))
+        elif ('G' not in p[0] and 'g' not in p[0]) or ('G' not in p[0] and 'y' in p[0] and 'r' in p[0]):
+            yellowRedTime += int(p[1])
         if options.verbose and i in groupFlowsMap:
-            print("phase: %s" % i)
-            print("group flows: %s" % groupFlowsMap[i])
-            print("The used lanes: %s" % phaseLaneIndexMap[i])
+            print ("phase: %s" % i)
+            print ("group flows: %s" % groupFlowsMap[i])
+            print ("The used lanes: %s" % phaseLaneIndexMap[i])
     if options.verbose:
-        print("the current cycle length:%s sec" % currentLength)
+        print ("the current cycle length:%s sec" % currentLength)
     return groupFlowsMap, phaseLaneIndexMap, currentLength
-
-
-def getMaxOptimizedCycle(groupFlowsMap, phaseLaneIndexMap, currentLength, cycleList, options):
-    lostTime = len(groupFlowsMap) * options.losttime + options.allred
-    satFlows = 3600. / options.satheadway
-    # calculate the critical flow ratios and the respective sum
-    critialFlowRateMap = {}
-    for i in groupFlowsMap:   # [duration. groupFlow1, groupFlow2...]
-        critialFlowRateMap[i] = 0.
-        maxFlow = 0
-        index = None
-        if len(groupFlowsMap[i][1:]) > 0:
-            for j, f in enumerate(groupFlowsMap[i][1:]):
-                if f >= maxFlow:
-                    maxFlow = f
-                    index = j
-            critialFlowRateMap[i] = (maxFlow / float((len(phaseLaneIndexMap[i][index])))) / satFlows
-        else:
-            critialFlowRateMap[i] = 0.
-    sumCritialFlows = sum(critialFlowRateMap.values())
-
-    if options.existcycle:
-        optCycle = currentLength
-    elif sumCritialFlows >= 1.:
-        optCycle = options.maxcycle
-        if options.verbose:
-            print("Warning: the sum of the critical flows >= 1:%s" % sumCritialFlows)
-    else:
-        optCycle = int(round((1.5 * lostTime + 5.) / (1. - sumCritialFlows)))
-
-    if not options.existcycle and optCycle < options.mincycle:
-        optCycle = options.mincycle
-    elif not options.existcycle and optCycle > options.maxcycle:
-        optCycle = options.maxcycle
-
-    cycleList.append(optCycle)
-
-    return cycleList
 
 
 def optimizeGreenTime(groupFlowsMap, phaseLaneIndexMap, currentLength, options):
     lostTime = len(groupFlowsMap) * options.losttime + options.allred
     satFlows = 3600. / options.satheadway
-    # calculate the critical flow ratios and the respective sum
+    # calculate the critial flow ratios and the respective sum
     critialFlowRateMap = {}
     for i in groupFlowsMap:   # [duration. groupFlow1, groupFlow2...]
         critialFlowRateMap[i] = 0.
@@ -309,7 +270,7 @@ def optimizeGreenTime(groupFlowsMap, phaseLaneIndexMap, currentLength, options):
     elif sumCritialFlows >= 1.:
         optCycle = options.maxcycle
         if options.verbose:
-            print("Warning: the sum of the critical flows >= 1:%s" % sumCritialFlows)
+            print ("Warning: the sum of the critial flows >= 1:%s" % sumCritialFlows)
     else:
         optCycle = int(round((1.5 * lostTime + 5.) / (1. - sumCritialFlows)))
 
@@ -318,7 +279,6 @@ def optimizeGreenTime(groupFlowsMap, phaseLaneIndexMap, currentLength, options):
     elif not options.existcycle and optCycle > options.maxcycle:
         optCycle = options.maxcycle
 
-    # calculate the green time for each critical group
     effGreenTime = optCycle - lostTime
     totalLength = lostTime
     minGreenPhasesList = []
@@ -337,10 +297,10 @@ def optimizeGreenTime(groupFlowsMap, phaseLaneIndexMap, currentLength, options):
             subtotalGreenTimes += groupFlowsMap[i][0]
         totalLength += groupFlowsMap[i][0]
 
-    # adjust the green times if minimal green times are applied for keeping the defined maximal cycle length.
+    # adjust the green times if minmal green times are applied for keeping the defined maximal cycle length.
     if minGreenPhasesList and totalLength > options.maxcycle and options.restrict:
         if options.verbose:
-            print("Re-allocate the green splits!")
+            print ("Re-allocate the green splits!")
         adjustGreenTimes = totalGreenTimes - len(minGreenPhasesList) * options.mingreen
         for i in groupFlowsMap:
             if i not in minGreenPhasesList:
@@ -350,8 +310,8 @@ def optimizeGreenTime(groupFlowsMap, phaseLaneIndexMap, currentLength, options):
         totalLength = lostTime
         for i in groupFlowsMap:
             totalLength += groupFlowsMap[i][0]
-            print("Green time for phase %s: %s" % (i, groupFlowsMap[i][0]))
-        print("the optimal cycle length:%s" % totalLength)
+            print ("Green time for phase %s: %s" % (i, groupFlowsMap[i][0]))
+        print ("the optimal cycle lenth:%s" % totalLength)
 
     return groupFlowsMap
 
@@ -359,10 +319,10 @@ def optimizeGreenTime(groupFlowsMap, phaseLaneIndexMap, currentLength, options):
 def main(options):
     net = sumolib.net.readNet(options.netfile, withPrograms=True)
     tlsList = net.getTrafficLights()
-
+    nodesList = net.getNodes()
     if options.verbose:
         print("the total number of tls: %s" % len(tlsList))
-    print("Begin time:%s" % options.begin)
+    print ("Begin time:%s" % options.begin)
     # get traffic flows for each connection at each TL
     connFlowsMap = getFlows(net, options.routefiles, tlsList, options.begin, options.verbose)
 
@@ -374,35 +334,9 @@ def main(options):
         outf.write('<additional>\n')
 
         if len(effectiveTlsList) > 0:
-            if options.unicycle:
-                cycleList = []
-                if options.verbose:
-                    print("Firstly only calculate the maximal optimized cycle length! ")
-                for tl in effectiveTlsList:
-                    if options.verbose:
-                        print("tl-logic ID: %s" % tl._id)
-                    programs = tl.getPrograms()
-                    for pro in programs:
-                        phases = programs[pro].getPhases()
-
-                        # get the connection flows and group flows
-                        groupFlowsMap, phaseLaneIndexMap, currentLength = getLaneGroupFlows(tl, connFlowsMap, phases)
-
-                        # only optimize the cycle length
-                        cycleList = getMaxOptimizedCycle(groupFlowsMap, phaseLaneIndexMap,
-                                                         currentLength, cycleList, options)
-
-                options.maxcycle = max(cycleList)
-                options.mincycle = max(cycleList)
-                options.restrict = True
-                if options.verbose:
-                    print("The maximal optimized cycle length is %s, which will be used for calculating the green splits for all intersections." % (
-                        max(cycleList)))
-
-            # calculate the green splits; the optimal length will be also calculate if options.unicycle is set as false.
             for tl in effectiveTlsList:
                 if options.verbose:
-                    print("tl-logic ID: %s" % tl._id)
+                    print ("tl-logic ID: %s" % tl._id)
                 programs = tl.getPrograms()
                 for pro in programs:
                     phases = programs[pro].getPhases()
@@ -410,24 +344,23 @@ def main(options):
                     # get the connection flows and group flows
                     groupFlowsMap, phaseLaneIndexMap, currentLength = getLaneGroupFlows(tl, connFlowsMap, phases)
 
-                    # optimize the cycle length and calculate the respective green splits
+                    # optimize the cycle length and green times
                     groupFlowsMap = optimizeGreenTime(groupFlowsMap, phaseLaneIndexMap, currentLength, options)
 
-                # write output
-                outf.write('    <tlLogic id="%s" type="%s" programID="%s" offset="%i">\n' %
-                           (tl._id, programs[pro]._type, options.program, programs[pro]._offset))
+                    # write output
+                    outf.write('    <tlLogic id="%s" type="%s" programID="%s" offset="%i">\n' %
+                               (tl._id, programs[pro]._type, options.program, programs[pro]._offset))
 
-                phases = programs[pro].getPhases()
-                for i, p in enumerate(phases):
-                    duration = p.duration
-                    if i in groupFlowsMap:
-                        duration = groupFlowsMap[i][0]
-                    outf.write('        <phase duration="%s" state="%s"/>\n' % (duration, p.state))
-                outf.write('    </tlLogic>\n')
+                    phases = programs[pro].getPhases()
+                    for i, p in enumerate(phases):
+                        duration = p[1]
+                        if i in groupFlowsMap:
+                            duration = groupFlowsMap[i][0]
+                        outf.write('        <phase duration="%s" state="%s"/>\n' % (duration, p[0]))
+                    outf.write('    </tlLogic>\n')
         else:
             print("There are no flows at the given intersections. No green time optimization is done.")
         outf.write('</additional>\n')
-
 
 if __name__ == "__main__":
     options = get_options(sys.argv)

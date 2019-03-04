@@ -1,14 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-// activitygen module
-// Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    AGChild.cpp
 /// @author  Piotr Woznica
 /// @author  Daniel Krajzewicz
@@ -20,12 +10,29 @@
 ///
 // Person in age to go to school: linked to a school object
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+// activitygen module
+// Copyright 2010 TUM (Technische Universitaet Muenchen, http://www.tum.de/)
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <vector>
@@ -44,7 +51,7 @@ AGChild::print() const {
 
 bool
 AGChild::setSchool(AGSchool* school) {
-    if (school == nullptr) {
+    if (school == NULL) {
         return false;
     }
     bool enoughPlace = school->addNewChild();
@@ -57,7 +64,7 @@ AGChild::setSchool(AGSchool* school) {
 bool
 AGChild::allocateASchool(std::list<AGSchool>* schools, AGPosition housePos) {
     double minDist = std::numeric_limits<double>::infinity();
-    AGSchool* sch = nullptr;
+    AGSchool* sch = NULL;
     if (schools->size() == 0) {
         return false;
     }
@@ -74,17 +81,17 @@ AGChild::allocateASchool(std::list<AGSchool>* schools, AGPosition housePos) {
 
 bool
 AGChild::leaveSchool() {
-    if (school != nullptr)
+    if (school != NULL)
         if (!school->removeChild()) {
             return false;
         }
-    school = nullptr;
+    school = NULL;
     return true;
 }
 
 bool
 AGChild::haveASchool() const {
-    return (school != nullptr);
+    return (school != NULL);
 }
 
 AGPosition

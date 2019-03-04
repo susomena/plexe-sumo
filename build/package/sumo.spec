@@ -1,8 +1,8 @@
 #
 # spec file for package sumo
 #
-# Copyright (c) 2018 SUSE LINUX GmbH, Nuernberg, Germany.
-# Copyright (c) 2001-2018 DLR (http://www.dlr.de/) and contributors
+# Copyright (c) 2016 SUSE LINUX GmbH, Nuernberg, Germany.
+# Copyright (c) 2001-2017 DLR (http://www.dlr.de/) and contributors
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -18,16 +18,17 @@
 
 
 Name:           sumo
-Version:        git
+Version:        svn
 Release:        0
-Epoch:          2
-Summary:        Eclipse Simulation of Urban Mobility - A Microscopic Traffic Simulation
-License:        EPL-2.0
+Summary:        Simulation of Urban Mobility - A Microscopic Traffic Simulation
+License:        GPL-3.0+
 Group:          Productivity/Scientific/Other
-URL:            http://sumo.dlr.de/
+Url:            http://sumo.dlr.de/
 Source0:        sumo-src-%{version}.tar.gz
 Source1:        sumo-doc-%{version}.zip
-Source2:        %{name}.xml
+Source2:        %{name}.desktop
+Source3:        %{name}.png
+Source4:        %{name}.xml
 BuildRequires:  gcc-c++
 BuildRequires:  help2man
 BuildRequires:  pkgconfig
@@ -35,6 +36,7 @@ BuildRequires:  unzip
 BuildRequires:  pkgconfig(fox)
 BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(xerces-c)
+BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 %if 0%{?fedora_version} || 0%{?suse_version}
 BuildRequires:  fdupes
 BuildRequires:  pkgconfig(gdal)
@@ -63,11 +65,8 @@ designed to handle large road networks.
 %setup -q
 unzip -o %{SOURCE1} -d ..
 mv docs/tutorial docs/examples
-# Use real shebang
-%if 0%{?fedora_version} > 28
-find . -name "*.py" -o -name "*.pyw" | xargs sed -i 's,^#!%{_bindir}/env python$,#!%{_bindir}/python2,'
-%else
-find . -name "*.py" -o -name "*.pyw" | xargs sed -i 's,^#!%{_bindir}/env python$,#!%{_bindir}/python,'
+%if 0%{?sles_version}
+find . -name "*.jar" | xargs rm
 %endif
 
 %build
@@ -77,24 +76,21 @@ make %{?_smp_mflags} man
 
 %install
 %make_install
-mkdir -p %{buildroot}%{_datadir}/sumo
-cp -a tools data %{buildroot}%{_datadir}/sumo
+mkdir -p %{buildroot}%{_prefix}/lib/sumo
+rm -rf tools/contributed/traci4j
+cp -a tools data %{buildroot}%{_prefix}/lib/sumo
 mkdir -p %{buildroot}%{_bindir}
-ln -s %{_bindir} %{buildroot}%{_datadir}/sumo/bin
-ln -s %{_datadir}/sumo/tools/assign/duaIterate.py %{buildroot}%{_bindir}/duaIterate.py
-ln -s %{_datadir}/sumo/tools/osmWebWizard.py %{buildroot}%{_bindir}/osmWebWizard.py
-ln -s %{_datadir}/sumo/tools/randomTrips.py %{buildroot}%{_bindir}/randomTrips.py
-ln -s %{_datadir}/sumo/tools/traceExporter.py %{buildroot}%{_bindir}/traceExporter.py
+ln -s ../../bin %{buildroot}%{_prefix}/lib/sumo
+ln -s ../lib/sumo/tools/assign/duaIterate.py %{buildroot}%{_bindir}/duaIterate.py
+ln -s ../lib/sumo/tools/osmWebWizard.py %{buildroot}%{_bindir}/osmWebWizard.py
+ln -s ../lib/sumo/tools/randomTrips.py %{buildroot}%{_bindir}/randomTrips.py
+ln -s ../lib/sumo/tools/traceExporter.py %{buildroot}%{_bindir}/traceExporter.py
 install -d -m 755 %{buildroot}%{_mandir}/man1
 install -p -m 644 docs/man/*.1 %{buildroot}%{_mandir}/man1
-install -d -m 755 %{buildroot}%{_sysconfdir}/profile.d
-install -p -m 644 build/package/*sh %{buildroot}%{_sysconfdir}/profile.d
-install -d -m 755 %{buildroot}%{_datadir}/applications
-install -p -m 644 build/package/%{name}.desktop %{buildroot}%{_datadir}/applications
-install -d -m 755 %{buildroot}%{_datadir}/pixmaps
-install -p -m 644 build/package/%{name}.png %{buildroot}%{_datadir}/pixmaps
+install -Dm644 %{SOURCE2} %{buildroot}%{_datadir}/applications/%{name}.desktop
+install -Dm644 %{SOURCE3} %{buildroot}%{_datadir}/pixmaps/%{name}.png
 %if 0%{?suse_version}
-install -Dm644 %{SOURCE2} %{buildroot}%{_datadir}/mime/application/%{name}.xml
+install -Dm644 %{SOURCE4} %{buildroot}%{_datadir}/mime/application/%{name}.xml
 %fdupes -s docs
 %fdupes %{buildroot}
 %endif
@@ -102,13 +98,12 @@ install -Dm644 %{SOURCE2} %{buildroot}%{_datadir}/mime/application/%{name}.xml
 %files
 %defattr(-,root,root)
 %{_bindir}/*
-%{_datadir}/sumo
-%doc AUTHORS LICENSE README.md ChangeLog CONTRIBUTING.md NOTICE.md docs/pydoc docs/userdoc docs/examples
+%{_prefix}/lib/sumo
+%doc AUTHORS COPYING README ChangeLog docs/pydoc docs/userdoc docs/examples
 %{_mandir}/man1/*
-%{_sysconfdir}/profile.d/%{name}.*sh
 %{_datadir}/applications/%{name}.desktop
 %{_datadir}/pixmaps/%{name}.png
-%if 0%{?suse_version}
+%if 0%{?suse_version} > 1200
 %{_datadir}/mime/application
 %endif
 

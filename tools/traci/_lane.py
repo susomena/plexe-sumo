@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    lane.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@author  Laura Bieker
+@author  Jakob Erdmann
+@date    2011-03-17
+@version $Id$
 
-# @file    _lane.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @author  Laura Bieker
-# @author  Jakob Erdmann
-# @date    2011-03-17
-# @version $Id$
+Python implementation of the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from .domain import Domain
 from .storage import Storage
@@ -31,11 +35,11 @@ def _readLinks(result):
         result.read("!B")                           # Type String
         approachedInternal = result.readString()
         result.read("!B")                           # Type Byte
-        hasPrio = bool(result.read("!B")[0])
+        hasPrio = bool(result.read("!B"))
         result.read("!B")                           # Type Byte
-        isOpen = bool(result.read("!B")[0])
+        isOpen = bool(result.read("!B"))
         result.read("!B")                           # Type Byte
-        hasFoe = bool(result.read("!B")[0])
+        hasFoe = bool(result.read("!B"))
         result.read("!B")                           # Type String
         state = result.readString()
         result.read("!B")                           # Type String
@@ -52,7 +56,7 @@ _RETURN_VALUE_FUNC = {tc.VAR_LENGTH: Storage.readDouble,
                       tc.VAR_WIDTH: Storage.readDouble,
                       tc.LANE_ALLOWED: Storage.readStringList,
                       tc.LANE_DISALLOWED: Storage.readStringList,
-                      tc.LANE_LINK_NUMBER: Storage.readInt,
+                      tc.LANE_LINK_NUMBER: lambda result: result.read("!B")[0],
                       tc.LANE_LINKS: _readLinks,
                       tc.VAR_SHAPE: Storage.readShape,
                       tc.LANE_EDGE_ID: Storage.readString,
@@ -71,7 +75,6 @@ _RETURN_VALUE_FUNC = {tc.VAR_LENGTH: Storage.readDouble,
                       tc.VAR_CURRENT_TRAVELTIME: Storage.readDouble,
                       tc.LAST_STEP_VEHICLE_NUMBER: Storage.readInt,
                       tc.LAST_STEP_VEHICLE_HALTING_NUMBER: Storage.readInt,
-                      tc.VAR_FOES: Storage.readStringList,
                       tc.LAST_STEP_VEHICLE_ID_LIST: Storage.readStringList}
 
 
@@ -266,22 +269,6 @@ class LaneDomain(Domain):
         Returns the ids of the vehicles for the last time step on the given lane.
         """
         return self._getUniversal(tc.LAST_STEP_VEHICLE_ID_LIST, laneID)
-
-    def getFoes(self, laneID, toLaneID):
-        """getFoes(string, string) -> list(string)
-        Returns the ids of incoming lanes that have right of way over the connection from laneID to toLaneID
-        """
-        self._connection._beginMessage(
-            tc.CMD_GET_LANE_VARIABLE, tc.VAR_FOES, laneID, 1 + 4 + len(toLaneID))
-        self._connection._packString(toLaneID)
-        return Storage.readStringList(
-            self._connection._checkResult(tc.CMD_GET_LANE_VARIABLE, tc.VAR_FOES, laneID))
-
-    def getInternalFoes(self, laneID):
-        """getFoes(string) -> list(string)
-        Returns the ids of internal lanes that are in conflict with the given internal lane id
-        """
-        return self.getFoes(laneID, "")
 
     def setAllowed(self, laneID, allowedClasses):
         """setAllowed(string, list) -> None

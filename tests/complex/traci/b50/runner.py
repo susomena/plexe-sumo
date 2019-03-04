@@ -1,30 +1,35 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Michael Behrisch
+@author  Laura Bieker
+@date    2011-07-22
+@version $Id$
 
-# @file    runner.py
-# @author  Michael Behrisch
-# @author  Laura Bieker
-# @date    2011-07-22
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 
 import os
 import subprocess
 import sys
+import time
+import shutil
 sumoHome = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 if "SUMO_HOME" in os.environ:
     sumoHome = os.environ["SUMO_HOME"]
 sys.path.append(os.path.join(sumoHome, "tools"))
 import sumolib  # noqa
-import traci  # noqa
+import traci
 PORT = 8765
 
 sumoBinary = os.environ.get(
@@ -35,8 +40,7 @@ netconvertBinary = os.environ.get(
 subprocess.call([netconvertBinary, "-n", "input_nodes.nod.xml",
                  "-e", "input_edges.edg.xml"], stdout=sys.stdout, stderr=sys.stderr)
 p = subprocess.Popen(
-    [sumoBinary, "-c", "sumo.sumocfg", "-v", "-S", "-Q", "--remote-port", str(PORT)],
-    stdout=sys.stdout, stderr=sys.stderr)
+    [sumoBinary, "-c", "sumo.sumocfg", "-v", "-S", "-Q", "--remote-port", str(PORT)], stdout=sys.stdout, stderr=sys.stderr)
 traci.init(PORT)
 traci.simulationStep(200000)
 for i in range(10):

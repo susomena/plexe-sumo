@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    TraCIServerAPI_Junction.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Laura Bieker
@@ -18,16 +10,34 @@
 ///
 // APIs for getting/setting junction values via TraCI
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
+
+#ifndef NO_TRACI
 
 #include <microsim/MSJunctionControl.h>
+#include "TraCIConstants.h"
+#include "lib/TraCI_Junction.h"
 #include "TraCIServer.h"
-#include <libsumo/Junction.h>
 #include "TraCIServerAPI_Junction.h"
 
 
@@ -37,26 +47,86 @@
 bool
 TraCIServerAPI_Junction::processGet(TraCIServer& server, tcpip::Storage& inputStorage,
                                     tcpip::Storage& outputStorage) {
-    const int variable = inputStorage.readUnsignedByte();
-    const std::string id = inputStorage.readString();
-    server.initWrapper(libsumo::RESPONSE_GET_JUNCTION_VARIABLE, variable, id);
-    try {
-        if (!libsumo::Junction::handleVariable(id, variable, &server)) {
-            switch (variable) {
-                case libsumo::VAR_SHAPE:
-                    server.writePositionVector(server.getWrapperStorage(), libsumo::Junction::getShape(id));
-                    break;
-                default:
-                    return server.writeErrorStatusCmd(libsumo::CMD_GET_JUNCTION_VARIABLE, "Get Junction Variable: unsupported variable " + toHex(variable, 2) + " specified", outputStorage);
-            }
-        }
-    } catch (libsumo::TraCIException& e) {
-        return server.writeErrorStatusCmd(libsumo::CMD_GET_JUNCTION_VARIABLE, e.what(), outputStorage);
+    // variable
+    int variable = inputStorage.readUnsignedByte();
+    std::string id = inputStorage.readString();
+    // check variable
+    if (variable != ID_LIST && variable != VAR_POSITION && variable != ID_COUNT && variable != VAR_SHAPE) {
+        return server.writeErrorStatusCmd(CMD_GET_JUNCTION_VARIABLE, "Get Junction Variable: unsupported variable " + toHex(variable, 2) + " specified", outputStorage);
     }
-    server.writeStatusCmd(libsumo::CMD_GET_JUNCTION_VARIABLE, libsumo::RTYPE_OK, "", outputStorage);
-    server.writeResponseWithLength(outputStorage, server.getWrapperStorage());
+    // begin response building
+    tcpip::Storage tempMsg;
+    //  response-code, variableID, objectID
+    tempMsg.writeUnsignedByte(RESPONSE_GET_JUNCTION_VARIABLE);
+    tempMsg.writeUnsignedByte(variable);
+    tempMsg.writeString(id);
+
+    try {
+        switch (variable) {
+            case ID_LIST:
+                tempMsg.writeUnsignedByte(TYPE_STRINGLIST);
+                tempMsg.writeStringList(TraCI_Junction::getIDList());
+                break;
+            case ID_COUNT:
+                tempMsg.writeUnsignedByte(TYPE_INTEGER);
+                tempMsg.writeInt(TraCI_Junction::getIDCount());
+                break;
+            case VAR_POSITION: {
+                tempMsg.writeUnsignedByte(POSITION_2D);
+                TraCIPosition p = TraCI_Junction::getPosition(id);
+                tempMsg.writeDouble(p.x);
+                tempMsg.writeDouble(p.y);
+                break;
+            }
+            case VAR_SHAPE: {
+                tempMsg.writeUnsignedByte(TYPE_POLYGON);
+                const TraCIPositionVector shp = TraCI_Junction::getShape(id);
+                tempMsg.writeUnsignedByte(MIN2(255, (int) shp.size()));
+                for (int iPoint = 0; iPoint < MIN2(255, (int) shp.size()); ++iPoint) {
+                    tempMsg.writeDouble(shp[iPoint].x);
+                    tempMsg.writeDouble(shp[iPoint].y);
+                }
+                break;
+            }
+            default:
+                break;
+
+        }
+    } catch (TraCIException& e) {
+        return server.writeErrorStatusCmd(CMD_GET_JUNCTION_VARIABLE, e.what(), outputStorage);
+    }
+    server.writeStatusCmd(CMD_GET_JUNCTION_VARIABLE, RTYPE_OK, "", outputStorage);
+    server.writeResponseWithLength(outputStorage, tempMsg);
+
+    return true;
+}
+
+bool
+TraCIServerAPI_Junction::getPosition(const std::string& id, Position& p) {
+    MSJunction* j = TraCI_Junction::getJunction(id);
+    if (j == 0) {
+        return false;
+    }
+    p = j->getPosition();
     return true;
 }
 
 
+NamedRTree*
+TraCIServerAPI_Junction::getTree() {
+    NamedRTree* t = new NamedRTree();
+    const std::map<std::string, MSJunction*>& junctions = MSNet::getInstance()->getJunctionControl().getMyMap();
+    for (std::map<std::string, MSJunction*>::const_iterator i = junctions.begin(); i != junctions.end(); ++i) {
+        Boundary b = (*i).second->getShape().getBoxBoundary();
+        const float cmin[2] = {(float) b.xmin(), (float) b.ymin()};
+        const float cmax[2] = {(float) b.xmax(), (float) b.ymax()};
+        t->Insert(cmin, cmax, (*i).second);
+    }
+    return t;
+}
+
+#endif
+
+
 /****************************************************************************/
+

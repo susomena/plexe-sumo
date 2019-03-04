@@ -1,35 +1,39 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Jakob Erdmann
+@date    2015-02-06
+@version $Id$
 
-# @file    runner.py
-# @author  Jakob Erdmann
-# @date    2015-02-06
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 from __future__ import print_function
 from __future__ import absolute_import
 import os
+import subprocess
 import sys
-
-SUMO_HOME = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..")
-sys.path.append(os.path.join(os.environ.get("SUMO_HOME", SUMO_HOME), "tools"))
-if len(sys.argv) > 1:
-    import libsumo as traci  # noqa
-    traci.vehicle.addFull = traci.vehicle.add
-    traci.vehicle.add = traci.vehicle.addLegacy
-else:
-    import traci  # noqa
-    traci._vehicle.VehicleDomain.addFull = traci._vehicle.VehicleDomain.add
-    traci._vehicle.VehicleDomain.add = traci._vehicle.VehicleDomain.addLegacy
+import random
+sys.path.append(os.path.join(
+    os.path.dirname(sys.argv[0]), "..", "..", "..", "..", "..", "tools"))
+import traci
 import sumolib  # noqa
+
+sumoBinary = sumolib.checkBinary('sumo')
+
+PORT = sumolib.miscutils.getFreeSocketPort()
+sumoProcess = subprocess.Popen(
+    "%s -c sumo.sumocfg --remote-port %s --fcd-output fcd.xml" % (sumoBinary, PORT), shell=True, stdout=sys.stdout)
+traci.init(PORT)
 
 
 def step():
@@ -37,8 +41,6 @@ def step():
     traci.simulationStep()
     return s
 
-
-traci.start([sumolib.checkBinary('sumo'), "-c", "sumo.sumocfg", "--fcd-output", "fcd.xml"])
 # add walking person
 traci.person.add("newPerson", "3si", -10)
 traci.person.appendWalkingStage("newPerson", ["3si", "2si"], -20)
@@ -80,9 +82,7 @@ def check(personID):
     print("examining", personID)
     print("speed", traci.person.getSpeed(personID))
     print("pos", traci.person.getPosition(personID))
-    print("pos3D", traci.person.getPosition3D(personID))
     print("angle", traci.person.getAngle(personID))
-    print("slope", traci.person.getSlope(personID))
     print("road", traci.person.getRoadID(personID))
     print("type", traci.person.getTypeID(personID))
     print("lanePos", traci.person.getLanePosition(personID))
@@ -96,7 +96,6 @@ def check(personID):
     print("edges", traci.person.getEdges(personID))
     print("vehicle", traci.person.getVehicle(personID))
 
-
 check(personID)
 traci.person.subscribe(personID)
 print(traci.person.getSubscriptionResults(personID))
@@ -106,9 +105,7 @@ for i in range(3):
 check(personID)
 try:
     check("bla")
-except traci.TraCIException as e:
-    if traci.isLibsumo():
-        print(e, file=sys.stderr)
+except traci.TraCIException:
     print("recovering from exception after asking for unknown person")
 print("step", step())
 
@@ -116,26 +113,18 @@ traci.person.removeStages("newPerson")
 traci.person.appendDrivingStage("newPerson", "1o", "B42")
 
 traci.route.add("r0", ["3si", "1o"])
-traci.vehicle.add("veh0", "r0", traci.constants.DEPARTFLAG_TRIGGERED, pos=230)
+traci.vehicle.add("veh0", "r0", traci.vehicle.DEPART_TRIGGERED, pos=230)
 traci.vehicle.setLine("veh0", "B42")
-traci.vehicle.setStop("veh0", "3si", 235, laneIndex=2, startPos=230, duration=1)
+traci.vehicle.setStop(
+    "veh0", "3si", 235, laneIndex=2, startPos=230, duration=1000)
 
 print("getIDList", traci.person.getIDList())
-print("numVehs=%s, numPersons=%s, minExpected=%s" % (
-    traci.vehicle.getIDCount(),
-    traci.person.getIDCount(),
-    traci.simulation.getMinExpectedNumber()))
-
 for i in range(10):
     print("step", step())
     print(traci.person.getSubscriptionResults(personID))
 
 print("riding in vehicle: '%s'" % traci.vehicle.getParameter("veh0", "device.person.IDList"))
-print("riding in vehicle (direct): '%s'" % traci.vehicle.getPersonIDList("veh0"))
-print("persons on edge %s at time %s: %s" % (
-    traci.person.getRoadID("newPerson"),
-    traci.simulation.getCurrentTime() / 1000.0,
-    traci.edge.getLastStepPersonIDs(traci.person.getRoadID("newPerson"))))
+print("persons on edge: '%s'" % traci.edge.getLastStepPersonIDs(traci.person.getRoadID("newPerson")))
 
 traci.person.removeStages("newPerson")
 traci.person.appendWaitingStage(
@@ -167,36 +156,11 @@ print(traci.person.getNextEdge(personID))
 # retrieve invalid stages
 try:
     print(traci.person.getStage(personID, 3))
-except traci.TraCIException as e:
-    if traci.isLibsumo():
-        print(e, file=sys.stderr)
+except traci.TraCIException:
     print("recovering from exception after asking for invalid stage index")
 try:
     print(traci.person.getStage(personID, -2))
-except traci.TraCIException as e:
-    if traci.isLibsumo():
-        print(e, file=sys.stderr)
+except traci.TraCIException:
     print("recovering from exception after asking for invalid stage index")
-
-# changing walk edges in the middle of a walk
-personTT2 = "tripTest2"
-traci.person.add(personTT2, "2fi", 10)
-traci.person.appendWalkingStage(personTT2, ["2fi"], -20)
-for i in range(5):
-    print("%s person=%s edge=%s pos=%s" % (
-        traci.simulation.getCurrentTime() / 1000,
-        personTT2,
-        traci.person.getRoadID(personTT2),
-        traci.person.getLanePosition(personTT2)))
-    step()
-traci.person.appendWalkingStage(personTT2, ["2fi", "1fi"], 10)
-traci.person.removeStage(personTT2, 0)
-print("  %s new edges edges=%s" % (personTT2, traci.person.getEdges(personTT2)))
-for i in range(5):
-    print("%s person=%s edge=%s pos=%s" % (
-        traci.simulation.getCurrentTime() / 1000,
-        personTT2,
-        traci.person.getRoadID(personTT2),
-        traci.person.getLanePosition(personTT2)))
-    step()
 traci.close()
+sumoProcess.wait()

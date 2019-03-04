@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2003-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NGNet.cpp
 /// @author  Markus Hartinger
 /// @author  Daniel Krajzewicz
@@ -17,12 +9,27 @@
 ///
 // The class storing the generated network
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2003-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <stdlib.h>
@@ -36,19 +43,16 @@
 #include <netbuild/NBNetBuilder.h>
 #include <utils/common/ToString.h>
 #include <utils/common/RandHelper.h>
-#include <utils/common/StringUtils.h>
 #include <utils/options/OptionsCont.h>
-#include <utils/distribution/Distribution_Parameterized.h>
 #include "NGNet.h"
 
 
 // ===========================================================================
 // method definitions
 // ===========================================================================
-NGNet::NGNet(NBNetBuilder& nb) :
-    myLastID(0),
-    myAlphaIDs(OptionsCont::getOptions().getBool("alphanumerical-ids")),
-    myNetBuilder(nb) {
+NGNet::NGNet(NBNetBuilder& nb)
+    : myNetBuilder(nb) {
+    myLastID = 0;
 }
 
 
@@ -75,30 +79,20 @@ NGNet::findNode(int xID, int yID) {
             return *ni;
         }
     }
-    return nullptr;
+    return 0;
 }
 
-std::string
-NGNet::alphabeticalCode(int i, int iMax) {
-    // lazy mans 26th root to determine number of characters for x-label
-    int xn = 1;
-    for (; std::pow(26, xn) < iMax; xn++) {};
-    std::string result = "";
-    for (int j = 0; j < xn; j++) {
-        result = char('A' + (i % 26)) + result;
-        i /= 26;
-    }
-    return result;
-}
 
 void
-NGNet::createChequerBoard(int numX, int numY, double spaceX, double spaceY, double attachLength) {
-
+NGNet::createChequerBoard(int numX, int numY, double spaceX, double spaceY, double attachLength, bool alphaIDs) {
     for (int ix = 0; ix < numX; ix++) {
-        const std::string nodeIDStart = (myAlphaIDs ? alphabeticalCode(ix, numX) : toString<int>(ix) + "/");
         for (int iy = 0; iy < numY; iy++) {
             // create Node
-            NGNode* node = new NGNode(nodeIDStart + toString(iy), ix, iy);
+            std::string nodeID = toString<int>(ix) + "/" + toString<int>(iy);
+            if (alphaIDs) {
+                nodeID = toString(char('A' + ix)) + toString(iy);
+            }
+            NGNode* node = new NGNode(nodeID, ix, iy);
             node->setX(ix * spaceX + attachLength);
             node->setY(iy * spaceY + attachLength);
             myNodeList.push_back(node);
@@ -168,14 +162,11 @@ NGNet::createSpiderWeb(int numRadDiv, int numCircles, double spaceRad, bool hasC
     int ir, ic;
     double angle = (double)(2 * M_PI / numRadDiv); // angle between radial divisions
     NGNode* Node;
-    for (ic = 1; ic < numCircles + 1; ic++) {
-        const std::string nodeIDStart = alphabeticalCode(ic, numCircles);
-        for (ir = 1; ir < numRadDiv + 1; ir++) {
+    for (ir = 1; ir < numRadDiv + 1; ir++) {
+        for (ic = 1; ic < numCircles + 1; ic++) {
             // create Node
-            const std::string nodeID = (myAlphaIDs ?
-                                        nodeIDStart + toString<int>(ir) :
-                                        toString<int>(ir) + "/" + toString<int>(ic));
-            Node = new NGNode(nodeID, ir, ic);
+            Node = new NGNode(
+                toString<int>(ir) + "/" + toString<int>(ic), ir, ic);
             Node->setX(radialToX((ic) * spaceRad, (ir - 1) * angle));
             Node->setY(radialToY((ic) * spaceRad, (ir - 1) * angle));
             myNodeList.push_back(Node);
@@ -193,7 +184,7 @@ NGNet::createSpiderWeb(int numRadDiv, int numCircles, double spaceRad, bool hasC
     }
     if (hasCenter) {
         // node
-        Node = new NGNode(myAlphaIDs ? "A1" : "1", 0, 0, true);
+        Node = new NGNode(getNextFreeID(), 0, 0, true);
         Node->setX(0);
         Node->setY(0);
         myNodeList.push_back(Node);
@@ -207,38 +198,20 @@ NGNet::createSpiderWeb(int numRadDiv, int numCircles, double spaceRad, bool hasC
 
 void
 NGNet::connect(NGNode* node1, NGNode* node2) {
-    std::string id1 = node1->getID() + (myAlphaIDs ? "" : "to") + node2->getID();
-    std::string id2 = node2->getID() + (myAlphaIDs ? "" : "to") + node1->getID();
+    std::string id1 = node1->getID() + "to" + node2->getID();
+    std::string id2 = node2->getID() + "to" + node1->getID();
     NGEdge* link1 = new NGEdge(id1, node1, node2);
     NGEdge* link2 = new NGEdge(id2, node2, node1);
     myEdgeList.push_back(link1);
     myEdgeList.push_back(link2);
 }
 
-Distribution_Parameterized
-NGNet::getDistribution(const std::string& option) {
-    std::string val = OptionsCont::getOptions().getString(option);
-    try {
-        return Distribution_Parameterized("peturb", 0, StringUtils::toDouble(val));
-    } catch (NumberFormatException) {
-        Distribution_Parameterized result("perturb", 0, 0);
-        result.parse(val);
-        return result;
-    }
-}
 
 void
 NGNet::toNB() const {
-    Distribution_Parameterized perturbx = getDistribution("perturb-x");
-    Distribution_Parameterized perturby = getDistribution("perturb-y");
-    Distribution_Parameterized perturbz = getDistribution("perturb-z");
     std::vector<NBNode*> nodes;
     for (NGNodeList::const_iterator i1 = myNodeList.begin(); i1 != myNodeList.end(); i1++) {
-        Position perturb(
-            perturbx.sample(),
-            perturby.sample(),
-            perturbz.sample());
-        NBNode* node = (*i1)->buildNBNode(myNetBuilder, perturb);
+        NBNode* node = (*i1)->buildNBNode(myNetBuilder);
         nodes.push_back(node);
         myNetBuilder.getNodeCont().insert(node);
     }
@@ -250,64 +223,15 @@ NGNet::toNB() const {
     double bidiProb = OptionsCont::getOptions().getFloat("rand.bidi-probability");
     for (std::vector<NBNode*>::const_iterator i = nodes.begin(); i != nodes.end(); ++i) {
         NBNode* node = *i;
-        for (NBEdge* e : node->getIncomingEdges()) {
-            if (node->getConnectionTo(e->getFromNode()) == nullptr && RandHelper::rand() <= bidiProb) {
-                NBEdge* back = new NBEdge("-" + e->getID(), node, e->getFromNode(),
-                                          "", myNetBuilder.getTypeCont().getSpeed(""),
-                                          e->getNumLanes(),
-                                          e->getPriority(),
+        EdgeVector incoming = node->getIncomingEdges();
+        for (EdgeVector::const_iterator j = incoming.begin(); j != incoming.end(); ++j) {
+            if (node->getConnectionTo((*j)->getFromNode()) == 0 && RandHelper::rand() <= bidiProb) {
+                NBEdge* back = new NBEdge("-" + (*j)->getID(), node, (*j)->getFromNode(),
+                                          "", myNetBuilder.getTypeCont().getSpeed(""), myNetBuilder.getTypeCont().getNumLanes(""),
+                                          myNetBuilder.getTypeCont().getPriority(""),
                                           myNetBuilder.getTypeCont().getWidth(""), NBEdge::UNSPECIFIED_OFFSET);
                 myNetBuilder.getEdgeCont().insert(back);
             }
-        }
-    }
-    // add splits depending on turn-lane options
-    const int turnLanes = OptionsCont::getOptions().getInt("turn-lanes");
-    const bool lefthand =  OptionsCont::getOptions().getBool("lefthand");
-    if (turnLanes > 0) {
-        const double turnLaneLength = OptionsCont::getOptions().getFloat("turn-lanes.length");
-        NBEdgeCont& ec = myNetBuilder.getEdgeCont();
-        EdgeVector allEdges;
-        for (auto it = ec.begin(); it != ec.end(); ++it) {
-            allEdges.push_back(it->second);
-        }
-        for (NBEdge* e : allEdges) {
-            if (e->getToNode()->geometryLike()) {
-                continue;
-            }
-            std::vector<NBEdgeCont::Split> splits;
-            NBEdgeCont::Split split;
-            for (int i = 0; i < e->getNumLanes() + turnLanes; ++i) {
-                split.lanes.push_back(i);
-            }
-            split.pos = MAX2(0.0, e->getLength() - turnLaneLength);
-            split.speed = e->getSpeed();
-            split.node = new NBNode(e->getID() + "." + toString(split.pos), e->getGeometry().positionAtOffset(split.pos));
-            split.idBefore = e->getID();
-            split.idAfter = split.node->getID();
-            split.offsetFactor = lefthand ? -1 : 1;
-            if (turnLaneLength <= e->getLength() / 2) {
-                split.offset = -0.5 * split.offsetFactor * turnLanes * e->getLaneWidth(0);
-                if (e->getFromNode()->geometryLike()) {
-                    // shift the reverse direction explicitly as it will not get a turn lane
-                    NBEdge* reverse = nullptr;
-                    for (NBEdge* reverseCand : e->getFromNode()->getIncomingEdges()) {
-                        if (reverseCand->getFromNode() == e->getToNode()) {
-                            reverse = reverseCand;
-                        }
-                    }
-                    if (reverse != nullptr) {
-                        PositionVector g = reverse->getGeometry();
-                        g.move2side(-split.offset);
-                        reverse->setGeometry(g);
-                    }
-                }
-            }
-            splits.push_back(split);
-            ec.processSplits(e, splits,
-                             myNetBuilder.getNodeCont(),
-                             myNetBuilder.getDistrictCont(),
-                             myNetBuilder.getTLLogicCont());
         }
     }
 }

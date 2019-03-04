@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NINavTeqHelper.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,15 +9,30 @@
 ///
 // Some parser methods shared around several formats containing NavTeq-Nets
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "NINavTeqHelper.h"
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/UtilExceptions.h>
 #include <netbuild/NBEdge.h>
@@ -37,7 +44,7 @@
 double
 NINavTeqHelper::getSpeed(const std::string& id, const std::string& speedClassS) {
     try {
-        int speedClass = StringUtils::toInt(speedClassS);
+        int speedClass = TplConvert::_2int(speedClassS.c_str());
         switch (speedClass) {
             case -1:
                 return (double) 1.0 / (double) 3.6;
@@ -61,7 +68,7 @@ NINavTeqHelper::getSpeed(const std::string& id, const std::string& speedClassS) 
                 throw ProcessError("Invalid speed code (edge '" + id + "').");
         }
     } catch (NumberFormatException&) {
-        throw ProcessError("Non-numerical value for an edge's speed type occurred (edge '" + id + "').");
+        throw ProcessError("Non-numerical value for an edge's speed type occured (edge '" + id + "').");
     }
 }
 
@@ -69,7 +76,7 @@ NINavTeqHelper::getSpeed(const std::string& id, const std::string& speedClassS) 
 int
 NINavTeqHelper::getLaneNumber(const std::string& id, const std::string& laneNoS, double speed) {
     try {
-        int nolanes = StringUtils::toInt(laneNoS);
+        int nolanes = TplConvert::_2int(laneNoS.c_str());
         if (nolanes < 0) {
             return 1;
         } else if (nolanes / 10 > 0) {
@@ -91,7 +98,7 @@ NINavTeqHelper::getLaneNumber(const std::string& id, const std::string& laneNoS,
             }
         }
     } catch (NumberFormatException&) {
-        throw ProcessError("Non-numerical value for an edge's lane number occurred (edge '" + id + "'.");
+        throw ProcessError("Non-numerical value for an edge's lane number occured (edge '" + id + "'.");
     }
 }
 

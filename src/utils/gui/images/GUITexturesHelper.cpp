@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2004-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUITexturesHelper.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -16,12 +8,27 @@
 ///
 // Global storage for textures; manages and draws them
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2004-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <fx.h>
@@ -29,7 +36,6 @@
 #include <utils/gui/globjects/GUIGlObject.h>
 #include <utils/gui/globjects/GLIncludes.h>
 #include <utils/gui/windows/GUIMainWindow.h>
-#include <utils/options/OptionsCont.h>
 #include <utils/common/MsgHandler.h>
 #include "GUITexturesHelper.h"
 
@@ -76,8 +82,9 @@ GUITexturesHelper::drawTexturedBox(int which, double size) {
 
 
 void
-GUITexturesHelper::drawTexturedBox(int which, double sizeX1, double sizeY1, double sizeX2, double sizeY2) {
-    // first check that textures are allowed
+GUITexturesHelper::drawTexturedBox(int which,
+                                   double sizeX1, double sizeY1,
+                                   double sizeX2, double sizeY2) {
     if (!myAllowTextures) {
         return;
     }
@@ -113,15 +120,12 @@ int
 GUITexturesHelper::getTextureID(const std::string& filename, const bool mirrorX) {
     if (myTextures.count(filename) == 0) {
         try {
-            // load image
             FXImage* i = MFXImageHelper::loadImage(GUIMainWindow::getInstance()->getApp(), filename);
             if (mirrorX) {
                 i->mirror(false, true);
             }
             MFXImageHelper::scalePower2(i, getMaxTextureSize());
-            // Create GL structure using texture
             GUIGlID id = add(i);
-            // delete texture after creating GL Structure
             delete i;
             myTextures[filename] = (int)id;
         } catch (InvalidArgument& e) {

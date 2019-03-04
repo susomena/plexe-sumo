@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBNodeCont.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,6 +10,17 @@
 ///
 // Container for nodes during the netbuilding process
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBNodeCont_h
 #define NBNodeCont_h
 
@@ -25,7 +28,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <map>
@@ -44,10 +51,6 @@
 class NBDistrict;
 class OptionsCont;
 class OutputDevice;
-class NBParkingCont;
-class NBPTLineCont;
-class NBPTStopCont;
-
 
 
 // ===========================================================================
@@ -59,11 +62,6 @@ class NBPTStopCont;
  */
 class NBNodeCont {
 public:
-    /// @brief Definition of a node cluster container
-    typedef std::set<NBNode*, ComparatorIdLess> NodeSet;
-    typedef std::vector<NodeSet> NodeClusters;
-    typedef std::pair<NBNode*, double> NodeAndDist;
-
     /// @brief Constructor
     NBNodeCont();
 
@@ -135,25 +133,13 @@ public:
     /** @brief add ids of nodes which shall be joined into a single node
      * @param[in] cluster The cluster to add
      */
-    void addCluster2Join(std::set<std::string> cluster, NBNode* node);
+    void addCluster2Join(std::set<std::string> cluster);
 
     /// @brief Joins loaded junction clusters (see NIXMLNodesHandler)
     int joinLoadedClusters(NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLightLogicCont& tlc);
 
     /// @brief Joins junctions that are very close together
-    int joinJunctions(double maxDist, NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLightLogicCont& tlc, NBPTStopCont& sc);
-
-    /// @brief remove geometry-like fringe nodes from cluster
-    void pruneClusterFringe(NodeSet& cluster) const;
-
-    /// @brief determine wether the cluster is not too complex for joining
-    bool feasibleCluster(const NodeSet& cluster, const NBEdgeCont& ec, const NBPTStopCont& sc, std::string& reason) const;
-
-    /// @brief try to find a joinable subset (recursively)
-    bool reduceToCircle(NodeSet& cluster, int circleSize, NodeSet startNodes, std::vector<NBNode*> cands = std::vector<NBNode*>()) const;
-
-    /// @brief find closest neighbor for building circle
-    NBEdge* shortestEdge(const NodeSet& cluster, const NodeSet& startNodes, const std::vector<NBNode*>& exclude) const;
+    int joinJunctions(double maxDist, NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLightLogicCont& tlc);
     /// @}
 
     /// @name Adapting the input
@@ -209,10 +195,7 @@ public:
      * @param[in] removeGeometryNodes Whether geometry nodes shall also be removed
      * @return The number of removed nodes
      */
-    int removeUnwishedNodes(NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLightLogicCont& tlc,
-                            NBPTStopCont& sc, NBPTLineCont& lc,
-                            NBParkingCont& pc,
-                            bool removeGeometryNodes);
+    int removeUnwishedNodes(NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLightLogicCont& tlc, bool removeGeometryNodes);
     /// @}
 
     /// @name Methods for guessing/computing traffic lights
@@ -247,11 +230,8 @@ public:
     /// divides the incoming lanes on outgoing lanes
     void computeLanes2Lanes();
 
-    /// @brief build the list of outgoing edges and lanes
+    /// build the list of outgoing edges and lanes
     void computeLogics(const NBEdgeCont& ec, OptionsCont& oc);
-
-    /// @brief compute right-of-way logic for all lane-to-lane connections
-    void computeLogics2(const NBEdgeCont& ec, OptionsCont& oc);
 
     /// @brief Returns the number of nodes stored in this container
     int size() const {
@@ -286,11 +266,10 @@ public:
      * @param[out] hasTLS Whether the new node has a traffic light
      * @param[out] tlType The type of traffic light (if any)
      */
-    void analyzeCluster(NodeSet cluster, std::string& id, Position& pos,
-                        bool& hasTLS, TrafficLightType& type, SumoXMLNodeType& nodeType);
+    void analyzeCluster(std::set<NBNode*> cluster, std::string& id, Position& pos, bool& hasTLS, TrafficLightType& type);
 
     /// @brief gets all joined clusters (see doc for myClusters2Join)
-    void registerJoinedCluster(const NodeSet& cluster);
+    void registerJoinedCluster(const std::set<NBNode*>& cluster);
 
     /// @brief gets all joined clusters (see doc for myClusters2Join)
     const std::vector<std::set<std::string> >& getJoinedClusters() const {
@@ -302,19 +281,18 @@ public:
      */
     void discardTrafficLights(NBTrafficLightLogicCont& tlc, bool geometryLike, bool guessSignals);
 
-    /* @brief discards rail signals
-     */
-    void discardRailSignals();
-
     /// @brief mark a node as being created form a split
     void markAsSplit(const NBNode* node) {
         mySplit.insert(node);
     }
 
     /// @brief remap node IDs accoring to options --numerical-ids and --reserved-ids
-    int remapIDs(bool numericaIDs, bool reservedIDs, const std::string& prefix);
+    int remapIDs(bool numericaIDs, bool reservedIDs);
 
 private:
+    /// @brief Definition of a node cluster container
+    typedef std::vector<std::set<NBNode*> > NodeClusters;
+    typedef std::pair<NBNode*, double> NodeAndDist;
 
     /// @name Helper methods for for joining nodes
     /// @{
@@ -329,7 +307,6 @@ private:
 
     /// @brief joins the given node clusters
     void joinNodeClusters(NodeClusters clusters, NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLightLogicCont& tlc);
-    void joinNodeCluster(NodeSet clusters, NBDistrictCont& dc, NBEdgeCont& ec, NBTrafficLightLogicCont& tlc, NBNode* predefined = nullptr);
 
     /// @}
 
@@ -337,16 +314,9 @@ private:
     /// @{
     /** @brief Returns whethe the given node cluster should be controlled by a tls
      * @param[in] c The node cluster
-     * @param[in] laneSpeedThreshold threshold for determining whether a node or cluster should be tls controlled
      * @return Whether this node cluster shall be controlled by a tls
      */
-    bool shouldBeTLSControlled(const NodeSet& c, double laneSpeedThreshold) const;
-
-    /// @brief check wheter the set of nodes only contains pedestrian crossings
-    bool onlyCrossings(const NodeSet& c) const; 
-
-    /// @brief check wheter the set of nodes contains traffic lights with custom id
-    bool customTLID(const NodeSet& c) const; 
+    bool shouldBeTLSControlled(const std::set<NBNode*>& c) const;
     /// @}
 
 
@@ -367,7 +337,7 @@ private:
     std::set<std::string> myJoinExclusions;
 
     /// @brief loaded sets of node ids to join (cleared after use)
-    std::vector<std::pair<std::set<std::string>, NBNode*> > myClusters2Join;
+    std::vector<std::set<std::string> > myClusters2Join;
 
     /// @brief sets of node ids which were joined
     std::vector<std::set<std::string> > myJoinedClusters;

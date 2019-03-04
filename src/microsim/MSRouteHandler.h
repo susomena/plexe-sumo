@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSRouteHandler.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // Parser and container for routes during their loading
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSRouteHandler_h
 #define MSRouteHandler_h
 
@@ -23,14 +26,18 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
-#include <utils/common/SUMOTime.h>
-#include <utils/vehicle/SUMORouteHandler.h>
 #include <microsim/pedestrians/MSPerson.h>
 #include "MSContainer.h"
 #include "MSVehicle.h"
+#include <utils/xml/SUMORouteHandler.h>
+#include <utils/common/SUMOTime.h>
 
 
 // ===========================================================================
@@ -136,17 +143,10 @@ protected:
     /// Processing of a stop
     void addStop(const SUMOSAXAttributes& attrs);
 
-    /// @brief add a routing request for a walking or intermodal person
-    void addPersonTrip(const SUMOSAXAttributes& attrs);
-
-    /// @brief add a fully specified walk
-    void addWalk(const SUMOSAXAttributes& attrs);
-
     ///@ brief parse depart- and arrival positions of a walk
     void parseWalkPositions(const SUMOSAXAttributes& attrs, const std::string& personID,
                             const MSEdge* fromEdge, const MSEdge*& toEdge,
-                            double& departPos, double& arrivalPos, MSStoppingPlace*& bs,
-                            const MSTransportable::Stage* const lastStage, bool& ok);
+                            double& departPos, double& arrivalPos, MSStoppingPlace*& bs, bool& ok);
 
 protected:
     /// @brief The current route

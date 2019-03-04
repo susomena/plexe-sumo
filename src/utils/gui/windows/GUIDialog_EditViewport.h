@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIDialog_EditViewport.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,6 +7,17 @@
 ///
 // A dialog to change the viewport
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIDialog_EditViewport_h
 #define GUIDialog_EditViewport_h
 
@@ -22,9 +25,14 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <fx.h>
+#include <utils/foxtools/FXRealSpinDial.h>
 
 // ===========================================================================
 // class declarations
@@ -95,57 +103,49 @@ public:
      * @param[in] xoff Current view's x-offset
      * @param[in] yoff Current view's y-offset
      */
-    void setValues(double zoom, double xoff, double yoff, double rotation);
+    void setValues(double zoom, double xoff, double yoff);
 
     /** @brief Sets the given values into the dialog
      * @param[in] lookFrom Current viewport's from
      * @param[in] lookAt Current viewport's at
      */
-    void setValues(const Position& lookFrom, const Position& lookAt, double rotation);
+    void setValues(const Position& lookFrom, const Position& lookAt);
 
     /** @brief Resets old values
      * @param[in] lookFrom Current viewport's from
      * @param[in] lookAt Current viewport's at
      */
-    void setOldValues(const Position& lookFrom, const Position& lookAt, double rotation);
+    void setOldValues(const Position& lookFrom, const Position& lookAt);
 
     /** @brief Returns the information whether one of the spin dialers is grabbed
-    * @return Whether the spin dialers are currently used
-    */
+     * @return Whether the spin dialers are currently used
+     */
     bool haveGrabbed() const;
 
+
 protected:
-    /// @brief FOX needs this
-    GUIDialog_EditViewport() { }
-
-    /// @brief save window position to the registry
-    void saveWindowPos();
-
-private:
     /// @brief The calling view
     GUISUMOAbstractView* myParent;
 
     /// @brief The old viewport
     Position myOldLookFrom, myOldLookAt;
-    double myOldRotation;
-
-    /// @brief load button
-    FXButton* myLoadButton;
-
-    /// @brief save button
-    FXButton* mySaveButton;
 
     /// @brief The spin dialers used to change the view
-    FXRealSpinner* myZoom, *myXOff, *myYOff, *myZOff, *myRotation;
-
-    /// @brief The spin dialers used to change the view at (osg only)
-    FXRealSpinner* myLookAtX, *myLookAtY, *myLookAtZ;
+    FXRealSpinDial* myZoom, *myXOff, *myYOff, *myZOff;
 
     /// @brief OK button
-    FXButton* myOKButton;
+    FXButton* buttonOk;
 
-    /// @brief Cancel button
-    FXButton* myCancelButton;
+#ifdef HAVE_OSG
+    /// @brief The spin dialers used to change the view at (osg only)
+    FXRealSpinDial* myLookAtX, *myLookAtY, *myLookAtZ;
+#endif
+
+
+protected:
+    /// @brief FOX needs this
+    GUIDialog_EditViewport() { }
+
 };
 
 

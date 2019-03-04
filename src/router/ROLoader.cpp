@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    ROLoader.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,12 +10,27 @@
 ///
 // Loader for networks and route imports
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <string>
@@ -40,12 +47,11 @@
 #include <utils/common/FileHelpers.h>
 #include <utils/xml/XMLSubSys.h>
 #include <utils/xml/SAXWeightsHandler.h>
-#include <utils/vehicle/SUMORouteLoader.h>
-#include <utils/vehicle/SUMORouteLoaderControl.h>
+#include <utils/xml/SUMORouteLoader.h>
+#include <utils/xml/SUMORouteLoaderControl.h>
 #include "RONet.h"
 #include "RONetHandler.h"
 #include "ROLoader.h"
-#include "ROLane.h"
 #include "ROEdge.h"
 #include "RORouteHandler.h"
 
@@ -60,7 +66,7 @@ void
 ROLoader::EdgeFloatTimeLineRetriever_EdgeTravelTime::addEdgeWeight(const std::string& id,
         double val, double beg, double end) const {
     ROEdge* e = myNet.getEdge(id);
-    if (e != nullptr) {
+    if (e != 0) {
         e->addTravelTime(val, beg, end);
     } else {
         if (id[0] != ':') {
@@ -81,7 +87,7 @@ void
 ROLoader::EdgeFloatTimeLineRetriever_EdgeWeight::addEdgeWeight(const std::string& id,
         double val, double beg, double end) const {
     ROEdge* e = myNet.getEdge(id);
-    if (e != nullptr) {
+    if (e != 0) {
         e->addEffort(val, beg, end);
     } else {
         if (id[0] != ':') {
@@ -120,8 +126,7 @@ ROLoader::loadNet(RONet& toFill, ROAbstractEdgeBuilder& eb) {
         throw ProcessError("The network file '" + file + "' is not accessible.");
     }
     PROGRESS_BEGIN_MESSAGE("Loading net");
-    RONetHandler handler(toFill, eb, !myOptions.exists("no-internal-links") || myOptions.getBool("no-internal-links"),
-                         myOptions.exists("weights.minor-penalty") ? myOptions.getFloat("weights.minor-penalty") : 0);
+    RONetHandler handler(toFill, eb);
     handler.setFileName(file);
     if (!XMLSubSys::runParser(handler, file, true)) {
         PROGRESS_FAILED_MESSAGE();
@@ -156,7 +161,7 @@ void
 ROLoader::openRoutes(RONet& net) {
     // build loader
     // load relevant elements from additional file
-    bool ok = openTypedRoutes("additional-files", net, true);
+    bool ok = openTypedRoutes("additional-files", net);
     // load sumo routes, trips, and flows
     ok &= openTypedRoutes("route-files", net);
     // check
@@ -216,30 +221,36 @@ ROLoader::processRoutes(const SUMOTime start, const SUMOTime end, const SUMOTime
 
 bool
 ROLoader::openTypedRoutes(const std::string& optionName,
-                          RONet& net, const bool readAll) {
+                          RONet& net) {
+    // check whether the current loader is known
+    //  (not all routers import all route formats)
+    if (!myOptions.exists(optionName)) {
+        return true;
+    }
     // check whether the current loader is wished
     //  and the file(s) can be used
     if (!myOptions.isUsableFileList(optionName)) {
         return !myOptions.isSet(optionName);
     }
-    for (const std::string& fileIt : myOptions.getStringVector(optionName)) {
+    bool ok = true;
+    std::vector<std::string> files = myOptions.getStringVector(optionName);
+    for (std::vector<std::string>::const_iterator fileIt = files.begin(); fileIt != files.end(); ++fileIt) {
+        // build the instance when everything's all right
         try {
-            RORouteHandler* handler = new RORouteHandler(net, fileIt, myOptions.getBool("repair"), myEmptyDestinationsAllowed, myOptions.getBool("ignore-errors"), !readAll);
-            if (readAll) {
-                if (!XMLSubSys::runParser(*handler, fileIt)) {
-                    WRITE_ERROR("Loading of " + fileIt + " failed.");
-                    return false;
-                }
-                delete handler;
-            } else {
-                myLoaders.add(new SUMORouteLoader(handler));
-            }
+            myLoaders.add(new SUMORouteLoader(new RORouteHandler(net, *fileIt, myOptions.getBool("repair"), myEmptyDestinationsAllowed, myOptions.getBool("ignore-errors"))));
         } catch (ProcessError& e) {
-            WRITE_ERROR("The loader for " + optionName + " from file '" + fileIt + "' could not be initialised (" + e.what() + ").");
-            return false;
+            std::string msg = "The loader for " + optionName + " from file '" + *fileIt + "' could not be initialised;";
+            std::string reason = e.what();
+            if (reason != "Process Error" && reason != "") {
+                msg = msg + "\n Reason: " + reason + ".";
+            } else {
+                msg = msg + "\n (unknown reason).";
+            }
+            WRITE_ERROR(msg);
+            ok = false;
         }
     }
-    return true;
+    return ok;
 }
 
 
@@ -278,8 +289,9 @@ ROLoader::loadWeights(RONet& net, const std::string& optionName,
         }
     }
     // build edge-internal time lines
-    for (const auto& i : net.getEdgeMap()) {
-        i.second->buildTimeLines(measure, boundariesOverride);
+    const std::map<std::string, ROEdge*>& edges = net.getEdgeMap();
+    for (std::map<std::string, ROEdge*>::const_iterator i = edges.begin(); i != edges.end(); ++i) {
+        (*i).second->buildTimeLines(measure, boundariesOverride);
     }
     return true;
 }

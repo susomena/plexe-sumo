@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_Wiedemann.h
 /// @author  Jakob Erdmann
 /// @author  Michael Behrisch
@@ -15,13 +7,28 @@
 ///
 // The psycho-physical model of Wiedemann
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSCFModel_Wiedemann_H
 #define MSCFModel_Wiedemann_H
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSCFModel.h"
 #include <microsim/MSLane.h>
@@ -42,9 +49,20 @@ class MSCFModel_Wiedemann : public MSCFModel {
 public:
 
     /** @brief Constructor
-     *  @param[in] vtype the type for which this model is built and also the parameter object to configure this model
+     *
+     * @param[in] security The security parameter in [0,1] (dimensionless)
+     * @param[in] estimation The estimation capability parameter in [0,1] (dimensionless)
+     * @param[in] accel The maximum acceleration
+     * @param[in] decel The maximum deceleration
+     * @param[in] emergencyDecel The maximum emergency deceleration
+     * @param[in] apparentDecel The deceleration as expected by others
+     *
+     * @note other parameters of the wiedemann model:
+     * - speed: included in MSVehicleType
      */
-    MSCFModel_Wiedemann(const MSVehicleType* vtype);
+    MSCFModel_Wiedemann(const MSVehicleType* vtype,
+                        double accel, double decel, double emergencyDecel, double apparentDecel,
+                        double security, double estimation);
 
 
     /// @brief Destructor
@@ -59,7 +77,7 @@ public:
      * @param[in] vPos The possible velocity
      * @return The velocity after applying interactions with stops and lane change model influences
      */
-    double finalizeSpeed(MSVehicle* const veh, double vPos) const;
+    double moveHelper(MSVehicle* const veh, double vPos) const;
 
 
     /** @brief Computes the vehicle's safe speed (no dawdling)
@@ -70,7 +88,7 @@ public:
      * @return EGO's safe speed
      * @see MSCFModel::ffeV
      */
-    double followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel, const MSVehicle* const pred = 0) const;
+    double followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel) const;
 
 
     /** @brief Computes the vehicle's safe speed for approaching a non-moving obstacle (no dawdling)
@@ -92,7 +110,7 @@ public:
      * @todo evaluate signature
      * @see MSCFModel::interactionGap
      */
-    double interactionGap(const MSVehicle* const, double vL) const;
+    double interactionGap(const MSVehicle* const , double vL) const;
 
 
     /** @brief Returns the model's name
@@ -136,7 +154,7 @@ private:
     /// @{
     double fullspeed(double v, double vpref, double dx, double bx) const; // also 'WUNSCH'
     double following(double sign) const; // also 'FOLGEN'
-    double approaching(double dv, double dx, double abx) const;  // also 'BREMSBX'
+    double approaching(double dv, double dx, double bx) const;  // also 'BREMSBX'
     double emergency(double dv, double dx) const; // also 'BREMSAX'
     /// @}
 
@@ -150,18 +168,22 @@ private:
     /// @brief The driver's estimation parameter // also 'ZF2'
     const double myEstimation;
 
-    /// @brief the minimum front-bumper to front-bumper distance when standing
+    /// @brief front-bumper to front-bumper distance
     const double myAX;
 
     /// @brief perception threshold modifier
     const double myCX;
 
-    /// @brief The vehicle's minimum acceleration [m/s^2] // also b_null
+    /// @brief The vehicle's minimum acceleration [m/s^2]
     const double myMinAccel;
 
     /// @brief free-flow distance in m
     static const double D_MAX;
     /// @}
+
+    /// @brief vsafe from krauss since Wiedemann is deficient at approaching
+    // standing obstacles (see MSCFModel_Krauss::_vsafe)
+    double krauss_vsafe(double gap, double predSpeed) const;
 
 private:
     /// @brief Invalidated assignment operator

@@ -52,20 +52,11 @@ write_unfinished_exit_times
 # output of person route
 with_person
 
-# output of stops
-with_stops
-
 # one vehicle with route distribution in input
 route_dist
 
 # one vehicle with route distribution which is written completely
 dua
-
-# one vehicle with a single route that is written with costs
-dua_trip
-
-# public transport and walk possible
-person_route_length
 
 # Testing error cases
 errors

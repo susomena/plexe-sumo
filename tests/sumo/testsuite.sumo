@@ -1,6 +1,3 @@
-# testing meta processing
-meta
-
 # whether specification is implemented
 spec
 
@@ -12,6 +9,9 @@ output
 
 # tests for additional structures
 extended
+
+# testing meta processing
+meta
 
 # error handling tests
 errors
@@ -29,10 +29,6 @@ junction_model
 pedestrian_model
 opposite_direction_driving
 sublane_model
-
-# Basic tests with action step length != simulation step length.
-# Note that this suite uses the ballistic update
-action_step_length
 
 # demonstration and regression tests for known bugs
 bugs

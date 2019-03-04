@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    StringUtils.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Laura Bieker
@@ -16,20 +8,33 @@
 ///
 // Some static methods for string processing
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <iostream>
 #include <cstdio>
-#include <cstring>
-#include <xercesc/util/TransService.hpp>
-#include <xercesc/util/TranscodingException.hpp>
 #include <utils/common/UtilExceptions.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/ToString.h>
 #include "StringUtils.h"
 
@@ -194,7 +199,6 @@ StringUtils::urlEncode(const std::string& toEncode, const std::string encodeWhic
     return out.str();
 }
 
-
 std::string
 StringUtils::urlDecode(const std::string& toDecode) {
     std::ostringstream out;
@@ -223,7 +227,6 @@ StringUtils::charToHex(unsigned char c) {
     return s.str();
 }
 
-
 unsigned char
 StringUtils::hexToChar(const std::string& str) {
     short c = 0;
@@ -239,146 +242,6 @@ StringUtils::hexToChar(const std::string& str) {
     }
 
     return static_cast<unsigned char>(c);
-}
-
-
-int
-StringUtils::toInt(const std::string& sData) {
-    long long int result = toLong(sData);
-    if (result > std::numeric_limits<int>::max() || result < std::numeric_limits<int>::min()) {
-        throw NumberFormatException(toString(result) + " int overflow");
-    }
-    return (int)result;
-}
-
-
-int
-StringUtils::toIntSecure(const std::string& sData, int def) {
-    if (sData.length() == 0) {
-        return def;
-    }
-    return toInt(sData);
-}
-
-
-long long int
-StringUtils::toLong(const std::string& sData) {
-    const char* const data = sData.c_str();
-    if (data == 0 || data[0] == 0) {
-        throw EmptyData();
-    }
-    char* end;
-    errno = 0;
-#ifdef _MSC_VER
-    long long int ret = _strtoi64(data, &end, 10);
-#else
-    long long int ret = strtoll(data, &end, 10);
-#endif
-    if (errno == ERANGE) {
-        errno = 0;
-        throw NumberFormatException("(long long integer range) " + sData);
-    }
-    if ((int)(end - data) != (int)strlen(data)) {
-        throw NumberFormatException("(long long integer format) " + sData);
-    }
-    return ret;
-}
-
-
-int
-StringUtils::hexToInt(const std::string& sData) {
-    if (sData.length() == 0) {
-        throw EmptyData();
-    }
-    size_t idx = 0;
-    int result;
-    try {
-        if (sData[0] == '#') { // for html color codes
-            result = std::stoi(sData.substr(1), &idx, 16);
-            idx++;
-        } else {
-            result = std::stoi(sData, &idx, 16);
-        }
-    } catch (...) {
-        throw NumberFormatException("(hex integer format) " + sData);
-    }
-    if (idx != sData.length()) {
-        throw NumberFormatException("(hex integer format) " + sData);
-    }
-    return result;
-}
-
-
-double
-StringUtils::toDouble(const std::string& sData) {
-    if (sData.size() == 0) {
-        throw EmptyData();
-    }
-    try {
-        size_t idx = 0;
-        const double result = std::stod(sData, &idx);
-        if (idx != sData.size()) {
-            throw NumberFormatException("(double format) " + sData);
-        } else {
-            return result;
-        }
-    } catch (...) {
-        // invalid_argument or out_of_range
-        throw NumberFormatException("(double) " + sData);
-    }
-}
-
-
-double
-StringUtils::toDoubleSecure(const std::string& sData, const double def) {
-    if (sData.length() == 0) {
-        return def;
-    }
-    return toDouble(sData);
-}
-
-
-bool
-StringUtils::toBool(const std::string& sData) {
-    if (sData.length() == 0) {
-        throw EmptyData();
-    }
-    std::string s = sData;
-    // Don't use std::transform(..., ::tolower) due a C4244 Warning in MSVC17
-    for (int i = 0; i < (int)s.length(); i++) {
-        s[i] = (char)::tolower((char)s[i]);
-    }
-    if (s == "1" || s == "yes" || s == "true" || s == "on" || s == "x" || s == "t") {
-        return true;
-    } else if (s == "0" || s == "no" || s == "false" || s == "off" || s == "-" || s == "f") {
-        return false;
-    } else {
-        throw BoolFormatException(s);
-    }
-}
-
-
-std::string
-StringUtils::transcode(const XMLCh* const data, int length) {
-    if (data == 0) {
-        throw EmptyData();
-    }
-    if (length == 0) {
-        return "";
-    }
-#if _XERCES_VERSION < 30100
-    char* t = XERCES_CPP_NAMESPACE::XMLString::transcode(data);
-    std::string result(t);
-    XERCES_CPP_NAMESPACE::XMLString::release(&t);
-    return result;
-#else
-    try {
-        XERCES_CPP_NAMESPACE::TranscodeToStr utf8(data, "UTF-8");
-        return reinterpret_cast<const char*>(utf8.str());
-    } catch (XERCES_CPP_NAMESPACE::TranscodingException&) {
-        return "?";
-    }
-#endif
 }
 
 

@@ -1,18 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MESegment.h
 /// @author  Daniel Krajzewicz
 /// @date    Tue, May 2005
 /// @version $Id$
 ///
 // A single mesoscopic segment (cell)
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef MESegment_h
 #define MESegment_h
@@ -21,7 +24,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <utils/common/Named.h>
@@ -121,9 +128,7 @@ public:
      *
      * @return the total number of cars on the segment
      */
-    inline int getCarNumber() const {
-        return myNumCars;
-    }
+    int getCarNumber() const;
 
     /// @brief return the number of queues
     inline int numQueues() const {
@@ -209,10 +214,10 @@ public:
      *
      * @param[in] v The vehicle to remove
      * @param[in] leaveTime The time at which the vehicle is leaving the que
-     * @param[in] reason The reason for removing to send to reminders
+     * @param[in] next The next segment for this vehicle
      * @return The next first vehicle to add to the net's que
      */
-    MEVehicle* removeCar(MEVehicle* v, SUMOTime leaveTime, const MSMoveReminder::Notification reason);
+    MEVehicle* removeCar(MEVehicle* v, SUMOTime leaveTime, MESegment* next);
 
     /** @brief Returns the link the given car will use when passing the next junction
      *
@@ -241,7 +246,7 @@ public:
      * @param[in] time the leave time
      * @todo Isn't always time == veh->getEventTime?
      */
-    void send(MEVehicle* veh, MESegment* next, SUMOTime time, const MSMoveReminder::Notification reason);
+    void send(MEVehicle* veh, MESegment* next, SUMOTime time);
 
     /** @brief Adds the vehicle to the segment, adapting its parameters
      *
@@ -289,11 +294,6 @@ public:
         return STEPS2TIME(myLastHeadway);
     }
 
-    /// @brief get the last headway time in seconds
-    inline double getEntryBlockTimeSeconds() const {
-        return STEPS2TIME(myEntryBlockTime);
-    }
-
     /// @name State saving/loading
     /// @{
 
@@ -323,7 +323,7 @@ public:
      * @todo What about throwing an IOError?
      * @todo What about throwing an error if something else fails (a vehicle can not be referenced)?
      */
-    void loadState(const std::vector<std::string>& vehIDs, MSVehicleControl& vc, const SUMOTime blockTime, const int queIdx);
+    void loadState(std::vector<std::string>& vehIDs, MSVehicleControl& vc, const SUMOTime blockTime, const int queIdx);
     /// @}
 
 
@@ -394,6 +394,14 @@ public:
     double getTLSCapacity(const MEVehicle* veh) const;
 
 private:
+    /** @brief Updates data of all detectors for a leaving vehicle
+     *
+     * @param[in] v The vehicle to update values for
+     * @param[in] currentTime The leave time of the vehicle
+     * @param[in] next The next segment on this vehicles route
+     */
+    void updateDetectorsOnLeave(MEVehicle* v, SUMOTime currentTime, MESegment* next);
+
     bool overtake();
 
     SUMOTime getTimeHeadway(const MESegment* pred, const MEVehicle* veh);
@@ -479,9 +487,6 @@ private:
 
     /// @brief The car queues. Vehicles are inserted in the front and removed in the back
     Queues myCarQues;
-
-    /// @brief The cached value for the number of cars
-    int myNumCars;
 
     /// @brief The follower edge to que index mapping for multi queue segments
     std::map<const MSEdge*, std::vector<int> > myFollowerMap;

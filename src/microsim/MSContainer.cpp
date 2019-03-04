@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSContainer.cpp
 /// @author  Melanie Weber
 /// @author  Andreas Kendziorra
@@ -15,12 +7,27 @@
 ///
 // The class for modelling container-movements
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -45,11 +52,11 @@
 /* -------------------------------------------------------------------------
  * MSContainer::MSContainerStage_Driving - methods
  * ----------------------------------------------------------------------- */
-MSContainer::MSContainerStage_Driving::MSContainerStage_Driving(const MSEdge* destination,
+MSContainer::MSContainerStage_Driving::MSContainerStage_Driving(const MSEdge& destination,
         MSStoppingPlace* toStop, const double arrivalPos, const std::vector<std::string>& lines) :
     MSTransportable::Stage_Driving(destination, toStop,
                                    SUMOVehicleParameter::interpretEdgePos(
-                                       arrivalPos, destination->getLength(), SUMO_ATTR_ARRIVALPOS, "container getting transported to " + destination->getID()),
+                                       arrivalPos, destination.getLength(), SUMO_ATTR_ARRIVALPOS, "container getting transported to " + destination.getID()),
                                    lines) {
 }
 
@@ -59,7 +66,7 @@ MSContainer::MSContainerStage_Driving::~MSContainerStage_Driving() {}
 
 void
 MSContainer::MSContainerStage_Driving::proceed(MSNet* net, MSTransportable* container, SUMOTime now, Stage* previous) {
-    if (previous->getDestinationStop() != nullptr) {
+    if (previous->getDestinationStop() != 0) {
         // the arrival stop may have an access point
         myWaitingEdge = &previous->getDestinationStop()->getLane().getEdge();
     } else {
@@ -68,12 +75,13 @@ MSContainer::MSContainerStage_Driving::proceed(MSNet* net, MSTransportable* cont
     myWaitingPos = previous->getEdgePos(now);
     myWaitingSince = now;
     SUMOVehicle* availableVehicle = net->getVehicleControl().getWaitingVehicle(myWaitingEdge, myLines, myWaitingPos, container->getID());
-    if (availableVehicle != nullptr && availableVehicle->getParameter().departProcedure == DEPART_CONTAINER_TRIGGERED && !availableVehicle->hasDeparted()) {
+    if (availableVehicle != 0 && availableVehicle->getParameter().departProcedure == DEPART_CONTAINER_TRIGGERED && !availableVehicle->hasDeparted()) {
         setVehicle(availableVehicle);
+        myWaitingEdge->removeContainer(container);
         myVehicle->addContainer(container);
         net->getInsertionControl().add(myVehicle);
         net->getVehicleControl().removeWaiting(myWaitingEdge, myVehicle);
-        net->getVehicleControl().unregisterOneWaiting(false);
+        net->getVehicleControl().unregisterOneWaitingForContainer();
     } else {
         net->getContainerControl().addWaiting(myWaitingEdge, container);
         myWaitingEdge->addContainer(container);
@@ -87,39 +95,22 @@ MSContainer::MSContainerStage_Driving::getStageDescription() const {
 }
 
 
-std::string
-MSContainer::MSContainerStage_Driving::getStageSummary() const {
-    const std::string dest = (getDestinationStop() == nullptr ?
-                              " edge '" + getDestination()->getID() + "'" :
-                              " stop '" + getDestinationStop()->getID() + "'");
-    return isWaiting4Vehicle() ?
-           "waiting for " + joinToString(myLines, ",") + " then transported to " + dest :
-           "transported to " + dest;
-}
-
-
-
 void
-MSContainer::MSContainerStage_Driving::tripInfoOutput(OutputDevice& os, const MSTransportable* const) const {
+MSContainer::MSContainerStage_Driving::tripInfoOutput(OutputDevice& os) const {
     os.openTag("transport");
     os.writeAttr("waitingTime", time2string(myDeparted - myWaitingSince));
     os.writeAttr("vehicle", myVehicleID);
     os.writeAttr("depart", time2string(myDeparted));
     os.writeAttr("arrival", time2string(myArrived));
     os.writeAttr("arrivalPos", toString(myArrivalPos));
-    os.writeAttr("duration", myArrived > 0 ? time2string(myArrived - myDeparted) : "-1");
-    os.writeAttr("routeLength", myVehicleDistance);
     os.closeTag();
 }
 
 
 void
-MSContainer::MSContainerStage_Driving::routeOutput(OutputDevice& os, const bool withRouteLength) const {
-    os.openTag("transport").writeAttr(SUMO_ATTR_FROM, getFromEdge()->getID()).writeAttr(SUMO_ATTR_TO, getDestination()->getID());
+MSContainer::MSContainerStage_Driving::routeOutput(OutputDevice& os) const {
+    os.openTag("transport").writeAttr(SUMO_ATTR_FROM, getFromEdge()->getID()).writeAttr(SUMO_ATTR_TO, getDestination().getID());
     os.writeAttr(SUMO_ATTR_LINES, myLines).closeTag();
-    if (withRouteLength) {
-        os.writeAttr("routeLength", myVehicleDistance);
-    }
 }
 
 
@@ -131,9 +122,9 @@ MSContainer::MSContainerStage_Tranship::MSContainerStage_Tranship(const std::vec
         MSStoppingPlace* toStop,
         double speed,
         double departPos, double arrivalPos) :
-    MSTransportable::Stage(route.back(), toStop, SUMOVehicleParameter::interpretEdgePos(
+    MSTransportable::Stage(*route.back(), toStop, SUMOVehicleParameter::interpretEdgePos(
                                arrivalPos, route.back()->getLength(), SUMO_ATTR_ARRIVALPOS, "container getting transhipped to " + route.back()->getID()), MOVING_WITHOUT_VEHICLE), myRoute(route),
-    mySpeed(speed), myContainerState(nullptr), myCurrentInternalEdge(nullptr) {
+    mySpeed(speed), myContainerState(0), myCurrentInternalEdge(0) {
     myDepartPos = SUMOVehicleParameter::interpretEdgePos(
                       departPos, myRoute.front()->getLength(), SUMO_ATTR_DEPARTPOS, "container getting transhipped from " + myRoute.front()->getID());
 }
@@ -143,6 +134,7 @@ MSContainer::MSContainerStage_Tranship::~MSContainerStage_Tranship() {
 
 void
 MSContainer::MSContainerStage_Tranship::proceed(MSNet* /* net */, MSTransportable* container, SUMOTime now, Stage* previous) {
+    previous->getEdge()->removeContainer(container);
     myDeparted = now;
     myRouteStep = myRoute.end() - 1;   //define that the container is already on its destination edge
     myDepartPos = previous->getEdgePos(now);
@@ -152,7 +144,7 @@ MSContainer::MSContainerStage_Tranship::proceed(MSNet* /* net */, MSTransportabl
 
 const MSEdge*
 MSContainer::MSContainerStage_Tranship::getEdge() const {
-    if (myCurrentInternalEdge != nullptr) {
+    if (myCurrentInternalEdge != 0) {
         return myCurrentInternalEdge;
     } else {
         return *myRouteStep;
@@ -202,29 +194,19 @@ MSContainer::MSContainerStage_Tranship::getEdges() const {
 
 
 void
-MSContainer::MSContainerStage_Tranship::tripInfoOutput(OutputDevice& os, const MSTransportable* const) const {
-    const SUMOTime duration = myArrived - myDeparted;
-    // no timeloss is possible
-    const double distance = mySpeed * STEPS2TIME(duration);
+MSContainer::MSContainerStage_Tranship::tripInfoOutput(OutputDevice& os) const {
     os.openTag("tranship");
     os.writeAttr("depart", time2string(myDeparted));
-    os.writeAttr("departPos", myDepartPos);
     os.writeAttr("arrival", time2string(myArrived));
-    os.writeAttr("arrivalPos", myArrivalPos);
-    os.writeAttr("duration", time2string(duration));
-    os.writeAttr("routeLength", distance);
-    os.writeAttr("maxSpeed", mySpeed);
+    os.writeAttr("arrivalPos", toString(myArrivalPos));
     os.closeTag();
 }
 
 
 void
-MSContainer::MSContainerStage_Tranship::routeOutput(OutputDevice& os, const bool withRouteLength) const {
+MSContainer::MSContainerStage_Tranship::routeOutput(OutputDevice& os) const {
     os.openTag("tranship").writeAttr(SUMO_ATTR_EDGES, myRoute);
     os.writeAttr(SUMO_ATTR_SPEED, mySpeed);
-    if (withRouteLength) {
-        os.writeAttr("routeLength", mySpeed * (myArrived - myDeparted));
-    }
     os.closeTag();
 }
 
@@ -246,7 +228,7 @@ bool
 MSContainer::MSContainerStage_Tranship::moveToNextEdge(MSTransportable* container, SUMOTime currentTime, MSEdge* nextInternal) {
     ((MSEdge*)getEdge())->removeContainer(container);
     if (myRouteStep == myRoute.end() - 1) {
-        if (myDestinationStop != nullptr) {
+        if (myDestinationStop != 0) {
             myDestinationStop->addTransportable(container);    //jakob
         }
         if (!container->proceed(MSNet::getInstance(), currentTime)) {
@@ -254,23 +236,15 @@ MSContainer::MSContainerStage_Tranship::moveToNextEdge(MSTransportable* containe
         }
         return true;
     } else {
-        if (nextInternal == nullptr) {
+        if (nextInternal == 0) {
             ++myRouteStep;
-            myCurrentInternalEdge = nullptr;
+            myCurrentInternalEdge = 0;
         } else {
             myCurrentInternalEdge = nextInternal;
         }
         ((MSEdge*) getEdge())->addContainer(container);
         return false;
     }
-}
-
-std::string
-MSContainer::MSContainerStage_Tranship::getStageSummary() const {
-    const std::string dest = (getDestinationStop() == nullptr ?
-                              " edge '" + getDestination()->getID() + "'" :
-                              " stop '" + getDestinationStop()->getID() + "'");
-    return "transhipped to " + dest;
 }
 
 /* -------------------------------------------------------------------------
@@ -288,14 +262,13 @@ MSContainer::~MSContainer() {
 bool
 MSContainer::proceed(MSNet* net, SUMOTime time) {
     Stage* prior = *myStep;
-    prior->setArrived(net, this, time);
-    // must be done before increasing myStep to avoid invalid state for rendering
-    prior->getEdge()->removeContainer(this);
+    prior->setArrived(time);
     myStep++;
     if (myStep != myPlan->end()) {
         (*myStep)->proceed(net, this, time, prior);
         return true;
     } else {
+        prior->getEdge()->removeContainer(this);
         return false;
     }
 }
@@ -305,24 +278,23 @@ void
 MSContainer::tripInfoOutput(OutputDevice& os) const {
     os.openTag("containerinfo").writeAttr("id", getID()).writeAttr("depart", time2string(getDesiredDepart()));
     for (MSTransportablePlan::const_iterator i = myPlan->begin(); i != myPlan->end(); ++i) {
-        (*i)->tripInfoOutput(os, this);
+        (*i)->tripInfoOutput(os);
     }
     os.closeTag();
 }
 
 
 void
-MSContainer::routeOutput(OutputDevice& os, const bool withRouteLength) const {
+MSContainer::routeOutput(OutputDevice& os) const {
     os.openTag(SUMO_TAG_CONTAINER).writeAttr(SUMO_ATTR_ID, getID()).writeAttr(SUMO_ATTR_DEPART, time2string(getDesiredDepart()));
     if (myStep == myPlan->end()) {
         os.writeAttr("arrival", time2string(MSNet::getInstance()->getCurrentTimeStep()));
     }
     for (MSTransportablePlan::const_iterator i = myPlan->begin(); i != myPlan->end(); ++i) {
-        (*i)->routeOutput(os, withRouteLength);
+        (*i)->routeOutput(os);
     }
     os.closeTag();
     os.lf();
 }
-
 
 /****************************************************************************/

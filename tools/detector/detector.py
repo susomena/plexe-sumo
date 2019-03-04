@@ -1,21 +1,24 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    detector.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2007-06-28
+@version $Id$
 
-# @file    detector.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2007-06-28
-# @version $Id$
+<documentation missing>
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2007-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
-import os
 import sys
 from collections import defaultdict
 from xml.sax import make_parser, handler
@@ -23,128 +26,31 @@ from xml.sax import make_parser, handler
 MAX_POS_DEVIATION = 10
 
 
-class LaneMap:
-    def get(self, key, default):
-        return key[0:-2]
-
-
-def relError(actual, expected):
-    if expected == 0:
-        if actual == 0:
-            return 0
-        else:
-            return 1
-    else:
-        return (actual - expected) / expected
-
-
-def parseFlowFile(flowFile, detCol="Detector", timeCol="Time", flowCol="qPKW", speedCol="vPKW", begin=None, end=None):
-    detIdx = -1
-    flowIdx = -1
-    speedIdx = -1
-    timeIdx = -1
-    with open(flowFile) as f:
-        for l in f:
-            if ';' not in l:
-                continue
-            flowDef = [e.strip() for e in l.split(';')]
-            if detIdx == -1 and detCol in flowDef:
-                # init columns
-                detIdx = flowDef.index(detCol)
-                if flowCol in flowDef:
-                    flowIdx = flowDef.index(flowCol)
-                if speedCol in flowDef:
-                    speedIdx = flowDef.index(speedCol)
-                if timeCol in flowDef:
-                    timeIdx = flowDef.index(timeCol)
-            elif flowIdx != -1:
-                # columns are initialized
-                if timeIdx == -1 or begin is None:
-                    curTime = None
-                    timeIsValid = True
-                else:
-                    curTime = float(flowDef[timeIdx])
-                    timeIsValid = (end is None and curTime == begin) or (
-                        curTime >= begin and curTime < end)
-                if timeIsValid:
-                    speed = float(flowDef[speedIdx]) if speedIdx != -1 else None
-                    yield (flowDef[detIdx], curTime, float(flowDef[flowIdx]), speed)
-
-
 class DetectorGroupData:
 
-    def __init__(self, pos, isValid, id=None, detType=None):
+    def __init__(self, pos, isValid, id=None):
         self.ids = []
         self.pos = pos
         self.isValid = isValid
         self.totalFlow = 0
         self.avgSpeed = 0
         self.entryCount = 0
-        self.type = detType
         if id is not None:
             self.ids.append(id)
-        self.begin = 0
-        self.lastTime = None
-        self.interval = None
-        self.timeline = []
 
     def addDetFlow(self, flow, speed):
         oldFlow = self.totalFlow
         self.totalFlow += flow
-        if flow > 0 and speed is not None:
+        count = self.entryCount
+        if flow > 0:
             self.avgSpeed = (
                 self.avgSpeed * oldFlow + speed * flow) / self.totalFlow
         self.entryCount += 1
 
-    def addDetFlowTime(self, time, flow, speed):
-        if self.interval is None:
-            raise RuntimeError("DetectorGroupData interval not initialized")
-        time -= self.begin
-        index = int(time / self.interval)
-        if index > len(self.timeline):
-            if len(self.timeline) == 0:
-                # init
-                self.timeline = [[None, None] for i in range(index)]
-                self.timeline.append([0, 0])
-            else:
-                sys.stderr.write(("Gap in data for group=%s. Or data interval is higher than aggregation interval " +
-                                  "(i=%s, time=%s, begin=%s, lastTime=%s)\n") % (
-                    self.ids, self.interval, time, self.begin, len(self.timeline) * self.interval))
-                while len(self.timeline) < index:
-                    self.timeline.append([None, None])
-                self.timeline.append([0, 0])
-        if index == len(self.timeline):
-            # new entry
-            if time % self.interval != 0 and time > self.interval:
-                sys.stderr.write(("Aggregation interval is not a multiple of data interval for group=%s (i=%s " +
-                                  "time=%s begin=%s)\n") % (
-                    self.ids, self.interval, time, self.begin))
-            self.timeline.append([0, 0])
-        oldFlow, oldSpeed = self.timeline[index]
-        newFlow = oldFlow + flow
-        if flow > 0 and speed is not None:
-            newSpeed = (oldSpeed * oldFlow + speed * flow) / newFlow
-        else:
-            newSpeed = oldSpeed
-        self.timeline[index] = [newFlow, newSpeed]
-        self.entryCount += 1
-
-    def clearFlow(self, begin, interval):
+    def clearFlow(self):
         self.totalFlow = 0
         self.avgSpeed = 0
         self.entryCount = 0
-        self.begin = begin
-        self.lastTime = None
-        self.interval = interval
-        self.timeline = []
-
-    def getName(self, longName, firstName, sep='|'):
-        if firstName:
-            return self.ids[0]
-        name = os.path.commonprefix(self.ids)
-        if name == "" or longName:
-            name = sep.join(sorted(self.ids))
-        return name
 
 
 class DetectorReader(handler.ContentHandler):
@@ -160,12 +66,10 @@ class DetectorReader(handler.ContentHandler):
             parser.setContentHandler(self)
             parser.parse(detFile)
 
-    def addDetector(self, id, pos, edge, detType):
+    def addDetector(self, id, pos, edge):
         if id in self._det2edge:
             print("Warning! Detector %s already known." % id, file=sys.stderr)
             return
-        if edge is None:
-            raise RuntimeError("Detector '%s' has no edge" % id)
         if self._currentGroup:
             self._currentGroup.ids.append(id)
         else:
@@ -177,7 +81,7 @@ class DetectorReader(handler.ContentHandler):
                     break
             if not haveGroup:
                 self._edge2DetData[edge].append(
-                    DetectorGroupData(pos, True, id, detType))
+                    DetectorGroupData(pos, True, id))
         self._det2edge[id] = edge
 
     def getEdgeDetGroups(self, edge):
@@ -185,9 +89,8 @@ class DetectorReader(handler.ContentHandler):
 
     def startElement(self, name, attrs):
         if name == 'detectorDefinition' or name == 'e1Detector':
-            detType = attrs['type'] if 'type' in attrs else None
             self.addDetector(attrs['id'], float(attrs['pos']),
-                             self._laneMap.get(attrs['lane'], self._currentEdge), detType)
+                             self._laneMap.get(attrs['lane'], self._currentEdge))
         elif name == 'group':
             self._currentGroup = DetectorGroupData(float(attrs['pos']),
                                                    attrs.get('valid', "1") == "1")
@@ -199,50 +102,60 @@ class DetectorReader(handler.ContentHandler):
         if name == 'group':
             self._currentGroup = None
 
-    def getGroup(self, det):
+    def addFlow(self, det, flow, speed=0.0):
         if det in self._det2edge:
             edge = self._det2edge[det]
             for group in self._edge2DetData[edge]:
                 if det in group.ids:
-                    return group
-        return None
+                    group.addDetFlow(flow, speed)
+                    break
 
-    def addFlow(self, det, flow, speed=0.0):
-        group = self.getGroup(det)
-        if group is not None:
-            group.addDetFlow(flow, speed)
-
-    def clearFlows(self, begin=0, interval=None):
-        for groupList in self._edge2DetData.values():
+    def clearFlows(self):
+        for groupList in self._edge2DetData.itervalues():
             for group in groupList:
-                group.clearFlow(begin, interval)
+                group.clearFlow()
 
     def readFlows(self, flowFile, det="Detector", flow="qPKW", speed=None, time=None, timeVal=None, timeMax=None):
-        values = parseFlowFile(
-            flowFile,
-            detCol=det, timeCol=time, flowCol=flow,
-            speedCol=speed, begin=timeVal, end=timeMax)
+        detIdx = -1
+        flowIdx = -1
+        speedIdx = -1
+        timeIdx = -1
         hadFlow = False
-        for det, time, flow, speed in values:
-            hadFlow = True
-            self.addFlow(det, flow, speed)
-        return hadFlow
-
-    def readFlowsTimeline(self, flowFile, interval, **args):
-        values = parseFlowFile(flowFile, **args)
-        hadFlow = False
-        for det, time, flow, speed in values:
-            hadFlow = True
-            group = self.getGroup(det)
-            if group is not None:
-                group.addDetFlowTime(time, flow, speed)
+        with open(flowFile) as f:
+            for l in f:
+                if ';' not in l:
+                    continue
+                flowDef = [e.strip() for e in l.split(';')]
+                if detIdx == -1 and det in flowDef:
+                    detIdx = flowDef.index(det)
+                    if flow in flowDef:
+                        flowIdx = flowDef.index(flow)
+                    if speed in flowDef:
+                        speedIdx = flowDef.index(speed)
+                    if time in flowDef:
+                        timeIdx = flowDef.index(time)
+                elif flowIdx != -1:
+                    if timeIdx == -1 or timeVal is None:
+                        timeIsValid = True
+                    else:
+                        curTime = float(flowDef[timeIdx])
+                        timeIsValid = (timeMax is None and curTime == timeVal) or (
+                            curTime >= timeVal and curTime < timeMax)
+                    if timeIsValid:
+                        hadFlow = True
+                        if speedIdx != -1:
+                            self.addFlow(
+                                flowDef[detIdx], float(flowDef[flowIdx]), float(flowDef[speedIdx]))
+                        else:
+                            self.addFlow(
+                                flowDef[detIdx], float(flowDef[flowIdx]))
         return hadFlow
 
     def findTimes(self, flowFile, tMin, tMax, det="Detector", time="Time"):
         timeIdx = 1
         with open(flowFile) as f:
             for l in f:
-                if ';' not in l:
+                if not ';' in l:
                     continue
                 flowDef = [e.strip() for e in l.split(';')]
                 if det in flowDef:
@@ -255,9 +168,3 @@ class DetectorReader(handler.ContentHandler):
                     if tMax is None or tMax < curTime:
                         tMax = curTime
         return tMin, tMax
-
-    def getGroups(self):
-        for edge, detData in self._edge2DetData.items():
-            for group in detData:
-                if group.isValid:
-                    yield edge, group

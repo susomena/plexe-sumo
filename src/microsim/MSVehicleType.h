@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSVehicleType.h
 /// @author  Christian Roessel
 /// @author  Daniel Krajzewicz
@@ -17,6 +9,17 @@
 ///
 // The car-following model and parameter
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSVehicleType_h
 #define MSVehicleType_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <map>
@@ -81,7 +88,7 @@ public:
      * @return Whether the given parameter was set
      */
     bool wasSet(int what) const {
-        return (myParameter.parametersSet & what) != 0;
+        return (myParameter.setParameter & what) != 0;
     }
 
 
@@ -212,22 +219,6 @@ public:
     }
 
 
-    /** @brief Returns this type's default action step length
-     * @return The default action step length of this type (in ms.)
-     */
-    SUMOTime getActionStepLength() const {
-        return myParameter.actionStepLength;
-    }
-
-
-    /** @brief Returns this type's default action step length in seconds
-     * @return The default action step length of this type (in s.)
-     */
-    double getActionStepLengthSecs() const {
-        return myCachedActionStepLengthSecs;
-    }
-
-
     /** @brief Returns this type's impatience
      * @return The impatience of this type
      */
@@ -327,36 +318,6 @@ public:
     /// @name Setter methods
     /// @{
 
-    /** @brief Set a new value for this type's acceleration.
-     * @param[in] accel The new acceleration of this type
-     */
-    void setAccel(double accel);
-
-    /** @brief Set a new value for this type's deceleration.
-     * @param[in] decel The new deceleration of this type
-     */
-    void setDecel(double decel);
-
-    /** @brief Set a new value for this type's emergency deceleration.
-     * @param[in] emergencyDecel The new emergency deceleration of this type
-     */
-    void setEmergencyDecel(double emergencyDecel);
-
-    /** @brief Set a new value for this type's apparent deceleration.
-     * @param[in] apparentDecel The new apparent deceleration of this type
-     */
-    void setApparentDecel(double apparentDecel);
-
-    /** @brief Set a new value for this type's imperfection.
-     * @param[in] imperfection The new imperfection of this type
-     */
-    void setImperfection(double imperfection);
-
-    /** @brief Set a new value for this type's headway.
-     * @param[in] tau The new headway of this type
-     */
-    void setTau(double tau);
-
     /** @brief Set a new value for this type's length
      *
      * If the given value<0 then the one from the original type will
@@ -450,22 +411,6 @@ public:
     void setSpeedDeviation(const double& dev);
 
 
-    /** @brief Set a new value for this type's action step length
-     *
-     * @param[in] actionStepLength The new action step length of this type (in ms.)
-     * @param[in] resetActionOffset If True (default), the next action point is
-     *            scheduled immediately. if If resetActionOffset == False, the interval
-     *            between the last and the next action point is updated to match the given
-     *            value for all vehicles of this type, or if the latter is smaller than the
-     *            time since the last action point, the next action follows immediately.
-     *
-     * @note: Singular vtypes do not update the state of the corresponding vehicle, because
-     *        the global lookup would be too expensive. The caller is responsible to
-     *        perform the actionOffsetReset operation at caller context, where the vehicle is known.
-     */
-    void setActionStepLength(const SUMOTime actionStepLength, bool resetActionOffset);
-
-
     /** @brief Set a new value for this type's emission class
      * @param[in] eclass The new emission class of this type
      */
@@ -492,6 +437,7 @@ public:
      * @param[in] shape The new shape of this type
      */
     void setShape(SUMOVehicleShape shape);
+
 
     /** @brief Set a new value for this type's impatience
      * @param[in] impatience The new impatience of this type
@@ -549,27 +495,10 @@ public:
         return myParameter;
     }
 
-    /** @brief Checks whether vehicle type parameters may be problematic
-     *         (Currently, only the value for the action step length is
-     *         compared with the value for the desired headway time.)
-     */
-    void check();
-
-protected:
-
-    // init further param values
-    void initParameters(); 
 
 private:
     /// @brief the parameter container
     SUMOVTypeParameter myParameter;
-
-    /// @brief the vtypes actionsStepLength in seconds (cached because needed very often)
-    double myCachedActionStepLengthSecs;
-
-    /// @brief Indicator whether the user was already warned once about an action step length
-    ///        larger than the desired time headway.
-    bool myWarnedActionStepLengthTauOnce;
 
     /// @brief the running index
     const int myIndex;

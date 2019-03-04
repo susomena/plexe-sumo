@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIE3Collector.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // The gui-version of a MSE3Collector
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "GUIE3Collector.h"
 #include "GUIEdge.h"
@@ -35,14 +42,12 @@
 // ===========================================================================
 // method definitions
 // ===========================================================================
-
-// -------------------------------------------------------------------------
-// GUIE3Collector::MyWrapper-methods
-// -------------------------------------------------------------------------
-
-GUIE3Collector::MyWrapper::MyWrapper(GUIE3Collector& detector) :
-    GUIDetectorWrapper(GLO_E3DETECTOR, detector.getID()),
-    myDetector(detector) {
+/* -------------------------------------------------------------------------
+ * GUIE3Collector::MyWrapper-methods
+ * ----------------------------------------------------------------------- */
+GUIE3Collector::MyWrapper::MyWrapper(GUIE3Collector& detector)
+    : GUIDetectorWrapper("E3 detector", detector.getID()),
+      myDetector(detector) {
     const CrossSectionVector& entries = detector.getEntries();
     const CrossSectionVector& exits = detector.getExits();
     CrossSectionVectorConstIt i;
@@ -94,15 +99,15 @@ void
 GUIE3Collector::MyWrapper::drawGL(const GUIVisualizationSettings& s) const {
     glPushName(getGlID());
     glPushMatrix();
-    glTranslated(0, 0, GLO_JUNCTION + 0.4); // do not draw on top of linkRules
+    glTranslated(0, 0, getType());
     typedef std::vector<SingleCrossingDefinition> CrossingDefinitions;
     CrossingDefinitions::const_iterator i;
-    GLHelper::setColor(s.SUMO_color_E3Entry);
-    const double exaggeration = s.addSize.getExaggeration(s, this);
+    glColor3d(0, .8, 0);
+    const double exaggeration = s.addSize.getExaggeration(s);
     for (i = myEntryDefinitions.begin(); i != myEntryDefinitions.end(); ++i) {
         drawSingleCrossing((*i).myFGPosition, (*i).myFGRotation, exaggeration);
     }
-    GLHelper::setColor(s.SUMO_color_E3Exit);
+    glColor3d(.8, 0, 0);
     for (i = myExitDefinitions.begin(); i != myExitDefinitions.end(); ++i) {
         drawSingleCrossing((*i).myFGPosition, (*i).myFGRotation, exaggeration);
     }
@@ -161,8 +166,8 @@ GUIE3Collector::MyWrapper::getDetector() {
 GUIE3Collector::GUIE3Collector(const std::string& id,
                                const CrossSectionVector& entries,  const CrossSectionVector& exits,
                                double haltingSpeedThreshold,
-                               SUMOTime haltingTimeThreshold, const std::string& vTypes, bool openEntry)
-    : MSE3Collector(id, entries,  exits, haltingSpeedThreshold, haltingTimeThreshold, vTypes, openEntry) {}
+                               SUMOTime haltingTimeThreshold, const std::string& vTypes)
+    : MSE3Collector(id, entries,  exits, haltingSpeedThreshold, haltingTimeThreshold, vTypes) {}
 
 
 GUIE3Collector::~GUIE3Collector() {}

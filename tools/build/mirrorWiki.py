@@ -1,19 +1,11 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    mirrorWiki.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2011-10-20
-# @version $Id$
-
 """
+@file    mirrorWiki.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2011-10-20
+@version $Id$
+
 Mirrors wiki-documentation.
 
 Determines what to mirror, first: if a command line argument is given,
@@ -29,6 +21,15 @@ The page is saved into MIRROR_FOLDER/<PAGE_PATH>.
 
 After mirroring all pages, the images are downloaded and stored into
 MIRROR_FOLDER/images.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -88,7 +89,6 @@ def getImages(page):
             b = page.find(t, b + 1)
     return images
 
-
 if __name__ == "__main__":
     optParser = OptionParser()
     optParser.add_option(
@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
     try:
         os.makedirs(os.path.join(options.output, "images"))
-    except Exception:
+    except:
         pass
     images = set()
     for name in getAllPages(args):
@@ -107,7 +107,7 @@ if __name__ == "__main__":
             try:
                 os.makedirs(
                     os.path.join(options.output, name[:name.rfind("/")]))
-            except Exception:
+            except:
                 pass
             images.update(getImages(c))
         name = name + ".txt"

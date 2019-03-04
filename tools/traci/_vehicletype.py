@@ -1,24 +1,27 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    vehicletype.py
+@author  Michael Behrisch
+@author  Lena Kalleske
+@date    2008-10-09
+@version $Id$
 
-# @file    _vehicletype.py
-# @author  Michael Behrisch
-# @author  Lena Kalleske
-# @date    2008-10-09
-# @version $Id$
+Python implementation of the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from .domain import Domain
 from .storage import Storage
 import struct
 from . import constants as tc
-from . import exceptions
 
 _RETURN_VALUE_FUNC = {tc.VAR_LENGTH: Storage.readDouble,
                       tc.VAR_MAXSPEED: Storage.readDouble,
@@ -28,7 +31,6 @@ _RETURN_VALUE_FUNC = {tc.VAR_LENGTH: Storage.readDouble,
                       tc.VAR_DECEL: Storage.readDouble,
                       tc.VAR_EMERGENCY_DECEL: Storage.readDouble,
                       tc.VAR_APPARENT_DECEL: Storage.readDouble,
-                      tc.VAR_ACTIONSTEPLENGTH: Storage.readDouble,
                       tc.VAR_IMPERFECTION: Storage.readDouble,
                       tc.VAR_TAU: Storage.readDouble,
                       tc.VAR_VEHICLECLASS: Storage.readString,
@@ -94,25 +96,18 @@ class VehicleTypeDomain(Domain):
         return self._getUniversal(tc.VAR_DECEL, typeID)
 
     def getEmergencyDecel(self, typeID):
-        """getEmergencyDecel(string) -> double
+        """getDecel(string) -> double
 
         Returns the maximal physically possible deceleration in m/s^2 of vehicles of this type.
         """
         return self._getUniversal(tc.VAR_EMERGENCY_DECEL, typeID)
 
     def getApparentDecel(self, typeID):
-        """getApparentDecel(string) -> double
+        """getDecel(string) -> double
 
         Returns the apparent deceleration in m/s^2 of vehicles of this type.
         """
         return self._getUniversal(tc.VAR_APPARENT_DECEL, typeID)
-
-    def getActionStepLength(self, typeID):
-        """getActionStepLength(string) -> double
-
-        Returns the action step length for vehicles of this type.
-        """
-        return self._getUniversal(tc.VAR_ACTIONSTEPLENGTH, typeID)
 
     def getImperfection(self, typeID):
         """getImperfection(string) -> double
@@ -292,7 +287,7 @@ class VehicleTypeDomain(Domain):
         Sets the preferred lateral alignment of this type.
         """
         self._connection._sendStringCmd(
-            tc.CMD_SET_VEHICLETYPE_VARIABLE, tc.VAR_LATALIGNMENT, typeID, latAlignment)
+            tc.CMD_SET_VEHICLETYPE_VARIABLE, tc.VAR_LATALIGNMENT, typeID, clazz)
 
     def setShapeClass(self, typeID, clazz):
         """setShapeClass(string, string) -> None
@@ -326,23 +321,6 @@ class VehicleTypeDomain(Domain):
         self._connection._sendDoubleCmd(
             tc.CMD_SET_VEHICLETYPE_VARIABLE, tc.VAR_EMERGENCY_DECEL, typeID, decel)
 
-    def setActionStepLength(self, typeID, actionStepLength, resetActionOffset=True):
-        """setActionStepLength(string, double, bool) -> None
-
-        Sets the action step length for vehicles of this type. If resetActionOffset == True (default), the
-        next action point is scheduled immediately for all vehicles of the type.
-        If resetActionOffset == False, the interval between the last and the next action point is
-        updated to match the given value for all vehicles of the type, or if the latter is smaller
-        than the time since the last action point, the next action follows immediately.
-        """
-        if actionStepLength < 0:
-            raise exceptions.TraCIException("Invalid value for actionStepLength. Given value must be non-negative.")
-        # Use negative value to indicate resetActionOffset == False
-        if not resetActionOffset:
-            actionStepLength *= -1
-        self._connection._sendDoubleCmd(
-            tc.CMD_SET_VEHICLETYPE_VARIABLE, tc.VAR_ACTIONSTEPLENGTH, typeID, actionStepLength)
-
     def setApparentDecel(self, typeID, decel):
         """setDecel(string, double) -> None
 
@@ -362,8 +340,7 @@ class VehicleTypeDomain(Domain):
     def setTau(self, typeID, tau):
         """setTau(string, double) -> None
 
-        Sets the driver's tau-parameter (reaction time or anticipation time depending on the car-following model) in s
-        for vehicles of this type.
+        Sets the driver's reaction time in s for vehicles of this type.
         """
         self._connection._sendDoubleCmd(
             tc.CMD_SET_VEHICLETYPE_VARIABLE, tc.VAR_TAU, typeID, tau)
@@ -375,8 +352,8 @@ class VehicleTypeDomain(Domain):
         """
         self._connection._beginMessage(
             tc.CMD_SET_VEHICLETYPE_VARIABLE, tc.VAR_COLOR, typeID, 1 + 1 + 1 + 1 + 1)
-        self._connection._string += struct.pack("!BBBBB", tc.TYPE_COLOR, int(color[0]), int(color[1]), int(color[2]),
-                                                int(color[3]) if len(color) > 3 else 255)
+        self._connection._string += struct.pack("!BBBBB", tc.TYPE_COLOR, int(
+            color[0]), int(color[1]), int(color[2]), int(color[3]))
         self._connection._sendExact()
 
     def copy(self, origTypeID, newTypeID):
@@ -386,6 +363,5 @@ class VehicleTypeDomain(Domain):
         """
         self._connection._sendStringCmd(
             tc.CMD_SET_VEHICLETYPE_VARIABLE, tc.COPY, origTypeID, newTypeID)
-
 
 VehicleTypeDomain()

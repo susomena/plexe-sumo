@@ -1,18 +1,22 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2010-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    tlsCoordinator.py
+@author  Martin Taraz (martin@taraz.de)
+@author  Jakob Erdmann
+@date    2015-09-07
+@version $Id$
 
-# @file    tlsCoordinator.py
-# @author  Martin Taraz (martin@taraz.de)
-# @author  Jakob Erdmann
-# @date    2015-09-07
-# @version $Id$
+Coordinates traffic lights in a sumo net for a given demand
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2010-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -29,12 +33,12 @@ if 'SUMO_HOME' in os.environ:
 else:
     sys.exit("please declare environment variable 'SUMO_HOME'")
 
-from sumolib.output import parse_fast  # noqa
+from sumolib.output import parse_fast
 
 TLTuple = namedtuple('TLTuple', ['edgeID', 'dist', 'time', 'connection'])
 PairKey = namedtuple('PairKey', ['edgeID', 'edgeID2', 'dist'])
-PairData = namedtuple('PairData', ['otl', 'oconnection', 'tl', 'connection', 'betweenOffset', 'startOffset',
-                                   'travelTime', 'prio', 'numVehicles', 'ogreen', 'green'])
+PairData = namedtuple('PairData', ['otl', 'oconnection', 'tl', 'connection', 'betweenOffset', 'startOffset', 'travelTime',
+                                   'prio', 'numVehicles', 'ogreen', 'green'])
 
 
 def pair2str(p, full=True):
@@ -65,10 +69,8 @@ def get_options(args=None):
                          help="define replacement tls plans to be coordinated")
     optParser.add_option("-v", "--verbose", action="store_true",
                          default=False, help="tell me what you are doing")
-    optParser.add_option("-i", "--ignore-priority", dest="ignorePriority", action="store_true",
-                         default=False, help="Ignore road priority when sorting TLS pairs")
     optParser.add_option("--speed-factor", type="float",
-                         default=0.8, help="avg ration of vehicle speed in relation to the speed limit")
+                         default=0.9, help="avg ration of vehicle speed in relation to the speed limit")
     optParser.add_option("-e", "--evaluate", action="store_true",
                          default=False, help="run the scenario and print duration statistics")
     (options, args) = optParser.parse_args(args=args)
@@ -249,16 +251,16 @@ def getFirstGreenOffset(tl, connection):
                            (len(tlp), connection._tls))
     phases = list(tlp.values())[0].getPhases()
     start = 0
-    for p in phases:
-        if p.state[index] in ['G', 'g']:
+    for state, duration in phases:
+        if state[index] in ['G', 'g']:
             return start
         else:
-            start += p.duration
+            start += duration
     raise RuntimeError(
         "No green light for tlIndex %s at tl %s" % (index, connection._tls))
 
 
-def getTLPairs(net, routeFile, speedFactor, ignorePriority):
+def getTLPairs(net, routeFile, speedFactor):
     # pairs of traffic lights
     TLPairs = {}  # PairKey -> PairData
 
@@ -282,9 +284,8 @@ def getTLPairs(net, routeFile, speedFactor, ignorePriority):
             betweenOffset = travelTime + ogreen - green
             startOffset = 0
             # relevant data for a pair of traffic lights
-            prio = 1 if ignorePriority else edge.getPriority()
             TLPairs[key] = PairData(otl, oconnection, tl, connection, betweenOffset, startOffset, travelTime,
-                                    prio, numVehicles + 1, ogreen, green)
+                                    edge.getPriority(), numVehicles + 1, ogreen, green)
 
     return TLPairs
 
@@ -299,7 +300,7 @@ def main(options):
     if options.addfile is not None:
         sumolib.net.readNet(options.addfile, withLatestPrograms=True, net=net)
 
-    TLPairs = getTLPairs(net, options.routefile, options.speed_factor, options.ignorePriority)
+    TLPairs = getTLPairs(net, options.routefile, options.speed_factor)
     TLPairs = removeDuplicates(TLPairs)
 
     sortHelper = [(
@@ -339,7 +340,6 @@ def main(options):
                          '-r', options.routefile,
                          '-a', ','.join(additionals),
                          '-v', '--no-step-log', '--duration-log.statistics'], stdout=sys.stdout)
-
 
 if __name__ == "__main__":
     options = get_options(sys.argv)

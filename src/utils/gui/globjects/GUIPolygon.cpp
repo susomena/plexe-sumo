@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIPolygon.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,11 +9,26 @@
 ///
 // The GUI-version of a polygon
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include "GUIPolygon.h"
@@ -32,17 +39,70 @@
 #include <utils/gui/settings/GUIVisualizationSettings.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
 #include <utils/gui/div/GLHelper.h>
+#include <foreign/polyfonts/polyfonts.h>
 
 //#define GUIPolygon_DEBUG_DRAW_VERTICES
 
 // ===========================================================================
-// callbacks definitions
+// method definitions
 // ===========================================================================
+GUIPolygon::GUIPolygon(const std::string& id, const std::string& type,
+                       const RGBColor& color, const PositionVector& shape, bool fill,
+                       double layer, double angle, const std::string& imgFile):
+    SUMOPolygon(id, type, color, shape, fill, layer, angle, imgFile),
+    GUIGlObject_AbstractAdd("poly", GLO_POLYGON, id),
+    myDisplayList(0),
+    myLineWidth(1) // m
+
+{}
+
+
+GUIPolygon::~GUIPolygon() {}
+
+
+
+GUIGLObjectPopupMenu*
+GUIPolygon::getPopUpMenu(GUIMainWindow& app,
+                         GUISUMOAbstractView& parent) {
+    GUIGLObjectPopupMenu* ret = new GUIGLObjectPopupMenu(app, parent, *this);
+    buildPopupHeader(ret, app, false);
+    FXString t(myType.c_str());
+    new FXMenuCommand(ret, "(" + t + ")", 0, 0, 0);
+    new FXMenuSeparator(ret);
+    buildCenterPopupEntry(ret);
+    buildNameCopyPopupEntry(ret);
+    buildSelectionPopupEntry(ret);
+    buildShowParamsPopupEntry(ret, false);
+    buildPositionCopyEntry(ret, false);
+    return ret;
+}
+
+
+GUIParameterTableWindow*
+GUIPolygon::getParameterWindow(GUIMainWindow& app,
+                               GUISUMOAbstractView&) {
+    GUIParameterTableWindow* ret =
+        new GUIParameterTableWindow(app, *this, 3 + (int)getMap().size());
+    // add items
+    ret->mkItem("type", false, myType);
+    ret->mkItem("layer", false, toString(getLayer()));
+    ret->closeBuilding(this);
+    return ret;
+}
+
+
+Boundary
+GUIPolygon::getCenteringBoundary() const {
+    Boundary b;
+    b.add(myShape.getBoxBoundary());
+    b.grow(2);
+    return b;
+}
+
 
 void APIENTRY beginCallback(GLenum which) {
     glBegin(which);
 }
-
 
 void APIENTRY errorCallback(GLenum errorCode) {
     const GLubyte* estring;
@@ -52,16 +112,13 @@ void APIENTRY errorCallback(GLenum errorCode) {
     exit(0);
 }
 
-
 void APIENTRY endCallback(void) {
     glEnd();
 }
 
-
 void APIENTRY vertexCallback(GLvoid* vertex) {
     glVertex3dv((GLdouble*) vertex);
 }
-
 
 void APIENTRY combineCallback(GLdouble coords[3],
                               GLdouble* vertex_data[4],
@@ -78,89 +135,102 @@ void APIENTRY combineCallback(GLdouble coords[3],
     *dataOut = vertex;
 }
 
+
 GLfloat INV_POLY_TEX_DIM = 1.0 / 256.0;
 GLfloat xPlane[] = {INV_POLY_TEX_DIM, 0.0, 0.0, 0.0};
 GLfloat yPlane[] = {0.0, INV_POLY_TEX_DIM, 0.0, 0.0};
 
-// ===========================================================================
-// method definitions
-// ===========================================================================
-
-GUIPolygon::GUIPolygon(const std::string& id, const std::string& type,
-                       const RGBColor& color, const PositionVector& shape, bool geo,
-                       bool fill, double lineWidth, double layer, double angle, const std::string& imgFile,
-                       bool relativePath):
-    SUMOPolygon(id, type, color, shape, geo, fill, lineWidth, layer, angle, imgFile, relativePath),
-    GUIGlObject_AbstractAdd(GLO_POLYGON, id),
-    myDisplayList(0)
-
-{}
-
-
-GUIPolygon::~GUIPolygon() {}
-
-
-
-GUIGLObjectPopupMenu*
-GUIPolygon::getPopUpMenu(GUIMainWindow& app,
-                         GUISUMOAbstractView& parent) {
-    GUIGLObjectPopupMenu* ret = new GUIGLObjectPopupMenu(app, parent, *this);
-    buildPopupHeader(ret, app, false);
-    FXString t(getShapeType().c_str());
-    new FXMenuCommand(ret, "(" + t + ")", nullptr, nullptr, 0);
-    new FXMenuSeparator(ret);
-    buildCenterPopupEntry(ret);
-    buildNameCopyPopupEntry(ret);
-    buildSelectionPopupEntry(ret);
-    buildShowParamsPopupEntry(ret, false);
-    buildPositionCopyEntry(ret, false);
-    return ret;
-}
-
-
-GUIParameterTableWindow*
-GUIPolygon::getParameterWindow(GUIMainWindow& app,
-                               GUISUMOAbstractView&) {
-    GUIParameterTableWindow* ret =
-        new GUIParameterTableWindow(app, *this, 3 + (int)getParametersMap().size());
-    // add items
-    ret->mkItem("type", false, getShapeType());
-    ret->mkItem("layer", false, toString(getShapeLayer()));
-    ret->closeBuilding(this);
-    return ret;
-}
-
-
-Boundary
-GUIPolygon::getCenteringBoundary() const {
-    Boundary b;
-    b.add(myShape.getBoxBoundary());
-    b.grow(2);
-    return b;
-}
-
-
 void
 GUIPolygon::drawGL(const GUIVisualizationSettings& s) const {
-    // first check if polygon can be drawn
-    if (checkDraw(s)) {
-        FXMutexLock locker(myLock);
-        //if (myDisplayList == 0 || (!getFill() && myLineWidth != s.polySize.getExaggeration(s))) {
-        //    storeTesselation(s.polySize.getExaggeration(s));
-        //}
-        // push name (needed for getGUIGlObjectsUnderCursor(...)
-        glPushName(getGlID());
-        // draw inner polygon
-        drawInnerPolygon(s, false);
-        // pop name
-        glPopName();
+    if (s.polySize.getExaggeration(s) == 0) {
+        return;
     }
+    Boundary boundary = myShape.getBoxBoundary();
+    if (s.scale * MAX2(boundary.getWidth(), boundary.getHeight()) < s.polySize.minSize) {
+        return;
+    }
+    if (getFill()) {
+        if (myShape.size() < 3) {
+            return;
+        }
+    } else {
+        if (myShape.size() < 2) {
+            return;
+        }
+    }
+    AbstractMutex::ScopedLocker locker(myLock);
+    //if (myDisplayList == 0 || (!getFill() && myLineWidth != s.polySize.getExaggeration(s))) {
+    //    storeTesselation(s.polySize.getExaggeration(s));
+    //}
+    glPushName(getGlID());
+    glPushMatrix();
+    glTranslated(0, 0, getLayer());
+    glRotated(-getNaviDegree(), 0, 0, 1);
+    // set color depending of selection
+    if (gSelected.isSelected(GLO_POLYGON, getGlID())) {
+        GLHelper::setColor(RGBColor(0, 0, 204));
+    } else {
+        GLHelper::setColor(getColor());
+    }
+
+    int textureID = -1;
+    if (getFill()) {
+        const std::string& file = getImgFile();
+        if (file != "") {
+            textureID = GUITexturesHelper::getTextureID(file, true);
+        }
+    }
+    // init generation of texture coordinates
+    if (textureID >= 0) {
+        glEnable(GL_TEXTURE_2D);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST); // without DEPTH_TEST vehicles may be drawn below roads
+        glDisable(GL_LIGHTING);
+        glDisable(GL_COLOR_MATERIAL);
+        glDisable(GL_ALPHA_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // http://www.gamedev.net/topic/133564-glutesselation-and-texture-mapping/
+        glEnable(GL_TEXTURE_GEN_S);
+        glEnable(GL_TEXTURE_GEN_T);
+        glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+        glTexGenfv(GL_S, GL_OBJECT_PLANE, xPlane);
+        glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+        glTexGenfv(GL_T, GL_OBJECT_PLANE, yPlane);
+    }
+    // recall tesselation
+    //glCallList(myDisplayList);
+    performTesselation(myLineWidth * s.polySize.getExaggeration(s));
+    // de-init generation of texture coordinates
+    if (textureID >= 0) {
+        glEnable(GL_DEPTH_TEST);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_TEXTURE_GEN_S);
+        glDisable(GL_TEXTURE_GEN_T);
+    }
+#ifdef GUIPolygon_DEBUG_DRAW_VERTICES
+    GLHelper::debugVertices(myShape, 80 / s.scale);
+#endif
+    glPopMatrix();
+    const Position namePos = myShape.getPolygonCenter();
+    drawName(namePos, s.scale, s.polyName);
+    if (s.polyType.show) {
+        GLHelper::drawText(myType, namePos + Position(0, -0.6 * s.polyType.size / s.scale),
+                           GLO_MAX, s.polyType.size / s.scale, s.polyType.color);
+    }
+    glPopName();
 }
 
 
 void
 GUIPolygon::setShape(const PositionVector& shape) {
-    FXMutexLock locker(myLock);
+    AbstractMutex::ScopedLocker locker(myLock);
     SUMOPolygon::setShape(shape);
     //storeTesselation(myLineWidth);
 }
@@ -178,7 +248,7 @@ GUIPolygon::performTesselation(double lineWidth) const {
         //gluTessCallback(tobj, GLU_TESS_ERROR, (GLvoid (APIENTRY*) ()) &errorCallback);
         gluTessCallback(tobj, GLU_TESS_COMBINE, (GLvoid(APIENTRY*)()) &combineCallback);
         gluTessProperty(tobj, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
-        gluTessBeginPolygon(tobj, nullptr);
+        gluTessBeginPolygon(tobj, NULL);
         gluTessBeginContour(tobj);
         for (int i = 0; i != (int)myShape.size(); ++i) {
             points[3 * i]  = myShape[(int) i].x();
@@ -214,105 +284,6 @@ GUIPolygon::storeTesselation(double lineWidth) const {
     glEndList();
 }
 
-
-void
-GUIPolygon::setColor(const GUIVisualizationSettings& s, bool disableSelectionColor) const {
-    const GUIColorer& c = s.polyColorer;
-    const int active = c.getActive();
-    if (s.netedit && active != 1 && gSelected.isSelected(GLO_POLYGON, getGlID()) && disableSelectionColor) {
-        // override with special selection colors (unless the color scheme is based on selection)
-        GLHelper::setColor(RGBColor(0, 0, 204));
-    } else if (active == 0) {
-        GLHelper::setColor(getShapeColor());
-    } else if (active == 1) {
-        GLHelper::setColor(c.getScheme().getColor(gSelected.isSelected(GLO_POLYGON, getGlID())));
-    } else {
-        GLHelper::setColor(c.getScheme().getColor(0));
-    }
-}
-
-
-bool
-GUIPolygon::checkDraw(const GUIVisualizationSettings& s) const {
-    if (s.polySize.getExaggeration(s, this) == 0) {
-        return false;
-    }
-    Boundary boundary = myShape.getBoxBoundary();
-    if (s.scale * MAX2(boundary.getWidth(), boundary.getHeight()) < s.polySize.minSize) {
-        return false;
-    }
-    if (getFill()) {
-        if (myShape.size() < 3) {
-            return false;
-        }
-    } else {
-        if (myShape.size() < 2) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-void
-GUIPolygon::drawInnerPolygon(const GUIVisualizationSettings& s, bool disableSelectionColor) const {
-    glPushMatrix();
-    glTranslated(0, 0, getShapeLayer());
-    glRotated(-getShapeNaviDegree(), 0, 0, 1);
-    setColor(s, disableSelectionColor);
-
-    int textureID = -1;
-    if (getFill()) {
-        const std::string& file = getShapeImgFile();
-        if (file != "") {
-            textureID = GUITexturesHelper::getTextureID(file, true);
-        }
-    }
-    // init generation of texture coordinates
-    if (textureID >= 0) {
-        glEnable(GL_TEXTURE_2D);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glDisable(GL_CULL_FACE);
-        glDisable(GL_DEPTH_TEST); // without DEPTH_TEST vehicles may be drawn below roads
-        glDisable(GL_LIGHTING);
-        glDisable(GL_COLOR_MATERIAL);
-        glDisable(GL_ALPHA_TEST);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        // http://www.gamedev.net/topic/133564-glutesselation-and-texture-mapping/
-        glEnable(GL_TEXTURE_GEN_S);
-        glEnable(GL_TEXTURE_GEN_T);
-        glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-        glTexGenfv(GL_S, GL_OBJECT_PLANE, xPlane);
-        glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-        glTexGenfv(GL_T, GL_OBJECT_PLANE, yPlane);
-    }
-    // recall tesselation
-    //glCallList(myDisplayList);
-    performTesselation(myLineWidth * s.polySize.getExaggeration(s, this));
-    // de-init generation of texture coordinates
-    if (textureID >= 0) {
-        glEnable(GL_DEPTH_TEST);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glDisable(GL_TEXTURE_2D);
-        glDisable(GL_TEXTURE_GEN_S);
-        glDisable(GL_TEXTURE_GEN_T);
-    }
-#ifdef GUIPolygon_DEBUG_DRAW_VERTICES
-    GLHelper::debugVertices(myShape, 80 / s.scale);
-#endif
-    glPopMatrix();
-    const Position namePos = myShape.getPolygonCenter();
-    drawName(namePos, s.scale, s.polyName, s.angle);
-    if (s.polyType.show) {
-        const Position p = namePos + Position(0, -0.6 * s.polyType.size / s.scale);
-        GLHelper::drawTextSettings(s.polyType, getShapeType(), p, s.scale, s.angle);
-    }
-}
 
 /****************************************************************************/
 

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2003-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NGEdge.cpp
 /// @author  Markus Hartinger
 /// @author  Daniel Krajzewicz
@@ -17,15 +9,29 @@
 ///
 // A netgen-representation of an edge
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2003-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <algorithm>
-#include <utils/common/RandHelper.h>
 #include <netbuild/NBNode.h>
 #include <netbuild/NBNodeCont.h>
 #include <netbuild/NBEdge.h>
@@ -63,20 +69,12 @@ NGEdge::~NGEdge() {
 
 NBEdge*
 NGEdge::buildNBEdge(NBNetBuilder& nb) const {
-    int priority = nb.getTypeCont().getPriority("");
-    if (priority > 1 && OptionsCont::getOptions().getBool("rand.random-priority")) {
-        priority = RandHelper::rand(priority) + 1;
-    }
-    int lanenumber = nb.getTypeCont().getNumLanes("");
-    if (lanenumber > 1 && OptionsCont::getOptions().getBool("rand.random-lanenumber")) {
-        lanenumber = RandHelper::rand(lanenumber) + 1;
-    }
     return new NBEdge(
                myID,
                nb.getNodeCont().retrieve(myStartNode->getID()), // from
                nb.getNodeCont().retrieve(myEndNode->getID()), // to
-               "", nb.getTypeCont().getSpeed(""), lanenumber,
-               priority, nb.getTypeCont().getWidth(""), NBEdge::UNSPECIFIED_OFFSET
+               "", nb.getTypeCont().getSpeed(""), nb.getTypeCont().getNumLanes(""),
+               nb.getTypeCont().getPriority(""), nb.getTypeCont().getWidth(""), NBEdge::UNSPECIFIED_OFFSET
            );
 }
 

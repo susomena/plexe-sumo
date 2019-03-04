@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    PositionVector.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // A list of positions
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef PositionVector_h
 #define PositionVector_h
 
@@ -23,7 +26,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <limits>
@@ -69,9 +76,6 @@ public:
 
     /// @brief Destructor
     ~PositionVector();
-
-    /// @brief empty Vector
-    static const PositionVector EMPTY;
 
     /// @name methode for iterate over PositionVector
     /// @{
@@ -157,6 +161,7 @@ public:
     const Position& operator[](int index) const;
 
     /// @brief returns the position at the given index
+    /// @ToDo !!! exceptions?
     Position& operator[](int index);
 
     /// @brief Returns the position at the given length
@@ -212,7 +217,7 @@ public:
     bool partialWithin(const AbstractPoly& poly, double offset = 0) const;
 
     /// @brief Returns the two lists made when this list vector is splitted at the given point
-    std::pair<PositionVector, PositionVector> splitAt(double where, bool use2D = false) const;
+    std::pair<PositionVector, PositionVector> splitAt(double where) const;
 
     //// @brief Output operator
     friend std::ostream& operator<<(std::ostream& os, const PositionVector& geom);
@@ -264,9 +269,6 @@ public:
 
     /// @brief move position vector to side using certain ammount
     void move2side(double amount);
-
-    /// @brief move position vector to side using a custom offset for each geometry point
-    void move2side(std::vector<double> amount);
 
     /// @brief get angle  in certain position of position vector
     double angleAt2D(int pos) const;
@@ -351,9 +353,6 @@ public:
     /// @brief check if PositionVector is closed
     bool isClosed() const;
 
-    /// @brief check if PositionVector is NAN
-    bool isNAN() const;
-
     /** @brief Removes positions if too near
      * @param[in] minDist The minimum accepted distance; default: POSITION_EPS
      * @param[in] assertLength Whether the result must at least contain two points (be a line); default: false, to ensure original behaviour
@@ -374,22 +373,15 @@ public:
      */
     PositionVector getOrthogonal(const Position& p, double extend, bool before, double length = 1.0) const;
 
+
     /// @brief returned vector that is smoothed at the front (within dist)
     PositionVector smoothedZFront(double dist = std::numeric_limits<double>::max()) const;
-
-    /// @brief returned vector that varies z smoothly over its length
-    PositionVector interpolateZ(double zStart, double zEnd) const;
-
-    /// @brief resample shape with the given number of points (equal spacing)
-    PositionVector resample(double maxLength) const;
 
     /// @brief return the offset at the given index
     double offsetAtIndex2D(int index) const;
 
-    /* @brief return the maximum grade of all segments as a fraction of zRange/length2D
-     * @param[out] maxJump The maximum vertical jump (with grade infinity)
-     */
-    double getMaxGrade(double& maxJump) const;
+    /// @brief return the maximum grade of all segments as a fraction of zRange/length2D
+    double getMaxGrade() const;
 
 private:
     /// @brief return whether the line segments defined by Line p11,p12 and Line p21,p22 intersect

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSSOTLPolicy.cpp
 /// @author  Alessio Bonfietti
 /// @author  Anna Chiara Bellini
@@ -16,6 +8,17 @@
 ///
 // The class for low-level policy
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 #include "MSSOTLPolicy.h"
 #include <cmath>
@@ -24,7 +27,7 @@
 
 void PushButtonLogic::init(std::string prefix, const Parameterised* parameterised) {
     m_prefix = prefix;
-    m_pushButtonScaleFactor = StringUtils::toDouble(parameterised->getParameter("PUSH_BUTTON_SCALE_FACTOR", "1"));
+    m_pushButtonScaleFactor = TplConvert::_2double(parameterised->getParameter("PUSH_BUTTON_SCALE_FACTOR", "1").c_str());
     WRITE_MESSAGE(m_prefix + "::PushButtonLogic::init use " + parameterised->getParameter("USE_PUSH_BUTTON", "0") + " scale " + parameterised->getParameter("PUSH_BUTTON_SCALE_FACTOR", "1"));
 }
 
@@ -45,7 +48,7 @@ bool PushButtonLogic::pushButtonLogic(SUMOTime elapsed, bool pushButtonPressed, 
 void SigmoidLogic::init(std::string prefix, const Parameterised* parameterised) {
     m_prefix = prefix;
     m_useSigmoid = parameterised->getParameter("PLATOON_USE_SIGMOID", "0") != "0";
-    m_k = StringUtils::toDouble(parameterised->getParameter("PLATOON_SIGMOID_K_VALUE", "1"));
+    m_k = TplConvert::_2double(parameterised->getParameter("PLATOON_SIGMOID_K_VALUE", "1").c_str());
 //  DBG(
     WRITE_MESSAGE(m_prefix + "::SigmoidLogic::init use " + parameterised->getParameter("PLATOON_USE_SIGMOID", "0") + " k " + parameterised->getParameter("PLATOON_SIGMOID_K_VALUE", "1"));
 //    for (int elapsed = 10; elapsed < 51; ++elapsed)
@@ -94,7 +97,7 @@ MSSOTLPolicy::MSSOTLPolicy(std::string name,
                            const std::map<std::string, std::string>& parameters) :
     Parameterised(parameters), myName(name), myDesirabilityAlgorithm(
         desirabilityAlgorithm) {
-    theta_sensitivity = StringUtils::toDouble(getParameter("THETA_INIT", "0.5"));
+    theta_sensitivity = TplConvert::_2double(getParameter("THETA_INIT", "0.5").c_str());
 }
 
 MSSOTLPolicy::~MSSOTLPolicy(void) {

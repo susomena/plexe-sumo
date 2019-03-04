@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    dfrouter_main.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Eric Nicolay
@@ -19,38 +11,51 @@
 ///
 // Main for the DFROUTER
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
 #endif
 
+#include <xercesc/sax/SAXException.hpp>
+#include <xercesc/sax/SAXParseException.hpp>
+#include <utils/common/TplConvert.h>
 #include <iostream>
 #include <string>
 #include <limits.h>
 #include <ctime>
-#include <xercesc/sax/SAXException.hpp>
-#include <xercesc/sax/SAXParseException.hpp>
-#include <utils/common/StringUtils.h>
+#include <router/ROLoader.h>
+#include <router/RONet.h>
+#include "RODFEdgeBuilder.h"
+#include <router/ROFrame.h>
 #include <utils/common/MsgHandler.h>
-#include <utils/common/UtilExceptions.h>
-#include <utils/common/SystemFrame.h>
-#include <utils/common/ToString.h>
-#include <utils/common/FileHelpers.h>
 #include <utils/options/Option.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/options/OptionsIO.h>
-#include <utils/iodevices/OutputDevice.h>
+#include <utils/common/UtilExceptions.h>
+#include <utils/common/SystemFrame.h>
+#include <utils/common/ToString.h>
 #include <utils/xml/XMLSubSys.h>
-#include <router/ROLoader.h>
-#include <router/RONet.h>
-#include <router/ROFrame.h>
-#include "RODFEdgeBuilder.h"
 #include "RODFFrame.h"
 #include "RODFNet.h"
 #include "RODFEdge.h"
@@ -59,6 +64,8 @@
 #include "RODFRouteCont.h"
 #include "RODFDetectorFlow.h"
 #include "RODFDetFlowLoader.h"
+#include <utils/common/FileHelpers.h>
+#include <utils/iodevices/OutputDevice.h>
 
 
 // ===========================================================================
@@ -122,7 +129,7 @@ startComputation(RODFNet* optNet, RODFDetectorFlows& flows, RODFDetectorCon& det
     }
 
     // if a network was loaded... (mode1)
-    if (optNet != nullptr) {
+    if (optNet != 0) {
         if (oc.getBool("remove-empty-detectors")) {
             PROGRESS_BEGIN_MESSAGE("Removing empty detectors");
             optNet->removeEmptyDetectors(detectors, flows);
@@ -253,11 +260,11 @@ main(int argc, char** argv) {
     OptionsCont& oc = OptionsCont::getOptions();
     // give some application descriptions
     oc.setApplicationDescription("Builds vehicle routes for SUMO using detector values.");
-    oc.setApplicationName("dfrouter", "Eclipse SUMO dfrouter Version " VERSION_STRING);
+    oc.setApplicationName("dfrouter", "SUMO dfrouter Version " VERSION_STRING);
     int ret = 0;
-    RODFNet* net = nullptr;
-    RODFDetectorCon* detectors = nullptr;
-    RODFDetectorFlows* flows = nullptr;
+    RODFNet* net = 0;
+    RODFDetectorCon* detectors = 0;
+    RODFDetectorFlows* flows = 0;
     try {
         // initialise the application system (messaging, xml, options)
         XMLSubSys::init();
@@ -270,7 +277,7 @@ main(int argc, char** argv) {
         }
         XMLSubSys::setValidation(oc.getString("xml-validation"), oc.getString("xml-validation.net"));
         MsgHandler::initOutputOptions();
-        if (!(RODFFrame::checkOptions() && SystemFrame::checkOptions())) {
+        if (!RODFFrame::checkOptions()) {
             throw ProcessError();
         }
         RandHelper::initRandGlobal();

@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_Krauss.h
 /// @author  Tobias Mayer
 /// @author  Daniel Krajzewicz
@@ -17,13 +9,28 @@
 ///
 // Krauss car-following model, with acceleration decrease and faster start
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSCFModel_Krauss_h
 #define MSCFModel_Krauss_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSCFModel_KraussOrig1.h"
 #include <utils/xml/SUMOXMLDefinitions.h>
@@ -39,18 +46,23 @@
 class MSCFModel_Krauss : public MSCFModel_KraussOrig1 {
 public:
     /** @brief Constructor
-     *  @param[in] vtype the type for which this model is built and also the parameter object to configure this model
+     * @param[in] accel The maximum acceleration
+     * @param[in] decel The maximum deceleration
+     * @param[in] emergencyDecel The maximum emergency deceleration
+     * @param[in] apparentDecel The deceleration as expected by others
+     * @param[in] dawdle The driver imperfection
+     * @param[in] headwayTime The driver's desired headway
      */
-    MSCFModel_Krauss(const MSVehicleType* vtype);
+    MSCFModel_Krauss(const MSVehicleType* vtype, double accel, double decel,
+                     double emergencyDecel, double apparentDecel, double dawdle, double headwayTime);
 
 
     /// @brief Destructor
     ~MSCFModel_Krauss();
 
+
     /// @name Implementations of the MSCFModel interface
     /// @{
-    /// @brief apply dawdling
-    double patchSpeedBeforeLC(const MSVehicle* veh, double vMin, double vMax) const;
 
     /** @brief Computes the vehicle's safe speed for approaching a non-moving obstacle (no dawdling)
      * this uses the maximumSafeStopSpeed
@@ -68,10 +80,9 @@ public:
      * @param[in] speed The vehicle's speed
      * @param[in] gap2pred The (netto) distance to the LEADER
      * @param[in] predSpeed The speed of LEADER
-     * @param[in] pred The leading vehicle (LEADER)
      * @return EGO's safe speed
      */
-    double followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel, const MSVehicle* const pred = 0) const;
+    double followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel) const;
 
 
     /** @brief Returns the model's name
@@ -95,10 +106,9 @@ protected:
 
     /** @brief Applies driver imperfection (dawdling / sigma)
      * @param[in] speed The speed with no dawdling
-     * @param[in] sigma The sigma value to use
      * @return The speed after dawdling
      */
-    double dawdle2(double speed, double sigma, std::mt19937* rng) const;
+    double dawdle(double speed) const;
 
 };
 

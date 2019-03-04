@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIImporter_ArcView.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Eric Nicolay
@@ -18,17 +10,32 @@
 ///
 // Importer for networks stored in ArcView-shape format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/ToString.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/common/StringUtils.h>
 #include <utils/options/OptionsCont.h>
 #include <utils/geom/GeomHelper.h>
@@ -109,7 +116,6 @@ NIImporter_ArcView::NIImporter_ArcView(const OptionsCont& oc,
       myNameAddition(0),
       myNodeCont(nc), myEdgeCont(ec), myTypeCont(tc),
       mySpeedInKMH(speedInKMH),
-      myRunningEdgeID(0),
       myRunningNodeID(0) {
     UNUSED_PARAMETER(dbf_name);
 }
@@ -155,44 +161,27 @@ NIImporter_ArcView::load() {
         }
     }
 
-    const bool saveOrigIDs = OptionsCont::getOptions().getBool("output.original-names");
     OGRFeature* poFeature;
     poLayer->ResetReading();
-
-    const double nodeJoinDist = myOptions.getFloat("shapefile.node-join-dist");
-    const std::vector<std::string> params = myOptions.getStringVector("shapefile.add-params");
-
-    int featureIndex = 0;
-    bool warnNotUnique = true;
-    std::string idPrefix = ""; // prefix for non-unique street-id values
-    int idIndex = 1; // running index to make street-id unique
     while ((poFeature = poLayer->GetNextFeature()) != NULL) {
         // read in edge attributes
-        if (featureIndex == 0) {
-            WRITE_MESSAGE("Available fields: " + toString(getFieldNames(poFeature)));
-        }
-        std::string id;
-        std::string name;
-        std::string from_node;
-        std::string to_node;
+        std::string id, name, from_node, to_node;
         if (!getStringEntry(poFeature, "shapefile.street-id", "LINK_ID", true, id)) {
-            WRITE_ERROR("Needed field '" + id + "' (street-id) is missing.");
-            id = "";
+            WRITE_ERROR("Needed field '" + id + "' (from node id) is missing.");
         }
         if (id == "") {
-            id = toString(myRunningEdgeID++);
+            WRITE_ERROR("Could not obtain edge id.");
+            return;
         }
 
-        getStringEntry(poFeature, "shapefile.name", "ST_NAME", true, name);
+        getStringEntry(poFeature, "shapefile.street-id", "ST_NAME", true, name);
         name = StringUtils::replace(name, "&", "&amp;");
 
         if (!getStringEntry(poFeature, "shapefile.from-id", "REF_IN_ID", true, from_node)) {
             WRITE_ERROR("Needed field '" + from_node + "' (from node id) is missing.");
-            from_node = "";
         }
         if (!getStringEntry(poFeature, "shapefile.to-id", "NREF_IN_ID", true, to_node)) {
             WRITE_ERROR("Needed field '" + to_node + "' (to node id) is missing.");
-            to_node = "";
         }
 
         if (from_node == "" || to_node == "") {
@@ -206,24 +195,17 @@ NIImporter_ArcView::load() {
         } else if (poFeature->GetFieldIndex("ST_TYP_AFT") >= 0) {
             type = poFeature->GetFieldAsString("ST_TYP_AFT");
         }
-        if ((type != "" || myOptions.isSet("shapefile.type-id")) && !myTypeCont.knows(type)) {
-            WRITE_WARNING("Unknown type '" + type + "' for edge '" + id + "'");
-        }
         double width = myTypeCont.getWidth(type);
-        bool oneway = myTypeCont.knows(type) ? myTypeCont.getIsOneWay(type) : false;
         double speed = getSpeed(*poFeature, id);
         int nolanes = getLaneNo(*poFeature, id, speed);
         int priority = getPriority(*poFeature, id);
-        if (nolanes <= 0 || speed <= 0) {
+        if (nolanes == 0 || speed == 0) {
             if (myOptions.getBool("shapefile.use-defaults-on-failure")) {
-                nolanes = nolanes <= 0 ? myTypeCont.getNumLanes(type) : nolanes;
-                speed = speed <= 0 ? myTypeCont.getSpeed(type) : speed;
+                nolanes = myTypeCont.getNumLanes("");
+                speed = myTypeCont.getSpeed("");
             } else {
-                const std::string lanesField = myOptions.isSet("shapefile.laneNumber") ? myOptions.getString("shapefile.laneNumber") : "nolanes";
-                const std::string speedField = myOptions.isSet("shapefile.speed") ? myOptions.getString("shapefile.speed") : "speed";
-                WRITE_ERROR("Required field '" + lanesField + "' or '" + speedField + "' is missing (add fields or set option --shapefile.use-defaults-on-failure).");
-                WRITE_ERROR("Available fields: " + toString(getFieldNames(poFeature)));
                 OGRFeature::DestroyFeature(poFeature);
+                WRITE_ERROR("Required field 'nolanes' or 'speed' is missing (add fields or set option --shapefile.use-defaults-on-failure).");
                 return;
             }
         }
@@ -235,9 +217,9 @@ NIImporter_ArcView::load() {
         // read in the geometry
         OGRGeometry* poGeometry = poFeature->GetGeometryRef();
         OGRwkbGeometryType gtype = poGeometry->getGeometryType();
-        if (gtype != wkbLineString && gtype != wkbLineString25D) {
+        if (gtype != wkbLineString) {
             OGRFeature::DestroyFeature(poFeature);
-            WRITE_ERROR("Road geometry must be of type 'linestring' or 'linestring25D' (found '" + toString(gtype) + "')");
+            WRITE_ERROR("Road geometry must be of type 'linestring'.");
             return;
         }
         OGRLineString* cgeom = (OGRLineString*) poGeometry;
@@ -259,7 +241,7 @@ NIImporter_ArcView::load() {
         NBNode* from = myNodeCont.retrieve(from_node);
         if (from == 0) {
             Position from_pos = shape[0];
-            from = myNodeCont.retrieve(from_pos, nodeJoinDist);
+            from = myNodeCont.retrieve(from_pos);
             if (from == 0) {
                 from = new NBNode(from_node, from_pos);
                 if (!myNodeCont.insert(from)) {
@@ -273,7 +255,7 @@ NIImporter_ArcView::load() {
         NBNode* to = myNodeCont.retrieve(to_node);
         if (to == 0) {
             Position to_pos = shape[-1];
-            to = myNodeCont.retrieve(to_pos, nodeJoinDist);
+            to = myNodeCont.retrieve(to_pos);
             if (to == 0) {
                 to = new NBNode(to_node, to_pos);
                 if (!myNodeCont.insert(to)) {
@@ -295,57 +277,26 @@ NIImporter_ArcView::load() {
         if (index >= 0 && poFeature->IsFieldSet(index)) {
             dir = poFeature->GetFieldAsString(index);
         }
-        const std::string origID = saveOrigIDs ? id : "";
-        // check for duplicate ids
-        NBEdge* existing = myEdgeCont.retrieve(id);
-        NBEdge* existingReverse = myEdgeCont.retrieve("-" + id);
-        if (existing != nullptr || existingReverse != nullptr) {
-            std::string duplicateID = existing != nullptr ? id : existingReverse->getID();
-            if ((existing != 0 && existing->getGeometry() == shape)
-                    || (existingReverse != 0 && existingReverse->getGeometry() == shape.reverse())) {
-                WRITE_ERROR("Edge '" + duplicateID + " is not unique");
-            } else {
-                if (id != idPrefix) {
-                    idPrefix = id;
-                    idIndex = 1;
-                }
-                id += "#" + toString(idIndex);
-                if (warnNotUnique) {
-                    WRITE_WARNING("street-id '" + idPrefix + "' is not unique. Renaming subsequent edge to '" + id + "'");
-                    warnNotUnique = false;
-                }
-                idIndex++;
-            }
-        }
         // add positive direction if wanted
         if (dir == "B" || dir == "F" || dir == "" || myOptions.getBool("shapefile.all-bidirectional")) {
             if (myEdgeCont.retrieve(id) == 0) {
                 LaneSpreadFunction spread = dir == "B" || dir == "FALSE" ? LANESPREAD_RIGHT : LANESPREAD_CENTER;
-                NBEdge* edge = new NBEdge(id, from, to, type, speed, nolanes, priority, width, NBEdge::UNSPECIFIED_OFFSET, shape, name, origID, spread);
-                edge->setPermissions(myTypeCont.getPermissions(type));
+                NBEdge* edge = new NBEdge(id, from, to, type, speed, nolanes, priority, width, NBEdge::UNSPECIFIED_OFFSET, shape, name, id, spread);
                 myEdgeCont.insert(edge);
                 checkSpread(edge);
-                addParams(edge, poFeature, params);
-            } else {
-                WRITE_ERROR("Could not create edge '" + id + "'. An edge with the same id already exists");
             }
         }
         // add negative direction if wanted
-        if ((dir == "B" || dir == "T" || myOptions.getBool("shapefile.all-bidirectional")) && !oneway) {
+        if (dir == "B" || dir == "T" || myOptions.getBool("shapefile.all-bidirectional")) {
             if (myEdgeCont.retrieve("-" + id) == 0) {
                 LaneSpreadFunction spread = dir == "B" || dir == "FALSE" ? LANESPREAD_RIGHT : LANESPREAD_CENTER;
-                NBEdge* edge = new NBEdge("-" + id, to, from, type, speed, nolanes, priority, width, NBEdge::UNSPECIFIED_OFFSET, shape.reverse(), name, origID, spread);
-                edge->setPermissions(myTypeCont.getPermissions(type));
+                NBEdge* edge = new NBEdge("-" + id, to, from, type, speed, nolanes, priority, width, NBEdge::UNSPECIFIED_OFFSET, shape.reverse(), name, id, spread);
                 myEdgeCont.insert(edge);
                 checkSpread(edge);
-                addParams(edge, poFeature, params);
-            } else {
-                WRITE_ERROR("Could not create edge '-" + id + "'. An edge with the same id already exists");
             }
         }
         //
         OGRFeature::DestroyFeature(poFeature);
-        featureIndex++;
     }
 #if GDAL_VERSION_MAJOR < 2
     OGRDataSource::DestroyDataSource(poDS);
@@ -361,19 +312,6 @@ NIImporter_ArcView::load() {
 #ifdef HAVE_GDAL
 double
 NIImporter_ArcView::getSpeed(OGRFeature& poFeature, const std::string& edgeid) {
-    if (myOptions.isSet("shapefile.speed")) {
-        int index = poFeature.GetDefnRef()->GetFieldIndex(myOptions.getString("shapefile.speed").c_str());
-        if (index >= 0 && poFeature.IsFieldSet(index)) {
-            const double speed = poFeature.GetFieldAsDouble(index);
-            if (speed <= 0) {
-                WRITE_WARNING("invalid value for field: '"
-                              + myOptions.getString("shapefile.laneNumber")
-                              + "': '" + std::string(poFeature.GetFieldAsString(index)) + "'");
-            } else {
-                return speed;
-            }
-        }
-    }
     if (myOptions.isSet("shapefile.type-id")) {
         return myTypeCont.getSpeed(poFeature.GetFieldAsString((char*)(myOptions.getString("shapefile.type-id").c_str())));
     }
@@ -400,19 +338,6 @@ NIImporter_ArcView::getSpeed(OGRFeature& poFeature, const std::string& edgeid) {
 int
 NIImporter_ArcView::getLaneNo(OGRFeature& poFeature, const std::string& edgeid,
                               double speed) {
-    if (myOptions.isSet("shapefile.laneNumber")) {
-        int index = poFeature.GetDefnRef()->GetFieldIndex(myOptions.getString("shapefile.laneNumber").c_str());
-        if (index >= 0 && poFeature.IsFieldSet(index)) {
-            const int laneNumber = poFeature.GetFieldAsInteger(index);
-            if (laneNumber <= 0) {
-                WRITE_WARNING("invalid value for field '"
-                              + myOptions.getString("shapefile.laneNumber")
-                              + "': '" + std::string(poFeature.GetFieldAsString(index)) + "'");
-            } else {
-                return laneNumber;
-            }
-        }
-    }
     if (myOptions.isSet("shapefile.type-id")) {
         return (int) myTypeCont.getNumLanes(poFeature.GetFieldAsString((char*)(myOptions.getString("shapefile.type-id").c_str())));
     }
@@ -492,24 +417,7 @@ NIImporter_ArcView::getStringEntry(OGRFeature* poFeature, const std::string& opt
     return true;
 }
 
-std::vector<std::string>
-NIImporter_ArcView::getFieldNames(OGRFeature* poFeature) const {
-    std::vector<std::string> fields;
-    for (int i = 0; i < poFeature->GetFieldCount(); i++) {
-        fields.push_back(poFeature->GetFieldDefnRef(i)->GetNameRef());
-    }
-    return fields;
-}
 
-void
-NIImporter_ArcView::addParams(NBEdge* edge, OGRFeature* poFeature, const std::vector<std::string>& params) const {
-    for (const std::string& p : params) {
-        int index = poFeature->GetDefnRef()->GetFieldIndex(p.c_str());
-        if (index >= 0 && poFeature->IsFieldSet(index)) {
-            edge->setParameter(p, poFeature->GetFieldAsString(index));
-        }
-    }
-}
 
 #endif
 

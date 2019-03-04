@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBNode.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -17,6 +9,17 @@
 ///
 // The representation of a single node
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBNode_h
 #define NBNode_h
 
@@ -24,7 +27,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <deque>
@@ -65,7 +72,7 @@ class OutputDevice;
  * @class NBNode
  * @brief Represents a single node (junction) during network building
  */
-class NBNode : public Named, public Parameterised {
+class NBNode : public Named {
     friend class NBNodeCont;
     friend class GNEJunction;            // < used for visualization (NETEDIT)
     friend class NBNodesEdgesSorter;     // < sorts the edges
@@ -74,6 +81,9 @@ class NBNode : public Named, public Parameterised {
     friend class NBNodeShapeComputer;    // < computes node's shape
 
 public:
+    /// @brief map for custon shapes
+    typedef std::map<std::string, PositionVector> CustomShapeMap;
+
     /**
      * @class ApproachingDivider
      * @brief Computes lane-2-lane connections
@@ -86,12 +96,22 @@ public:
      *  but may also be transposed in full when there is not enough space.
      */
     class ApproachingDivider : public Bresenham::BresenhamCallBack {
+    private:
+        /// @brief The list of edges that approach the current edge
+        EdgeVector* myApproaching;
+
+        /// @brief The approached current edge
+        NBEdge* myCurrentOutgoing;
+
+        /// @brief The available lanes to which connections shall be built
+        std::vector<int> myAvailableLanes;
+
     public:
         /**@brief Constructor
          * @param[in] approaching The list of the edges that approach the outgoing edge
          * @param[in] currentOutgoing The outgoing edge
          */
-        ApproachingDivider(const EdgeVector& approaching, NBEdge* currentOutgoing);
+        ApproachingDivider(EdgeVector* approaching, NBEdge* currentOutgoing);
 
         /// @brief Destructor
         ~ApproachingDivider();
@@ -107,37 +127,28 @@ public:
         /// @brief the method that spreads the wished number of lanes from the the lane given by the bresenham-call to both left and right
         std::deque<int>* spread(const std::vector<int>& approachingLanes, int dest) const;
 
-    private:
-        /// @brief The list of edges that approach the current edge
-        const EdgeVector& myApproaching;
-
-        /// @brief The approached current edge
-        NBEdge* myCurrentOutgoing;
-
-        /// @brief The available lanes to which connections shall be built
-        std::vector<int> myAvailableLanes;
-
-    private:
-        /// @brief Invalidated assignment operator.
-        ApproachingDivider& operator=(const ApproachingDivider&) = delete;
-
     };
 
     /** @struct Crossing
      * @brief A definition of a pedestrian crossing
      */
-    struct Crossing : public Parameterised {
+    struct Crossing {
         /// @brief constructor
-        Crossing(const NBNode* _node, const EdgeVector& _edges, double _width, bool _priority, int _customTLIndex, int _customTLIndex2, const PositionVector& _customShape);
+        Crossing(const NBNode* _node, const EdgeVector& _edges, double _width, bool _priority) :
+            node(_node),
+            edges(_edges),
+            width(_width),
+            priority(_priority),
+            tlLinkNo(-1),
+            valid(true) {
+        }
         /// @brief The parent node of this crossing
         const NBNode* node;
         /// @brief The edges being crossed
         EdgeVector edges;
-        /// @brief The crossing's shape
+        /// @brief The lane's shape
         PositionVector shape;
-        /// @brief This crossing's width
-        double customWidth;
-        /// @brief This crossing's width
+        /// @brief This lane's width
         double width;
         /// @brief the (edge)-id of this crossing
         std::string id;
@@ -147,14 +158,8 @@ public:
         std::string nextWalkingArea;
         /// @brief whether the pedestrians have priority
         bool priority;
-        /// @brief optional customShape for this crossing
-        PositionVector customShape;
         /// @brief the traffic light index of this crossing (if controlled)
-        int tlLinkIndex;
-        int tlLinkIndex2;
-        /// @brief the custom traffic light index of this crossing (if controlled)
-        int customTLIndex;
-        int customTLIndex2;
+        int tlLinkNo;
         /// @brief The id of the traffic light that controls this connection
         std::string tlID;
         /// @brief whether this crossing is valid (and can be written to the net.xml). This is needed for netedit because validity can only be checked during junction computation
@@ -170,9 +175,7 @@ public:
         WalkingArea(const std::string& _id, double _width) :
             id(_id),
             width(_width),
-            hasCustomShape(false),
-            minNextCrossingEdges(std::numeric_limits<int>::max()),
-            minPrevCrossingEdges(std::numeric_limits<int>::max()) {
+            nextCrossing("") {
         }
         /// @brief the (edge)-id of this walkingArea
         std::string id;
@@ -182,36 +185,22 @@ public:
         double length;
         /// @brief The polygonal shape
         PositionVector shape;
-        /// @brief the lane-id of the next crossing(s)
-        std::vector<std::string> nextCrossings;
+        /// @brief the lane-id of the next crossing
+        std::string nextCrossing;
         /// @brief the lane-id of the next sidewalk lane or ""
         std::vector<std::string> nextSidewalks;
         /// @brief the lane-id of the previous sidewalk lane or ""
         std::vector<std::string> prevSidewalks;
-        /// @brief whether this walkingArea has a custom shape
-        bool hasCustomShape;
-        /// @brief minimum number of edges crossed by nextCrossings
-        int minNextCrossingEdges;
-        /// @brief minimum number of edges crossed by incoming crossings
-        int minPrevCrossingEdges;
-    };
-
-    struct WalkingAreaCustomShape {
-        std::set<const NBEdge*, ComparatorIdLess> edges;
-        PositionVector shape;
     };
 
     /// @brief edge directions (for pedestrian related stuff)
     static const int FORWARD;
     static const int BACKWARD;
+    /// @brief default width of pedetrian crossings
+    static const double DEFAULT_CROSSING_WIDTH;
 
     /// @brief unspecified lane width
     static const double UNSPECIFIED_RADIUS;
-
-    /// @brief flags for controlling shape generation
-    static const int AVOID_WIDE_RIGHT_TURN;
-    static const int AVOID_WIDE_LEFT_TURN;
-    static const int FOUR_CONTROL_POINTS;
 
 public:
     /**@brief Constructor
@@ -281,11 +270,6 @@ public:
     bool getKeepClear() const {
         return myKeepClear;
     }
-
-    /// @brief Returns hint on how to compute right of way
-    RightOfWay getRightOfWay() const {
-        return myRightOfWay;
-    }
     /// @}
 
     /// @name Methods for dealing with assigned traffic lights
@@ -316,8 +300,8 @@ public:
     /// @brief causes the traffic light to be computed anew
     void invalidateTLS(NBTrafficLightLogicCont& tlCont, bool removedConnections, bool addedConnections);
 
-    /// @brief patches loaded signal plans by modifying lane indices above threshold by the given offset
-    void shiftTLConnectionLaneIndex(NBEdge* edge, int offset, int threshold = -1);
+    /// @brief patches loaded signal plans by modifying lane indices
+    void shiftTLConnectionLaneIndex(NBEdge* edge, int offset);
     /// @}
 
 
@@ -361,14 +345,8 @@ public:
     /// @brief computes the node's type, logic and traffic light
     void computeLogic(const NBEdgeCont& ec, OptionsCont& oc);
 
-    /// @brief compute right-of-way logic for all lane-to-lane connections
-    void computeLogic2(bool checkLaneFoes);
-
     /// @brief writes the XML-representation of the logic as a bitset-logic XML representation
-    bool writeLogic(OutputDevice& into) const;
-
-    const std::string getFoes(int linkIndex) const;
-    const std::string getResponse(int linkIndex) const;
+    bool writeLogic(OutputDevice& into, const bool checkLaneFoes) const;
 
     /// @brief Returns something like the most unused direction Should only be used to add source or sink nodes
     Position getEmptyDir() const;
@@ -446,11 +424,6 @@ public:
                                   const NBEdge* prohibitorFrom, const NBEdge* prohibitorTo, int prohibitorFromLane,
                                   bool lefthand = false);
 
-    /// @brief return whether the given laneToLane connection originate from the same edge and are in conflict due to turning across each other
-    bool turnFoes(const NBEdge* from, const NBEdge* to, int fromLane,
-                  const NBEdge* from2, const NBEdge* to2, int fromLane2,
-                  bool lefthand = false) const;
-
     /**@brief Returns the information whether "prohibited" flow must let "prohibitor" flow pass
      * @param[in] possProhibitedFrom The maybe prohibited connection's begin
      * @param[in] possProhibitedTo The maybe prohibited connection's end
@@ -496,6 +469,14 @@ public:
     /// @brief set the junction shape
     void setCustomShape(const PositionVector& shape);
 
+    /// @brief sets a custom shape for an internal lane
+    void setCustomLaneShape(const std::string& laneID, const PositionVector& shape);
+
+    /// @brief sets a custom shape for an internal lane
+    const CustomShapeMap& getCustomLaneShapes() const {
+        return myCustomLaneShapes;
+    }
+
     /// @brief set the turning radius
     void setRadius(double radius) {
         myRadius = radius;
@@ -504,11 +485,6 @@ public:
     /// @brief set the keepClear flag
     void setKeepClear(bool keepClear) {
         myKeepClear = keepClear;
-    }
-
-    /// @brief set method for computing right-of-way
-    void setRightOfWay(RightOfWay rightOfWay) {
-        myRightOfWay = rightOfWay;
     }
 
     /// @brief return whether the shape was set by the user
@@ -535,11 +511,6 @@ public:
     bool needsCont(const NBEdge* fromE, const NBEdge* otherFromE,
                    const NBEdge::Connection& c, const NBEdge::Connection& otherC) const;
 
-    /// @brief whether the connection must yield if the foe remains on the intersection after its phase ends
-    bool tlsContConflict(const NBEdge* from, const NBEdge::Connection& c,
-                         const NBEdge* foeFrom, const NBEdge::Connection& foe) const;
-
-
     /**@brief Compute the shape for an internal lane
      * @param[in] fromE The starting edge
      * @param[in] con The connection for this internal lane
@@ -561,12 +532,11 @@ public:
      */
     PositionVector computeSmoothShape(const PositionVector& begShape, const PositionVector& endShape, int numPoints,
                                       bool isTurnaround, double extrapolateBeg, double extrapolateEnd,
-                                      NBNode* recordError = 0, int shapeFlag = 0) const;
+                                      NBNode* recordError = 0) const;
     /// @brief get bezier control points
     static PositionVector bezierControlPoints(const PositionVector& begShape, const PositionVector& endShape,
             bool isTurnaround, double extrapolateBeg, double extrapolateEnd,
-            bool& ok, NBNode* recordError = 0, double straightThresh = DEG2RAD(5),
-            int shapeFlag = 0);
+            bool& ok, NBNode* recordError = 0, double straightThresh = DEG2RAD(5));
 
 
     /// @brief compute the displacement error during s-curve computation
@@ -595,7 +565,7 @@ public:
      * */
     int checkCrossing(EdgeVector candidates);
 
-    /// @brief return true if there already exist a crossing with the same edges as the input
+    /// @brief return true if already exist a crossing with the same edges as the input
     bool checkCrossingDuplicated(EdgeVector edges);
 
     /// @brief build internal lanes, pedestrian crossings and walking areas
@@ -627,26 +597,18 @@ public:
 
     /// @brief whether this is structurally similar to a geometry node
     bool geometryLike() const;
-    bool geometryLike(const EdgeVector& incoming, const EdgeVector& outgoing) const;
 
     /// @brief update the type of this node as a roundabout
     void setRoundabout();
 
     /// @brief add a pedestrian crossing to this node
-    NBNode::Crossing* addCrossing(EdgeVector edges, double width, bool priority, int tlIndex = -1, int tlIndex2 = -1,
-                                  const PositionVector& customShape = PositionVector::EMPTY, bool fromSumoNet = false);
-
-    /// @brief add custom shape for walkingArea
-    void addWalkingAreaShape(EdgeVector edges, const PositionVector& shape);
+    void addCrossing(EdgeVector edges, double width, bool priority, bool fromSumoNet = false);
 
     /// @brief remove a pedestrian crossing from this node (identified by its edges)
     void removeCrossing(const EdgeVector& edges);
 
     /// @brief discard all current (and optionally future) crossings
     void discardAllCrossings(bool rejectAll);
-
-    /// @brief discard previously built walkingareas (required for repeated computation by netedit)
-    void discardWalkingareas();
 
     /// @brief get num of crossings from sumo net
     int numCrossingsFromSumoNet() const {
@@ -664,20 +626,11 @@ public:
         return myWalkingAreas;
     }
 
-    const std::vector<WalkingAreaCustomShape>& getWalkingAreaCustomShapes() const {
-        return myWalkingAreaCustomShapes;
-    }
-
     /// @brief return the crossing with the given id
     Crossing* getCrossing(const std::string& id) const;
 
-    /// @brief return the crossing with the given Edges
-    Crossing* getCrossing(const EdgeVector& edges, bool hardFail = true) const;
-
-    /* @brief set tl indices of this nodes crossing starting at the given index
-     * @return Whether a custom index was used
-     */
-    bool setCrossingTLIndices(const std::string& tlID, int startIndex);
+    /// @brief set tl indices of this nodes crossing starting at the given index
+    void setCrossingTLIndices(const std::string& tlID, int startIndex);
 
     /// @brief return the number of lane-to-lane connections at this junction (excluding crossings)
     int numNormalConnections() const;
@@ -739,28 +692,13 @@ public:
     /// @brief check if node is a simple continuation
     bool isSimpleContinuation(bool checkLaneNumbers = true) const;
 
-    /// @brief mark whether a priority road turns at this node
-    void markBentPriority(bool isBent) {
-        myIsBentPriority = isBent;
-    }
-
-    /// @brief return whether a priority road turns at this node
-    bool isBentPriority() {
-        return myIsBentPriority;
-    }
-
-    /// @brief detects whether a given junction splits or merges lanes while keeping constant road width
-    bool isConstantWidthTransition() const;
-
-    /// @brief return list of unique endpoint coordinates of all edges at this node
-    std::vector<std::pair<Position, std::string> > getEndPoints() const;
 
 private:
     /// @brief sets the priorites in case of a priority junction
     void setPriorityJunctionPriorities();
 
     /// @brief returns a list of edges which are connected to the given outgoing edge
-    void getEdgesThatApproach(NBEdge* currentOutgoing, EdgeVector& approaching);
+    EdgeVector* getEdgesThatApproach(NBEdge* currentOutgoing);
 
     /// @brief replace incoming connections prohibitions
     void replaceInConnectionProhibitions(NBEdge* which, NBEdge* by, int whichLaneOff, int byLaneOff);
@@ -776,16 +714,6 @@ private:
 
     /// @brief check if is long enough
     static bool isLongEnough(NBEdge* out, double minLength);
-
-    /// @brief remove all traffic light definitions that are part of a joined tls
-    void removeJoinedTrafficLights();
-
-    /// @brief displace lane shapes to account for change in lane width at this node
-    void displaceShapeAtWidthChange(const NBEdge* from, const NBEdge::Connection& con, PositionVector& fromShape, PositionVector& toShape) const;
-
-    /// @brief returns whether sub is a subset of super
-    static bool includes(const std::set<NBEdge*, ComparatorIdLess>& super,
-                         const std::set<const NBEdge*, ComparatorIdLess>& sub);
 
 private:
     /// @brief The position the node lies at
@@ -805,9 +733,6 @@ private:
 
     /// @brief Vector of walking areas
     std::vector<WalkingArea> myWalkingAreas;
-
-    /// @brief Vector of custom walking areas shapes
-    std::vector<WalkingAreaCustomShape> myWalkingAreaCustomShapes;
 
     /// @brief The type of the junction
     SumoXMLNodeType myType;
@@ -836,8 +761,8 @@ private:
     /// @brief whether the junction area must be kept clear
     bool myKeepClear;
 
-    /// @brief how to compute right of way for this node
-    RightOfWay myRightOfWay;
+    /// @brief custom lane shapes
+    CustomShapeMap myCustomLaneShapes;
 
     /// @brief whether to discard all pedestrian crossings
     bool myDiscardAllCrossings;
@@ -847,12 +772,6 @@ private:
 
     /// @brief geometry error after computation of internal lane shapes
     double myDisplacementError;
-
-    /* @brief whether this junction is a bent priority junction (main direction turns)
-     * @note see NBEdgePriorityComputer
-     */
-    bool myIsBentPriority;
-
 
 private:
     /// @brief invalidated copy constructor

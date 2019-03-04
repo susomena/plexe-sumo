@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    RGBColor.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // A RGB-color definition
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef RGBColor_h
 #define RGBColor_h
 
@@ -23,10 +26,13 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
-#include <random>
 #include <utils/common/UtilExceptions.h>
 
 
@@ -103,10 +109,6 @@ public:
     /// @brief obtain inverted of current RGBColor
     RGBColor invertedColor() const;
 
-    static std::mt19937* getColorRNG() {
-        return &myRNG;
-    }
-
     /** @brief Parses a color information
      *
      * It is assumed that the color is stored as "<RED>,<GREEN>,<BLUE>"
@@ -159,13 +161,6 @@ public:
      */
     static RGBColor fromHSV(double h, double s, double v);
 
-    /** @brief Return color with random hue
-     * @param[in] s Saturation (0-1)
-     * @param[in] v Value (0-1)
-     * @return The color as RGB
-     */
-    static RGBColor randomHue(double s = 1, double v = 1);
-
     /** @brief Writes the color to the given stream
     * @param[out] os The stream to write to
     * @param[in] col The color to write
@@ -191,7 +186,6 @@ public:
     static const RGBColor WHITE;
     static const RGBColor BLACK;
     static const RGBColor GREY;
-    static const RGBColor INVISIBLE;
     /// @}
 
     /// @brief The default color (for vehicle types and vehicles)
@@ -203,9 +197,6 @@ public:
 private:
     /// @brief The color amounts
     unsigned char myRed, myGreen, myBlue, myAlpha;
-
-    /// @brief A random number generator to generate random colors independent of other randomness
-    static std::mt19937 myRNG;
 };
 
 

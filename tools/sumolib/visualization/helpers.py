@@ -1,31 +1,33 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2013-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    helpers.py
+@author  Daniel Krajzewicz
+@author  Laura Bieker
+@author  Michael Behrisch
+@date    2013-11-11
+@version $Id$
 
-# @file    helpers.py
-# @author  Daniel Krajzewicz
-# @author  Laura Bieker
-# @author  Michael Behrisch
-# @date    2013-11-11
-# @version $Id$
+Helper methods for plotting
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2013-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
 import os
-import gc
-import sys
 import matplotlib
 if 'TEXTTEST_SANDBOX' in os.environ or (os.name == 'posix' and 'DISPLAY' not in os.environ):
     matplotlib.use('Agg')
-from pylab import arange, close, cm, get_cmap, figure, legend, log, plt, savefig, show, title  # noqa
-from pylab import xlabel, xlim, xticks, ylabel, ylim, yticks  # noqa
-from matplotlib.ticker import FuncFormatter as ff  # noqa
-from matplotlib.collections import LineCollection  # noqa
+from pylab import *
+from matplotlib.ticker import FuncFormatter as ff
+from matplotlib.collections import LineCollection
+import gc
 
 # http://datadebrief.blogspot.de/2010/10/plotting-sunrise-sunset-times-in-python.html
 
@@ -47,7 +49,7 @@ def addPlotOptions(optParser):
     optParser.add_option("--colors", dest="colors",
                          default=None, help="Defines the colors to use")
     optParser.add_option("--colormap", dest="colormap",
-                         default="nipy_spectral", help="Defines the colormap to use")
+                         default="spectral", help="Defines the colormap to use")
     optParser.add_option("-l", "--labels", dest="labels",
                          default=None, help="Defines the labels to use")
     optParser.add_option("--xlim", dest="xlim",
@@ -179,8 +181,7 @@ def applyPlotOptions(fig, ax, options):
                 vals[1]), right=float(vals[2]), top=float(vals[3]))
         else:
             print(
-                "Error: adjust must be given as two floats (<LEFT>,<BOTTOM>) or four floats " +
-                "(<LEFT>,<BOTTOM>,<RIGHT>,<TOP>)")
+                "Error: adjust must be given as two floats (<LEFT>,<BOTTOM>) or four floats (<LEFT>,<BOTTOM>,<RIGHT>,<TOP>)")
             sys.exit()
 
 
@@ -316,8 +317,10 @@ def toColor(val, colormap):
 
 
 def parseColorMap(mapDef):
+    somedict = {}
     ret = {"red": [], "green": [], "blue": []}
     defs = mapDef.split(",")
+    lastValue = 0
     for d in defs:
         (value, color) = d.split(":")
         value = float(value)
@@ -329,6 +332,7 @@ def parseColorMap(mapDef):
         ret["green"].append((value, toFloat(g) / 255., toFloat(g) / 255.))
         ret["blue"].append((value, toFloat(b) / 255., toFloat(b) / 255.))
 
+        lastValue = value
         # ret.append( (value, color) )
     colormap = matplotlib.colors.LinearSegmentedColormap("CUSTOM", ret, 1024)
     return colormap

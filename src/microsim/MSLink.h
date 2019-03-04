@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2002-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSLink.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,6 +8,17 @@
 ///
 // A connnection between lanes
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2002-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSLink_h
 #define MSLink_h
 
@@ -23,13 +26,16 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <set>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/SUMOVehicleClass.h>
-#include <utils/vehicle/SUMOVehicle.h>
 #include <utils/xml/SUMOXMLDefinitions.h>
 
 
@@ -38,6 +44,7 @@
 // ===========================================================================
 class MSLane;
 class MSJunction;
+class SUMOVehicle;
 class MSVehicle;
 class MSPerson;
 class OutputDevice;
@@ -184,9 +191,6 @@ public:
                         const SUMOTime arrivalTimeBraking, const double arrivalSpeedBraking,
                         const SUMOTime waitingTime, double dist);
 
-    /** @brief Sets the information about an approaching vehicle */
-    void setApproaching(const SUMOVehicle* approaching, ApproachingVehicleInformation ai);
-
     /// @brief removes the vehicle from myApproachingVehicles
     void removeApproaching(const SUMOVehicle* veh);
 
@@ -198,7 +202,7 @@ public:
     ApproachingVehicleInformation getApproaching(const SUMOVehicle* veh) const;
 
     /// @brief return all approaching vehicles
-    const std::map<const SUMOVehicle*, const ApproachingVehicleInformation, ComparatorNumericalIdLess>& getApproaching() const {
+    const std::map<const SUMOVehicle*, ApproachingVehicleInformation>& getApproaching() const {
         return myApproachingVehicles;
     }
 
@@ -265,15 +269,6 @@ public:
      */
     LinkState getState() const {
         return myState;
-    }
-
-
-    /** @brief Returns the off-state for the link
-     *
-     * @return The current state of this link
-     */
-    LinkState getOffState() const {
-        return myOffState;
     }
 
 
@@ -373,8 +368,10 @@ public:
         return myHasFoes;
     }
 
-    // @brief return whether the vehicle may continute past this link to wait within the intersection
-    bool isCont() const;
+    // @todo documentation
+    bool isCont() const {
+        return myAmCont;
+    }
 
 
     /// @brief whether the junction after this link must be kept clear
@@ -447,23 +444,20 @@ public:
     /// @brief write information about all approaching vehicles to the given output device
     void writeApproaching(OutputDevice& od, const std::string fromLaneID) const;
 
+    /// @brief erase vehicle from myLinkLeaders of this links junction
+    void passedJunction(const MSVehicle* vehicle);
+
     /// @brief return the link that is parallel to this lane or 0
     MSLink* getParallelLink(int direction) const;
+
+    //// @brief @return whether the foe vehicle is a leader for ego
+    bool isLeader(const MSVehicle* ego, const MSVehicle* foe) const;
 
     /// @brief return whether the fromLane of this link is an internal lane
     bool fromInternalLane() const;
 
-    /// @brief return whether the toLane of this link is an internal lane and fromLane is a normal lane
-    bool isEntryLink() const;
-
-    /// @brief return whether this link enters the conflict area (not a continuation link)
-    bool isConflictEntryLink() const;
-
     /// @brief return whether the fromLane of this link is an internal lane and toLane is a normal lane
     bool isExitLink() const;
-
-    /// @brief return whether the fromLane of this link is an internal lane and its incoming lane is also an internal lane
-    bool isExitLinkAfterInternalJunction() const;
 
     /// @brief returns the corresponding exit link for entryLinks to a junction.
     MSLink* getCorrespondingExitLink() const;
@@ -506,11 +500,6 @@ public:
     /// @brief initialize parallel links (to be called after all links are loaded)
     void initParallelLinks();
 
-    /// @brief return lateral shift that must be applied when passing this link
-    double getLateralShift() {
-        return myLateralShift;
-    }
-
 private:
     /// @brief return whether the given vehicles may NOT merge safely
     static inline bool unsafeMergeSpeeds(double leaderSpeed, double followerSpeed, double leaderDecel, double followerDecel) {
@@ -526,16 +515,8 @@ private:
 
     MSLink* computeParallelLink(int direction);
 
-    bool blockedByFoe(const SUMOVehicle* veh, const ApproachingVehicleInformation& avi,
-                      SUMOTime arrivalTime, SUMOTime leaveTime, double arrivalSpeed, double leaveSpeed,
-                      bool sameTargetLane, double impatience, double decel, SUMOTime waitingTime,
-                      const SUMOVehicle* ego) const;
-
-    /// @brief figure out whether the cont status remains in effect when switching off the tls
-    bool checkContOff() const;
-
-    /// @brief check if the lane intersects with a foe cont-lane
-    bool contIntersect(const MSLane* lane, const MSLane* foe);
+    bool blockedByFoe(const SUMOVehicle* veh, const ApproachingVehicleInformation& avi, SUMOTime arrivalTime, SUMOTime leaveTime, double arrivalSpeed, double leaveSpeed,
+                      bool sameTargetLane, double impatience, double decel, SUMOTime waitingTime) const;
 
 private:
     /// @brief The lane behind the junction approached by this link
@@ -544,7 +525,7 @@ private:
     /// @brief The lane approaching this link
     MSLane* myLaneBefore;
 
-    std::map<const SUMOVehicle*, const ApproachingVehicleInformation, ComparatorNumericalIdLess> myApproachingVehicles;
+    std::map<const SUMOVehicle*, ApproachingVehicleInformation> myApproachingVehicles;
     std::set<MSLink*> myBlockedFoeLinks;
 
     /// @brief The position within this respond
@@ -558,8 +539,6 @@ private:
 
     /// @brief The state of the link
     LinkState myState;
-    /// @brief The state of the link when switching of traffic light control
-    const LinkState myOffState;
 
     /// @brief The time of the last state change
     SUMOTime myLastStateChange;
@@ -579,12 +558,9 @@ private:
     /// @brief Whether any foe links exist
     bool myHasFoes;
 
-    // @brief whether vehicles may continue past this link to wait within the intersection
+    // @todo documentation
     bool myAmCont;
-    // @brief whether vehicles may continue past this link to wait within the intersection after switching of the traffic light at this intersection
-    bool myAmContOff;
 
-    // @brief whether vehicles must keep the intersection clear if there is a downstream jam
     bool myKeepClear;
 
     /// @brief The following junction-internal lane if used
@@ -601,9 +577,6 @@ private:
     /// @brief green fraction at tls for mesoscopic simulation
     double myGreenFraction;
 
-    /// @brief lateral shift to be applied when passing this link
-    double myLateralShift;
-
     /* @brief lengths after the crossing point with foeLane
      * (lengthOnThis, lengthOnFoe)
      * (index corresponds to myFoeLanes)
@@ -616,15 +589,9 @@ private:
     std::vector<const MSLane*> myFoeLanes;
     const MSLane* myWalkingAreaFoe;
 
-    /// @brief whether on of myFoeLanes is a crossing
-    bool myHavePedestrianCrossingFoe;
-
     /* @brief Links with the same origin lane and the same destination edge that may
        be in conflict for sublane simulation */
     std::vector<MSLink*> mySublaneFoeLinks;
-    /* @brief Links with the same origin lane and different destination edge that may
-       be in conflict for sublane simulation */
-    std::vector<MSLink*> mySublaneFoeLinks2;
 
     /* @brief Internal Lanes with the same origin lane and the same destination edge that may
        be in conflict for sublane simulation */

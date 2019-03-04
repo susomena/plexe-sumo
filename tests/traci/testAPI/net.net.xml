@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!-- generated on Thu 09 Mar 2017 08:28:13 AM CET by Netedit Version dev-SVN-r23260
-This data file and the accompanying materials
-are made available under the terms of the Eclipse Public License v2.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v20.html
-SPDX-License-Identifier: EPL-2.0
+<?xml version="1.0" encoding="UTF-8"?>
+
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netedit.exeConfiguration.xsd">
 
     <input>
@@ -148,7 +145,7 @@ SPDX-License-Identifier: EPL-2.0
         <lane id=":n_x1_0_1" index="1" speed="60.00" length="0.10" shape="3698.35,500.00 3698.35,500.00"/>
     </edge>
 
-    <edge id="e_m0" from="n_m0" to="n_m1" priority="-1" name="exampleStreetName1">
+    <edge id="e_m0" from="n_m0" to="n_m1" priority="-1">
         <lane id="e_m0_0" index="0" speed="60.00" length="500.00" shape="0.00,491.75 500.00,491.75"/>
         <lane id="e_m0_1" index="1" speed="60.00" length="500.00" shape="0.00,495.05 500.00,495.05"/>
         <lane id="e_m0_2" index="2" speed="60.00" length="500.00" shape="0.00,498.35 500.00,498.35"/>

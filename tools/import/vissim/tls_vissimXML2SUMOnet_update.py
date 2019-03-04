@@ -1,22 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    tls_vissimXML2SUMOnet_update.py
-# @author  Lukas Grohmann <Lukas.Grohmann@ait.ac.at>
-# @author  Gerald Richter <Gerald.Richter@ait.ac.at>
-# @date    Jun 11 2015
-# @version $Id$
-
 """
+@file    tls_vissimXML2SUMOnet_update.py
+@author  Lukas Grohmann <Lukas.Grohmann@ait.ac.at>
+@author  Gerald Richter <Gerald.Richter@ait.ac.at>
+@date    Jun 11 2015
+@version $Id$
+
 Converts a VISSIM-tls-description into a SUMO-tls-description and writes
 the appended information to a copy of the given sumo.net file
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 # TODO: usage doc.ref
 
@@ -268,7 +269,7 @@ def get_sg_connection_data(
                     link = signal['link']
                     lane = str(int(signal['lane']) - 1)
                     # tls on normal edge or verbinder?
-                    if is_verbinder_d[link] is False:
+                    if is_verbinder_d[link] == False:
                         if link in edge_list:
                             connection = conn_tab[
                                 (conn_tab["from"] == link) & (

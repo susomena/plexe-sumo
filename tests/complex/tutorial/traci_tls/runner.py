@@ -1,37 +1,45 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Lena Kalleske
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2009-03-26
+@version $Id$
 
-# @file    runner.py
-# @author  Lena Kalleske
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2009-03-26
-# @version $Id$
+Tutorial for traffic light control via the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR/TS, Germany
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
 import os
 import sys
 import optparse
+import subprocess
 import random
 
 # we need to import python modules from the $SUMO_HOME/tools directory
-if 'SUMO_HOME' in os.environ:
-    tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-    sys.path.append(tools)
-else:
-    sys.exit("please declare environment variable 'SUMO_HOME'")
+try:
+    sys.path.append(os.path.join(os.path.dirname(
+        __file__), '..', '..', '..', '..', "tools"))  # tutorial in tests
+    sys.path.append(os.path.join(os.environ.get("SUMO_HOME", os.path.join(
+        os.path.dirname(__file__), "..", "..", "..")), "tools"))  # tutorial in docs
+    from sumolib import checkBinary  # noqa
+except ImportError:
+    sys.exit(
+        "please declare environment variable 'SUMO_HOME' as the root directory of your sumo installation (it should contain folders 'bin', 'tools' and 'docs')")
 
-from sumolib import checkBinary  # noqa
-import traci  # noqa
+import traci
 
 
 def generate_routefile():
@@ -43,27 +51,30 @@ def generate_routefile():
     pNS = 1. / 30
     with open("data/cross.rou.xml", "w") as routes:
         print("""<routes>
-        <vType id="typeWE" accel="0.8" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="16.67" \
-guiShape="passenger"/>
+        <vType id="typeWE" accel="0.8" decel="4.5" sigma="0.5" length="5" minGap="2.5" maxSpeed="16.67" guiShape="passenger"/>
         <vType id="typeNS" accel="0.8" decel="4.5" sigma="0.5" length="7" minGap="3" maxSpeed="25" guiShape="bus"/>
 
         <route id="right" edges="51o 1i 2o 52i" />
         <route id="left" edges="52o 2i 1o 51i" />
         <route id="down" edges="54o 4i 3o 53i" />""", file=routes)
+        lastVeh = 0
         vehNr = 0
         for i in range(N):
             if random.uniform(0, 1) < pWE:
                 print('    <vehicle id="right_%i" type="typeWE" route="right" depart="%i" />' % (
                     vehNr, i), file=routes)
                 vehNr += 1
+                lastVeh = i
             if random.uniform(0, 1) < pEW:
                 print('    <vehicle id="left_%i" type="typeWE" route="left" depart="%i" />' % (
                     vehNr, i), file=routes)
                 vehNr += 1
+                lastVeh = i
             if random.uniform(0, 1) < pNS:
                 print('    <vehicle id="down_%i" type="typeNS" route="down" depart="%i" color="1,0,0"/>' % (
                     vehNr, i), file=routes)
                 vehNr += 1
+                lastVeh = i
         print("</routes>", file=routes)
 
 # The program looks like this
@@ -80,17 +91,17 @@ def run():
     """execute the TraCI control loop"""
     step = 0
     # we start with phase 2 where EW has green
-    traci.trafficlight.setPhase("0", 2)
+    traci.trafficlights.setPhase("0", 2)
     while traci.simulation.getMinExpectedNumber() > 0:
         traci.simulationStep()
-        if traci.trafficlight.getPhase("0") == 2:
+        if traci.trafficlights.getPhase("0") == 2:
             # we are not already switching
             if traci.inductionloop.getLastStepVehicleNumber("0") > 0:
                 # there is a vehicle from the north, switch
-                traci.trafficlight.setPhase("0", 3)
+                traci.trafficlights.setPhase("0", 3)
             else:
                 # otherwise try to keep green for EW
-                traci.trafficlight.setPhase("0", 2)
+                traci.trafficlights.setPhase("0", 2)
         step += 1
     traci.close()
     sys.stdout.flush()

@@ -1,34 +1,34 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    netcheck.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @author  Laura Bieker
-# @author  Jakob Erdmann
-# @author  Greg Albiston
-# @date    2007-03-20
-# @version $Id$
-
 """
+@file    netcheck.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@author  Laura Bieker
+@author  Jakob Erdmann
+@author  Greg Albiston
+@date    2007-03-20
+@version $Id$
+
 This script does simple check for the network.
 It tests whether the network is (weakly) connected.
 It needs one parameter, the SUMO net (.net.xml).
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2007-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
 import os
 import sys
 from optparse import OptionParser
-from itertools import chain
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import sumolib.net  # noqa
+import sumolib.net
 
 
 def parse_args():
@@ -41,15 +41,13 @@ def parse_args():
     optParser.add_option("-o", "--selection-output",
                          help="Write output to file(s) as a loadable selection")
     optParser.add_option("--ignore-connections", action="store_true",
-                         default=False,
-                         help="Assume full connectivity at each node when computing all connected components")
-    optParser.add_option("-l", "--vclass", help="Include only edges allowing VCLASS")
+                         default=False, help="Assume full connectivity at each node when computing all connected components")
+    optParser.add_option(
+        "-l", "--vclass", help="Include only edges allowing VCLASS")
     optParser.add_option("-c", "--component-output",
-                         default=None, help="Write components of disconnected network to file - not compatible " +
-                                            "with --source or --destination options")
+                         default=None, help="Write components of disconnected network to file - not compatible with --source or --destination options")
     optParser.add_option("-r", "--results-output",
-                         default=None, help="Write results summary of disconnected network to file - not compatible " +
-                         "with --source or --destination options")
+                         default=None, help="Write results summary of disconnected network to file - not compatible with --source or --destination options")
 
     options, args = optParser.parse_args()
     if len(args) != 1:
@@ -103,20 +101,12 @@ def getReachable(net, source_id, options, useIncoming=False):
     while len(fringe) > 0:
         new_fringe = []
         for edge in fringe:
-            if options.vclass == "pedestrian":
-                cands = chain(chain(*edge.getIncoming().values()), chain(*edge.getOutgoing().values()))
-            else:
-                cands = chain(*(edge.getIncoming().values() if useIncoming else edge.getOutgoing().values()))
-            # print("\n".join(map(str, list(cands))))
-            for conn in cands:
-                if options.vclass is None or (
-                        conn.getFromLane().allows(options.vclass)
-                        and conn.getToLane().allows(options.vclass)):
-                    for reachable in [conn.getTo(), conn.getFrom()]:
-                        if reachable not in found:
-                            # print("added %s via %s" % (reachable, conn))
-                            found.add(reachable)
-                            new_fringe.append(reachable)
+            cands = edge.getIncoming() if useIncoming else edge.getOutgoing()
+            for reachable in cands:
+                if options.vclass is None or reachable.allows(options.vclass):
+                    if reachable not in found:
+                        found.add(reachable)
+                        new_fringe.append(reachable)
         fringe = new_fringe
 
     if useIncoming:
@@ -138,9 +128,7 @@ def getReachable(net, source_id, options, useIncoming=False):
 if __name__ == "__main__":
     options = parse_args()
 
-    net = sumolib.net.readNet(options.net,
-                              withInternal=(options.vclass == "pedestrian"),
-                              withPedestrianConnections=(options.vclass == "pedestrian"))
+    net = sumolib.net.readNet(options.net)
     if options.source:
         getReachable(net, options.source, options)
     elif options.destination:

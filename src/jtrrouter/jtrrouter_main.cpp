@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    jtrrouter_main.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,25 +8,40 @@
 ///
 // Main for JTRROUTER
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #ifdef HAVE_VERSION_H
 #include <version.h>
 #endif
 
+#include <xercesc/sax/SAXException.hpp>
+#include <xercesc/sax/SAXParseException.hpp>
+#include <utils/common/TplConvert.h>
 #include <iostream>
 #include <string>
 #include <limits.h>
 #include <ctime>
 #include <set>
-#include <xercesc/sax/SAXException.hpp>
-#include <xercesc/sax/SAXParseException.hpp>
-#include <utils/common/StringUtils.h>
 #include <utils/common/MsgHandler.h>
 #include <utils/common/UtilExceptions.h>
 #include <utils/common/SystemFrame.h>
@@ -75,8 +82,9 @@ initNet(RONet& net, ROLoader& loader,
     ROJTREdgeBuilder builder;
     loader.loadNet(net, builder);
     // set the turn defaults
-    for (const auto& i : net.getEdgeMap()) {
-        static_cast<ROJTREdge*>(i.second)->setTurnDefaults(turnDefs);
+    const std::map<std::string, ROEdge*>& edges = net.getEdgeMap();
+    for (std::map<std::string, ROEdge*>::const_iterator i = edges.begin(); i != edges.end(); ++i) {
+        static_cast<ROJTREdge*>((*i).second)->setTurnDefaults(turnDefs);
     }
 }
 
@@ -89,7 +97,7 @@ getTurningDefaults(OptionsCont& oc) {
     }
     for (std::vector<std::string>::const_iterator i = defs.begin(); i != defs.end(); ++i) {
         try {
-            double val = StringUtils::toDouble(*i);
+            double val = TplConvert::_2double((*i).c_str());
             ret.push_back(val);
         } catch (NumberFormatException&) {
             throw ProcessError("A turn default is not numeric.");
@@ -119,7 +127,7 @@ loadJTRDefinitions(RONet& net, OptionsCont& oc) {
         std::vector<std::string> edges = oc.getStringVector("sink-edges");
         for (std::vector<std::string>::const_iterator i = edges.begin(); i != edges.end(); ++i) {
             ROJTREdge* edge = static_cast<ROJTREdge*>(net.getEdge(*i));
-            if (edge == nullptr) {
+            if (edge == 0) {
                 throw ProcessError("The edge '" + *i + "' declared as a sink is not known.");
             }
             edge->setSink();
@@ -139,11 +147,11 @@ computeRoutes(RONet& net, ROLoader& loader, OptionsCont& oc) {
     net.openOutput(oc);
     // build the router
     ROJTRRouter* router = new ROJTRRouter(oc.getBool("ignore-errors"), oc.getBool("accept-all-destinations"),
-                                          (int)(((double) net.getEdgeNumber()) * OptionsCont::getOptions().getFloat("max-edges-factor")),
+                                          (int)(((double) net.getEdgeNo()) * OptionsCont::getOptions().getFloat("max-edges-factor")),
                                           oc.getBool("ignore-vclasses"), oc.getBool("allow-loops"));
     RORouteDef::setUsingJTRR();
-    RORouterProvider provider(router, new PedestrianRouter<ROEdge, ROLane, RONode, ROVehicle>(),
-                              new ROIntermodalRouter(RONet::adaptIntermodalRouter, 0, "dijkstra"));
+    RORouterProvider provider(router, new PedestrianRouterDijkstra<ROEdge, ROLane, RONode, ROVehicle>(),
+                              new ROIntermodalRouter(RONet::adaptIntermodalRouter));
     loader.processRoutes(string2time(oc.getString("begin")), string2time(oc.getString("end")),
                          string2time(oc.getString("route-steps")), net, provider);
     net.cleanup();
@@ -157,10 +165,10 @@ int
 main(int argc, char** argv) {
     OptionsCont& oc = OptionsCont::getOptions();
     // give some application descriptions
-    oc.setApplicationDescription("Router for the microscopic, multi-modal traffic simulation SUMO based on junction turning ratios.");
-    oc.setApplicationName("jtrrouter", "Eclipse SUMO jtrrouter Version " VERSION_STRING);
+    oc.setApplicationDescription("Router for the microscopic road traffic simulation SUMO based on junction turning ratios.");
+    oc.setApplicationName("jtrrouter", "SUMO jtrrouter Version " VERSION_STRING);
     int ret = 0;
-    RONet* net = nullptr;
+    RONet* net = 0;
     try {
         // initialise the application system (messaging, xml, options)
         XMLSubSys::init();
@@ -173,7 +181,7 @@ main(int argc, char** argv) {
         }
         XMLSubSys::setValidation(oc.getString("xml-validation"), oc.getString("xml-validation.net"));
         MsgHandler::initOutputOptions();
-        if (!(ROJTRFrame::checkOptions() && SystemFrame::checkOptions())) {
+        if (!ROJTRFrame::checkOptions()) {
             throw ProcessError();
         }
         RandHelper::initRandGlobal();
@@ -191,7 +199,7 @@ main(int argc, char** argv) {
             WRITE_ERROR(toString(e.getLineNumber()));
             ret = 1;
         } catch (XERCES_CPP_NAMESPACE::SAXException& e) {
-            WRITE_ERROR(StringUtils::transcode(e.getMessage()));
+            WRITE_ERROR(TplConvert::_2str(e.getMessage()));
             ret = 1;
         }
         if (MsgHandler::getErrorInstance()->wasInformed()) {

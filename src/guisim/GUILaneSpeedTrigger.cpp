@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUILaneSpeedTrigger.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,10 +8,25 @@
 ///
 // Changes the speed allowed on a set of lanes (gui version)
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <utils/common/MsgHandler.h>
@@ -41,6 +48,7 @@
 #include <gui/GUIApplicationWindow.h>
 #include <microsim/logging/FunctionBinding.h>
 #include <utils/gui/div/GUIGlobalSelection.h>
+#include <foreign/polyfonts/polyfonts.h>
 #include <utils/gui/images/GUIIconSubSys.h>
 #include <guisim/GUILaneSpeedTrigger.h>
 #include <utils/gui/globjects/GLIncludes.h>
@@ -88,7 +96,7 @@ GUILaneSpeedTrigger::GUIManip_LaneSpeedTrigger::GUIManip_LaneSpeedTrigger(
     const std::string& name, GUILaneSpeedTrigger& o,
     int /*xpos*/, int /*ypos*/)
     : GUIManipulator(app, name, 0, 0),
-      myParent(&app), myChosenValue(0), myChosenTarget(myChosenValue, nullptr, MID_OPTION),
+      myParent(&app), myChosenValue(0), myChosenTarget(myChosenValue, NULL, MID_OPTION),
       mySpeed(o.getDefaultSpeed()), mySpeedTarget(mySpeed),
       myObject(&o) {
     myChosenTarget.setTarget(this);
@@ -144,16 +152,15 @@ GUILaneSpeedTrigger::GUIManip_LaneSpeedTrigger::GUIManip_LaneSpeedTrigger(
                           ICON_BEFORE_TEXT | LAYOUT_SIDE_TOP | LAYOUT_CENTER_Y,
                           0, 0, 0, 0,   2, 2, 0, 0);
         myUserDefinedSpeed =
-            new FXRealSpinner(gf12, 10, this, MID_USER_DEF,
-                              LAYOUT_TOP | FRAME_SUNKEN | FRAME_THICK);
-        //myUserDefinedSpeed->setFormatString("%.0f km/h");
-        //myUserDefinedSpeed->setIncrements(1, 10, 10);
-        myUserDefinedSpeed->setIncrement(10);
+            new FXRealSpinDial(gf12, 10, this, MID_USER_DEF,
+                               LAYOUT_TOP | FRAME_SUNKEN | FRAME_THICK);
+        myUserDefinedSpeed->setFormatString("%.0f km/h");
+        myUserDefinedSpeed->setIncrements(1, 10, 10);
         myUserDefinedSpeed->setRange(0, 300);
         myUserDefinedSpeed->setValue(
             static_cast<GUILaneSpeedTrigger*>(myObject)->getDefaultSpeed() * 3.6);
     }
-    new FXButton(f1, "Close", nullptr, this, MID_CLOSE,
+    new FXButton(f1, "Close", NULL, this, MID_CLOSE,
                  BUTTON_INITIAL | BUTTON_DEFAULT | FRAME_RAISED | FRAME_THICK | LAYOUT_TOP | LAYOUT_LEFT | LAYOUT_CENTER_X, 0, 0, 0, 0, 30, 30, 4, 4);
     static_cast<GUILaneSpeedTrigger*>(myObject)->setOverriding(true);
 }
@@ -259,15 +266,15 @@ GUILaneSpeedTrigger::GUILaneSpeedTriggerPopupMenu::onCmdOpenManip(FXObject*,
     return 1;
 }
 
-// -------------------------------------------------------------------------
-// GUILaneSpeedTrigger - methods
-// -------------------------------------------------------------------------
 
+/* -------------------------------------------------------------------------
+ * GUILaneSpeedTrigger - methods
+ * ----------------------------------------------------------------------- */
 GUILaneSpeedTrigger::GUILaneSpeedTrigger(
     const std::string& id, const std::vector<MSLane*>& destLanes,
     const std::string& aXMLFilename) :
     MSLaneSpeedTrigger(id, destLanes, aXMLFilename),
-    GUIGlObject_AbstractAdd(GLO_VSS, id),
+    GUIGlObject_AbstractAdd("speedtrigger", GLO_TRIGGER, id),
     myShowAsKMH(true), myLastValue(-1) {
     myFGPositions.reserve(destLanes.size());
     myFGRotations.reserve(destLanes.size());
@@ -318,7 +325,7 @@ GUILaneSpeedTrigger::drawGL(const GUIVisualizationSettings& s) const {
     glPushName(getGlID());
     glPushMatrix();
     glTranslated(0, 0, getType());
-    const double exaggeration = s.addSize.getExaggeration(s, this);
+    const double exaggeration = s.addSize.getExaggeration(s);
     for (int i = 0; i < (int)myFGPositions.size(); ++i) {
         const Position& pos = myFGPositions[i];
         double rot = myFGRotations[i];
@@ -366,9 +373,12 @@ GUILaneSpeedTrigger::drawGL(const GUIVisualizationSettings& s) const {
             glColor3d(1, 1, 0);
             glTranslated(0, 0, .1);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-            // draw last value string
-            GLHelper::drawText(myLastValueString.c_str(), Position(0, 0), .1, 1.2, RGBColor(255, 255, 0), 180);
+            pfSetPosition(0, 0);
+            pfSetScale(1.2f);
+            double w = pfdkGetStringWidth(myLastValueString.c_str());
+            glRotated(180, 0, 1, 0);
+            glTranslated(-w / 2., 0.3, 0);
+            pfDrawString(myLastValueString.c_str());
         }
         glPopMatrix();
     }

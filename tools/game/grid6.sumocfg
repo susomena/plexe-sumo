@@ -12,6 +12,7 @@
         <end value="220"/>
         <step-length value=".1"/>
     </time>
+    <output-prefix value="grid6."/>
     <weights.random-factor value="1.2"/>
 
 </configuration>

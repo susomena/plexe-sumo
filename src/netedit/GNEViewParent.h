@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GNEViewParent.h
 /// @author  Jakob Erdmann
 /// @date    Feb 2011
@@ -17,6 +9,17 @@
 // While we don't actually need MDI for netedit it is easier to adapt existing
 // structures than to write everything from scratch.
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GNEViewParent_h
 #define GNEViewParent_h
 
@@ -24,32 +27,35 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
+#include <string>
+#include <vector>
+#include <fx.h>
+#include <utils/geom/Position.h>
+#include <utils/geom/Boundary.h>
+#include <utils/gui/globjects/GUIGlObjectTypes.h>
 #include <utils/gui/windows/GUIGlChildWindow.h>
-
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
-class GNEAdditionalFrame;
+class GUISUMOAbstractView;
+class GNENet;
 class GNEApplicationWindow;
+class GNEFrame;
+class GNEInspectorFrame;
+class GNESelectorFrame;
 class GNEConnectorFrame;
-class GNECreateEdgeFrame;
+class GNETLSEditorFrame;
+class GNEAdditionalFrame;
 class GNECrossingFrame;
 class GNEDeleteFrame;
-class GNEDialogACChooser;
-class GNEInspectorFrame;
-class GNENet;
 class GNEPolygonFrame;
-class GNEProhibitionFrame;
-class GNERouteFrame;
-class GNESelectorFrame;
-class GNETAZFrame;
-class GNETLSEditorFrame;
-class GNEUndoList;
-class GNEVehicleFrame;
-class GNEVehicleTypeFrame;
 
 // ===========================================================================
 // class declarations
@@ -88,7 +94,7 @@ public:
     GNEViewParent(FXMDIClient* p, FXMDIMenu* mdimenu,
                   const FXString& name, GNEApplicationWindow* parentWindow,
                   FXGLCanvas* share, GNENet* net, GNEUndoList* undoList,
-                  FXIcon* ic = nullptr, FXuint opts = 0, FXint x = 0, FXint y = 0, FXint w = 0, FXint h = 0);
+                  FXIcon* ic = NULL, FXuint opts = 0, FXint x = 0, FXint y = 0, FXint w = 0, FXint h = 0);
 
     /// @brief Destructor
     ~GNEViewParent();
@@ -96,47 +102,29 @@ public:
     /// @brief hide all frames
     void hideAllFrames();
 
-    /// @brief get frame for GNE_NMODE_INSPECT
+    /// @brief get frame for GNE_MODE_INSPECT
     GNEInspectorFrame* getInspectorFrame() const;
 
-    /// @brief get frame for GNE_NMODE_SELECT
+    /// @brief get frame for GNE_MODE_SELECT
     GNESelectorFrame* getSelectorFrame() const;
 
-    /// @brief get frame for GNE_NMODE_CONNECT
+    /// @brief get frame for GNE_MODE_CONNECT
     GNEConnectorFrame* getConnectorFrame() const;
 
-    /// @brief get frame for GNE_NMODE_TLS
+    /// @brief get frame for GNE_MODE_TLS
     GNETLSEditorFrame* getTLSEditorFrame() const;
 
-    /// @brief get frame for GNE_NMODE_ADDITIONAL
+    /// @brief get frame for GNE_MODE_ADDITIONAL
     GNEAdditionalFrame* getAdditionalFrame() const;
 
-    /// @brief get frame for GNE_NMODE_CROSSING
+    /// @brief get frame for GNE_MODE_CROSSING
     GNECrossingFrame* getCrossingFrame() const;
 
-    /// @brief get frame for GNE_NMODE_TAZ
-    GNETAZFrame* getTAZFrame() const;
-
-    /// @brief get frame for GNE_NMODE_DELETE
+    /// @brief get frame for GNE_MODE_DELETE
     GNEDeleteFrame* getDeleteFrame() const;
 
-    /// @brief get frame for GNE_NMODE_POLYGON
+    /// @brief get frame for GNE_MODE_POLYGON
     GNEPolygonFrame* getPolygonFrame() const;
-
-    /// @brief get frame for GNE_NMODE_PROHIBITION
-    GNEProhibitionFrame* getProhibitionFrame() const;
-
-    /// @brief get frame for GNE_NMODE_CREATEEDGE
-    GNECreateEdgeFrame* getCreateEdgeFrame() const;
-
-    /// @brief get frame for GNE_DMODE_ROUTE
-    GNERouteFrame* getRouteFrame() const;
-
-    /// @brief get frame for GNE_DMODE_VEHICLE
-    GNEVehicleFrame* getVehicleFrame() const;
-
-    /// @brief get frame for GNE_DMODE_VEHICLETYPE
-    GNEVehicleTypeFrame* getVehicleTypeFrame() const;
 
     /// @brief show frames area if at least a GNEFrame is showed
     /// @note this function is called in GNEFrame::Show();
@@ -146,14 +134,11 @@ public:
     /// @note this function is called in GNEFrame::Show();
     void hideFramesArea();
 
-    /// @brief get GUIMainWindow App
-    GUIMainWindow* getGUIMainWindow() const;
+    /// @brief get App (GUIMainWindow)
+    GUIMainWindow* getApp() const;
 
     /// @brief get GNE Application Windows
     GNEApplicationWindow* getGNEAppWindows() const;
-
-    /// @brief remove created chooser dialog
-    void eraseACChooserDialog(GNEDialogACChooser* chooserDialog);
 
     /// @name FOX-callbacks
     /// @{
@@ -176,98 +161,14 @@ public:
     long onCmdUpdateFrameAreaWidth(FXObject*, FXSelector, void*);
     /// @}
 
+    /// @brief true if the object is selected (may include extra logic besides calling gSelected)
+    bool isSelected(GUIGlObject* o) const;
+
 protected:
     /// @brief FOX needs this
     GNEViewParent() {}
 
 private:
-    /// @brief struct for Frames
-    struct Frames {
-        /// @brief constructor
-        Frames();
-
-        /// @brief hide frames
-        void hideFrames();
-
-        /// @brief set new width in all frames
-        void setWidth(int frameWidth);
-
-        /// @brief return true if at least there is a frame shown
-        bool isFrameShown() const;
-
-        /// @brief frame for GNE_NMODE_INSPECT
-        GNEInspectorFrame* inspectorFrame;
-
-        /// @brief frame for GNE_NMODE_SELECT
-        GNESelectorFrame* selectorFrame;
-
-        /// @brief frame for GNE_NMODE_CONNECT
-        GNEConnectorFrame* connectorFrame;
-
-        /// @brief frame for GNE_NMODE_TLS
-        GNETLSEditorFrame* TLSEditorFrame;
-
-        /// @brief frame for GNE_NMODE_ADDITIONAL
-        GNEAdditionalFrame* additionalFrame;
-
-        /// @brief frame for GNE_NMODE_CROSSING
-        GNECrossingFrame* crossingFrame;
-
-        /// @brief frame for GNE_NMODE_TAZ
-        GNETAZFrame* TAZFrame;
-
-        /// @brief frame for GNE_NMODE_DELETE
-        GNEDeleteFrame* deleteFrame;
-
-        /// @brief frame for GNE_NMODE_POLYGON
-        GNEPolygonFrame* polygonFrame;
-
-        /// @brief frame for GNE_NMODE_PROHIBITION
-        GNEProhibitionFrame* prohibitionFrame;
-
-        /// @brief frame for GNE_NMODE_CREATEDGE
-        GNECreateEdgeFrame* createEdgeFrame;
-
-        /// @brief frame for GNE_DMODE_ROUTE
-        GNERouteFrame* routeFrame;
-
-        /// @brief frame for GNE_DMODE_VEHICLE
-        GNEVehicleFrame* vehicleFrame;
-
-        /// @brief frame for GNE_DMODE_VEHICLETYPE
-        GNEVehicleTypeFrame* vehicleTypeFrame;
-    };
-
-    /// @brief struct for ACChoosers dialog
-    struct ACChoosers {
-        /// @brief constructor
-        ACChoosers();
-
-        /// @brief destructor
-        ~ACChoosers();
-
-        /// @brief pointer to ACChooser dialog
-        GNEDialogACChooser* ACChooserJunction;
-
-        /// @brief pointer to ACChooser dialog
-        GNEDialogACChooser* ACChooserEdges;
-
-        /// @brief pointer to ACChooser dialog
-        GNEDialogACChooser* ACChooserTLS;
-
-        /// @brief pointer to ACChooser dialog
-        GNEDialogACChooser* ACChooserAdditional;
-
-        /// @brief pointer to ACChooser dialog
-        GNEDialogACChooser* ACChooserPOI;
-
-        /// @brief pointer to ACChooser dialog
-        GNEDialogACChooser* ACChooserPolygon;
-
-        /// @brief pointer to ACChooser dialog
-        GNEDialogACChooser* ACChooserProhibition;
-    };
-
     /// @brief pointer to GNEApplicationWindow
     GNEApplicationWindow* myGNEAppWindows;
 
@@ -280,11 +181,8 @@ private:
     /// @brief Splitter to divide ViewNet und GNEFrames
     FXSplitter* myFramesSplitter;
 
-    /// @brief struct for frames
-    Frames myFrames;
-
-    /// @brief struct for ACChoosers
-    ACChoosers myACChoosers;
+    /// @brief map with the Frames
+    std::map<int, GNEFrame*> myGNEFrames;
 };
 
 

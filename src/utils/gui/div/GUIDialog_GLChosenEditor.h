@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    GUIDialog_GLChosenEditor.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -15,6 +7,17 @@
 ///
 // Editor for the list of chosen objects
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef GUIDialog_GLChosenEditor_h
 #define GUIDialog_GLChosenEditor_h
 
@@ -22,7 +25,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -52,20 +59,28 @@ class GUIDialog_GLChosenEditor : public FXMainWindow, public GUISelectedStorage:
     FXDECLARE(GUIDialog_GLChosenEditor)
 
 public:
-    /** @brief Constructor (Notifies both the parent and the storage about being initialised)
+    /** @brief Constructor
+     *
+     * Notifies both the parent and the storage about being initialised.
+     *
      * @param[in] parent The parent window
      * @param[in] str The storage of object selections to use
      */
-    GUIDialog_GLChosenEditor(GUIMainWindow* parent, GUISelectedStorage* str);
+    GUIDialog_GLChosenEditor(GUIMainWindow* parent,
+                             GUISelectedStorage* str);
 
-    /// @brief Destructor (Notifies both the parent and the storage about being destroyed)
+
+    /** @brief Destructor
+     *
+     * Notifies both the parent and the storage about being destroyed.
+     */
     ~GUIDialog_GLChosenEditor();
 
-    /// @brief Rebuilds the entire list
+
+    /** @brief Rebuilds the entire list
+     */
     void rebuildList();
 
-    // @brief called if the global selection changes
-    void selectionUpdated();
 
     /// @name FOX-callbacks
     /// @{
@@ -79,6 +94,7 @@ public:
      * @todo Recheck loading/saving of selections
      */
     long onCmdLoad(FXObject*, FXSelector, void*);
+
 
     /** @brief Called when the user presses the Save-button
      *
@@ -105,6 +121,7 @@ public:
      */
     long onCmdClear(FXObject*, FXSelector, void*);
 
+
     /** @brief Called when the user presses the Close-button
      *
      * Closes itself.
@@ -112,9 +129,9 @@ public:
     long onCmdClose(FXObject*, FXSelector, void*);
     /// @}
 
-protected:
-    /// FOX needs this
-    GUIDialog_GLChosenEditor() {}
+
+    // called if the global selection changes
+    void selectionUpdated();
 
 private:
     /// @brief The list that holds the ids
@@ -125,6 +142,11 @@ private:
 
     /// @brief The storage
     GUISelectedStorage* myStorage;
+
+protected:
+    /// FOX needs this
+    GUIDialog_GLChosenEditor() { }
+
 };
 
 

@@ -1,32 +1,35 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2007-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    elements.py
-# @author  Yun-Pang Floetteroed
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2007-10-25
-# @version $Id$
-
 """
+@file    elements.py
+@author  Yun-Pang Floetteroed
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2007-10-25
+@version $Id$
+
 This script is to define the classes and functions for
 - reading network geometric,
 - calculating link characteristics, such as capacity, travel time and link cost function,
 - recording vehicular and path information, and
 - conducting statistic tests.
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2007-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
 
 import sys
 import math
+import os
 from tables import crCurveTable, laneTypeTable
-import sumolib
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import sumolib.net
 
 # This class is used for finding the k shortest paths.
 
@@ -42,14 +45,14 @@ class Predecessor:
 # includes the update-function for searching the k shortest paths.
 
 
-class Vertex(sumolib.net.node.Node):
+class Vertex(sumolib.net.Node):
 
     """
     This class is to store node attributes and the respective incoming/outgoing links.
     """
 
     def __init__(self, id, type=None, coord=None, incLanes=None):
-        sumolib.net.node.Node.__init__(self, id, type, coord, incLanes)
+        sumolib.net.Node.__init__(self, id, type, coord, incLanes)
         self.preds = []
         self.wasUpdated = False
 
@@ -105,14 +108,14 @@ class Vertex(sumolib.net.node.Node):
 # read from the net.
 
 
-class Edge(sumolib.net.edge.Edge):
+class Edge(sumolib.net.Edge):
 
     """
     This class is to record link attributes
     """
 
     def __init__(self, label, source, target, prio, function, name):
-        sumolib.net.edge.Edge.__init__(
+        sumolib.net.Edge.__init__(
             self, label, source, target, prio, function, name)
         self.capacity = sys.maxsize
         # parameter for estimating capacities according to signal timing plans
@@ -158,7 +161,7 @@ class Edge(sumolib.net.edge.Edge):
         self.capThrough = 0.
 
     def addLane(self, lane):
-        sumolib.net.edge.Edge.addLane(self, lane)
+        sumolib.net.Edge.addLane(self, lane)
         if self._from._id == self._to._id:
             self.freeflowtime = 0.0
         else:
@@ -170,8 +173,7 @@ class Edge(sumolib.net.edge.Edge):
         cap = str(self.capacity)
         if self.capacity == sys.maxsize or self.connection != 0:
             cap = "inf"
-        return "%s_%s_%s_%s<%s|%s|%s|%s|%s|%s|%s|%s|%s>" % (self._function, self._id, self._from, self._to,
-                                                            self.junctiontype, self._speed,
+        return "%s_%s_%s_%s<%s|%s|%s|%s|%s|%s|%s|%s|%s>" % (self._function, self._id, self._from, self._to, self.junctiontype, self._speed,
                                                             self.flow, self._length, self._lanes,
                                                             self.CRcurve, self.estcapacity, cap, self.ratio)
 
@@ -269,8 +271,7 @@ class Edge(sumolib.net.edge.Edge):
                     (1 + (curve[0] * (self.flow /
                                       (self.estcapacity * curve[2]))**curve[1]))
 
-            if ((self.flow > self.estcapacity or self.flow == self.estcapacity) and
-                    self.flow > 0. and self.connection == 0):
+            if (self.flow > self.estcapacity or self.flow == self.estcapacity) and self.flow > 0. and self.connection == 0:
                 self.queuetime = self.queuetime + options.lamda * \
                     (self.actualtime - self.freeflowtime * (1 + curve[0]))
                 if self.queuetime < 1.:
@@ -388,9 +389,7 @@ class Vehicle:
         self.rank = 0.
 
     def __repr__(self):
-        return "%s_%s_%s_%s_%s_%s<%s>" % (self.label, self.depart, self.arrival, self.speed,
-                                          self.traveltime, self.travellength, self.route)
-
+        return "%s_%s_%s_%s_%s_%s<%s>" % (self.label, self.depart, self.arrival, self.speed, self.traveltime, self.travellength, self.route)
 
 pathNum = 0
 
@@ -424,8 +423,7 @@ class Path:
         self.currentshortest = True
 
     def __repr__(self):
-        return "%s_%s_%s<%s|%s|%s|%s>" % (self.label, self.source, self.target, self.freepathtime,
-                                          self.pathflow, self.actpathtime, self.edges)
+        return "%s_%s_%s<%s|%s|%s|%s>" % (self.label, self.source, self.target, self.freepathtime, self.pathflow, self.actpathtime, self.edges)
 
     def getPathLength(self):
         for edge in self.edges:

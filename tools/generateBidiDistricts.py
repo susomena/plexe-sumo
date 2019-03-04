@@ -1,24 +1,25 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    generateBidiDistricts.py
-# @author  Jakob Erdmann
-# @date    2015-07-31
-# @version $Id$
-
 """
+@file    generateBidiDistricts.py
+@author  Jakob Erdmann
+@date    2015-07-31
+@version $Id$
+
 Generate a taz (district) file which groups edges in opposite directions
 belonging to the same road. For each edge, a taz is created which contains this edge
 and its opposite.
 This allows routing without the need for an
 initial/final turn-around by replacing the attribute names 'from' and 'to' with
 'fromTaz' and 'toTaz'
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 import sys
@@ -39,7 +40,7 @@ def parse_args():
     options, args = optParser.parse_args()
     try:
         options.net, = args
-    except Exception:
+    except:
         sys.exit(USAGE)
     if options.outfile is None:
         options.outfile = options.net + ".taz.xml"
@@ -55,7 +56,6 @@ def getCandidates(edge, net, radius):
             nearby.add(edge2)
         candidates.append(nearby)
     return candidates
-
 
 ASYM_BIDI_CACHE = {}  # edge : opposites
 
@@ -111,7 +111,6 @@ def main(netFile, outFile, radius, travelDist, symmetrical):
                 taz.getID(), ' '.join(sorted([e.getID() for e in edges]))))
         outf.write('</tazs>\n')
     return net
-
 
 if __name__ == "__main__":
     options = parse_args()

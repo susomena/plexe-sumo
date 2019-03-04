@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NIImporter_ITSUMO.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // Importer for networks stored in ITSUMO format
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 #include <set>
 #include <functional>
 #include <sstream>
@@ -37,7 +44,7 @@
 #include <utils/common/StringUtils.h>
 #include <utils/common/FileHelpers.h>
 #include <utils/common/StringTokenizer.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 #include <utils/xml/XMLSubSys.h>
 #include "NILoader.h"
 #include "NIImporter_ITSUMO.h"
@@ -225,8 +232,8 @@ NIImporter_ITSUMO::Handler::myEndElement(int element) {
         case ITSUMO_TAG_NODE: {
             try {
                 std::string id = myParameter["id"];
-                double x = StringUtils::toDouble(myParameter["x"]);
-                double y = StringUtils::toDouble(myParameter["y"]);
+                double x = TplConvert::_2double(myParameter["x"].c_str());
+                double y = TplConvert::_2double(myParameter["y"].c_str());
                 Position pos(x, y);
                 if (!NBNetBuilder::transformCoordinate(pos)) {
                     WRITE_ERROR("Unable to project coordinates for node '" + id + "'.");
@@ -251,12 +258,12 @@ NIImporter_ITSUMO::Handler::myEndElement(int element) {
         case ITSUMO_TAG_LANESET: {
             try {
                 std::string id = myParameter["lanesetID"];
-                int i = StringUtils::toInt(myParameter["i"]);
+                int i = TplConvert::_2int(myParameter["i"].c_str());
                 std::string fromID = myParameter["from"];
                 std::string toID = myParameter["to"];
                 NBNode* from = myNetBuilder.getNodeCont().retrieve(fromID);
                 NBNode* to = myNetBuilder.getNodeCont().retrieve(toID);
-                if (from == nullptr || to == nullptr) {
+                if (from == 0 || to == 0) {
                     WRITE_ERROR("Missing node in laneset '" + myParameter["lanesetID"] + "'.");
                 } else {
                     if (myLaneSets.find(id) != myLaneSets.end()) {
@@ -283,8 +290,8 @@ NIImporter_ITSUMO::Handler::myEndElement(int element) {
         case ITSUMO_TAG_LANE: {
             try {
                 std::string id = myParameter["laneID"];
-                int i = StringUtils::toInt(myParameter["i"]);
-                double v = StringUtils::toDouble(myParameter["v"]);
+                int i = TplConvert::_2int(myParameter["i"].c_str());
+                double v = TplConvert::_2double(myParameter["v"].c_str());
                 myCurrentLanes.push_back(Lane(id, (int) i, v));
             } catch (NumberFormatException&) {
                 WRITE_ERROR("Not numeric value in lane '" + myParameter["laneID"] + "'.");

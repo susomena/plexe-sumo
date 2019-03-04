@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on Fri Dec 14 09:27:42 2018 by Eclipse SUMO netconvert Version v1_0_1+0645-93703db
-This data file and the accompanying materials
-are made available under the terms of the Eclipse Public License v2.0
-which accompanies this distribution, and is available at
-http://www.eclipse.org/legal/epl-v20.html
-SPDX-License-Identifier: EPL-2.0
+<!-- generated on Tue Jun 13 16:43:16 2017 by SUMO netconvert Version dev-SVN-r24657
+<?xml version="1.0" encoding="UTF-8"?>
+
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
@@ -14,27 +11,17 @@ SPDX-License-Identifier: EPL-2.0
     </input>
 
     <output>
-        <write-license value="true"/>
         <output-file value="net.net.xml"/>
     </output>
 
     <processing>
-        <geometry.max-grade.fix value="false"/>
-        <offset.disable-normalization value="true"/>
-        <lefthand value="false"/>
-    </processing>
-
-    <junctions>
         <no-internal-links value="true"/>
         <no-turnarounds value="true"/>
+        <offset.disable-normalization value="true"/>
+        <lefthand value="false"/>
         <junctions.corner-detail value="0"/>
-        <junctions.limit-turn-speed value="-1"/>
         <rectangular-lane-cut value="false"/>
-    </junctions>
-
-    <pedestrian>
-        <walkingareas value="false"/>
-    </pedestrian>
+    </processing>
 
     <report>
         <xml-validation value="never"/>
@@ -43,38 +30,38 @@ SPDX-License-Identifier: EPL-2.0
 </configuration>
 -->
 
-<net version="1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
+<net version="0.27" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/net_file.xsd">
 
     <location netOffset="0.00,0.00" convBoundary="0.00,0.00,200.00,100.00" origBoundary="-10000000000.00,-10000000000.00,10000000000.00,10000000000.00" projParameter="!"/>
 
     <edge id="-beg" from="gneJ1" to="newNode" priority="1">
-        <lane id="-beg_0" index="0" speed="13.89" length="50.00" shape="200.00,4.80 150.80,4.80"/>
-        <lane id="-beg_1" index="1" speed="13.89" length="50.00" shape="200.00,1.60 150.80,1.60"/>
+        <lane id="-beg_0" index="0" speed="13.89" length="56.46" shape="200.00,4.95 148.17,4.95"/>
+        <lane id="-beg_1" index="1" speed="13.89" length="56.46" shape="200.00,1.65 148.17,1.65"/>
     </edge>
     <edge id="-beg.-150" from="newNode" to="gneJ0" priority="1">
-        <lane id="-beg.-150_0" index="0" speed="13.89" length="150.00" shape="139.22,4.80 0.00,4.80"/>
-        <lane id="-beg.-150_1" index="1" speed="13.89" length="150.00" shape="139.22,1.60 0.00,1.60"/>
+        <lane id="-beg.-150_0" index="0" speed="13.89" length="145.70" shape="141.59,4.95 0.00,4.95"/>
+        <lane id="-beg.-150_1" index="1" speed="13.89" length="145.70" shape="141.59,1.65 0.00,1.65"/>
     </edge>
     <edge id="beg" from="gneJ0" to="newNode" priority="1">
-        <lane id="beg_0" index="0" speed="13.89" length="150.00" shape="0.00,-4.80 139.22,-4.80"/>
-        <lane id="beg_1" index="1" speed="13.89" length="150.00" shape="0.00,-1.60 139.22,-1.60"/>
+        <lane id="beg_0" index="0" speed="13.89" length="145.70" shape="0.00,-4.95 141.59,-4.95"/>
+        <lane id="beg_1" index="1" speed="13.89" length="145.70" shape="0.00,-1.65 141.59,-1.65"/>
     </edge>
     <edge id="beg.150" from="newNode" to="gneJ1" priority="1">
-        <lane id="beg.150_0" index="0" speed="13.89" length="50.00" shape="150.80,-4.80 200.00,-4.80"/>
-        <lane id="beg.150_1" index="1" speed="13.89" length="50.00" shape="150.80,-1.60 200.00,-1.60"/>
+        <lane id="beg.150_0" index="0" speed="13.89" length="56.46" shape="148.17,-4.95 200.00,-4.95"/>
+        <lane id="beg.150_1" index="1" speed="13.89" length="56.46" shape="148.17,-1.65 200.00,-1.65"/>
     </edge>
     <edge id="gneE0" from="gneJ2" to="A" priority="1">
-        <lane id="gneE0_0" index="0" speed="13.89" length="99.93" shape="0.00,98.40 98.02,98.40"/>
+        <lane id="gneE0_0" index="0" speed="13.89" length="99.95" shape="0.00,98.35 97.99,98.35"/>
     </edge>
     <edge id="newEdge" from="A" to="newNode" priority="-1">
-        <lane id="newEdge_0" index="0" speed="13.89" length="111.74" shape="99.45,97.52 142.86,10.69"/>
+        <lane id="newEdge_0" index="0" speed="13.90" length="107.83" shape="99.42,97.47 143.85,8.61"/>
     </edge>
 
-    <junction id="A" type="dead_end" x="100.00" y="100.00" incLanes="gneE0_0" intLanes="" shape="100.88,98.23 98.02,96.80 98.02,100.00"/>
-    <junction id="gneJ0" type="unregulated" x="0.00" y="0.00" incLanes="-beg.-150_0 -beg.-150_1" intLanes="" shape="0.00,0.00 0.00,6.40 0.00,0.00"/>
-    <junction id="gneJ1" type="dead_end" x="200.00" y="0.00" incLanes="beg.150_0 beg.150_1" intLanes="" shape="200.00,0.00 200.00,-6.40 200.00,0.00"/>
-    <junction id="gneJ2" type="dead_end" x="0.00" y="100.00" incLanes="" intLanes="" shape="0.00,100.00 0.00,96.80"/>
-    <junction id="newNode" type="priority" x="150.00" y="0.00" incLanes="-beg_0 -beg_1 beg_0 beg_1 newEdge_0" intLanes="" shape="150.80,6.40 150.80,-6.40 139.22,-6.40 139.22,6.40 141.43,9.98 144.30,11.41">
+    <junction id="A" type="dead_end" x="100.00" y="100.00" incLanes="gneE0_0" intLanes="" shape="100.85,98.18 97.99,96.75 97.99,99.95"/>
+    <junction id="gneJ0" type="unregulated" x="0.00" y="0.00" incLanes="-beg.-150_0 -beg.-150_1" intLanes="" shape="0.00,-0.05 0.00,6.55 0.00,0.05"/>
+    <junction id="gneJ1" type="dead_end" x="200.00" y="0.00" incLanes="beg.150_0 beg.150_1" intLanes="" shape="200.00,0.05 200.00,-6.55 200.00,-0.05"/>
+    <junction id="gneJ2" type="dead_end" x="0.00" y="100.00" incLanes="" intLanes="" shape="0.00,99.95 0.00,96.75"/>
+    <junction id="newNode" type="priority" x="150.00" y="0.00" incLanes="-beg_0 -beg_1 beg_0 beg_1 newEdge_0" intLanes="" shape="148.17,6.55 148.17,-6.55 141.59,-6.55 141.59,6.55 142.42,7.89 145.28,9.32">
         <request index="0" response="000000" foes="110000"/>
         <request index="1" response="000000" foes="110000"/>
         <request index="2" response="000000" foes="100000"/>

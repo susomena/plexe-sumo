@@ -29,10 +29,8 @@
         </xsd:attribute>
     </xsd:complexType>
 
-    <xsd:complexType name="nodeTypeWithoutID">
-        <xsd:sequence>
-            <xsd:element name="param" type="paramType" minOccurs="0" maxOccurs="unbounded"/>
-        </xsd:sequence>
+    <xsd:complexType name="nodeType">
+        <xsd:attribute name="id" type="xsd:string" use="required"/>
         <xsd:attribute name="x" type="xsd:float" use="optional"/>
         <xsd:attribute name="y" type="xsd:float" use="optional"/>
         <xsd:attribute name="z" type="xsd:float" use="optional"/>
@@ -43,35 +41,14 @@
         <xsd:attribute name="shape" type="shapeType" use="optional"/>
         <xsd:attribute name="radius" type="nonNegativeFloatTypeWithErrorValue" use="optional"/>
         <xsd:attribute name="keepClear" type="boolType" use="optional"/>
-        <xsd:attribute name="rightOfWay" use="optional">
-            <xsd:simpleType>
-                <xsd:restriction base="xsd:string">
-                    <xsd:enumeration value="default"/>
-                    <xsd:enumeration value="edgePriority"/>
-                </xsd:restriction>
-            </xsd:simpleType>
-        </xsd:attribute>
-    </xsd:complexType>
-
-    <xsd:complexType name="nodeType">
-        <xsd:complexContent>
-            <xsd:extension base="nodeTypeWithoutID">
-                <xsd:attribute name="id" type="idType" use="required"/>
-            </xsd:extension>
-        </xsd:complexContent>
     </xsd:complexType>
 
     <xsd:complexType name="deleteType">
-        <xsd:attribute name="id" type="idType" use="required"/>
+        <xsd:attribute name="id" type="xsd:string" use="required"/>
     </xsd:complexType>
 
     <xsd:complexType name="joinType">
-        <xsd:complexContent>
-            <xsd:extension base="nodeTypeWithoutID">
-                <xsd:attribute name="nodes" type="xsd:string" use="required"/>
-                <xsd:attribute name="id" type="idType" use="optional"/>
-            </xsd:extension>
-        </xsd:complexContent>
+        <xsd:attribute name="nodes" type="xsd:string" use="required"/>
     </xsd:complexType>
 
     <xsd:complexType name="joinExcludeType">

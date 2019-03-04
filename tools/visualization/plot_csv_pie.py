@@ -1,24 +1,25 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    plot_csv_pie.py
-# @author  Daniel Krajzewicz
-# @author  Laura Bieker
-# @date    2014-01-15
-# @version $Id$
-
 """
+@file    plot_csv_pie.py
+@author  Daniel Krajzewicz
+@author  Laura Bieker
+@date    2014-01-15
+@version $Id$
+
 
 This script plots name / value pairs from a given .csv file (';'-separated).
 The values are plotted as a pie diagram.
 matplotlib (http://matplotlib.org/) has to be installed for this purpose
 
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2014-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
@@ -28,8 +29,9 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 import sumolib  # noqa
-from sumolib.visualization import helpers  # noqa
-import matplotlib.pyplot as plt  # noqa
+from sumolib.visualization import helpers
+
+import matplotlib.pyplot as plt
 
 
 def main(args=None):
@@ -95,7 +97,6 @@ def main(args=None):
     patches, texts, autotexts = plt.pie(
         vals, labels=labels, autopct=autopct, colors=colors, shadow=shadow, startangle=options.startangle)
     helpers.closeFigure(fig, ax, options)
-
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))

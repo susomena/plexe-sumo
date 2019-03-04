@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSCFModel_Daniel1.h
 /// @author  Daniel Krajzewicz
 /// @author  Michael Behrisch
@@ -15,13 +7,28 @@
 ///
 // The original Krauss (1998) car-following model and parameter
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef MSCFModel_Daniel1_h
 #define MSCFModel_Daniel1_h
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include "MSCFModel.h"
 #include <utils/xml/SUMOXMLDefinitions.h>
@@ -37,9 +44,17 @@
 class MSCFModel_Daniel1 : public MSCFModel {
 public:
     /** @brief Constructor
-     *  @param[in] vtype the type for which this model is built and also the parameter object to configure this model
+     * @param[in] accel The maximum acceleration
+     * @param[in] decel The maximum deceleration
+     * @param[in] emergencyDecel The maximum emergency deceleration
+     * @param[in] apparentDecel The deceleration as expected by others
+     * @param[in] dawdle The driver imperfection
+     * @param[in] tau The driver's reaction time
      */
-    MSCFModel_Daniel1(const MSVehicleType* vtype);
+    MSCFModel_Daniel1(const MSVehicleType* vtype, double accel,
+                      double decel, double emergencyDecel, double apparentDecel,
+                      double dawdle, double headwayTime,
+                      double tmp1, double tmp2, double tmp3, double tmp4, double tmp5);
 
 
     /// @brief Destructor
@@ -54,7 +69,7 @@ public:
      * @param[in] vPos The possible velocity
      * @return The velocity after applying interactions with stops and lane change model influences
      */
-    double finalizeSpeed(MSVehicle* const veh, double vPos) const;
+    double moveHelper(MSVehicle* const veh, double vPos) const;
 
 
     /** @brief Computes the vehicle's safe speed (no dawdling)
@@ -65,7 +80,7 @@ public:
      * @return EGO's safe speed
      * @see MSCFModel::ffeV
      */
-    virtual double followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel, const MSVehicle* const pred = 0) const;
+    virtual double followSpeed(const MSVehicle* const veh, double speed, double gap2pred, double predSpeed, double predMaxDecel) const;
 
 
     /** @brief Computes the vehicle's safe speed for approaching a non-moving obstacle (no dawdling)
@@ -145,7 +160,7 @@ private:
      * @param[in] speed The speed with no dawdling
      * @return The speed after dawdling
      */
-    virtual double dawdle(double speed, std::mt19937* rng) const;
+    virtual double dawdle(double speed) const;
 
 protected:
     /// @brief The vehicle's dawdle-parameter. 0 for no dawdling, 1 for max.

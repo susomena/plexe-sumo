@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    multientryexit.py
+@author  Michael Behrisch
+@date    2011-03-16
+@version $Id$
 
-# @file    _multientryexit.py
-# @author  Michael Behrisch
-# @date    2011-03-16
-# @version $Id$
+Python implementation of the TraCI interface.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from .domain import Domain
 from .storage import Storage
@@ -34,24 +38,21 @@ class MultiEntryExitDomain(Domain):
     def getLastStepVehicleNumber(self, detID):
         """getLastStepVehicleNumber(string) -> integer
 
-        Returns the number of vehicles that have been within the named multi-entry/multi-exit detector within the
-        last simulation step.
+        Returns the number of vehicles that have been within the named multi-entry/multi-exit detector within the last simulation step.
         """
         return self._getUniversal(tc.LAST_STEP_VEHICLE_NUMBER, detID)
 
     def getLastStepMeanSpeed(self, detID):
         """getLastStepMeanSpeed(string) -> double
 
-        Returns the mean speed in m/s of vehicles that have been within the named multi-entry/multi-exit detector
-        within the last simulation step.
+        Returns the mean speed in m/s of vehicles that have been within the named multi-entry/multi-exit detector within the last simulation step.
         """
         return self._getUniversal(tc.LAST_STEP_MEAN_SPEED, detID)
 
     def getLastStepVehicleIDs(self, detID):
         """getLastStepVehicleIDs(string) -> list(string)
 
-        Returns the list of ids of vehicles that have been within the named multi-entry/multi-exit detector in the
-        last simulation step.
+        Returns the list of ids of vehicles that have been within the named multi-entry/multi-exit detector in the last simulation step.
         """
         return self._getUniversal(tc.LAST_STEP_VEHICLE_ID_LIST, detID)
 

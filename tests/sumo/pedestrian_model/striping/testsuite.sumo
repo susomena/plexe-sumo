@@ -18,9 +18,6 @@ errors
 # tests mapping between stripes of lanes with differnt widths and directions.
 # 4 pedestrians are walking in paralllel and should all arrive at the same time
 stripe_offsets
-
-# test regarding interaction with traffic lights
-tls
 bugs
 
 # two flows in opposite directions with a change in walking direction
@@ -31,9 +28,6 @@ counterflow_change_direction
 
 # no sidewalks, walkingareas nor crossings
 no_sidewalks
-
-# multiple lanes that allow pedestrians on one edge. Prefere the exclusive lane
-multiple_pedestrian_lanes
 
 # Copy of disconnected_route
 disconnected_route

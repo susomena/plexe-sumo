@@ -1,18 +1,21 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MEVehicle.h
 /// @author  Daniel Krajzewicz
 /// @date    Tue, May 2005
 /// @version $Id$
 ///
 // A vehicle from the mesoscopic point of view
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef MEVehicle_h
 #define MEVehicle_h
@@ -21,7 +24,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <iostream>
 #include <cassert>
@@ -154,13 +161,6 @@ public:
      */
     bool isStopped() const;
 
-    /// @brief Returns the remaining stop duration for a stopped vehicle or 0
-    SUMOTime remainingStopDuration() const {
-        return 0;
-    }
-
-    ///@brief ends the current stop and performs loading/unloading
-    void processStop();
 
     /** @brief Returns whether the vehicle is on a triggered stop
      * @return whether the vehicle is on a triggered stop
@@ -171,30 +171,16 @@ public:
      */
     bool isStoppedInRange(double pos) const;
 
-    /** @brief Returns whether the vehicle stops at the given stopping place */
-    bool stopsAt(MSStoppingPlace* /*stop*/) const {
-        return false;
-    };
-
-    /** @brief Returns until when to stop at the given segment
+    /** @brief Returns how long to stop at the given segment
      * @param[in] seg The segment in question
-     * @param[in] time the current time
      * @return stop time for the segment
      */
-    SUMOTime getStoptime(const MESegment* const seg, SUMOTime time) const;
+    SUMOTime getStoptime(const MESegment* const seg) const;
 
 
     /** @brief Returns the list of still pending stop edges
      */
-    const ConstMSEdgeVector getStopEdges(double& firstPos, double& lastPos) const;
-
-    /// @brief return list of route indices for the remaining stops
-    std::vector<int> getStopIndices() const;
-
-    /// @brief get distance for coming to a stop (used for rerouting checks)
-    double getBrakeGap() const {
-        return 0;
-    }
+    const ConstMSEdgeVector getStopEdges() const;
 
     /** @brief replace the current parking area stop with a new stop with merge duration
      */
@@ -292,11 +278,6 @@ public:
         return MAX2(SUMOTime(0), myEventTime - myBlockTime);
     }
 
-    /// @brief Returns the duration for which the vehicle was blocked
-    inline SUMOTime getAccumulatedWaitingTime() const {
-        return getWaitingTime();
-    }
-
 
     /** @brief Returns the number of seconds waited (speed was lesser than 0.1m/s)
      *
@@ -327,11 +308,9 @@ public:
     /// @brief Returns the delay that is accrued due to option --meso-tls-penalty or --meso-minor-penalty
     double getCurrentLinkPenaltySeconds() const;
 
-    /// @brief Returns the delay that is accrued due to option --meso-tls-penalty or --meso-minor-penalty
-    double getCurrentStoppingTimeSeconds() const;
 
     /// Replaces the current route by the given one
-    bool replaceRoute(const MSRoute* route,  const std::string& info, bool onInit = false, int offset = 0, bool addStops = true, bool removeStops = true);
+    bool replaceRoute(const MSRoute* route, bool onInit = false, int offset = 0, bool addStops = true);
 
     /** @brief Returns whether the vehicle is allowed to pass the next junction
      * @return true iff the vehicle may drive over the next junction
@@ -376,10 +355,7 @@ protected:
     SUMOTime myBlockTime;
 
     /// @brief where to stop
-    std::map<const MESegment* const, std::vector<SUMOVehicleParameter::Stop> > myStops;
-
-    /// @brief edges to stop
-    ConstMSEdgeVector myStopEdges;
+    std::map<const MESegment* const, SUMOTime> myStops;
 
 };
 

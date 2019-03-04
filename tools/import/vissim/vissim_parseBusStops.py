@@ -1,19 +1,11 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2009-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    vissim_parseBusStops.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2009-05-27
-# @version $Id$
-
 """
+@file    vissim_parseBusStops.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2009-05-27
+@version $Id$
+
 
 Parses bus stops and bus routes given in the Vissim file (first parameter).
 
@@ -22,16 +14,28 @@ The read routes are saved as <OUTPUT_PREFIX>_stops.add.xml
 
 (Starting?) edges of the route may be renamed by setting them within "edgemap"
  variable (see below).
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2009-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from __future__ import print_function
-import sys
 
 edgemap = {}
 edgemap["203"] = "203[0]"
 edgemap["78"] = "78[0]"
 edgemap["77"] = "77[0]"
 edgemap["203"] = "203[0]"
+
+
+import sys
+from random import *
 
 
 def getName(vals, beg):
@@ -80,7 +84,7 @@ def parseBusRoute(br, stops):
             i = vals.index("HALTESTELLE", i)
             i = i + 1
             stops.insert(0, int(vals[i]))
-        except Exception:
+        except:
             i = len(vals) + 1
     return (id, name, startKante, ziel, zeiten, stops)
 

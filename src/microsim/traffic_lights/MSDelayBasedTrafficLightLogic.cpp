@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSDelayBasedTrafficLightLogic.cpp
 /// @author  Leonhard Luecken
 /// @date    Feb 2017
@@ -14,12 +6,27 @@
 ///
 // An actuated traffic light logic based on time delay of approaching vehicles
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <cassert>
 #include <vector>
@@ -30,7 +37,7 @@
 #include "MSDelayBasedTrafficLightLogic.h"
 #include <microsim/MSLane.h>
 #include <netload/NLDetectorBuilder.h>
-#include <utils/common/StringUtils.h>
+#include <utils/common/TplConvert.h>
 
 #define INVALID_POSITION std::numeric_limits<double>::max()
 
@@ -49,15 +56,15 @@ MSDelayBasedTrafficLightLogic::MSDelayBasedTrafficLightLogic(MSTLLogicControl& t
         int step, SUMOTime delay,
         const std::map<std::string, std::string>& parameter,
         const std::string& basePath) :
-    MSSimpleTrafficLightLogic(tlcontrol, id, programID, TLTYPE_DELAYBASED, phases, step, delay, parameter) {
+    MSSimpleTrafficLightLogic(tlcontrol, id, programID, phases, step, delay, parameter) {
 #ifdef DEBUG_TIMELOSS_CONTROL
     std::cout << "Building delay based tls logic '" << id << "'" << std::endl;
 #endif
-    myShowDetectors = StringUtils::toBool(getParameter("show-detectors", "false"));
-    myDetectionRange = StringUtils::toDouble(getParameter("detectorRange", "-1.0"));
-    myTimeLossThreshold = StringUtils::toDouble(getParameter("minTimeloss", "1.0"));
+    myShowDetectors = TplConvert::_2bool(getParameter("show-detectors", "false").c_str());
+    myDetectionRange = TplConvert::_2double(getParameter("detectorRange", "-1.0").c_str());
+    myTimeLossThreshold = TplConvert::_2double(getParameter("minTimeloss", "1.0").c_str());
     myFile = FileHelpers::checkForRelativity(getParameter("file", "NUL"), basePath);
-    myFreq = TIME2STEPS(StringUtils::toDouble(getParameter("freq", "300")));
+    myFreq = TIME2STEPS(TplConvert::_2double(getParameter("freq", "300").c_str()));
     myVehicleTypes = getParameter("vTypes", "");
 #ifdef DEBUG_TIMELOSS_CONTROL
     std::cout << "show-detectors: " << myShowDetectors
@@ -82,10 +89,6 @@ MSDelayBasedTrafficLightLogic::init(NLDetectorBuilder& nb) {
         const LaneVector& lanes = *i2;
         for (i = lanes.begin(); i != lanes.end(); i++) {
             MSLane* lane = (*i);
-            if (noVehicles(lane->getPermissions())) {
-                // do not build detectors on green verges or sidewalks
-                continue;
-            }
             // Build the detectors and register them at the detector control
             std::string id = "TLS" + myID + "_" + myProgramID + "_E2CollectorOn_" + lane->getID();
             if (myLaneDetectors.find(lane) == myLaneDetectors.end()) {
@@ -117,13 +120,13 @@ MSDelayBasedTrafficLightLogic::proposeProlongation(const SUMOTime actDuration, c
         const std::vector<MSLane*>& lanes = getLanesAt(i);
         for (LaneVector::const_iterator j = lanes.begin(); j != lanes.end(); j++) {
             LaneDetectorMap::iterator i = myLaneDetectors.find(*j);
-            if (i == myLaneDetectors.end()) {
 #ifdef DEBUG_TIMELOSS_CONTROL
-                // no detector for this lane!? maybe noVehicles allowed
+            if (i == myLaneDetectors.end()) {
+                // no detector for this lane!?
                 std::cout << "no detector on lane '" << (*j)->getID() << std::endl;
-#endif
                 continue;
             }
+#endif
             MSE2Collector* detector = static_cast<MSE2Collector* >(i->second);
             const std::vector<MSE2Collector::VehicleInfo*> vehInfos = detector->getCurrentVehicles();
 #ifdef DEBUG_TIMELOSS_CONTROL

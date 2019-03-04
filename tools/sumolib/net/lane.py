@@ -1,23 +1,26 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2011-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    lane.py
+@author  Daniel Krajzewicz
+@author  Laura Bieker
+@author  Karol Stosiek
+@author  Michael Behrisch
+@author  Jakob Erdmann
+@date    2011-11-28
+@version $Id$
 
-# @file    lane.py
-# @author  Daniel Krajzewicz
-# @author  Laura Bieker
-# @author  Karol Stosiek
-# @author  Michael Behrisch
-# @author  Jakob Erdmann
-# @date    2011-11-28
-# @version $Id$
+This file contains a Python-representation of a single lane.
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2011-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 
 import sumolib.geomhelper
-from functools import reduce
 
 # taken from sumo/src/utils/common/SUMOVehicleClass.cpp
 SUMO_VEHICLE_CLASSES = (
@@ -64,8 +67,6 @@ def get_allowed(allow, disallow):
         return SUMO_VEHICLE_CLASSES
     elif disallow is None:
         return allow.split()
-    elif disallow == "all":
-        return ()
     else:
         disallow = disallow.split()
         return tuple([c for c in SUMO_VEHICLE_CLASSES if c not in disallow])
@@ -86,11 +87,10 @@ class Lane:
 
     """ Lanes from a sumo network """
 
-    def __init__(self, edge, speed, length, width, allow, disallow):
+    def __init__(self, edge, speed, length, allow, disallow):
         self._edge = edge
         self._speed = speed
         self._length = length
-        self._width = width
         self._shape = None
         self._shape3D = None
         self._shapeWithJunctions = None
@@ -98,7 +98,6 @@ class Lane:
         self._outgoing = []
         self._params = {}
         self._allowed = get_allowed(allow, disallow)
-        self._neigh = None
         edge.addLane(self)
 
     def getSpeed(self):
@@ -106,9 +105,6 @@ class Lane:
 
     def getLength(self):
         return self._length
-
-    def getWidth(self):
-        return self._width
 
     def setShape(self, shape):
         """Set the shape of the lane
@@ -184,6 +180,7 @@ class Lane:
             xmax = max(xmax, p[0])
             ymin = min(ymin, p[1])
             ymax = max(ymax, p[1])
+        assert(xmin != xmax or ymin != ymax)
         return (xmin, ymin, xmax, ymax)
 
     def getClosestLanePosAndDist(self, point, perpendicular=False):
@@ -204,35 +201,8 @@ class Lane:
     def getOutgoing(self):
         return self._outgoing
 
-    def getIncoming(self):
-        """
-        Returns all incoming lanes for this lane, i.e. lanes, which have a connection to this lane.
-        """
-        candidates = reduce(lambda x, y: x + y, [cons for e, cons in self._edge.getIncoming().items()], [])
-        return [c.getFromLane() for c in candidates if self == c.getToLane()]
-
-    def getConnection(self, toLane):
-        """Returns the connection to the given target lane or None"""
-        for conn in self._outgoing:
-            if conn.getToLane() == toLane:
-                return conn
-        return None
-
-    def allows(self, vClass):
-        """true if this lane allows the given vehicle class"""
-        return vClass in self._allowed
-
-    def setNeigh(self, neigh):
-        self._neigh = neigh
-
-    def getNeigh(self):
-        return self._neigh
-
     def setParam(self, key, value):
         self._params[key] = value
 
     def getParam(self, key, default=None):
         return self._params.get(key, default)
-
-    def getParams(self):
-        return self._params

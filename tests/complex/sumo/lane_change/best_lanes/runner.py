@@ -1,18 +1,21 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    runner.py
+@author  Daniel Krajzewicz
+@author  Michael Behrisch
+@date    2010-10-17
+@version $Id$
 
-# @file    runner.py
-# @author  Daniel Krajzewicz
-# @author  Michael Behrisch
-# @date    2010-10-17
-# @version $Id$
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -23,7 +26,7 @@ import shutil
 import random
 sys.path.append(os.path.join(
     os.path.dirname(sys.argv[0]), '..', '..', '..', '..', '..', "tools"))
-import traci  # noqa
+import traci
 import sumolib  # noqa
 
 sumoBinary = sumolib.checkBinary('sumo')
@@ -61,7 +64,7 @@ for root in sorted(roots):
         print("  length: %s" % (l[1]))
         print("  offset: %s" % (l[3]))
         print("  allowsContinuation: %s" % (l[4]))
-        print("  over: %s" % (l[5],))
+        print("  over: %s" % (l[5]))
     traci.close()
     sys.stdout.flush()
 

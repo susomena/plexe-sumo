@@ -1,6 +1,3 @@
-# testing meta processing
-meta
-
 # Tests for nodes building
 node_building
 
@@ -16,8 +13,12 @@ import
 # Tests whether other options work
 function
 
+# testing meta processing
+meta
+
 # testing error input
 errors
 
 # testing previous bugs
 bugs
+

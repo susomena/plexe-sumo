@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    MSNet.h
 /// @author  Christian Roessel
 /// @author  Jakob Erdmann
@@ -18,7 +10,18 @@
 /// @date    Mon, 12 Mar 2001
 /// @version $Id$
 ///
-// The simulated network and simulation performer
+// The simulated network and simulation perfomer
+/****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
 /****************************************************************************/
 #ifndef MSNet_h
 #define MSNet_h
@@ -27,7 +30,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <typeinfo>
 #include <vector>
@@ -41,15 +48,18 @@
 #include <utils/common/UtilExceptions.h>
 #include <utils/common/NamedObjectCont.h>
 #include <utils/common/NamedRTree.h>
-#include <utils/router/SUMOAbstractRouter.h>
+#include <utils/vehicle/SUMOAbstractRouter.h>
+#include <utils/vehicle/PedestrianRouter.h>
 #include <microsim/trigger/MSChargingStation.h>
-#include "MSJunction.h"
+#include "MSParkingArea.h"
+#include "MSStoppingPlace.h"
 
 
 // ===========================================================================
 // class declarations
 // ===========================================================================
 class MSEdge;
+class MSJunction;
 class MSEdgeControl;
 class MSEventControl;
 class MSVehicleControl;
@@ -61,18 +71,13 @@ class MSVehicle;
 class MSRoute;
 class MSLane;
 class MSTLLogicControl;
-class MSTrafficLightLogic;
 class MSDetectorControl;
 class ShapeContainer;
 class BinaryInputDevice;
 class MSEdgeWeightsStorage;
 class SUMOVehicle;
-class MSStoppingPlace;
-template<class E, class L, class N, class V>
-class IntermodalRouter;
-template<class E, class L, class N, class V>
-class PedestrianRouter;
 
+typedef std::vector<MSEdge*> MSEdgeVector;
 
 // ===========================================================================
 // class definitions
@@ -97,16 +102,15 @@ public:
         SIMSTATE_NO_FURTHER_VEHICLES,
         /// @brief The connection to a client was closed by the client
         SIMSTATE_CONNECTION_CLOSED,
-        /// @brief An error occurred during the simulation step
+        /// @brief An error occured during the simulation step
         SIMSTATE_ERROR_IN_SIM,
-        /// @brief An external interrupt occured
-        SIMSTATE_INTERRUPTED,
         /// @brief The simulation had too many teleports
         SIMSTATE_TOO_MANY_TELEPORTS
     };
 
-    typedef PedestrianRouter<MSEdge, MSLane, MSJunction, MSVehicle> MSPedestrianRouter;
-    typedef IntermodalRouter<MSEdge, MSLane, MSJunction, SUMOVehicle> MSIntermodalRouter;
+    //typedef PedestrianRouterDijkstra<MSEdge, MSLane> MSPedestrianRouterDijkstra;
+    typedef PedestrianRouterDijkstra<MSEdge, MSLane, MSJunction, MSVehicle> MSPedestrianRouterDijkstra;
+
 
 
 public:
@@ -115,20 +119,6 @@ public:
      * @exception ProcessError If a network was not yet constructed
      */
     static MSNet* getInstance();
-
-    /// @brief Place for static initializations of simulation components (called after successful net build)
-    static void initStatic();
-
-    /// @brief Place for static initializations of simulation components (called after successful net build)
-    static void cleanupStatic();
-
-
-    /** @brief Returns whether the network was already constructed
-    * @return whether the network was already constructed
-    */
-    static bool hasInstance() {
-        return myInstance != nullptr;
-    }
 
 
     /** @brief Constructor
@@ -146,8 +136,7 @@ public:
      * @see closeBuilding
      */
     MSNet(MSVehicleControl* vc, MSEventControl* beginOfTimestepEvents,
-          MSEventControl* endOfTimestepEvents,
-          MSEventControl* insertionEvents,
+          MSEventControl* endOfTimestepEvents, MSEventControl* insertionEvents,
           ShapeContainer* shapeCont = 0);
 
 
@@ -233,18 +222,12 @@ public:
     void loadRoutes();
 
 
-    /** @brief Writes performance output and running vehicle stats
-     *
-     * @param[in] start The step the simulation was started with
-     */
-    const std::string generateStatistics(SUMOTime start);
-
-
     /** @brief Closes the simulation (all files, connections, etc.)
      *
      * Writes also performance output
      *
      * @param[in] start The step the simulation was started with
+     * @todo What exceptions may occure?
      */
     void closeSimulation(SUMOTime start);
 
@@ -454,50 +437,132 @@ public:
     MSEdgeWeightsStorage& getWeightsStorage();
     /// @}
 
-    /// @name Insertion and retrieval of stopping places
+    /// @name Insertion and retrieval of bus stops
     /// @{
 
-    /** @brief Adds a stopping place
+    /** @brief Adds a bus stop
      *
-     * If another stop with the same id and category exists, false is returned.
-     *  Otherwise, the stop is added to the internal stopping place container.
+     * If another bus stop with the same id exists, false is returned.
+     *  Otherwise, the bus stop is added to the internal bus stop
+     *  container "myBusStopDict".
      *
-     * This control gets responsible for deletion of the added stop.
+     * This control gets responsible for deletion of the added bus stop.
      *
-     * @param[in] stop The stop to add
-     * @return Whether the stop could be added
+     * @param[in] busStop The bus stop to add
+     * @return Whether the bus stop could be added
      */
-    bool addStoppingPlace(const SumoXMLTag category, MSStoppingPlace* stop);
+    bool addBusStop(MSStoppingPlace* busStop);
 
 
-    /** @brief Returns the named stopping place of the given category
-     * @param[in] id The id of the stop to return.
-     * @param[in] category The type of stop
-     * @return The named stop, or 0 if no such stop exists
+    /** @brief Returns the named bus stop
+     * @param[in] id The id of the bus stop to return.
+     * @return The named bus stop, or 0 if no such stop exists
      */
-    MSStoppingPlace* getStoppingPlace(const std::string& id, const SumoXMLTag category) const;
+    MSStoppingPlace* getBusStop(const std::string& id) const;
 
-    /** @brief Returns the stop of the given category close to the given position
-     * @param[in] lane the lane of the stop to return.
-     * @param[in] pos the position of the stop to return.
-     * @param[in] category The type of stop
-     * @return The stop id on the location, or "" if no such stop exists
+
+    /** @brief Returns the bus stop close to the given position
+     * @param[in] lane the lane of the bus stop to return.
+     * @param[in] pos the position of the bus stop to return.
+     * @return The bus stop id on the location, or "" if no such stop exists
      */
-    std::string getStoppingPlaceID(const MSLane* lane, const double pos, const SumoXMLTag category) const;
+    std::string getBusStopID(const MSLane* lane, const double pos) const;
     /// @}
 
-    const NamedObjectCont<MSStoppingPlace*>& getStoppingPlaces(SumoXMLTag category) const;
+
+    /// @name Insertion and retrieval of container stops
+    /// @{
+
+    /** @brief Adds a container stop
+     *
+     * If another container stop with the same id exists, false is returned.
+     *  Otherwise, the container stop is added to the internal container stop
+     *  container "myContainerStopDict".
+     *
+     * This control gets responsible for deletion of the added container stop.
+     *
+     * @param[in] containerStop The container stop to add
+     * @return Whether the container stop could be added
+     */
+    bool addContainerStop(MSStoppingPlace* containerStop);
+
+    /** @brief Returns the named container stop
+     * @param[in] id The id of the container stop to return.
+     * @return The named container stop, or 0 if no such stop exists
+     */
+    MSStoppingPlace* getContainerStop(const std::string& id) const;
+
+    /** @brief Returns the container stop close to the given position
+     * @param[in] lane the lane of the container stop to return.
+     * @param[in] pos the position of the container stop to return.
+     * @return The container stop id on the location, or "" if no such stop exists
+     */
+    std::string getContainerStopID(const MSLane* lane, const double pos) const;
+    /// @}
+
+    /// @name Insertion and retrieval of parking areas
+    /// @{
+
+    /** @brief Adds a parking area
+     *
+     * If another parking area with the same id exists, false is returned.
+     *  Otherwise, the parking area is added to the internal parking area
+     *  container "myParkingAreaDict".
+     *
+     * This control gets responsible for deletion of the added parking area.
+     *
+     * @param[in] parkingArea The parking area to add
+     * @return Whether the parking area could be added
+     */
+    bool addParkingArea(MSParkingArea* parkingArea);
+
+    /** @brief Returns the named parking area
+     * @param[in] id The id of the parking area to return.
+     * @return The named parking area, or 0 if no such stop exists
+     */
+    MSParkingArea* getParkingArea(const std::string& id) const;
+
+    /** @brief Returns the parking area close to the given position
+     * @param[in] lane the lane of the parking area to return.
+     * @param[in] pos the position of the parking area to return.
+     * @return The parking area id on the location, or "" if no such stop exists
+     */
+    std::string getParkingAreaID(const MSLane* lane, const double pos) const;
+    /// @}
+
+    /// @name Insertion and retrieval of charging stations
+    /// @{
+
+    /** @brief Adds a chargingg station
+     *
+     * If another charging station with the same id exists, false is returned.
+     *  Otherwise, the charging station is added to the internal bus stop
+     *  container "myChargingStationDict".
+     *
+     * This control gets responsible for deletion of the added charging station.
+     *
+     * @param[in] chargingStation The charging station add
+     * @return Whether the charging station could be added
+     */
+    bool addChargingStation(MSChargingStation* chargingStation);
+
+    /** @brief Returns the named charging station
+     * @param[in] id The id of the charging station to return.
+     * @return The named charging station, or 0 if no such stop exists
+     */
+    MSChargingStation* getChargingStation(const std::string& id) const;
+
+    /** @brief Returns the charging station close to the given position
+     * @param[in] lane the lane of the charging station to return.
+     * @param[in] pos the position of the bus stop to return.
+     * @return The charging station id on the location, or "" if no such stop exists
+     */
+    std::string getChargingStationID(const MSLane* lane, const double pos) const;
 
     /// @brief write charging station output
     void writeChargingStationOutput() const;
+    /// @}
 
-    /// @brief creates a wrapper for the given logic (see GUINet)
-    virtual void createTLWrapper(MSTrafficLightLogic*) {};
-
-    /// @brief return wheter the given logic (or rather it's wrapper) is selected in the GUI
-    virtual bool isSelected(const MSTrafficLightLogic*) const {
-        return false;
-    }
 
     /// @name Notification about vehicle state changes
     /// @{
@@ -523,11 +588,7 @@ public:
         /// @brief The vehicles starts to stop
         VEHICLE_STATE_STARTING_STOP,
         /// @brief The vehicle ends to stop
-        VEHICLE_STATE_ENDING_STOP,
-        /// @brief The vehicle is involved in a collision
-        VEHICLE_STATE_COLLISION,
-        /// @brief The vehicle had to brake harder than permitted
-        VEHICLE_STATE_EMERGENCYSTOP
+        VEHICLE_STATE_ENDING_STOP
     };
 
 
@@ -545,9 +606,8 @@ public:
         /** @brief Called if a vehicle changes its state
          * @param[in] vehicle The vehicle which changed its state
          * @param[in] to The state the vehicle has changed to
-         * @param[in] info Additional information on the state change
          */
-        virtual void vehicleStateChanged(const SUMOVehicle* const vehicle, VehicleState to, const std::string& info = "") = 0;
+        virtual void vehicleStateChanged(const SUMOVehicle* const vehicle, VehicleState to) = 0;
 
     };
 
@@ -567,10 +627,9 @@ public:
     /** @brief Informs all added listeners about a vehicle's state change
      * @param[in] vehicle The vehicle which changed its state
      * @param[in] to The state the vehicle has changed to
-     * @param[in] info Information regarding the replacement
      * @see VehicleStateListener:vehicleStateChanged
      */
-    void informVehicleStateListener(const SUMOVehicle* const vehicle, VehicleState to, const std::string& info = "");
+    void informVehicleStateListener(const SUMOVehicle* const vehicle, VehicleState to);
     /// @}
 
 
@@ -580,7 +639,7 @@ public:
      * @param[in] v The vehicle that is rerouted
      * @param[in] t The time for which the travel time shall be returned [s]
      * @return The travel time for an edge
-     * @see DijkstraRouter_ByProxi
+     * @see DijkstraRouterTT_ByProxi
      */
     static double getTravelTime(const MSEdge* const e, const SUMOVehicle* const v, double t);
 
@@ -590,7 +649,7 @@ public:
      * @param[in] v The vehicle that is rerouted
      * @param[in] t The time for which the effort shall be returned [s]
      * @return The effort (abstract) for an edge
-     * @see DijkstraRouter_ByProxi
+     * @see DijkstraRouterTT_ByProxi
      */
     static double getEffort(const MSEdge* const e, const SUMOVehicle* const v, double t);
 
@@ -602,10 +661,7 @@ public:
         const MSEdgeVector& prohibited = MSEdgeVector()) const;
     SUMOAbstractRouter<MSEdge, SUMOVehicle>& getRouterEffort(
         const MSEdgeVector& prohibited = MSEdgeVector()) const;
-    MSPedestrianRouter& getPedestrianRouter(const MSEdgeVector& prohibited = MSEdgeVector()) const;
-    MSIntermodalRouter& getIntermodalRouter(const int routingMode = 0, const MSEdgeVector& prohibited = MSEdgeVector()) const;
-
-    static void adaptIntermodalRouter(MSIntermodalRouter& router);
+    MSPedestrianRouterDijkstra& getPedestrianRouter(const MSEdgeVector& prohibited = MSEdgeVector()) const;
 
 
     /** @brief Returns an RTree that contains lane IDs
@@ -616,6 +672,11 @@ public:
     /// @brief return whether the network contains internal links
     bool hasInternalLinks() const {
         return myHasInternalLinks;
+    }
+
+    /// @brief return whether the network contains explicit neighbor lanes
+    bool hasNeighs() const {
+        return myHasNeighs;
     }
 
     /// @brief return whether the network contains elevation data
@@ -629,25 +690,25 @@ public:
     }
 
     /// @brief return the network version
-    double getNetworkVersion() const {
+    double version() const {
         return myVersion;
-    }
-
-    /// @brief return whether a warning regarding the given object shall be issued
-    bool warnOnce(const std::string& typeAndID);
-
-    void interrupt() {
-        myAmInterrupted = true;
-    }
-
-    bool isInterrupted() const {
-        return myAmInterrupted;
     }
 
 protected:
     /// @brief check all lanes for elevation data
     bool checkElevation();
 
+    /// @brief count number of standing vehicles in the network
+    int getHaltingVehicleNumber() const;
+
+    /// @brief get current absolute and relative mean vehicle speed in the network
+    std::pair<double, double> getVehicleMeanSpeeds() const;
+    double getVehicleMeanSpeed() const {
+        return getVehicleMeanSpeeds().first;
+    }
+    double getVehicleMeanSpeedRelative() const {
+        return getVehicleMeanSpeeds().second;
+    }
 
 protected:
     /// @brief Unique instance of MSNet
@@ -661,9 +722,6 @@ protected:
 
     /// @brief Maximum number of teleports.
     int myMaxTeleports;
-
-    /// @brief whether an interrupt occured
-    bool myAmInterrupted;
 
 
 
@@ -746,6 +804,9 @@ protected:
     /// @brief Whether the network contains internal links/lanes/edges
     bool myHasInternalLinks;
 
+    /// @brief Whether the network contains explicit neighbor lanes
+    bool myHasNeighs;
+
     /// @brief Whether the network contains elevation data
     bool myHasElevation;
 
@@ -755,17 +816,21 @@ protected:
     /// @brief the network version
     double myVersion;
 
-    /// @brief end of loaded edgeData
-    SUMOTime myEdgeDataEndTime;
+    /// @brief Dictionary of bus stops
+    NamedObjectCont<MSStoppingPlace*> myBusStopDict;
 
-    /// @brief Dictionary of bus / container stops
-    std::map<SumoXMLTag, NamedObjectCont<MSStoppingPlace*> > myStoppingPlaces;
+    /// @brief Dictionary of container stops
+    NamedObjectCont<MSStoppingPlace*> myContainerStopDict;
+
+    /// @brief Dictionary of parking areas
+    NamedObjectCont<MSParkingArea*> myParkingAreaDict;
+
+    /// @brief Dictionary of charging Stations
+    NamedObjectCont<MSChargingStation*> myChargingStationDict;
 
     /// @brief Container for vehicle state listener
     std::vector<VehicleStateListener*> myVehicleStateListeners;
 
-    /// @brief container to record warnings that shall only be issued once
-    std::map<std::string, bool> myWarnedOnce;
 
     /* @brief The router instance for routing by trigger and by traci
      * @note MSDevice_Routing has its own instance since it uses a different weight function
@@ -773,8 +838,7 @@ protected:
      * because the class structure makes it inconvenient to use a superclass*/
     mutable SUMOAbstractRouter<MSEdge, SUMOVehicle>* myRouterTT;
     mutable SUMOAbstractRouter<MSEdge, SUMOVehicle>* myRouterEffort;
-    mutable MSPedestrianRouter* myPedestrianRouter;
-    mutable std::map<int, MSIntermodalRouter*> myIntermodalRouter;
+    mutable MSPedestrianRouterDijkstra* myPedestrianRouter;
 
 
     /// @brief An RTree structure holding lane IDs

@@ -1,18 +1,3 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2016-2019 German Aerospace Center (DLR) and others.
-# SUMOPy module
-# Copyright (C) 2012-2017 University of Bologna - DICAM
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    test_app.py
-# @author  Joerg Schweizer
-# @date
-# @version $Id$
-
 import os
 import sys
 
@@ -28,7 +13,8 @@ if __name__ == '__main__':
     AGILEDIR = os.path.join(APPDIR, '..')
     print 'APPDIR,AGILEDIR', APPDIR, AGILEDIR
     sys.path.append(AGILEDIR)
-    libpaths = [AGILEDIR, os.path.join(AGILEDIR, "lib_base"), os.path.join(AGILEDIR, "lib_wx"), ]
+    libpaths = [AGILEDIR, os.path.join(
+        AGILEDIR, "lib_base"), os.path.join(AGILEDIR, "lib_wx"), ]
     for libpath in libpaths:
         print '  libpath=', libpath
         lp = os.path.abspath(libpath)
@@ -58,11 +44,13 @@ ICONPATH = os.path.join(IMAGEDIR, 'icon_color_small.png')  # None
 
 
 class MyApp(wx.App):
+
     def __init__(self, redirect=False, filename=None):
         wx.App.__init__(self, redirect, filename)
         #self.frame = wx.Frame(None, wx.ID_ANY, title='My Title')
-        self.mainframe = AgileMainframe(title='MyApp', size_toolbaricons=(32, 32))
-        if ICONPATH is not None:
+        self.mainframe = AgileMainframe(
+            title='MyApp', size_toolbaricons=(32, 32))
+        if ICONPATH != None:
             icon = wx.Icon(ICONPATH, wx.BITMAP_TYPE_PNG, 16, 16)
             self.mainframe.SetIcon(icon)
 
@@ -80,8 +68,10 @@ class MyApp(wx.App):
     def make_toolbar(self):
         tsize = self.mainframe.get_size_toolbaricons()
         new_bmp = wx.ArtProvider.GetBitmap(wx.ART_NEW, wx.ART_TOOLBAR, tsize)
-        open_bmp = wx.ArtProvider.GetBitmap(wx.ART_FILE_OPEN, wx.ART_TOOLBAR, tsize)
-        save_bmp = wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE, wx.ART_TOOLBAR, tsize)
+        open_bmp = wx.ArtProvider.GetBitmap(
+            wx.ART_FILE_OPEN, wx.ART_TOOLBAR, tsize)
+        save_bmp = wx.ArtProvider.GetBitmap(
+            wx.ART_FILE_SAVE, wx.ART_TOOLBAR, tsize)
         #cut_bmp = wx.ArtProvider.GetBitmap(wx.ART_CUT, wx.ART_TOOLBAR, tsize)
         #copy_bmp = wx.ArtProvider.GetBitmap(wx.ART_COPY, wx.ART_TOOLBAR, tsize)
         #paste_bmp= wx.ArtProvider.GetBitmap(wx.ART_PASTE, wx.ART_TOOLBAR, tsize)
@@ -134,13 +124,13 @@ class MyApp(wx.App):
         ])
 
         drawing = OGLdrawing()
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
 
         if 0:
             lines = Lines('lines', drawing)
             lines.add_drawobjs(vertices, colors)
             drawing.add_drawobj(lines)
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
         if 0:
             fancylines = Fancylines('fancylines', drawing)
             vertices_fancy = np.array([
@@ -162,7 +152,7 @@ class MyApp(wx.App):
                                     beginstyles=[TRIANGLEHEAD, TRIANGLEHEAD],
                                     endstyles=[ARROWHEAD, ARROWHEAD])
             drawing.add_drawobj(fancylines)
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
         if 0:
             polylines = Polylines('polylines', drawing, joinstyle=BEVELHEAD)
             colors_poly = np.array([
@@ -171,7 +161,8 @@ class MyApp(wx.App):
             ])
 
             vertices_poly = np.array([
-                [[0.0, 2.0, 0.0], [5.0, 2.0, 0.0], [5.0, 7.0, 0.0], [0.0, 7.0, 0.0]],  # 0 green
+                [[0.0, 2.0, 0.0], [5.0, 2.0, 0.0], [
+                    5.0, 7.0, 0.0], [0.0, 7.0, 0.0]],  # 0 green
                 [[0.0, -2.0, 0.0], [-2.0, -2.0, 0.0]],  # 1 red
             ], np.object)
 
@@ -186,7 +177,7 @@ class MyApp(wx.App):
                                    endstyles=[ARROWHEAD, ARROWHEAD])
             drawing.add_drawobj(polylines)
 
-# -------------------------------------------------------------------------------
+#-------------------------------------------------------------------------
         if 1:
             polygons = Polygons('polygons', drawing, linewidth=5)
             colors_poly = np.array([
@@ -195,8 +186,10 @@ class MyApp(wx.App):
             ])
 
             vertices_poly = np.array([
-                [[0.0, 2.0, 0.0], [5.0, 2.0, 0.0], [5.0, 7.0, 0.0], [0.0, 7.0, 0.0]],  # 0 green
-                [[0.0, -2.0, 0.0], [-2.0, -2.0, 0.0], [-2.0, 0.0, 0.0]],  # 1 red
+                [[0.0, 2.0, 0.0], [5.0, 2.0, 0.0], [
+                    5.0, 7.0, 0.0], [0.0, 7.0, 0.0]],  # 0 green
+                [[0.0, -2.0, 0.0], [-2.0, -2.0, 0.0],
+                 [-2.0, 0.0, 0.0]],  # 1 red
             ], np.object)
 
             print '  vertices_polygon\n', vertices_poly

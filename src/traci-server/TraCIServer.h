@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    TraCIServer.h
 /// @author  Axel Wegener
 /// @author  Friedemann Wesner
@@ -22,6 +14,17 @@
 ///
 // TraCI server used to control sumo by a remote TraCI client
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef TRACISERVER_H
 #define TRACISERVER_H
 
@@ -29,11 +32,20 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
+
+#ifndef NO_TRACI
 
 #include <map>
 #include <string>
 #include <set>
+
+#include "TraCIDefs.h"
+#include "TraCIConstants.h"
 
 #define BUILD_TCPIP
 #include <foreign/tcpip/socket.h>
@@ -41,16 +53,16 @@
 #include <utils/common/NamedRTree.h>
 #include <utils/common/SUMOTime.h>
 #include <utils/common/ToString.h>
+
 #include <utils/geom/Boundary.h>
 #include <utils/geom/Position.h>
 #include <utils/geom/GeomHelper.h>
+#include <utils/shapes/PointOfInterest.h>
 #include <utils/options/OptionsCont.h>
 #include <microsim/MSNet.h>
 #include <microsim/traffic_lights/MSTrafficLightLogic.h>
-#include <libsumo/TraCIConstants.h>
-#include <libsumo/Subscription.h>
-#include <libsumo/TraCIDefs.h>
 #include "TraCIServerAPI_Lane.h"
+
 
 
 // ===========================================================================
@@ -59,10 +71,11 @@
 /** @class TraCIServer
  * @brief TraCI server used to control sumo by a remote TraCI client
  */
-class TraCIServer : public MSNet::VehicleStateListener, public libsumo::VariableWrapper {
+class TraCIServer : public MSNet::VehicleStateListener {
 public:
     /// @brief Definition of a method to be called for serving an associated commandID
     typedef bool(*CmdExecutor)(TraCIServer& server, tcpip::Storage& inputStorage, tcpip::Storage& outputStorage);
+
 
     SUMOTime getTargetTime() const {
         return myTargetTime;
@@ -99,6 +112,12 @@ public:
     ///        (except the case that a load or close command is received)s
     void processCommandsUntilSimStep(SUMOTime step);
 
+
+    void setVTDControlled(MSVehicle* v, Position xyPos, MSLane* l, double pos, double posLat, double angle,
+                          int edgeOffset, ConstMSEdgeVector route, SUMOTime t);
+
+    void postProcessVTD();
+
     /// @brief clean up subscriptions
     void cleanup();
 
@@ -111,7 +130,7 @@ public:
     static void runEmbedded(std::string pyFile);
 #endif
 
-    void vehicleStateChanged(const SUMOVehicle* const vehicle, MSNet::VehicleState to, const std::string& info = "");
+    void vehicleStateChanged(const SUMOVehicle* const vehicle, MSNet::VehicleState to);
 
     /// @name Writing Status Messages
     /// @{
@@ -157,7 +176,7 @@ public:
 
     void writeResponseWithLength(tcpip::Storage& outputStorage, tcpip::Storage& tempMsg);
 
-    void writePositionVector(tcpip::Storage& outputStorage, const libsumo::TraCIPositionVector& shape);
+    void collectObjectsInRange(int domain, const PositionVector& shape, double range, std::set<std::string>& into);
 
 
     /// @name Helpers for reading and checking values
@@ -205,7 +224,7 @@ public:
      * @param[out] into Holder of the read value
      * @return Whether a color was given (by data type)
      */
-    bool readTypeCheckingColor(tcpip::Storage& inputStorage, libsumo::TraCIColor& into);
+    bool readTypeCheckingColor(tcpip::Storage& inputStorage, TraCIColor& into);
 
 
     /** @brief Reads the value type and a 2D position, verifying the type
@@ -214,7 +233,16 @@ public:
      * @param[out] into Holder of the read value
      * @return Whether a 2D position was given (by data type)
      */
-    bool readTypeCheckingPosition2D(tcpip::Storage& inputStorage, libsumo::TraCIPosition& into);
+    bool readTypeCheckingPosition2D(tcpip::Storage& inputStorage, TraCIPosition& into);
+
+
+    /** @brief Reads the value type and a 2D bounding box, verifying the type
+     *
+     * @param[in, changed] inputStorage The storage to read from
+     * @param[out] into Holder of the read value
+     * @return Whether a 2D bounding box was given (by data type)
+     */
+    bool readTypeCheckingBoundary(tcpip::Storage& inputStorage, Boundary& into);
 
 
     /** @brief Reads the value type and a byte, verifying the type
@@ -242,27 +270,6 @@ public:
      * @return Whether an unsigned byte was given (by data type)
      */
     bool readTypeCheckingPolygon(tcpip::Storage& inputStorage, PositionVector& into);
-    /// @}
-
-
-    /// @brief Sets myTargetTime on server and sockets to the given value
-    /// @note  Used in MSStateHandler to update the server's time after loading a state
-    void setTargetTime(SUMOTime targetTime);
-
-    std::vector<std::string>& getLoadArgs() {
-        return myLoadArgs;
-    }
-
-    /// @name VariableWrapper interface
-    /// @{
-    void initWrapper(const int domainID, const int variable, const std::string& objID);
-    bool wrapDouble(const std::string& objID, const int variable, const double value);
-    bool wrapInt(const std::string& objID, const int variable, const int value);
-    bool wrapString(const std::string& objID, const int variable, const std::string& value);
-    bool wrapStringList(const std::string& objID, const int variable, const std::vector<std::string>& value);
-    bool wrapPosition(const std::string& objID, const int variable, const libsumo::TraCIPosition& value);
-    bool wrapColor(const std::string& objID, const int variable, const libsumo::TraCIColor& value);
-    tcpip::Storage& getWrapperStorage();
     /// @}
 
 
@@ -366,11 +373,8 @@ private:
     /// @brief The storage to read from
     tcpip::Storage myInputStorage;
 
-    /// @brief The storage to write to
+    /// @brief The storage to writeto
     tcpip::Storage myOutputStorage;
-
-    /// @brief A temporary storage to let the wrapper write to
-    tcpip::Storage myWrapperStorage;
 
     /// @brief The last timestep's subscription results
     tcpip::Storage mySubscriptionCache;
@@ -384,13 +388,53 @@ private:
     /// @brief Map of variable ids to the size of the parameter in bytes
     std::map<int, int> myParameterSizes;
 
-    std::vector<std::string> myLoadArgs;
+    std::map<std::string, MSVehicle*> myVTDControlledVehicles;
+
+
+    /** @class Subscription
+     * @brief Representation of a subscription
+     */
+    class Subscription {
+    public:
+        /** @brief Constructor
+         * @param[in] commandIdArg The command id of the subscription
+         * @param[in] idArg The id of the object that is subscribed
+         * @param[in] variablesArg The subscribed variables
+         * @param[in] beginTimeArg The begin time of the subscription
+         * @param[in] endTimeArg The end time of the subscription
+         * @param[in] contextVarsArg Whether the subscription is a context subscription (variable subscription otherwise)
+         * @param[in] contextDomainArg The domain ID of the context
+         * @param[in] rangeArg The range of the context
+         */
+        Subscription(int commandIdArg, const std::string& idArg,
+                     const std::vector<int>& variablesArg, const std::vector<std::vector<unsigned char> >& paramsArg,
+                     SUMOTime beginTimeArg, SUMOTime endTimeArg, bool contextVarsArg, int contextDomainArg, double rangeArg)
+            : commandId(commandIdArg), id(idArg), variables(variablesArg), parameters(paramsArg), beginTime(beginTimeArg), endTime(endTimeArg),
+              contextVars(contextVarsArg), contextDomain(contextDomainArg), range(rangeArg) {}
+
+        /// @brief commandIdArg The command id of the subscription
+        int commandId;
+        /// @brief The id of the object that is subscribed
+        std::string id;
+        /// @brief The subscribed variables
+        std::vector<int> variables;
+        /// @brief The parameters for the subscribed variables
+        std::vector<std::vector<unsigned char> > parameters;
+        /// @brief The begin time of the subscription
+        SUMOTime beginTime;
+        /// @brief The end time of the subscription
+        SUMOTime endTime;
+        /// @brief Whether the subscription is a context subscription (variable subscription otherwise)
+        bool contextVars;
+        /// @brief The domain ID of the context
+        int contextDomain;
+        /// @brief The range of the context
+        double range;
+
+    };
 
     /// @brief The list of known, still valid subscriptions
-    std::vector<libsumo::Subscription> mySubscriptions;
-
-    /// @brief The last modified context subscription (the one to add a filter to, see @addSubscriptionFilter(), currently only for vehicle to vehicle context)
-    libsumo::Subscription* myLastContextSubscription;
+    std::vector<Subscription> mySubscriptions;
 
     /// @brief Changes in the states of simulated vehicles
     /// @note
@@ -401,33 +445,22 @@ private:
     /// Performance could be improved if for a single client, myVehicleStateChanges is used only.
     std::map<MSNet::VehicleState, std::vector<std::string> > myVehicleStateChanges;
 
+    /// @brief A storage of objects
+    std::map<int, NamedRTree*> myObjects;
+
+    /// @brief A storage of lanes
+    LANE_RTREE_QUAL* myLaneTree;
+
+
 private:
     bool addObjectVariableSubscription(const int commandId, const bool hasContext);
-    void initialiseSubscription(libsumo::Subscription& s);
+    void initialiseSubscription(const Subscription& s);
     void removeSubscription(int commandId, const std::string& identity, int domain);
-    bool processSingleSubscription(const libsumo::Subscription& s, tcpip::Storage& writeInto,
+    bool processSingleSubscription(const TraCIServer::Subscription& s, tcpip::Storage& writeInto,
                                    std::string& errors);
 
 
-    bool addSubscriptionFilter();
-    void removeFilters();
-    void addSubscriptionFilterLanes(std::vector<int> lanes);
-    void addSubscriptionFilterNoOpposite();
-    void addSubscriptionFilterDownstreamDistance(double dist);
-    void addSubscriptionFilterUpstreamDistance(double dist);
-    void addSubscriptionFilterLeadFollow();
-    // TODO: for libsumo, implement convenience definitions present in python client:
-    //    void addSubscriptionFilterCF();
-    //    void addSubscriptionFilterLC(int direction);
-    void addSubscriptionFilterTurn();
-    void addSubscriptionFilterVClass(SVCPermissions vClasses);
-    void addSubscriptionFilterVType(std::set<std::string> vTypes);
-    bool isVehicleToVehicleContextSubscription(const libsumo::Subscription& s);
-
     bool findObjectShape(int domain, const std::string& id, PositionVector& shape);
-
-    /// @brief check whether a found objID refers to the central object of a context subscription
-    bool centralObject(const libsumo::Subscription& s, const std::string& objID);
 
 
 private:
@@ -436,5 +469,7 @@ private:
 
 };
 
+
+#endif
 
 #endif

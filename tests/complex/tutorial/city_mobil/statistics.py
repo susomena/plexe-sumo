@@ -1,21 +1,24 @@
 #!/usr/bin/env python
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2008-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
+"""
+@file    statistics.py
+@author  Michael Behrisch
+@author  Daniel Krajzewicz
+@date    2008-10-17
+@version $Id$
 
-# @file    statistics.py
-# @author  Michael Behrisch
-# @author  Daniel Krajzewicz
-# @date    2008-10-17
-# @version $Id$
+Collecting statistics for the CityMobil parking lot
 
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2008-2017 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
+"""
 from __future__ import absolute_import
 from __future__ import print_function
-import sys
 persons = {}
 personsRunning = 0
 
@@ -56,10 +59,10 @@ def evaluate(forTest=False):
         return
     waitTimes = []
     routeTimes = {}
-    for person in persons.values():
+    for person in persons.itervalues():
         waitTimes.append(person.depart - person.waitStart)
         route = (person.source, person.target)
-        if route not in routeTimes:
+        if not route in routeTimes:
             routeTimes[route] = []
         routeTimes[route].append(person.arrive - person.depart)
     waitArray = numpy.array(waitTimes)
@@ -70,10 +73,11 @@ def evaluate(forTest=False):
         print("waiting time (max, mean, dev):", waitArray.max(),
               waitArray.mean(), math.sqrt(waitArray.var()))
 
-    for route, times in sorted(routeTimes.items()):
+    for route, times in sorted(routeTimes.iteritems()):
         timeArray = numpy.array(times)
         if forTest:
-            print(route, timeArray.max() < 1000, timeArray.mean() < 1000, math.sqrt(timeArray.var()) < 100)
+            print(route, timeArray.max() < 1000, timeArray.mean()
+                  < 1000, math.sqrt(timeArray.var()) < 100)
         else:
             print(route, timeArray.max(), timeArray.mean(),
                   math.sqrt(timeArray.var()))
@@ -91,9 +95,8 @@ def evaluate(forTest=False):
     else:
         print("CO2:", co2)
 
-
 if __name__ == "__main__":
-    from pylab import figure, errorbar, legend, savefig, show, title, xlabel, xlim, ylabel, ylim
+    from pylab import *
     stats = open(sys.argv[1])
     demand = []
     simpleWaitMean = []

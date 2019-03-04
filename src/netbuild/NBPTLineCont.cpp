@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBPTLineCont.cpp
 /// @author  Gregor Laemmel
 /// @author  Nikita Cherednychek
@@ -15,17 +7,24 @@
 ///
 // Container for NBPTLine during netbuild
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 #include <iostream>
 #include <utils/common/MsgHandler.h>
-#include <utils/common/ToString.h>
-#include <utils/options/OptionsCont.h>
-#include <utils/router/DijkstraRouter.h>
 #include "NBPTLineCont.h"
 #include "NBPTStop.h"
 #include "NBEdge.h"
 #include "NBNode.h"
-#include "NBVehicle.h"
 #include "NBPTStopCont.h"
 
 // ===========================================================================
@@ -92,12 +91,11 @@ void NBPTLineCont::reviseStops(NBPTLine* myPTLine, NBEdgeCont& cont) {
                 waysIdsIt =  waysIds.begin();
                 for (; waysIdsIt != waysIds.end(); waysIdsIt++) {
                     if ((*waysIdsIt) == edgeCand.first) {
-                        if (stop->setEdgeId(edgeCand.second, cont)) {
-                            stop->setMyOrigEdgeId(edgeCand.first);
-                            origId = edgeCand.first;
-                            found = true;
-                            break;
-                        }
+                        stop->setEdgeId(edgeCand.second);
+                        stop->setMyOrigEdgeId(edgeCand.first);
+                        origId = edgeCand.first;
+                        found = true;
+                        break;
                     }
                 }
                 if (found) {
@@ -157,24 +155,24 @@ void NBPTLineCont::reviseStops(NBPTLine* myPTLine, NBEdgeCont& cont) {
 
         std::string edgeId = stop->getEdgeId();
         NBEdge* current = cont.getByID(edgeId);
-        int assignedTo = edgeId.at(0) == '-' ? BWD : FWD;
+        int assingedTo = edgeId.at(0) == '-' ? BWD : FWD;
 
-        if (dir != assignedTo) {
+        if (dir != assingedTo) {
             NBEdge* reverse = NBPTStopCont::getReverseEdge(current);
             if (reverse == nullptr) {
                 WRITE_WARNING("Could not re-assign PT stop: " + stop->getID() + " probably broken osm file");
                 continue;
             }
-            stop->setEdgeId(reverse->getID(), cont);
+            stop->setEdgeId(reverse->getID());
+            NBPTStopCont::findLaneAndComputeBusStopExtend(stop, cont);
             WRITE_WARNING("PT stop: " + stop->getID() + " has been moved to edge: " + reverse->getID());
         }
-        myServedPTStops.insert(stop->getID());
-        stop->addLine(myPTLine->getRef());
+
     }
 }
-
-
 void NBPTLineCont::constructRoute(NBPTLine* pTLine, NBEdgeCont& cont) {
+
+
     std::vector<NBEdge*> edges;
 
     NBNode* first = nullptr;
@@ -255,7 +253,7 @@ void NBPTLineCont::constructRoute(NBPTLine* pTLine, NBEdgeCont& cont) {
             }
         } else {
             if (it3 != pTLine->getMyWays().begin()) {
-                WRITE_WARNING("Incomplete route for ptline '" + toString(pTLine->getLineID()) + "' (" + pTLine->getName() + ")");
+                std::cout << "Warning: incomplete route for " << pTLine->getName() << std::endl;
             }
             prevWayEdges = currentWayEdges;
             prevWayMinusEdges = currentWayMinusEdges;
@@ -290,137 +288,3 @@ void NBPTLineCont::constructRoute(NBPTLine* pTLine, NBEdgeCont& cont) {
     pTLine->addEdgeVector(fr, to);
 }
 
-
-void
-NBPTLineCont::addEdges2Keep(const OptionsCont& oc, std::set<std::string>& into) {
-    if (oc.isSet("ptline-output")) {
-        for (auto line : myPTLines) {
-            for (auto edge : line->getRoute()) {
-                into.insert(edge->getID());
-            }
-        }
-    }
-}
-
-
-std::set<std::string>&
-NBPTLineCont::getServedPTStops() {
-    return myServedPTStops;
-}
-
-
-void
-NBPTLineCont::fixBidiStops(const NBEdgeCont& ec) {
-    std::map<std::string, SUMOVehicleClass> types;
-    types["bus"] = SVC_BUS;
-    types["tram"] = SVC_TRAM;
-    types["train"] = SVC_RAIL;
-    types["subway"] = SVC_RAIL_URBAN;
-    types["light_rail"] = SVC_RAIL_URBAN;
-    types["ferry"] = SVC_SHIP;
-
-    SUMOAbstractRouter<NBEdge, NBVehicle>* router;
-    router = new DijkstraRouter<NBEdge, NBVehicle, SUMOAbstractRouter<NBEdge, NBVehicle> >(
-        ec.getAllEdges(), true, &NBEdge::getTravelTimeStatic, nullptr, true);
-
-    for (NBPTLine* line : myPTLines) {
-        std::vector<NBPTStop*> stops = line->getStops();
-        if (stops.size() < 2) {
-            continue;
-        }
-        if (types.count(line->getType()) == 0) {
-            WRITE_WARNING("Could not determine vehicle class for public transport line of type '"
-                          + line->getType() + "'.");
-            continue;
-        }
-        NBVehicle veh(line->getRef(), types[line->getType()]);
-        std::vector<NBPTStop*> newStops;
-        NBPTStop* from = nullptr;
-        for (auto it = stops.begin(); it != stops.end(); ++it) {
-            NBPTStop* to = *it;
-            NBPTStop* used = *it;
-            if (to->getBidiStop() != nullptr) {
-                double best = std::numeric_limits<double>::max();
-                NBPTStop* to2 = to->getBidiStop();
-                if (from == nullptr) {
-                    if ((it + 1) != stops.end()) {
-                        from = to;
-                        NBPTStop* from2 = to2;
-                        to = *(it + 1);
-                        const double c1 = getCost(ec, *router, from, to, &veh);
-                        const double c2 = getCost(ec, *router, from2, to, &veh);
-                        //std::cout << " from=" << from->getID() << " to=" << to->getID() << " c1=" << MIN2(10000.0, c1) << "\n";
-                        //std::cout << " from2=" << from2->getID() << " to=" << to->getID() << " c2=" << MIN2(10000.0, c2) << "\n";
-                        best = c1;
-                        if (to->getBidiStop() != nullptr) {
-                            to2 = to->getBidiStop();
-                            const double c3 = getCost(ec, *router, from, to2, &veh);
-                            const double c4 = getCost(ec, *router, from2, to2, &veh);
-                            //std::cout << " from=" << from->getID() << " to2=" << to2->getID() << " c3=" << MIN2(10000.0, c3) << "\n";
-                            //std::cout << " from2=" << from2->getID() << " to2=" << to2->getID() << " c4=" << MIN2(10000.0, c4) << "\n";
-                            if (c2 < best) {
-                                used = from2;
-                                best = c2;
-                            }
-                            if (c3 < best) {
-                                used = from;
-                                best = c3;
-                            }
-                            if (c4 < best) {
-                                used = from2;
-                                best = c4;
-                            }
-                        } else {
-                            if (c2 < c1) {
-                                used = from2;
-                                best = c2;
-                            } else {
-                                best = c1;
-                            }
-                        }
-                    }
-                } else {
-                    const double c1 = getCost(ec, *router, from, to, &veh);
-                    const double c2 = getCost(ec, *router, from, to2, &veh);
-                    //std::cout << " from=" << from->getID() << " to=" << to->getID() << " c1=" << MIN2(10000.0, c1) << "\n";
-                    //std::cout << " from=" << from->getID() << " t2o=" << to2->getID() << " c2=" << MIN2(10000.0, c2) << "\n";
-                    if (c2 < c1) {
-                        used = to2;
-                        best = c2;
-                    } else {
-                        best = c1;
-                    }
-
-                }
-                if (best < std::numeric_limits<double>::max()) {
-                    from = used;
-                } else {
-                    WRITE_WARNING("Could not determine direction for line '" + toString(line->getLineID()) + "' at stop '" + used->getID() + "'");
-                };
-            }
-            from = used;
-            newStops.push_back(used);
-        }
-        assert(stops.size() == newStops.size());
-        line->replaceStops(newStops);
-    }
-    delete router;
-}
-
-
-double
-NBPTLineCont::getCost(const NBEdgeCont& ec, SUMOAbstractRouter<NBEdge, NBVehicle>& router,
-                      const NBPTStop* from, const NBPTStop* to, const NBVehicle* veh) {
-    NBEdge* fromEdge = ec.getByID(from->getEdgeId());
-    NBEdge* toEdge = ec.getByID(to->getEdgeId());
-    if (fromEdge == nullptr || toEdge == nullptr) {
-        return std::numeric_limits<double>::max();
-    }
-    std::vector<const NBEdge*> route;
-    router.compute(fromEdge, toEdge, veh, 0, route);
-    if (route.size() == 0) {
-        return std::numeric_limits<double>::max();
-    } else {
-        return router.recomputeCosts(route, veh, 0);
-    }
-}

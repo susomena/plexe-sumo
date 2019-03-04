@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBTrafficLightDefinition.cpp
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -16,12 +8,27 @@
 ///
 // The base class for traffic light logic definitions
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 
 
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <vector>
 #include <string>
@@ -113,7 +120,7 @@ NBTrafficLightDefinition::compute(OptionsCont& oc) {
             (*it)->removeTrafficLight(this);
         }
         WRITE_WARNING("The traffic light '" + getID() + "' does not control any links; it will not be build.");
-        return nullptr;
+        return 0;
     }
     // compute the time needed to brake
     int brakingTime = computeBrakingTime(oc.getFloat("tls.yellow.min-decel"));
@@ -123,7 +130,7 @@ NBTrafficLightDefinition::compute(OptionsCont& oc) {
         brakingTime = oc.getInt("tls.yellow.time");
     }
     NBTrafficLightLogic* ret = myCompute(brakingTime);
-    ret->updateParameter(getParametersMap());
+    ret->addParameter(getMap());
     return ret;
 }
 
@@ -136,10 +143,6 @@ NBTrafficLightDefinition::amInvalid() const {
 
 int
 NBTrafficLightDefinition::computeBrakingTime(double minDecel) const {
-    if (myIncomingEdges.size() == 0) {
-        // don't crash
-        return 3;
-    }
     double vmax = NBContHelper::maxSpeed(myIncomingEdges);
     if (vmax < 71 / 3.6) {
         // up to 50kmh: 3 seconds , 60km/h: 4, 70kmh: 5
@@ -200,7 +203,7 @@ NBTrafficLightDefinition::collectEdges() {
     for (EdgeVector::iterator j = myIncomingEdges.begin(); j != myIncomingEdges.end(); ++j) {
         NBEdge* edge = *j;
         // an edge lies within the logic if it is outgoing as well as incoming
-        EdgeVector::iterator k = std::find(myOutgoing.begin(), myOutgoing.end(), edge);
+        EdgeVector::iterator k = find(myOutgoing.begin(), myOutgoing.end(), edge);
         if (k != myOutgoing.end()) {
             myEdgesWithin.push_back(edge);
         } else  {
@@ -218,7 +221,7 @@ NBTrafficLightDefinition::collectEdges() {
         // edges that are marked as 'inner' will not get their own phase when
         // computing traffic light logics (unless they cannot be reached from the outside at all)
         if (reachable.count(edge) == 1) {
-            edge->setInternal();
+            edge->setIsInnerEdge();
             // legacy behavior
             if (uncontrolledWithin && myControlledInnerEdges.count(edge->getID()) == 0) {
                 myIncomingEdges.erase(find(myIncomingEdges.begin(), myIncomingEdges.end(), edge));
@@ -276,7 +279,7 @@ NBTrafficLightDefinition::forbids(const NBEdge* const possProhibitorFrom,
                                   const NBEdge* const possProhibitedTo,
                                   bool regardNonSignalisedLowerPriority,
                                   bool sameNodeOnly) const {
-    if (possProhibitorFrom == nullptr || possProhibitorTo == nullptr || possProhibitedFrom == nullptr || possProhibitedTo == nullptr) {
+    if (possProhibitorFrom == 0 || possProhibitorTo == 0 || possProhibitedFrom == 0 || possProhibitedTo == 0) {
         return false;
     }
     // retrieve both nodes
@@ -391,7 +394,7 @@ NBTrafficLightDefinition::forbids(const NBEdge* const possProhibitorFrom,
 bool
 NBTrafficLightDefinition::foes(const NBEdge* const from1, const NBEdge* const to1,
                                const NBEdge* const from2, const NBEdge* const to2) const {
-    if (to1 == nullptr || to2 == nullptr) {
+    if (to1 == 0 || to2 == 0) {
         return false;
     }
     // retrieve both nodes (it is possible that a connection
@@ -462,19 +465,13 @@ NBTrafficLightDefinition::collectAllLinks() {
             for (std::vector<NBEdge::Connection>::iterator k = connected.begin(); k != connected.end(); k++) {
                 const NBEdge::Connection& el = *k;
                 if (incoming->mayBeTLSControlled(el.fromLane, el.toEdge, el.toLane)) {
-                    if (el.toEdge != nullptr && el.toLane >= (int) el.toEdge->getNumLanes()) {
+                    if (el.toEdge != 0 && el.toLane >= (int) el.toEdge->getNumLanes()) {
                         throw ProcessError("Connection '" + incoming->getID() + "_" + toString(j) + "->" + el.toEdge->getID() + "_" + toString(el.toLane) + "' yields in a not existing lane.");
                     }
-                    if (incoming->getToNode()->getType() == NODETYPE_RAIL_CROSSING 
-                                && isRailway(incoming->getPermissions())) {
-                        // railways stay uncontrolled at rail crossing but they
-                        // must be registered in MSRailCrossing
-                        myControlledLinks.push_back(NBConnection(incoming, el.fromLane, el.toEdge, el.toLane, -1));
-                    } else if (incoming->getToNode()->getType() == NODETYPE_RAIL_SIGNAL 
-                                && incoming->getToNode()->getDirection(incoming, el.toEdge) == LINKDIR_TURN) {
-                        // turnarounds stay uncontrolled at rail signal
-                    } else {
+                    if (incoming->getToNode()->getType() != NODETYPE_RAIL_CROSSING || !isRailway(incoming->getPermissions())) {
                         myControlledLinks.push_back(NBConnection(incoming, el.fromLane, el.toEdge, el.toLane, tlIndex++));
+                    } else {
+                        myControlledLinks.push_back(NBConnection(incoming, el.fromLane, el.toEdge, el.toLane, -1));
                     }
                 }
             }
@@ -529,11 +526,6 @@ NBTrafficLightDefinition::rightOnRedConflict(int index, int foeIndex) const {
         //}
     }
     return std::find(myRightOnRedConflicts.begin(), myRightOnRedConflicts.end(), std::make_pair(index, foeIndex)) != myRightOnRedConflicts.end();
-}
-
-std::string
-NBTrafficLightDefinition::getDescription() const {
-    return getID() + ':' + getProgramID() + '@' + toString(this);
 }
 
 /****************************************************************************/

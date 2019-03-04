@@ -1,6 +1,3 @@
-# overtaking a stopped vehicle should be a strategic priority
-ticket3103
-
 # changeProbability should diminsh if there is no advantage in changing
 ticket3337
 
@@ -9,10 +6,3 @@ ticket3360
 
 # overtaking over two lanes
 ticket3377
-ticket4108
-
-# Copied from speedGain/default, added option --lanechangeDuration=2.5
-ticket4364
-
-# approaching roundabout with an invalid route
-ticket5097

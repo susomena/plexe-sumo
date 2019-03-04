@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2012-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    NBAlgorithms.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -15,6 +7,17 @@
 ///
 // Algorithms for network computation
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2012-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef NBAlgorithms_h
 #define NBAlgorithms_h
 
@@ -22,7 +25,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <map>
 #include "NBEdgeCont.h"
@@ -115,13 +122,7 @@ public:
         explicit crossing_by_junction_angle_sorter(const NBNode* node, const EdgeVector& ordering);
 
         int operator()(const NBNode::Crossing* c1, const NBNode::Crossing* c2) const {
-            const int r1 = getMinRank(c1->edges);
-            const int r2 = getMinRank(c2->edges);
-            if (r1 == r2) {
-                return c1->edges.size() > c2->edges.size();
-            } else {
-                return (int)(r1 < r2);
-            }
+            return (int)(getMinRank(c1->edges) < getMinRank(c2->edges));
         }
 
     private:
@@ -205,15 +206,12 @@ public:
     /** @brief Computes node types
      * @param[in] nc The container of nodes to loop along
      */
-    static void computeNodeTypes(NBNodeCont& nc, NBTrafficLightLogicCont& tlc);
+    static void computeNodeTypes(NBNodeCont& nc);
 
-    /** @brief Checks rail_crossing for validity
-     * @param[in] nc The container of nodes to loop along
+    /** @brief Computes a single node type
+     * @param[in] node the single node to compute node type
      */
-    static void validateRailCrossings(NBNodeCont& nc, NBTrafficLightLogicCont& tlc);
-
-    /// @brief whether the given node only has rail edges
-    static bool isRailwayNode(const NBNode* n);
+    static void computeSingleNodeType(NBNode* node);
 };
 
 
@@ -231,14 +229,16 @@ public:
      */
     static void computeEdgePriorities(NBNodeCont& nc);
 
+    /** @brief Computes edge priorities within a single node
+     * @param[in] node the single node
+     */
+    static void computeEdgePrioritiesSingleNode(NBNode* node);
+
 private:
     /** @brief Sets the priorites in case of a priority junction
      * @param[in] n The node to set edges' priorities
      */
     static void setPriorityJunctionPriorities(NBNode& n);
-
-    /// @brief set priority for edges that are parallel to the best edges
-    static void markBestParallel(const NBNode& n, NBEdge* bestFirst, NBEdge* bestSecond);
 
     /** @brief Sets the priorites in case of a priority junction
      * @param[in] n The node to set edges' priorities

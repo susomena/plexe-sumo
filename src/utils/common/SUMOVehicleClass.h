@@ -1,12 +1,4 @@
 /****************************************************************************/
-// Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-// Copyright (C) 2001-2019 German Aerospace Center (DLR) and others.
-// This program and the accompanying materials
-// are made available under the terms of the Eclipse Public License v2.0
-// which accompanies this distribution, and is available at
-// http://www.eclipse.org/legal/epl-v20.html
-// SPDX-License-Identifier: EPL-2.0
-/****************************************************************************/
 /// @file    SUMOVehicleClass.h
 /// @author  Daniel Krajzewicz
 /// @author  Jakob Erdmann
@@ -18,6 +10,17 @@
 ///
 // Definitions of SUMO vehicle classes and helper functions
 /****************************************************************************/
+// SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+// Copyright (C) 2001-2017 DLR (http://www.dlr.de/) and contributors
+/****************************************************************************/
+//
+//   This file is part of SUMO.
+//   SUMO is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+//
+/****************************************************************************/
 #ifndef SUMOVehicleClass_h
 #define SUMOVehicleClass_h
 
@@ -25,7 +28,11 @@
 // ===========================================================================
 // included modules
 // ===========================================================================
+#ifdef _MSC_VER
+#include <windows_config.h>
+#else
 #include <config.h>
+#endif
 
 #include <string>
 #include <set>
@@ -39,7 +46,7 @@
 // class declarations
 // ===========================================================================
 class OutputDevice;
-class SUMOSAXAttributes;
+
 
 // ===========================================================================
 // enum definitions
@@ -70,7 +77,7 @@ enum SUMOVehicleShape {
     /// @brief render as a van
     SVS_PASSENGER_VAN,
     /// @brief automated car (with cruise controllers)
-    //SVS_PASSENGER_AUTOMATED,
+    SVS_PASSENGER_AUTOMATED,
     /// @brief render as a delivery vehicle
     SVS_DELIVERY,
     /// @brief render as a transport vehicle
@@ -104,9 +111,7 @@ enum SUMOVehicleShape {
     /// @brief render as a fire brigade
     SVS_FIREBRIGADE,
     /// @brief render as a police car
-    SVS_POLICE,
-    /// @brief render as a rickshaw
-    SVS_RICKSHAW
+    SVS_POLICE
 };
 
 
@@ -199,10 +204,8 @@ enum SUMOVehicleClass {
     SVC_AUTOMATED = 1 << 25,
     //@}
 
-    /// @brief classes which drive on tracks
-    SVC_RAIL_CLASSES = SVC_RAIL_ELECTRIC | SVC_RAIL | SVC_RAIL_URBAN | SVC_TRAM,
     /// @brief classes which (normally) do not drive on normal roads
-    SVC_NON_ROAD = SVC_RAIL_CLASSES | SVC_SHIP
+    SVC_NON_ROAD = SVC_TRAM | SVC_RAIL | SVC_RAIL_URBAN | SVC_RAIL_ELECTRIC | SVC_SHIP
 };
 
 extern const int SUMOVehicleClass_MAX;
@@ -293,9 +296,6 @@ extern void writePermissions(OutputDevice& into, SVCPermissions permissions);
 /// @brief writes allowed disallowed attributes if needed;
 extern void writePreferences(OutputDevice& into, SVCPermissions preferred);
 
-/// @brief Extract stopOffsets from attributes of stopOffset element
-extern std::map<SVCPermissions, double> parseStopOffsets(const SUMOSAXAttributes& attrs, bool& ok);
-
 // ---------------------------------------------------------------------------
 // vehicle shape class
 // ---------------------------------------------------------------------------
@@ -332,24 +332,11 @@ extern bool isWaterway(SVCPermissions permissions);
  */
 extern bool isForbidden(SVCPermissions permissions);
 
-/** @brief Returns whether an edge with the given permission is a sidewalk
- * @param[in] permissions The permissions of the edge
- * @return Whether the edge is a sidewalk
- */
-extern bool isSidewalk(SVCPermissions permissions);
-
-/** @brief Returns whether an edge with the given permission forbids vehicles
- * @param[in] permissions The permissions of the edge
- * @return Whether the edge is forbidden for vehicles
- */
-extern bool noVehicles(SVCPermissions permissions);
-
 // ---------------------------------------------------------------------------
 // default vehicle type parameter
 // ---------------------------------------------------------------------------
 extern const std::string DEFAULT_VTYPE_ID;
 extern const std::string DEFAULT_PEDTYPE_ID;
-extern const std::string DEFAULT_BIKETYPE_ID;
 
 extern const double DEFAULT_VEH_PROB; // !!! does this belong here?
 

@@ -1,20 +1,21 @@
-# Eclipse SUMO, Simulation of Urban MObility; see https://eclipse.org/sumo
-# Copyright (C) 2014-2019 German Aerospace Center (DLR) and others.
-# This program and the accompanying materials
-# are made available under the terms of the Eclipse Public License v2.0
-# which accompanies this distribution, and is available at
-# http://www.eclipse.org/legal/epl-v20.html
-# SPDX-License-Identifier: EPL-2.0
-
-# @file    poi.py
-# @author  Jakob Erdmann
-# @author  Laura Bieker
-# @date    2014-02-13
-# @version $Id$
-
 """
+@file    poi.py
+@author  Jakob Erdmann
+@author  Laura Bieker
+@date    2014-02-13
+@version $Id$
+
 This module includes functions for converting SUMO's fcd-output into
 pois (useful for showing synthetic GPS disturtbances)
+
+SUMO, Simulation of Urban MObility; see http://sumo.dlr.de/
+Copyright (C) 2014 DLR (http://www.dlr.de/) and contributors
+
+This file is part of SUMO.
+SUMO is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+(at your option) any later version.
 """
 from __future__ import absolute_import
 from collections import defaultdict
